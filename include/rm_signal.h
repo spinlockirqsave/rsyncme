@@ -3,7 +3,7 @@
 ///  @author    peterg
 ///  @version   0.1.1
 ///  @date      02 Nov 2016 02:42 PM
-///  @copyright LGPL
+///  @copyright LGPLv2.1
 
 
 #ifndef RSYNCME_SIGNAL_H

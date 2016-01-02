@@ -3,7 +3,7 @@
 /// @author    peterg
 /// @version   0.1.1
 /// @date      02 Nov 2016 04:29 PM
-/// @copyright LGPL
+/// @copyright LGPLv2.1
 
 #ifndef RSYNCME_DO_MSG_H
 #define RSYNCME_DO_MSG_H

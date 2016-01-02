@@ -6,7 +6,7 @@
 /// @author     Piotr Gregor piotrek.gregor at gmail.com
 /// @version    0.1.1
 /// @date       1 Jan 2016 07:50 PM
-/// @copyright  LGPL
+/// @copyright  LGPLv2.1
 
 
 #ifndef RSYNCME_H

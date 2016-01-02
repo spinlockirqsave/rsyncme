@@ -3,7 +3,7 @@
 /// @author     Piotr Gregor piotrek.gregor at gmail.com
 /// @version    0.1.1
 /// @date       2 Jan 2016 11:18 AM
-/// @copyright  LGPL
+/// @copyright  LGPLv2.1
 
 
 #ifndef RSYNCME_TX_H

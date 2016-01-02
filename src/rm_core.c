@@ -3,7 +3,7 @@
 ///  @author    peterg
 ///  @version   0.1.1
 ///  @date      02 Jan 2016 02:50 PM
-///  @copyright LGPL
+///  @copyright LGPLv2.1
 
 
 #include "rm_core.h"

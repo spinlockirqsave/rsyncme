@@ -3,7 +3,7 @@
 ///  @author    peterg
 ///  @version   0.1.1
 ///  @date      02 Jan 2015 02:35 PM
-///  @copyright LGPL
+///  @copyright LGPLv2.1
 
 
 #include "rm_defs.h"
