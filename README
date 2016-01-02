@@ -1,0 +1,4 @@
+rsyncme
+
+A simple implementation of rsync algorithm
+for efficient file synchronization.
