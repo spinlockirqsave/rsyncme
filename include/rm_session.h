@@ -20,28 +20,24 @@ struct rm_session
 
 	uint32_t                session_id;
 	pthread_mutex_t         session_mutex;
-	pthread_t               tid;
+	pthread_t               ch_ch_tid;
+	pthread_t               delta_tid;
 
 	struct rsyncme		*rm;		// pointer to global
 						// rsyncme object
 };
 
 
-/// @brief      Rsync push session thread routine (inbound).
-void *
-rm_session_push_in_f(void *arg);
 
-/// @brief      Rsync push session thread routine (outbound).
+/// @brief      Rsync push session checksum on nonoverlaping
+///		blocks producing thread routine (outbound).
 void *
-rm_session_push_out_f(void *arg);
+rm_session_push_out_ch_ch_f(void *arg);
 
-/// @brief      Rsync pull session thread routine (inbound).
+/// @brief      Rsync push session delta reconstruction
+///		thread routine (outbound).
 void *
-rm_session_pull_in_f(void *arg);
-
-/// @brief      Rsync pull session thread routine (outbound).
-void *
-rm_session_pull_out_f(void *arg);
+rm_session_push_out_delta_f(void *arg);
 
 struct rm_session *
 rm_session_create(uint32_t session_id,

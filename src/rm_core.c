@@ -44,51 +44,24 @@ rm_core_session_find(struct rsyncme *rm,
         return NULL;
 }
 
-int
+struct rm_session *
 rm_core_session_start(struct rsyncme *rm,
-                        uint32_t session_id,
-                        void *(*f)(void*),
-			unsigned char *buf)
+                        uint32_t session_id)
 {
-        int                     err;
-        pthread_attr_t          attr;
-
         struct rm_session	*s = NULL;
 
         assert(rm != NULL);
-        assert(f != NULL);
-        assert(buf != NULL);
 
-        err = pthread_attr_init(&attr);
-        if (err != 0)
-                return -1;
-        err = pthread_attr_setdetachstate(&attr,
-                        PTHREAD_CREATE_JOINABLE);
-        if (err != 0)
-                goto fail;
         s = rm_session_create(session_id, rm);
         if (s == NULL)
-                goto fail;
-
-        err = pthread_create(&s->tid, &attr,
-                          f, (void*)s);
-	if (err != 0)
-                goto fail;
-
+                return NULL;
 	pthread_mutex_lock(&rm->mutex);
 	twlist_add(&rm->sessions_list, &s->link);
 	twhash_add(rm->sessions, &s->hlink, session_id);
 	rm->sessions_n++;
 	pthread_mutex_unlock(&rm->mutex);
 
-        return 0;
-
-fail:
-        pthread_attr_destroy(&attr);
-	if (s != NULL)
-		rm_session_free(s);
-
-        return -1;
+        return s;
 }
 
 int
@@ -107,6 +80,10 @@ int
 rm_core_authenticate(struct sockaddr_in *cli_addr)
 {
         char a[INET_ADDRSTRLEN];
+	// IPv4
+	//cli_ip = cli_addr.sin_addr.s_addr;
+	//inet_ntop(AF_INET, &cli_ip, cli_ip_str, INET_ADDRSTRLEN);
+	//cli_port = ntohs(cli_addr.sin_port);
         inet_ntop(AF_INET, &cli_addr->sin_addr, a, INET_ADDRSTRLEN);
         if (strcmp(a, RM_IP_AUTH) != 0)
                 return -1;
@@ -130,176 +107,3 @@ rm_core_tcp_msg_validate(unsigned char *buf, int read_n)
 	}
         return 0;
 }
-
-/// @brief      Process TCP connection's events.
-/// @details    Thread routine.
-static void *
-rm_core_proc_con_events(void *data)
-{
-        // TODO implement
-        struct rsyncme	*rm;
-        int		connfd;
-        struct rm_core_con_data	*con_data;
-        int		read_n, err;
-        unsigned char	buf[RM_TCP_MSG_MAX_LEN];
-
-        assert(data != NULL);
-        con_data = (struct rm_core_con_data *) data;
-        rm = con_data->rm;
-        connfd = con_data->connfd;
-
-	for ( ; ; )
-        {
-                memset(&buf, 0, sizeof buf);
-                read_n = read(connfd, &buf, RM_TCP_MSG_MAX_LEN);
-                if (read_n == -1)
-                {
-                        switch (read_n)
-                        {
-                                case EAGAIN:
-                                        rm_perr_abort("Nonblocking I/O requested"
-                                                " on TCP control socket");
-                                case EINTR:
-                                        rm_err("TCP control socket: interrupted");
-                                        continue;
-                                case EBADF:
-                                        rm_perr_abort("TCP control socket passed "
-                                                        "is not a valid descriptor "
-                                                        "or nor open for reading");
-                                case EFAULT:
-                                        rm_perr_abort("TCP control socket: buffer"
-                                                       " is outside accessible "
-                                                       "address space");
-                                case EINVAL:
-                                        rm_perr_abort("TCP control socket: unsuitable "
-                                                        "for reading or wrong buffer len");
-                                case EIO:
-                                        rm_perr_abort("TCP control socket: I/O error");
-                                case EISDIR:
-                                        rm_perr_abort("TCP control socket: socket "
-                                                        "descriptor refers to directory");
-                                default:
-                                        rm_perr_abort("TCP control socket: "
-                                                        "unknown error");
-                        }
-                }
-                // validate the message: do we understand that?
-                err = rm_core_tcp_msg_validate(buf, read_n);
-                if (err < 0)
-                {
-                        rm_err("TCP control socket: not a valid rsyncme message");
-                        continue;
-                }
-                // process server message
-                switch (err)
-                {
-                        case RM_MSG_PUSH_IN:
-                                pthread_mutex_lock(&rm->mutex);
-                                rm_do_msg_push_in(rm, buf);
-                                pthread_mutex_unlock(&rm->mutex);
-                                break;
-
-                        case RM_MSG_PUSH_OUT:
-                                pthread_mutex_lock(&rm->mutex);
-                                rm_do_msg_push_out(rm, buf);
-                                pthread_mutex_unlock(&rm->mutex);
-                                break;
-
-                        case RM_MSG_PULL_IN:
-                                pthread_mutex_lock(&rm->mutex);
-                                rm_do_msg_pull_in(rm, buf);
-                                pthread_mutex_unlock(&rm->mutex);
-                                break;
-
-                        case RM_MSG_PULL_OUT:
-                                pthread_mutex_lock(&rm->mutex);
-                                rm_do_msg_pull_out(rm, buf);
-                                pthread_mutex_unlock(&rm->mutex);
-                                break;
-
-                        case RM_MSG_BYE:
-                                break;
-
-                        default:
-                                rm_perr_abort("Unknown TCP message type");
-                }
-        }
-        return 0;
-}
-
-int
-rm_core_process_connection(struct rsyncme* rm, int connfd)
-{
-        struct rm_core_con	*c = NULL;
-        pthread_attr_t		attr;
-        pthread_attr_t		*attrp; // NULL or init &attr
-        int			err;
-
-        attrp = NULL;
-        pthread_mutex_lock(&rm->mutex);
-        if (rm->connections_n == RM_CORE_CONNECTIONS_MAX)
-        {
-                err = -1;
-                goto fail;
-        }
-        c = malloc(sizeof *c);
-        if (c == NULL)
-        {
-                err = -2;
-                goto fail;
-        }
-
-        // start the thread
-        err = pthread_attr_init(&attr);
-        if (err != 0)
-        {
-                RM_ERR("pthread_attr_init failed");
-                err = -3;
-                goto fail;
-        }
-        attrp = &attr;
-
-        err = pthread_attr_setdetachstate(&attr,
-                                PTHREAD_CREATE_JOINABLE);
-        if (err != 0)
-        {
-                RM_ERR("pthread_attr_setdetachstate failed");
-                err = -3;
-                goto fail;
-        }
-
-        err = pthread_attr_init(&attr);
-        if (err != 0)
-        {
-                RM_ERR("pthread_attr_init failed");
-                err = -3;
-                goto fail;
-        }
-
-        err = pthread_create(&c->tid, &attr,
-                rm_core_proc_con_events, c);
-        if (err != 0)
-        {
-                RM_ERR("pthread_create failed");
-                err = -3;
-                goto fail;
-        }
-
-        c->connfd = connfd;
-
-        // add to the list of connections
-        twlist_add(&c->link, &rm->connections);
-        rm->connections_n++;
-        pthread_mutex_unlock(&rm->mutex);
-        return 0;
-
-fail:
-        pthread_mutex_unlock(&rm->mutex);
-        if (c != NULL)
-                free(c);
-        if (attrp)
-                pthread_attr_destroy(attrp);
-
-        return err;
-}
-

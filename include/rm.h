@@ -81,36 +81,17 @@ typedef int		BLOCKSIZE;
 typedef uint32_t	FASTCHECKSUM;
 typedef uint32_t	DIVISOR;
 
-/// @brief	Strong checksum struct.
-struct rm_strong_ch
+/// @brief	Strong checksum struct. MD5.
+struct rm_md5
 {
-	char data[16];
+	unsigned char data[16];
 };
 
 /// @brief	Checksum checksum struct.
 struct rm_ch_ch
 {
-	struct rm_strong_ch	s_ch;		// strong checksum
+	struct rm_md5		s_ch;		// strong checksum
         uint32_t		f_ch;		// fast checksum
-        int			index_in_b;
-};
-
-/// @brief	Checksum checksum hash struct.
-struct rm_ch_ch_h
-{
-	struct rm_strong_ch	strong_ch;
-	uint32_t		fast_ch;
-	int			index_in_b;
-	uint16_t		h;
-};
-
-/// @brief	Checksum hash struct.
-struct rm_ch_h
-{
-	uint32_t	fast_ch;
-	BLOCKSIZE	size;
-	int		index_in_a;
-	uint16_t	h;
 };
 
 

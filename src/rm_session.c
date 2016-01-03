@@ -10,57 +10,21 @@
 
 
 void *
-rm_session_push_f(void *arg)
+rm_session_push_out_ch_ch_f(void *arg)
 {
-        struct rm_session *s =
-                        (struct rm_session *)arg;
-        assert(s != NULL);
-        return 0;
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
 }
 
 void *
-rm_session_push_in_f(void *arg)
+rm_session_push_out_delta_f(void *arg)
 {
-        struct rm_session *s =
-                        (struct rm_session *)arg;
-        assert(s != NULL);
-        return 0;
-}
-
-void *
-rm_session_push_out_f(void *arg)
-{
-        struct rm_session *s =
-                        (struct rm_session *)arg;
-        assert(s != NULL);
-        return 0;
-}
-
-void *
-rm_session_pull_in_f(void *arg)
-{
-        struct rm_session *s =
-                        (struct rm_session *)arg;
-        assert(s != NULL);
-        return 0;
-}
-
-void *
-rm_session_pull_out_f(void *arg)
-{
-        struct rm_session *s =
-                        (struct rm_session *)arg;
-        assert(s != NULL);
-        return 0;
-}
-
-void *
-rm_session_pull_f(void *arg)
-{
-        struct rm_session *s =
-                        (struct rm_session *)arg;
-        assert(s != NULL);
-        return 0;
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
 }
 
 struct rm_session *

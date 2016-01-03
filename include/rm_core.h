@@ -66,11 +66,9 @@ rm_core_session_find(struct rsyncme *rm,
                         uint32_t session_id);
 
 /// @brief	Handles rsync pull/push request in new sesion.
-int
+struct rm_session *
 rm_core_session_start(struct rsyncme *rm,
-                        uint32_t session_id,
-                        void *(*f)(void*),
-			unsigned char *buf);
+                        uint32_t session_id);
 
 /// @brief      Shut down.
 int
@@ -84,12 +82,6 @@ rm_core_authenticate(struct sockaddr_in *cli_addr);
 int
 rm_core_tcp_msg_validate(unsigned char *buf,
                                 int read_n);
-
-/// @brief      Process TCP connection.
-/// @details    Start processing of events sent over connection
-///             in separate thread.
-int
-rm_core_process_connection(struct rsyncme* rm, int connfd);
 
 
 #endif  // RSYNCME_CORE_H

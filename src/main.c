@@ -17,15 +17,14 @@ int
 main()
 {
         struct rsyncme		rm;	// global rsyncme object
+	int			read_n;
+	unsigned char		buf[RM_TCP_MSG_MAX_LEN];
 
 	// sockets
 	int			listenfd, connfd;
 	socklen_t		cli_len;
 	struct sockaddr_in	cli_addr, server_addr;
 	int			err, errsv;
-	char			cli_ip_str[INET_ADDRSTRLEN];
-	uint32_t		cli_ip;
-	uint16_t		cli_port;
 
 	fprintf(stderr, "[%s] Starting", __func__);
 	listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -94,10 +93,6 @@ main()
 				rm_perr_abort("Accept error.");
 		}
 
-		// IPv4
-		cli_ip = cli_addr.sin_addr.s_addr;
-		inet_ntop(AF_INET, &cli_ip, cli_ip_str, INET_ADDRSTRLEN);
-		cli_port = ntohs(cli_addr.sin_port);
 		// authenticate
 		if (rm_core_authenticate(&cli_addr) == -1)
 		{
@@ -105,33 +100,81 @@ main()
 			rm_perr_abort("Authentication failed.\n");
 			exit(1);
 		}
-		// start processing of TCP events sent by control application
-		err = rm_core_process_connection(&rm, connfd);
-                if (err < 0)
+		
+		memset(&buf, 0, sizeof buf);
+		read_n = read(connfd, &buf, RM_TCP_MSG_MAX_LEN);
+		if (read_n == -1)
 		{
-			close(connfd);
-			if (err == -1)
+			switch (read_n)
 			{
-				// connections limit reached
-				// send EBUSY
-				RM_ERR("Connection on socket [%d] from IP [%s],"
-					"port [%u] dropped because of max number"
-					" of connections", connfd, cli_ip_str,
-					cli_port);
-			} else if (err == -2)
-			{
-				// malloc failed
-				// send EBUSY
-				RM_ERR("Connection on socket [%d] from IP [%s],"
-					"port [%u] dropped because of memory "
-					"exhaustion", connfd, cli_ip_str,
-					cli_port);
+				case EAGAIN:
+					rm_perr_abort("Nonblocking I/O requested"
+						" on TCP control socket");
+				case EINTR:
+					rm_err("TCP control socket: interrupted");
+					continue;
+				case EBADF:
+					rm_perr_abort("TCP control socket passed "
+							"is not a valid descriptor "
+							"or nor open for reading");
+				case EFAULT:
+					rm_perr_abort("TCP control socket: buffer"
+							" is outside accessible "
+							"address space");
+				case EINVAL:
+					rm_perr_abort("TCP control socket: unsuitable "
+							"for reading or wrong buffer len");
+				case EIO:
+					rm_perr_abort("TCP control socket: I/O error");
+				case EISDIR:
+					rm_perr_abort("TCP control socket: socket "
+							"descriptor refers to directory");
+				default:
+					rm_perr_abort("TCP control socket: "
+							"unknown error");
 			}
 		}
+		// validate the message: do we understand that?
+		err = rm_core_tcp_msg_validate(buf, read_n);
+		if (err < 0)
+		{
+			rm_err("TCP control socket: not a valid rsyncme message");
+			continue;
+		}
+		// process server message
+		switch (err)
+		{
+			case RM_MSG_PUSH_IN:
+				pthread_mutex_lock(&rm.mutex);
+				rm_do_msg_push_in(&rm, buf);
+				pthread_mutex_unlock(&rm.mutex);
+				break;
 
-		// connection has been added
+			case RM_MSG_PUSH_OUT:
+				pthread_mutex_lock(&rm.mutex);
+				rm_do_msg_push_out(&rm, buf);
+				pthread_mutex_unlock(&rm.mutex);
+				break;
 
-		// continue to listen for the next connection
+			case RM_MSG_PULL_IN:
+				pthread_mutex_lock(&rm.mutex);
+				rm_do_msg_pull_in(&rm, buf);
+				pthread_mutex_unlock(&rm.mutex);
+				break;
+
+			case RM_MSG_PULL_OUT:
+				pthread_mutex_lock(&rm.mutex);
+				rm_do_msg_pull_out(&rm, buf);
+				pthread_mutex_unlock(&rm.mutex);
+				break;
+
+			case RM_MSG_BYE:
+				break;
+
+			default:
+				rm_perr_abort("Unknown TCP message type");
+		}
+		// continue to listen for the next message
 	}
 
 	fprintf(stderr, "[%s] Shutting down", __func__);
