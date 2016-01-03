@@ -43,6 +43,8 @@ rm_serialize_msg_pull(unsigned char *buf,
 uint32_t
 rm_msg_hdr_hash(unsigned char *buf);
 
+#define RM_MSG_HDR_HASH(b) ntohl(*((uint32_t *)b))
+
 uint8_t
 rm_msg_hdr_pt(unsigned char *buf);
 

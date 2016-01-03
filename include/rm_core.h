@@ -16,6 +16,7 @@
 #include "twlist.h"
 #include "twhash.h"
 #include "rm_session.h"
+#include "rm_serialize.h"
 
 #include <arpa/inet.h>
 
@@ -64,10 +65,12 @@ struct rm_session *
 rm_core_session_find(struct rsyncme *rm,
                         uint32_t session_id);
 
+/// @brief	Handles rsync pull/push request in new sesion.
 int
 rm_core_session_start(struct rsyncme *rm,
                         uint32_t session_id,
-                        void *(*f)(void*));
+                        void *(*f)(void*),
+			unsigned char *buf);
 
 /// @brief      Shut down.
 int

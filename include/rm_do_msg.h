@@ -1,13 +1,17 @@
-/// @file      rm_do_msg.h
-/// @brief     Execute TCP messages.
-/// @author    peterg
-/// @version   0.1.1
-/// @date      02 Nov 2016 04:29 PM
-/// @copyright LGPLv2.1
+/// @file	rm_do_msg.h
+/// @brief	Execute TCP messages.
+/// @author	peterg
+/// @version	0.1.1
+/// @date	02 Nov 2016 04:29 PM
+/// @copyright	LGPLv2.1
+
 
 #ifndef RSYNCME_DO_MSG_H
 #define RSYNCME_DO_MSG_H
 
+
+#include "rm_defs.h"
+#include "rm_session.h"
 
 struct rm_msg_hdr
 {
@@ -18,17 +22,39 @@ struct rm_msg_hdr
 	uint8_t		z;                              // unused yet
 };
 
-struct rm_msg_session_add
+struct rm_msg_push
 {
-        struct rm_msg_hdr	hdr;                            // header
-        uint32_t		session_id;                     // id into hashtable
+        struct rm_msg_hdr	hdr;			// header
+        uint32_t		L;			// block size	
 };
 
+struct rm_msg_pull
+{
+        struct rm_msg_hdr	hdr;			// header
+        uint32_t		L;			// block size
+	uint32_t		ch_ch_n;		// number of elements in the ch_ch list,
+							// that follows this msg, ch_ch elements
+							// are being sent in chunks while computing
+							// hashes on file
+};
+
+struct rsyncme;
 
 int
-rm_do_msg_session_add(struct rsyncme* rm,
-                        struct rm_msg_session_add *m,
-                                        int read_n);
+rm_do_msg_push_in(struct rsyncme* rm,
+		unsigned char *buf);
+
+int
+rm_do_msg_push_out(struct rsyncme* rm,
+		unsigned char *buf);
+
+int
+rm_do_msg_pull_in(struct rsyncme* rm,
+		unsigned char *buf);
+
+int
+rm_do_msg_pull_out(struct rsyncme* rm,
+		unsigned char *buf);
 
 
 #endif  // RSYNCME_DO_MSG

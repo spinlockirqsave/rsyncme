@@ -27,9 +27,21 @@ struct rm_session
 };
 
 
-/// @brief      Main rsync session thread routine.
+/// @brief      Rsync push session thread routine (inbound).
 void *
-rm_session_core_f(void *session);
+rm_session_push_in_f(void *arg);
+
+/// @brief      Rsync push session thread routine (outbound).
+void *
+rm_session_push_out_f(void *arg);
+
+/// @brief      Rsync pull session thread routine (inbound).
+void *
+rm_session_pull_in_f(void *arg);
+
+/// @brief      Rsync pull session thread routine (outbound).
+void *
+rm_session_pull_out_f(void *arg);
 
 struct rm_session *
 rm_session_create(uint32_t session_id,

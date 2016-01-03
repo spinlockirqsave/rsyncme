@@ -9,8 +9,53 @@
 #include "rm_session.h"
 
 
-void*
-rm_session_core_f(void *arg)
+void *
+rm_session_push_f(void *arg)
+{
+        struct rm_session *s =
+                        (struct rm_session *)arg;
+        assert(s != NULL);
+        return 0;
+}
+
+void *
+rm_session_push_in_f(void *arg)
+{
+        struct rm_session *s =
+                        (struct rm_session *)arg;
+        assert(s != NULL);
+        return 0;
+}
+
+void *
+rm_session_push_out_f(void *arg)
+{
+        struct rm_session *s =
+                        (struct rm_session *)arg;
+        assert(s != NULL);
+        return 0;
+}
+
+void *
+rm_session_pull_in_f(void *arg)
+{
+        struct rm_session *s =
+                        (struct rm_session *)arg;
+        assert(s != NULL);
+        return 0;
+}
+
+void *
+rm_session_pull_out_f(void *arg)
+{
+        struct rm_session *s =
+                        (struct rm_session *)arg;
+        assert(s != NULL);
+        return 0;
+}
+
+void *
+rm_session_pull_f(void *arg)
 {
         struct rm_session *s =
                         (struct rm_session *)arg;

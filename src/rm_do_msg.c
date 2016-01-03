@@ -7,27 +7,80 @@
 
 #include "rm_defs.h"
 #include "rm_core.h"
-#include "rm_do_msg.h"
+#include "rm_serialize.h"
 #include "rm_session.h"
 
 int
-rm_do_msg_session_add(struct rsyncme *rm,
-                        struct rm_msg_session_add *m,
-                                        int read_n)
+rm_do_msg_push_in(struct rsyncme *rm,
+			unsigned char *buf)
 {
 	int		err;
 	uint32_t	session_id;
 
-        assert(rm != NULL && m != NULL);
-        (void)read_n;
+        assert(rm != NULL && buf != NULL);
 
-	// session id from message
+	// generate GUID (session id)
 	session_id = 0;
-
         err = rm_core_session_start(rm, session_id,
-                        rm_session_core_f);
+                        rm_session_push_in_f, buf);
         if (err == -1)
                 return err;
         return 0;
 }
 
+int
+rm_do_msg_push_out(struct rsyncme *rm,
+			unsigned char *buf)
+{
+	int		err;
+	uint32_t	session_id;
+
+        assert(rm != NULL && buf != NULL);
+
+	// generate GUID (session id)
+	session_id = 0;
+
+        err = rm_core_session_start(rm, session_id,
+                        rm_session_push_out_f, buf);
+        if (err == -1)
+                return err;
+        return 0;
+}
+
+int
+rm_do_msg_pull_in(struct rsyncme *rm,
+			unsigned char *buf)
+{
+	int		err;
+	uint32_t	session_id;
+
+        assert(rm != NULL && buf != NULL);
+
+	// generate GUID (session id)
+	session_id = 0;
+
+        err = rm_core_session_start(rm, session_id,
+                        rm_session_pull_in_f, buf);
+        if (err == -1)
+                return err;
+        return 0;
+}
+
+int
+rm_do_msg_pull_out(struct rsyncme *rm,
+			unsigned char *buf)
+{
+	int		err;
+	uint32_t	session_id;
+
+        assert(rm != NULL && buf != NULL);
+
+	// generate GUID (session id)
+	session_id = 0;
+
+        err = rm_core_session_start(rm, session_id,
+                        rm_session_pull_out_f, buf);
+        if (err == -1)
+                return err;
+        return 0;
+}

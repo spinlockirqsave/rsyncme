@@ -47,7 +47,8 @@ rm_core_session_find(struct rsyncme *rm,
 int
 rm_core_session_start(struct rsyncme *rm,
                         uint32_t session_id,
-                        void *(*f)(void*))
+                        void *(*f)(void*),
+			unsigned char *buf)
 {
         int                     err;
         pthread_attr_t          attr;
@@ -55,6 +56,8 @@ rm_core_session_start(struct rsyncme *rm,
         struct rm_session	*s = NULL;
 
         assert(rm != NULL);
+        assert(f != NULL);
+        assert(buf != NULL);
 
         err = pthread_attr_init(&attr);
         if (err != 0)
@@ -113,10 +116,18 @@ rm_core_authenticate(struct sockaddr_in *cli_addr)
 int
 rm_core_tcp_msg_validate(unsigned char *buf, int read_n)
 {
+	uint32_t	hash;
+
         assert(buf != NULL && read_n >= 0);
         if (read_n == 0)
                 rm_perr_abort("TCP message size is 0");
-
+	// validate hash
+	hash = RM_MSG_HDR_HASH(buf);
+	if (hash != RM_CORE_HASH_OK)
+	{
+		RM_ERR("incorrect hash");
+		return -1;
+	}
         return 0;
 }
 
@@ -182,14 +193,33 @@ rm_core_proc_con_events(void *data)
                 // process server message
                 switch (err)
                 {
-                        case RM_MSG_SESSION_ADD:
+                        case RM_MSG_PUSH_IN:
                                 pthread_mutex_lock(&rm->mutex);
-                                rm_do_msg_session_add(rm,
-                                        (struct rm_msg_session_add *) buf, read_n);
+                                rm_do_msg_push_in(rm, buf);
                                 pthread_mutex_unlock(&rm->mutex);
                                 break;
+
+                        case RM_MSG_PUSH_OUT:
+                                pthread_mutex_lock(&rm->mutex);
+                                rm_do_msg_push_out(rm, buf);
+                                pthread_mutex_unlock(&rm->mutex);
+                                break;
+
+                        case RM_MSG_PULL_IN:
+                                pthread_mutex_lock(&rm->mutex);
+                                rm_do_msg_pull_in(rm, buf);
+                                pthread_mutex_unlock(&rm->mutex);
+                                break;
+
+                        case RM_MSG_PULL_OUT:
+                                pthread_mutex_lock(&rm->mutex);
+                                rm_do_msg_pull_out(rm, buf);
+                                pthread_mutex_unlock(&rm->mutex);
+                                break;
+
                         case RM_MSG_BYE:
                                 break;
+
                         default:
                                 rm_perr_abort("Unknown TCP message type");
                 }
