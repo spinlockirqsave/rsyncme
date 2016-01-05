@@ -166,7 +166,7 @@ rm_util_daemonize(const char *dir, int noclose)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
 
-	// set file mode to 0x662 (rw-rw-r--)
+	// set file mode to 0x622 (rw-r--r--)
 	// umask syscall always succeedes
 	umask(S_IWGRP | S_IWOTH);
 
@@ -201,7 +201,7 @@ rm_util_chdir_umask(const char *dir, int noclose)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
 
-	// set file mode to 0x662 (rw-rw-r--)
+	// set file mode to 0x622 (rw-r--r--)
 	// umask syscall always succeedes
 	umask(S_IWGRP | S_IWOTH);
 
