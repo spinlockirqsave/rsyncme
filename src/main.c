@@ -27,11 +27,18 @@ main()
 	struct sockaddr_in	cli_addr, server_addr;
 	int			err, errsv;
 
-	err = rm_util_daemonize("/usr/local/rsyncme", 0);
-	if (err < 0)
-		exit(EXIT_FAILURE);
+	if (RM_CORE_DAEMONIZE == 1)
+	{
+		err = rm_util_daemonize("/usr/local/rsyncme", 0);
+		if (err < 0)
+			exit(EXIT_FAILURE);
+	} else {
+		err = rm_util_chdir_umask("/usr/local/rsyncme/", 1);
+		if (err != 0)
+			exit(EXIT_FAILURE);
+	}
 
-	RM_INFO("Starting");
+	RM_LOG_INFO("Starting\n");
 	listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	memset(&server_addr, 0, sizeof(server_addr));

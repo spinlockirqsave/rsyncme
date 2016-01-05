@@ -59,6 +59,14 @@ __attribute__((noreturn));
                         "%s:%d:%s(): " fmt,       \
                 __FILE__, __LINE__, __func__, ##args)
 
+// log file
+#define RM_LOG_ERR(fmt, args...) rm_util_log(stderr, \
+			"%s\t%s:%d:%s(): " fmt,       \
+                "ERR", __FILE__, __LINE__, __func__, ##args)
+#define RM_LOG_INFO(fmt, args...) rm_util_log(stderr, \
+			"%s\t%s:%d:%s(): " fmt,       \
+                "INFO", __FILE__, __LINE__, __func__, ##args)
+
 
 #endif  // RSYNCME_ERROR_H
 

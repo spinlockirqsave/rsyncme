@@ -40,11 +40,91 @@ rm_util_dt_detail(char *buf)
 		strftime(tmp, 20, "%Y-%m-%d_%H-%M-%S", &t);
 		tmp[19] = '\0';
 
-		// append microseconds, buf must be at least 27 chars
+		// append microseconds, buf must be at least
+		// 28 chars
 		sprintf(buf, "%s:%06ld", tmp, tv.tv_usec);
 		return 0;
 	}
 	return -1;
+}
+
+// rsyncme_2016-01-05_16-52-45:081207.log
+int
+rm_util_openlogs(const char *dir, const char *name)
+{
+	FILE	*stream;
+	int	err;
+	char	*full_path;
+
+	if (dir == NULL) return -1;
+	full_path = malloc(strlen(dir) + strlen(name)
+			+ 1 + 27 + 1 + 3 + 1);
+	if (full_path == NULL)
+		return -1;
+
+	sprintf(full_path, "%s%s_", dir, name);
+	if (rm_util_dt_detail(full_path + strlen(dir)
+			+ strlen(name) + 1) == -1)
+	{
+		err = -2;
+		goto fail;
+	}
+	// stdout log
+	strcpy(full_path + strlen(dir) + strlen(name)
+		+ 27, ".log");
+	if ((stream = fopen(full_path, "w+")) == NULL)
+	{
+		err = -3;
+		goto fail;
+	}
+	fclose(stream);
+	// redirect stdout
+	if (freopen(full_path, "w", stdout) == NULL)
+	{
+		perror("rsyncme");
+		err = -4;
+		goto fail;
+	}
+	// stderr log
+	strcpy(full_path + strlen(dir) + strlen(name)
+		+ 27, ".err");
+	if ((stream = fopen(full_path, "w+")) == NULL)
+	{
+		err = -5;
+		goto fail;
+	}
+	fclose(stream);
+	// redirect stderr
+	if (freopen(full_path, "w", stderr) == NULL)
+	{
+		err = -6;
+		goto fail;
+	}
+	return 0;
+fail:
+	if (full_path != NULL)
+		free(full_path);
+	return err;
+}
+
+int
+rm_util_log(FILE *stream, const char *fmt, ...)
+{
+	int	ret;
+	va_list	args;
+	char 	buf[1024];
+	char	dt[28];
+
+	ret = rm_util_dt_detail(dt);
+	if (ret == -1) return -1;
+	
+	va_start(args, fmt);
+	snprintf(buf, sizeof(buf), "%s\t%s", dt, fmt);
+	ret = vfprintf(stream, buf, args);
+	va_end(args);
+	fflush(stream);
+
+	return ret; 
 }
 
 int
@@ -88,10 +168,11 @@ rm_util_daemonize(const char *dir, int noclose)
 
 	// set file mode to 0x662 (rw-rw-r--)
 	// umask syscall always succeedes
-	umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+	umask(S_IWGRP | S_IWOTH);
 
 	// TODO: open log here
-	openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
+	//openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
+	rm_util_openlogs("./log/", "rsyncme");
 
 	// change dir
 	if (dir != NULL)
@@ -102,11 +183,45 @@ rm_util_daemonize(const char *dir, int noclose)
 	{
 		// close open descriptors
 		fd = sysconf(_SC_OPEN_MAX);
-		for (; fd > 0; fd--)
+		for (; fd > 2; fd--)
 		{
 			close(fd);
 		}
 	}
 	
+	return 0;
+}
+
+int
+rm_util_chdir_umask(const char *dir, int noclose)
+{
+	int 	fd;
+	// TODO: handle signals
+	signal(SIGINT, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
+
+	// set file mode to 0x662 (rw-rw-r--)
+	// umask syscall always succeedes
+	umask(S_IWGRP | S_IWOTH);
+
+	// change dir
+	if (dir != NULL)
+		if (chdir(dir) == -1)
+			return -1;
+
+	// TODO: open log here
+	//openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
+	rm_util_openlogs("./log/", "rsyncme");
+
+	if (noclose == 0)
+	{
+		// close open descriptors
+		fd = sysconf(_SC_OPEN_MAX);
+		for (; fd > 2; fd--)
+		{
+			close(fd);
+		}
+	}
 	return 0;
 }

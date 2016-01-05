@@ -13,6 +13,7 @@
 #include "rm_defs.h"
 #include <time.h>
 #include <sys/time.h>
+#include <stdarg.h>
 
 
 /// @brief	Get date timestamp.
@@ -27,7 +28,19 @@ rm_util_dt(char *buf);
 int
 rm_util_dt_detail(char *buf);
 
+/// @details	@dir does include terminating '/',
+///		may be "./" for current dir
+int
+rm_util_openlogs(const char *dir, const char *name);
+
+int
+rm_util_log(FILE *stream, const char *fmt, ...);
+
 int
 rm_util_daemonize(const char *dir, int noclose);
+
+int
+rm_util_chdir_umask(const char *dir, int noclose);
+
 
 #endif	// RSYNCME_UTIL_H

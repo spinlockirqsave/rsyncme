@@ -44,6 +44,8 @@
 #define RM_CORE_ST_SHUT_DOWN		255	// shutting down, no more requests
 #define RM_CORE_CONNECTIONS_MAX		1	// max number of simultaneous connections
 #define RM_CORE_HASH_OK			84
+#define RM_CORE_DAEMONIZE		0	// become daemon or not, turn it to off
+						// while debugging for convenience
 
 #define rm_container_of(ptr, type, member) ({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
