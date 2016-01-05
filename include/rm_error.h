@@ -33,13 +33,32 @@ __attribute__((noreturn));
 #define RM_D_ERR(fmt, args...)    do { } while (0)
 #endif
 
-#define RM_ERR(fmt, args...) fprintf(stderr,  \
-                        "ERR: %s:%d:%s(): " fmt,        \
+// logging using syslog API
+#define RM_EMERG(fmt, args...) syslog(LOG_EMERG, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_ALERT(fmt, args...) syslog(LOG_ALERT, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_CRIT(fmt, args...) syslog(LOG_CRIT, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_ERR(fmt, args...) syslog(LOG_ERR, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_WARNING(fmt, args...) syslog(LOG_WARNING, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_NOTICE(fmt, args...) syslog(LOG_NOTICE, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_INFO(fmt, args...) syslog(LOG_INFO, \
+                        "%s:%d:%s(): " fmt,       \
+                __FILE__, __LINE__, __func__, ##args)
+#define RM_DEBUG(fmt, args...) syslog(LOG_DEBUG, \
+                        "%s:%d:%s(): " fmt,       \
                 __FILE__, __LINE__, __func__, ##args)
 
-#define RM_INFO(fmt, args...) fprintf(stderr, \
-                        "INFO: %s:%d:%s(): " fmt,       \
-                __FILE__, __LINE__, __func__, ##args)
 
 #endif  // RSYNCME_ERROR_H
 

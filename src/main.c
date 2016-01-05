@@ -11,6 +11,7 @@
 #include "rm_core.h"
 #include "rm_config.h"
 #include "rm_signal.h"
+#include "rm_util.h"
 
 
 int
@@ -26,7 +27,11 @@ main()
 	struct sockaddr_in	cli_addr, server_addr;
 	int			err, errsv;
 
-	fprintf(stderr, "[%s] Starting", __func__);
+	err = rm_util_daemonize("/usr/local/rsyncme", 0);
+	if (err < 0)
+		exit(EXIT_FAILURE);
+
+	RM_INFO("Starting");
 	listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	memset(&server_addr, 0, sizeof(server_addr));
