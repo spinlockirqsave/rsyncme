@@ -27,4 +27,7 @@ rm_util_dt(char *buf);
 int
 rm_util_dt_detail(char *buf);
 
+int
+rm_util_daemonize(const char *dir, int noclose);
+
 #endif	// RSYNCME_UTIL_H

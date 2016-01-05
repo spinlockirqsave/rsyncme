@@ -134,14 +134,16 @@ main()
 							"unknown error");
 			}
 		}
-		// validate the message: do we understand that?
+
+		// validate the message: check hash token
 		err = rm_core_tcp_msg_validate(buf, read_n);
 		if (err < 0)
 		{
 			rm_err("TCP control socket: not a valid rsyncme message");
 			continue;
 		}
-		// process server message
+
+		// process the message
 		switch (err)
 		{
 			case RM_MSG_PUSH_IN:

@@ -1,9 +1,9 @@
-/// @file       rm_defs.h
-/// @brief      Shared includes, definitions.
-/// @author     Piotr Gregor piotrek.gregor at gmail.com
-/// @version    0.1.1
-/// @date       2 Jan 2016 11:29 AM
-/// @copyright  LGPLv2.1
+/// @file	rm_defs.h
+/// @brief	Shared includes, definitions.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
+/// @version	0.1.1
+/// @date	2 Jan 2016 11:29 AM
+/// @copyright	LGPLv2.1
 
 #ifndef RSYNCME_DEFS_H
 #define RSYNCME_DEFS_H
@@ -12,6 +12,7 @@
 #include <stdlib.h>             // everything
 #include <stdio.h>              // most I/O
 #include <sys/types.h>          // syscalls
+#include <sys/stat.h>		// umask
 #include <sys/socket.h>         // socket.h etc.
 #include <netinet/in.h>         // networking
 #include <string.h>             // memset, etc.
@@ -21,6 +22,8 @@
 #include <assert.h>
 #include <pthread.h>            // POSIX threads
 #include <stddef.h>             // offsetof
+#include <signal.h>
+#include <syslog.h>
 
 
 #include "twlist.h"
