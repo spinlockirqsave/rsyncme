@@ -37,6 +37,9 @@ int
 rm_util_log(FILE *stream, const char *fmt, ...);
 
 int
+rm_util_log_perr(FILE *stream, const char *fmt, ...);
+
+int
 rm_util_daemonize(const char *dir, int noclose);
 
 int

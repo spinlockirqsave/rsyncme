@@ -102,7 +102,7 @@ rm_core_tcp_msg_validate(unsigned char *buf, int read_n)
 	hash = RM_MSG_HDR_HASH(buf);
 	if (hash != RM_CORE_HASH_OK)
 	{
-		RM_ERR("incorrect hash");
+		RM_LOG_ERR("incorrect hash");
 		return -1;
 	}
         return 0;

@@ -119,7 +119,28 @@ rm_util_log(FILE *stream, const char *fmt, ...)
 	if (ret == -1) return -1;
 	
 	va_start(args, fmt);
-	snprintf(buf, sizeof(buf), "%s\t%s", dt, fmt);
+	snprintf(buf, sizeof(buf), "%s\t%s\n", dt, fmt);
+	ret = vfprintf(stream, buf, args);
+	va_end(args);
+	fflush(stream);
+
+	return ret; 
+}
+
+int
+rm_util_log_perr(FILE *stream, const char *fmt, ...)
+{
+	int	ret;
+	va_list	args;
+	char 	buf[1024];
+	char	dt[28];
+
+	ret = rm_util_dt_detail(dt);
+	if (ret == -1) return -1;
+	
+	va_start(args, fmt);
+	snprintf(buf, sizeof(buf), "%s\t%s,%s\n",
+			dt, fmt, strerror(errno));
 	ret = vfprintf(stream, buf, args);
 	va_end(args);
 	fflush(stream);

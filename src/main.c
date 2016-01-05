@@ -38,7 +38,7 @@ main()
 			exit(EXIT_FAILURE);
 	}
 
-	RM_LOG_INFO("Starting\n");
+	RM_LOG_INFO("Starting");
 	listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -52,7 +52,7 @@ main()
 		&reuseaddr_on, sizeof(reuseaddr_on));
 	if (err < 0)
 	{
-		rm_err("Setting of SO_REUSEADDR on server's"
+		RM_LOG_ERR("Setting of SO_REUSEADDR on server's"
 			"managing socket failed");
 	}
 
@@ -60,36 +60,39 @@ main()
 			&server_addr, sizeof(server_addr));
 	if (err < 0)
 	{
-		rm_perr_abort("Bind of server's port "
+		RM_LOG_PERR("Bind of server's port "
 			"to managing socket failed");
+		exit(EXIT_FAILURE);
 	}
 
 	err = rm_core_init(&rm);
 	if (err < 0)
 	{
-		rm_perr_abort("Can't initialize the engine");
+		RM_LOG_PERR("Can't initialize the engine");
+		exit(EXIT_FAILURE);
 	}
 
 	err = listen(listenfd, RM_SERVER_LISTENQ);
 	if (err < 0)
 	{
 		errsv = errno;
-		rm_err("TCP listen on server's port failed");
+		RM_LOG_PERR("TCP listen on server's port failed");
 		switch(errsv)
 		{
 		case EADDRINUSE:
-			rm_perr_abort("Another socket is already "
+			RM_LOG_ERR("Another socket is already "
 				"listening on the same port");
 		case EBADF:
-			rm_perr_abort("Not a valid descriptor");
+			RM_LOG_ERR("Not a valid descriptor");
 		case ENOTSOCK:
-			rm_perr_abort("Not a socket");
+			RM_LOG_ERR("Not a socket");
 		case EOPNOTSUPP:
-			rm_perr_abort("The socket is not of a type that"
+			RM_LOG_ERR("The socket is not of a type that"
 				"supports the listen() call");
 		default:
-			return -2;
+			RM_LOG_ERR("Unknown error");
 		}
+		exit(EXIT_FAILURE);
 	}
 
 	signal(SIGINT, rm_sigint_h);
@@ -102,60 +105,65 @@ main()
 			if (errsv == EINTR)
 				continue;
 			else
-				rm_perr_abort("Accept error.");
+			{
+				RM_LOG_PERR("Accept error.");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		// authenticate
 		if (rm_core_authenticate(&cli_addr) == -1)
 		{
 			// print message and errno
-			rm_perr_abort("Authentication failed.\n");
-			exit(1);
+			RM_LOG_ERR("Authentication failed.\n");
+			exit(EXIT_FAILURE);
 		}
 		
 		memset(&buf, 0, sizeof buf);
 		read_n = read(connfd, &buf, RM_TCP_MSG_MAX_LEN);
 		if (read_n == -1)
 		{
+			RM_LOG_PERR("Read failed on TCP control socket");
 			switch (read_n)
 			{
 				case EAGAIN:
-					rm_perr_abort("Nonblocking I/O requested"
+					RM_LOG_ERR("Nonblocking I/O requested"
 						" on TCP control socket");
 				case EINTR:
-					rm_err("TCP control socket: interrupted");
+					RM_LOG_ERR("TCP control socket: interrupted");
 					continue;
 				case EBADF:
-					rm_perr_abort("TCP control socket passed "
+					RM_LOG_ERR("TCP control socket passed "
 							"is not a valid descriptor "
 							"or nor open for reading");
 				case EFAULT:
-					rm_perr_abort("TCP control socket: buffer"
+					RM_LOG_ERR("TCP control socket: buffer"
 							" is outside accessible "
 							"address space");
 				case EINVAL:
-					rm_perr_abort("TCP control socket: unsuitable "
+					RM_LOG_ERR("TCP control socket: unsuitable "
 							"for reading or wrong buffer len");
 				case EIO:
-					rm_perr_abort("TCP control socket: I/O error");
+					RM_LOG_ERR("TCP control socket: I/O error");
 				case EISDIR:
-					rm_perr_abort("TCP control socket: socket "
+					RM_LOG_ERR("TCP control socket: socket "
 							"descriptor refers to directory");
 				default:
-					rm_perr_abort("TCP control socket: "
-							"unknown error");
+					RM_LOG_ERR("Unknown error on TCP control socket");
 			}
+			exit(EXIT_FAILURE);
 		}
 
 		// validate the message: check hash token
 		err = rm_core_tcp_msg_validate(buf, read_n);
 		if (err < 0)
 		{
-			rm_err("TCP control socket: not a valid rsyncme message");
+			RM_LOG_ERR("TCP control socket: not a valid rsyncme message");
 			continue;
 		}
 
-		// process the message
+		// valid message
+		// process
 		switch (err)
 		{
 			case RM_MSG_PUSH_IN:
@@ -186,12 +194,14 @@ main()
 				break;
 
 			default:
-				rm_perr_abort("Unknown TCP message type");
+				RM_LOG_ERR("Unknown TCP message type,"
+					" this can't happen");
+				exit(EXIT_FAILURE);
 		}
 		// continue to listen for the next message
 	}
 
-	fprintf(stderr, "[%s] Shutting down", __func__);
+	RM_LOG_INFO("Shutting down");
 	return 0;
 }
 
