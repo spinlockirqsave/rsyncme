@@ -77,10 +77,6 @@
 #include "rm_defs.h"
 
 
-typedef int		BLOCKSIZE;
-typedef uint32_t	FASTCHECKSUM;
-typedef uint32_t	DIVISOR;
-
 /// @brief	Strong checksum struct. MD5.
 struct rm_md5
 {

@@ -30,9 +30,11 @@ struct rsyncme
         struct twlist_head      sessions_list;
         uint32_t                sessions_n;
 
-        // TCP connections
-        struct twlist_head      connections;
-        int                     connections_n;
+	uint32_t		L;	// block size
+	uint32_t		M;	// modulus in fast checksum
+					// computation, 2^16 is
+					// good choice for simplicity
+					// and speed
 };
 
 /// @brief      Helper struct to pass connection
