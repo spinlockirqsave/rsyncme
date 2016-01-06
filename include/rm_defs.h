@@ -15,6 +15,7 @@
 #include <sys/stat.h>		// umask
 #include <sys/socket.h>         // socket.h etc.
 #include <netinet/in.h>         // networking
+#include <arpa/inet.h>
 #include <string.h>             // memset, etc.
 #include <fcntl.h>              // open
 #include <unistd.h>             // close
@@ -24,6 +25,8 @@
 #include <stddef.h>             // offsetof
 #include <signal.h>
 #include <syslog.h>
+#include <stdint.h>
+#include <ctype.h>		// isprint
 
 
 #include "twlist.h"
