@@ -39,9 +39,9 @@ rm_session_push_out_ch_ch_f(void *arg);
 void *
 rm_session_push_out_delta_f(void *arg);
 
+/// @brief	Creates new session.
 struct rm_session *
-rm_session_create(uint32_t session_id,
-		struct rsyncme *engine);
+rm_session_create(struct rsyncme *engine);
 
 void
 rm_session_free(struct rm_session *s);

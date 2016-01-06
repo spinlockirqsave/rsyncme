@@ -173,9 +173,9 @@ main()
 				break;
 
 			case RM_MSG_PUSH_OUT:
-				pthread_mutex_lock(&rm.mutex);
-				rm_do_msg_push_out(&rm, buf);
-				pthread_mutex_unlock(&rm.mutex);
+				RM_LOG_ERR("Push outbound message sent to daemon "
+					"process, (please use rsyncme program to "
+					"make outgoing requests");
 				break;
 
 			case RM_MSG_PULL_IN:
@@ -185,9 +185,9 @@ main()
 				break;
 
 			case RM_MSG_PULL_OUT:
-				pthread_mutex_lock(&rm.mutex);
-				rm_do_msg_pull_out(&rm, buf);
-				pthread_mutex_unlock(&rm.mutex);
+				RM_LOG_ERR("Pull outbound message sent to daemon "
+					"process, (please use rsyncme program to "
+					"make outgoing requests");
 				break;
 
 			case RM_MSG_BYE:

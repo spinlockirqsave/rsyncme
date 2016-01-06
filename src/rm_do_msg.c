@@ -14,14 +14,13 @@ int
 rm_do_msg_push_in(struct rsyncme *rm,
 			unsigned char *buf)
 {
-	uint32_t	session_id;
 	struct rm_session	*s;
 
         assert(rm != NULL && buf != NULL);
 
-	// generate GUID (session id)
-	session_id = 0;
-        s = rm_core_session_start(rm, session_id);
+	// create session, assign SID, insert
+	// session into table
+        s = rm_core_session_add(rm);
         if (s == NULL)
                 return -1;
         return 0;
@@ -31,17 +30,15 @@ int
 rm_do_msg_push_out(struct rsyncme *rm,
 			unsigned char *buf)
 {
-	int		err;
-	uint32_t	session_id;
+	int			err;
 	pthread_attr_t          attr;
 	struct rm_session	*s;
 
         assert(rm != NULL && buf != NULL);
 
-	// generate GUID (session id)
-	session_id = 0;
-	// insert session into table
-        s = rm_core_session_start(rm, session_id);
+	// create session, assign SID, insert
+	// session into table
+        s = rm_core_session_add(rm);
         if (s == NULL)
                 return -1;
 
@@ -88,15 +85,13 @@ int
 rm_do_msg_pull_in(struct rsyncme *rm,
 			unsigned char *buf)
 {
-	uint32_t	session_id;
 	struct rm_session	*s;
 
         assert(rm != NULL && buf != NULL);
 
-	// generate GUID (session id)
-	session_id = 0;
-
-        s = rm_core_session_start(rm, session_id);
+	// create session, assign SID, insert
+	// session into table
+        s = rm_core_session_add(rm);
         if (s == NULL)
                 return -1;
         return 0;
@@ -106,15 +101,13 @@ int
 rm_do_msg_pull_out(struct rsyncme *rm,
 			unsigned char *buf)
 {
-	uint32_t	session_id;
 	struct rm_session	*s;
 
         assert(rm != NULL && buf != NULL);
 
-	// generate GUID (session id)
-	session_id = 0;
-
-        s = rm_core_session_start(rm, session_id);
+	// create session, assign SID, insert
+	// session into table
+        s = rm_core_session_add(rm);
         if (s == NULL)
                 return -1;
         return 0;

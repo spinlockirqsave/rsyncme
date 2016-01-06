@@ -27,16 +27,16 @@ rm_session_push_out_delta_f(void *arg)
 	return 0;
 }
 
+// TODO: generate GUID here
 struct rm_session *
-rm_session_create(uint32_t session_id,
-		struct rsyncme *rm)
+rm_session_create(struct rsyncme *rm)
 {
 	struct rm_session *s;
+
 	s = malloc(sizeof *s);
 	if (s == NULL)
 		return NULL;
 	memset(s, 0, sizeof(*s));
-	s->session_id = session_id;
 	pthread_mutex_init(&s->session_mutex, NULL);
 	s->rm = rm;
         return s;

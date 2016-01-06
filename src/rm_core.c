@@ -1,5 +1,5 @@
 ///  @file      rm_core.c
-///  @brief     Deamon's start up.
+///  @brief     Daemon's start up.
 ///  @author    peterg
 ///  @version   0.1.1
 ///  @date      02 Jan 2016 02:50 PM
@@ -45,19 +45,20 @@ rm_core_session_find(struct rsyncme *rm,
 }
 
 struct rm_session *
-rm_core_session_start(struct rsyncme *rm,
-                        uint32_t session_id)
+rm_core_session_add(struct rsyncme *rm)
 {
         struct rm_session	*s = NULL;
 
         assert(rm != NULL);
 
-        s = rm_session_create(session_id, rm);
+        s = rm_session_create(rm);
         if (s == NULL)
                 return NULL;
 	pthread_mutex_lock(&rm->mutex);
+	// create SID
+	s->session_id = rm->sessions_n + 1;
 	twlist_add(&rm->sessions_list, &s->link);
-	twhash_add(rm->sessions, &s->hlink, session_id);
+	twhash_add(rm->sessions, &s->hlink, s->session_id);
 	rm->sessions_n++;
 	pthread_mutex_unlock(&rm->mutex);
 

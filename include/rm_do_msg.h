@@ -40,6 +40,7 @@ struct rm_msg_pull
 
 struct rsyncme;
 
+/// @brief	Handles rsync push request in new sesion.
 int
 rm_do_msg_push_in(struct rsyncme* rm,
 		unsigned char *buf);
@@ -48,6 +49,7 @@ int
 rm_do_msg_push_out(struct rsyncme* rm,
 		unsigned char *buf);
 
+/// @brief	Handles rsync pull request in new sesion.
 int
 rm_do_msg_pull_in(struct rsyncme* rm,
 		unsigned char *buf);

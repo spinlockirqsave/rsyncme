@@ -1,5 +1,5 @@
 ///  @file      rm_core.h
-///  @brief     Deamon's start up.
+///  @brief     Daemon's start up.
 ///  @author    peterg
 ///  @version   0.1.1
 ///  @date      02 Jan 2016 02:50 PM
@@ -30,7 +30,14 @@ struct rsyncme
         struct twlist_head      sessions_list;
         uint32_t                sessions_n;
 
-	uint32_t		L;	// block size
+	uint32_t		L;	// block size, for a given L
+					// the worst case byte overhead
+					// of rsyncme is (s_f + s_s)
+					// * n/L
+					// where s_f is size of fast
+					// signature, s_s is strong
+					// signature size, n is the
+					// number of bytes in file
 	uint32_t		M;	// modulus in fast checksum
 					// computation, 2^16 is
 					// good choice for simplicity
@@ -67,10 +74,10 @@ struct rm_session *
 rm_core_session_find(struct rsyncme *rm,
                         uint32_t session_id);
 
-/// @brief	Handles rsync pull/push request in new sesion.
+/// @brief	Creates and adds new sesion into table.
+/// @details	Generates SID.
 struct rm_session *
-rm_core_session_start(struct rsyncme *rm,
-                        uint32_t session_id);
+rm_core_session_add(struct rsyncme *rm);
 
 /// @brief      Shut down.
 int
