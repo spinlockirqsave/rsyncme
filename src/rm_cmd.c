@@ -25,7 +25,7 @@ void usage(const char *name)
 	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]>\n", name);
 	fprintf(stderr, "     \t -x			: local file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
-	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]"
+	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
 	fprintf(stderr, "\nPossible options:\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/dir.tar -i 245.298.125.22 -y /tmp/dir2.tar\n"
@@ -46,11 +46,16 @@ void usage(const char *name)
 int
 main( int argc, char *argv[])
 {
-	char	x[RM_CMD_F_LEN_MAX], y[RM_CMD_F_LEN_MAX];
 	int	c, idx;
-	int	rm_msg_type = -1;
-	
-	struct sockaddr_in	server_addr;
+	char	x[RM_CMD_F_LEN_MAX] = {0};
+	char	y[RM_CMD_F_LEN_MAX] = {0};
+	uint8_t	flags = 0;		// bits		meaning
+					// 0		cmd (0 RM_MSG_PUSH_OUT,
+					//		     1 RM_MSG_PULL_OUT)
+					// 1		x
+					// 2		y
+					// 3		ip	
+	struct sockaddr_in	server_addr = {0};
 
 	if (argc < 4)
 	{
@@ -85,20 +90,22 @@ main( int argc, char *argv[])
 
 		case 1:
 			// push request
-			rm_msg_type = RM_MSG_PUSH_OUT;
+			flags &= ~RM_BIT_0;
 			break;
 
 		case 2:
 			// pull request
-			rm_msg_type = RM_MSG_PULL_OUT;
+			flags |= RM_BIT_0;
 			break;
 
 		case 'x':
 			strncpy(x, optarg, RM_CMD_F_LEN_MAX);
+			flags |= RM_BIT_1;
 			break;
 
 		case 'y':
 			strncpy(y, optarg, RM_CMD_F_LEN_MAX);
+			flags |= RM_BIT_2;
 			break;
 		case 'i':
 			if (inet_aton(optarg, &server_addr.sin_addr) == 0)
@@ -107,16 +114,18 @@ main( int argc, char *argv[])
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
+			flags |= RM_BIT_3;
 			break;
 		case '?':
 			// check optopt
-			if (optopt == 'x' || optopt == 'x' || optopt == 'i')
+			if (optopt == 'x' || optopt == 'y' || optopt == 'i')
 				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
 			else if (isprint(optopt))
 				fprintf(stderr,"Unknown option '-%c'.\n", optopt);
 			else {
 				fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
-				fprintf(stderr, "Are there any long options? Please check that you have typed them correctly.\n");
+				fprintf(stderr, "Are there any long options? "
+					"Please check that you have typed them correctly.\n");
 			}
 
 			usage(argv[0]);
@@ -133,12 +142,65 @@ main( int argc, char *argv[])
 	for (idx = optind; idx < argc; idx++)
 		//fprintf(stderr, "Non-option argument[ %s]\n", argv[idx]);
 
-	if ((argc - optind) != 2)
+	// validation
+	if ((argc - optind) != 1)
 	{
-		fprintf(stderr, "\nInvalid number of non-option arguments. There should be 2 non-option arguments,\n"
-						"namely: <file> <ioctl_number>\n");
+		fprintf(stderr, "\nInvalid number of non-option arguments."
+				"\nThere should be 1 non-option arguments: "
+						"<push|pull>\n");
 		usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
+
+	if (strcmp(argv[optind], "push") == 0)
+	{
+		// RM_MSG_PUSH_OUT
+		flags &= ~1;
+	}
+	else if (strcmp(argv[optind], "pull") == 0)
+	{
+		// RM_MSG_PULL_OUT;
+		flags |= 1;;
+	}
+	else {
+		fprintf(stderr, "\nUnknown command.\nCommand should be one of: "
+						"<push|pull>\n");
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	// if -x not set report error
+	if (((flags >> 1) & 1) == 0)
+	{
+		fprintf(stderr, "\n-x option not set.\n"
+			"What is the file you want to sync?\n");
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+	// if -i is set
+	if (((flags >> 3) & 1) == 1)
+	{
+		// remote request
+		if (((flags >> 0) & 1) == 0)
+		{
+			// push
+			fprintf(stdout, "\nRemote push.\n");
+		} else {
+			// pull
+			fprintf(stdout, "\nRemote pull.\n");
+		}
+	
+	} else {
+		// local sync
+		if (((flags >> 0) & 1) == 0)
+		{
+			// push
+			fprintf(stdout, "\nLocal push.\n");
+		} else {
+			// pull
+			fprintf(stdout, "\nLocal pull.\n");
+		}
+	}
+
 	return 0;
 }

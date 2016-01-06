@@ -33,6 +33,15 @@
 #include "twhash.h"
 
 
+#define RM_BIT_0	(1 << 0)  
+#define RM_BIT_1	(1 << 1)
+#define RM_BIT_2	(1 << 2)
+#define RM_BIT_3	(1 << 3)
+#define RM_BIT_4	(1 << 4)
+#define RM_BIT_5	(1 << 5)
+#define RM_BIT_6	(1 << 6)
+#define RM_BIT_7	(1 << 7)
+
 // TCP messages
 #define RM_MSG_PUSH_IN			1	// rsync push inbound
 #define RM_MSG_PUSH_OUT			2	// rsync push outbound
