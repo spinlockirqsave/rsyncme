@@ -40,20 +40,26 @@ struct rm_msg_pull
 
 struct rsyncme;
 
-/// @brief	Handles rsync push request in new sesion.
+/// @brief	Handles incoming rsync push request in new sesion.
+/// @details	Daemon's message.
 int
 rm_do_msg_push_in(struct rsyncme* rm,
 		unsigned char *buf);
 
+/// @brief	Makes outgoing rsync push request.
+/// @details	rsyncme program message.
 int
 rm_do_msg_push_out(struct rsyncme* rm,
 		unsigned char *buf);
 
-/// @brief	Handles rsync pull request in new sesion.
+/// @brief	Handles incoming rsync pull request in new sesion.
+/// @details	Daemon's message.
 int
 rm_do_msg_pull_in(struct rsyncme* rm,
 		unsigned char *buf);
 
+/// @brief	Makes outgoing rsync pull request.
+/// @details	rsyncme program message.
 int
 rm_do_msg_pull_out(struct rsyncme* rm,
 		unsigned char *buf);
