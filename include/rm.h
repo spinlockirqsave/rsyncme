@@ -100,5 +100,10 @@ struct rm_ch_ch
 					// checksums in ch_ch vector.
 };
 
+/// @brief	Calculate rolling checkum on a given file block
+///		of size @len starting from @data, modulo @M.
+/// @details	@M MUST be less than 2^16, 0x10000
+int
+rm_rolling_ch(unsigned char *data, uint32_t len, uint32_t M); 
 
 #endif	// RSYNCME_H

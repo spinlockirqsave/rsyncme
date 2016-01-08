@@ -10,7 +10,7 @@
 
 
 int
-rx_ch_ch_h(FILE *f, struct twlist_head *h)
+rm_rx_ch_ch_h(FILE *f, struct twlist_head *h)
 {
 	return 0;
 } 

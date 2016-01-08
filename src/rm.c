@@ -10,3 +10,27 @@
 
 
 #include "rm.h"
+
+
+int
+rm_rolling_ch(unsigned char *data, uint32_t len,
+				uint32_t M)
+{
+	uint32_t	r1, r2, i;
+
+#ifdef DEBUG
+	uint32_t res;
+#endif
+	r1 = r2 = 0;
+	i = 0;
+	for (; i < len; ++i)
+	{
+		r1 = (r1 + data[i]) % M;
+		r2 = (r2 + r1) % M;
+	}
+#ifdef DEBUG
+	res = (r2 << 16) | r1;
+	return res;
+#endif
+	return (r2 << 16) | r1;
+} 

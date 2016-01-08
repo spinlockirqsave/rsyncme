@@ -27,9 +27,9 @@ struct rm_msg_push
         struct rm_msg_hdr	hdr;			// header
         uint32_t		L;			// block size
 	uint16_t		x_name_len;		// x file name length
-	char			x_name[];		// x file name	
+	char			x_name[RM_FILE_LEN_MAX];// x file name	
 	uint16_t		y_name_len;		// y file name length
-	char			y_name[];		// y file name
+	char			y_name[RM_FILE_LEN_MAX];// y file name
 	uint32_t		ip;			// IPv4	
 };
 

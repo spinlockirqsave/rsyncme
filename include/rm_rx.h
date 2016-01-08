@@ -18,7 +18,7 @@
 /// @return	On success the size of list is returned,
 ///		-1 on error.
 int
-rx_ch_ch_h(FILE *f, struct twlist_head *h); 
+rm_rx_ch_ch_h(FILE *f, struct twlist_head *h); 
 
 
 #endif	// RSYNCME_RX_H

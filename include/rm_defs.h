@@ -50,6 +50,7 @@
 #define RM_MSG_BYE			255	// close the controlling connection
 
 #define RM_SESSION_HASH_BITS		10	// 10 bits hash, array size == 1024
+#define RM_FILE_LEN_MAX			150	// max len of -x -y files
 
 // CORE
 #define RM_CORE_ST_INITIALIZED		0	// init function returned with no errors
