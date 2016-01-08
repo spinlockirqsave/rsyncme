@@ -25,7 +25,12 @@ struct rm_msg_hdr
 struct rm_msg_push
 {
         struct rm_msg_hdr	hdr;			// header
-        uint32_t		L;			// block size	
+        uint32_t		L;			// block size
+	uint16_t		x_name_len;		// x file name length
+	char			x_name[];		// x file name	
+	uint16_t		y_name_len;		// y file name length
+	char			y_name[];		// y file name
+	uint32_t		ip;			// IPv4	
 };
 
 struct rm_msg_pull
