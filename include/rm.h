@@ -75,7 +75,7 @@
 
 
 #include "rm_defs.h"
-
+#include "md5.h"
 
 /// @brief	Strong checksum struct. MD5.
 struct rm_md5
@@ -105,5 +105,9 @@ struct rm_ch_ch
 /// @details	@M MUST be less than 2^16, 0x10000
 int
 rm_rolling_ch(unsigned char *data, uint32_t len, uint32_t M); 
+
+void
+rm_md5(unsigned char *data, uint32_t len, unsigned char res[16]);
+
 
 #endif	// RSYNCME_H

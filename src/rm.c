@@ -33,4 +33,13 @@ rm_rolling_ch(unsigned char *data, uint32_t len,
 	return res;
 #endif
 	return (r2 << 16) | r1;
-} 
+}
+ 
+void
+rm_md5(unsigned char *data, uint32_t len, unsigned char res[16])
+{
+	MD5_CTX ctx;
+	md5_init(&ctx);
+	md5_update(&ctx, data, len);
+	md5_final(&ctx, res);
+}
