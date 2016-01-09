@@ -12,7 +12,30 @@
 #include "rm.h"
 
 
-int
+uint32_t
+rm_adler32(unsigned char *data, uint32_t len)
+{
+	uint32_t	r1, r2, i;
+
+#ifdef DEBUG
+	uint32_t res;
+#endif
+	r1 = 1;
+	r2 = 0;
+	i = 0;
+	for (; i < len; ++i)
+	{
+		r1 = (r1 + data[i]) % RM_ADLER32_MODULUS;
+		r2 = (r2 + r1) % RM_ADLER32_MODULUS;
+	}
+#ifdef DEBUG
+	res = (r2 << 16) | r1;
+	return res;
+#endif
+	return (r2 << 16) | r1;
+}
+
+uint32_t
 rm_rolling_ch(unsigned char *data, uint32_t len,
 				uint32_t M)
 {
@@ -35,8 +58,10 @@ rm_rolling_ch(unsigned char *data, uint32_t len,
 	return (r2 << 16) | r1;
 }
  
+
 void
-rm_md5(unsigned char *data, uint32_t len, unsigned char res[16])
+rm_md5(unsigned char *data, uint32_t len,
+		unsigned char res[16])
 {
 	MD5_CTX ctx;
 	md5_init(&ctx);

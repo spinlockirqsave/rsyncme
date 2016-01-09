@@ -100,12 +100,25 @@ struct rm_ch_ch
 					// checksums in ch_ch vector.
 };
 
+/// @brief	Calculate adler32 checkum on a given file block
+///		of size @len starting from @data.
+/// @details	Adler checksum uses prime modulus. This allows
+///		for better strength than if 2^16 was used but
+///		requires more computation effort. Adler32 is more
+///		reliable than Fletcher16 but less than Fletcher32.
+uint32_t
+rm_adler32(unsigned char *data, uint32_t len);
+
 /// @brief	Calculate rolling checkum on a given file block
 ///		of size @len starting from @data, modulo @M.
 /// @details	@M MUST be less than 2^16, 0x10000
-int
+uint32_t
 rm_rolling_ch(unsigned char *data, uint32_t len, uint32_t M); 
 
+/// @brief	Calculate strong checkum on a given file block
+///		of size @len starting from @data.
+/// @details	Implemented reusing Brad Conte's MD5 code from his
+///		crypto-algorithms repo (see include/md5.h).
 void
 rm_md5(unsigned char *data, uint32_t len, unsigned char res[16]);
 

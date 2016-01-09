@@ -52,6 +52,8 @@
 #define RM_SESSION_HASH_BITS		10	// 10 bits hash, array size == 1024
 #define RM_FILE_LEN_MAX			150	// max len of -x -y files
 
+#define RM_ADLER32_MODULUS		65521	// biggest prime int less than 2^16
+
 // CORE
 #define RM_CORE_ST_INITIALIZED		0	// init function returned with no errors
 #define RM_CORE_ST_SHUT_DOWN		255	// shutting down, no more requests
