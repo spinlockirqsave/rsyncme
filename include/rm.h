@@ -102,9 +102,9 @@ struct rm_ch_ch
 
 /// @brief	Calculate adler32 checkum on a given file block
 ///		of size @len starting from @data.
-/// @details	Adler checksum uses prime modulus. This allows
-///		for better strength than if 2^16 was used but
-///		requires more computation effort. Adler32 is more
+/// @details	Adler checksum uses prime number 65521 as modulus.
+///		This allows for better strength than if 2^16 was used
+///		but requires more computation effort. Adler32 is more
 ///		reliable than Fletcher16 but less than Fletcher32.
 uint32_t
 rm_adler32(unsigned char *data, uint32_t len);
