@@ -109,7 +109,7 @@ struct rm_ch_ch
 uint32_t
 rm_adler32_1(unsigned char *data, uint32_t len);
 
-/// @brief	Efficient version of Adler32. Defers modulo reduction
+/// @brief	Efficient version of Adler32. Postpones modulo reduction
 ///		up to the point when this is absolutely necessary
 ///		to keep second sum s2 in 32 bits by setting block
 ///		size to RM_ADLER32_NMAX. Unrolls loop.

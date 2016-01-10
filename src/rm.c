@@ -15,11 +15,11 @@
 uint32_t
 rm_adler32_1(unsigned char *data, uint32_t len)
 {
-	uint32_t	r1, r2, i;
-
 #ifdef DEBUG
 	uint32_t res;
 #endif
+	uint32_t	r1, r2, i;
+
 	r1 = 1;
 	r2 = 0;
 	i = 0;
@@ -44,13 +44,13 @@ rm_adler32_1(unsigned char *data, uint32_t len)
 uint32_t
 rm_adler32_2(uint32_t adler, unsigned char *data, uint32_t len)
 {
+#ifdef DEBUG
+	uint32_t res;
+#endif
 	uint32_t	k;
 	uint32_t	r1 = adler & 0xffff;
 	uint32_t	r2 = (adler >> 16) & 0xfff;
 
-#ifdef DEBUG
-	uint32_t res;
-#endif
 	while(len)
 	{
 		k = len < RM_ADLER32_NMAX ? len : RM_ADLER32_NMAX;
