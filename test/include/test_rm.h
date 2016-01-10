@@ -10,6 +10,7 @@
 
 
 #include "rm.h"
+#include "rm_error.h"
 
 
 #include <stdarg.h>
@@ -17,6 +18,9 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+
+#define RM_TEST_DELETE_FILES	1	// 0 no, 1 yes
+char	rm_f_100_name[RM_FILE_LEN_MAX];
 
 struct test_rm_state
 {
@@ -36,6 +40,9 @@ test_rm_setup(void **state);
 /// tests have finished.
 int
 test_rm_teardown(void **state);
+
+int
+rm_random_file(char *name, uint32_t len);
 
 void
 test_rm_adler32_1(void **state);

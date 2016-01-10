@@ -40,10 +40,12 @@ int
 rm_util_log_perr(FILE *stream, const char *fmt, ...);
 
 int
-rm_util_daemonize(const char *dir, int noclose);
+rm_util_daemonize(const char *dir,
+		int noclose, char *logname);
 
 int
-rm_util_chdir_umask(const char *dir, int noclose);
+rm_util_chdir_umask_openlog(const char *dir,
+		int noclose, char *logname);
 
 
 #endif	// RSYNCME_UTIL_H

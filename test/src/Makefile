@@ -1,7 +1,7 @@
 CC                      = gcc
 CFLAGS                  = -c -g -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
 CPPFLAGS                +=              #compiler flags
-LDFLAGS                 = -lpthread -lcmocka -L../../include -L../include $(AUXOBJECTS)  #-lpcap
+LDFLAGS                 = -lpthread -lcmocka -L../../include -L../include  #-lpcap
 TESTSRCDIR              = .
 AUXOBJDIR		= ../../build/debug
 AUXOBJECTS = $(filter-out $(AUXOBJDIR)/main.o, $(wildcard $(AUXOBJDIR)/*.o))
@@ -20,15 +20,15 @@ all : test
 
 test:	$(TESTOUTPUTDIR)/test_rm_main
 
-$(TESTOUTPUTDIR)/test_rm_main:	$(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o
-	$(CC) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o -o $@
+$(TESTOUTPUTDIR)/test_rm_main:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o
+	$(CC) $(AUXOBJECTS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o -o $@
 
 
 test-check:	all
 	$(TESTOUTPUTDIR)/test_rm_main
 
 $(TESTOUTPUTDIR)/%: %.o
-	$(CC) $< -o $@ $(LDFLAGS)
+	$(CC) $(AUXOBJECTS) $< -o $@ $(LDFLAGS)
 
 $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
@@ -38,4 +38,4 @@ $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 
 
 clean:
-	rm -rf $(TESTOUTPUTDIR)/*
+	find $(TESTOUTPUTDIR) -maxdepth 1 -type f -exec rm -f {} \;

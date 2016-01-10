@@ -149,10 +149,13 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...)
 }
 
 int
-rm_util_daemonize(const char *dir, int noclose)
+rm_util_daemonize(const char *dir, int noclose,
+				char *logname)
 {
 	pid_t	pid, sid;
 	int 	fd;
+
+	assert(logname != NULL);
 
 	// background
 	if ((pid = fork()) < 0)
@@ -193,12 +196,14 @@ rm_util_daemonize(const char *dir, int noclose)
 
 	// TODO: open log here
 	//openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
-	rm_util_openlogs("./log/", "rsyncme");
+	fd = rm_util_openlogs("./log/", logname);
+	if (fd < 0)
+		return -4;
 
 	// change dir
 	if (dir != NULL)
 		if (chdir(dir) == -1)
-			return -4;
+			return -5;
 
 	if (noclose == 0)
 	{
@@ -214,9 +219,13 @@ rm_util_daemonize(const char *dir, int noclose)
 }
 
 int
-rm_util_chdir_umask(const char *dir, int noclose)
+rm_util_chdir_umask_openlog(const char *dir,
+		int noclose, char *logname)
 {
 	int 	fd;
+
+	assert(logname != NULL);
+
 	// TODO: handle signals
 	signal(SIGINT, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
@@ -233,7 +242,9 @@ rm_util_chdir_umask(const char *dir, int noclose)
 
 	// TODO: open log here
 	//openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
-	rm_util_openlogs("./log/", "rsyncme");
+	fd = rm_util_openlogs("./log/", logname);
+	if (fd < 0)
+		return -2;
 
 	if (noclose == 0)
 	{
