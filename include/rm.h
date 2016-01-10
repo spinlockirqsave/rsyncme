@@ -107,7 +107,24 @@ struct rm_ch_ch
 ///		but requires more computation effort. Adler32 is more
 ///		reliable than Fletcher16 but less than Fletcher32.
 uint32_t
-rm_adler32(unsigned char *data, uint32_t len);
+rm_adler32_1(unsigned char *data, uint32_t len);
+
+/// @brief	Efficient version of Adler32. Defers modulo reduction
+///		up to the point when this is absolutely necessary
+///		to keep second sum s2 in 32 bits by setting block
+///		size to RM_ADLER32_NMAX. Unrolls loop.
+/// @details	RM_ADLER32_NMAX is found as a bigger integer that satisfy
+///		g(x) = 255*x*(x+1)/2 + (x+1)*(65536-1)-4294967295 <=0.
+///		The rationale for this is: the max of s1 at the beginning
+///		of calculation for any block of size NMAX is s1MAX=BASE-1.
+///		The max value that s2 can get to when calculating on this
+///		block is then
+///		s2MAX = (BASE-1)(n+1) + sum[i in 1:n]255i
+///		s2MAX = (BASE-1)(n+1) + (1+n)n255/2,
+///		and s2MAX MUST fit in 32bits.
+/// @param	adler: initial value, should be one if this is beginning
+uint32_t
+rm_adler32_2(uint32_t adler, unsigned char *data, uint32_t len);
 
 /// @brief	Calculate rolling checkum on a given file block
 ///		of size @len starting from @data, modulo @M.

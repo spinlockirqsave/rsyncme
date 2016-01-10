@@ -13,7 +13,7 @@
 
 
 uint32_t
-rm_adler32(unsigned char *data, uint32_t len)
+rm_adler32_1(unsigned char *data, uint32_t len)
 {
 	uint32_t	r1, r2, i;
 
@@ -27,6 +27,53 @@ rm_adler32(unsigned char *data, uint32_t len)
 	{
 		r1 = (r1 + data[i]) % RM_ADLER32_MODULUS;
 		r2 = (r2 + r1) % RM_ADLER32_MODULUS;
+	}
+#ifdef DEBUG
+	res = (r2 << 16) | r1;
+	return res;
+#endif
+	return (r2 << 16) | r1;
+}
+
+#define RM_DO1(buf, i)	{ r1 += buf[i]; r2 += r1; }
+#define RM_DO2(buf, i)	RM_DO1(buf, i); RM_DO1(buf, i + 1)
+#define RM_DO4(buf, i)	RM_DO2(buf, i); RM_DO2(buf, i + 2)
+#define RM_DO8(buf, i)	RM_DO4(buf, i); RM_DO4(buf, i + 4)
+#define RM_DO16(buf)	RM_DO8(buf,0); RM_DO8(buf,8)
+
+uint32_t
+rm_adler32_2(uint32_t adler, unsigned char *data, uint32_t len)
+{
+	uint32_t	k;
+	uint32_t	r1 = adler & 0xffff;
+	uint32_t	r2 = (adler >> 16) & 0xfff;
+
+#ifdef DEBUG
+	uint32_t res;
+#endif
+	while(len)
+	{
+		k = len < RM_ADLER32_NMAX ? len : RM_ADLER32_NMAX;
+		len -= k;
+		// process 16bits blocks
+		while (k >= 16)
+		{
+			RM_DO16(data);
+			data += 16;
+			k-=16;
+		}
+		// remainder
+		if (k > 0)
+		{
+			do
+			{
+				r1 += *data++;
+				r2 += r1;
+			} while (--k);
+		}
+
+		r1 = r1  % RM_ADLER32_MODULUS;
+		r2 = r2  % RM_ADLER32_MODULUS;
 	}
 #ifdef DEBUG
 	res = (r2 << 16) | r1;

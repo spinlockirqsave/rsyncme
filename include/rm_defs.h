@@ -52,7 +52,11 @@
 #define RM_SESSION_HASH_BITS		10	// 10 bits hash, array size == 1024
 #define RM_FILE_LEN_MAX			150	// max len of -x -y files
 
-#define RM_ADLER32_MODULUS		65521	// biggest prime int less than 2^16
+#define RM_ADLER32_MODULUS		65521L	// biggest prime int less than 2^16
+#define RM_ADLER32_NMAX			5552	// biggest integer that allows for
+						// deffering of modulo reduction so that
+						// s2 will still fit in 32 bits when modulo
+						// is being done with 65521 value
 
 // CORE
 #define RM_CORE_ST_INITIALIZED		0	// init function returned with no errors
