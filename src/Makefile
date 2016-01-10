@@ -38,6 +38,8 @@ test:		debugall
 	cd $(TESTSRCDIR) && make
 test-check:	test
 	cd $(TESTSRCDIR) && make test-check
+test-clean:
+	cd $(TESTSRCDIR) && make clean
 
 rsyncme-debug:	rm_cmd.c ../build/debug/rsyncme
 rsyncme-debug:	CFLAGS += -DDEBUG -g

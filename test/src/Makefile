@@ -4,7 +4,7 @@ CPPFLAGS                +=              #compiler flags
 LDFLAGS                 = -lpthread -lcmocka -L../../include -L../include $(AUXOBJECTS)  #-lpcap
 TESTSRCDIR              = .
 AUXOBJDIR		= ../../build/debug
-AUXOBJECTS = $(filter-out $(AUXOBJDIR)/*main.o, $(wildcard $(AUXOBJDIR)/*.o))
+AUXOBJECTS = $(filter-out $(AUXOBJDIR)/main.o, $(wildcard $(AUXOBJDIR)/*.o))
 SRCDIR			= .
 
 SRCS = $(wildcard *.c)
@@ -16,7 +16,7 @@ TESTOUTPUTDIR           = ../build
 TESTOBJECTS             = $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 
 ##
-all : $(TESTOBJECTS)
+all : test
 
 test:	$(TESTOUTPUTDIR)/test_rm_main
 
@@ -25,7 +25,7 @@ $(TESTOUTPUTDIR)/test_rm_main:	$(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_
 
 
 test-check:	all
-	$(TESTOUTPUTDIR)/test_rsyncme
+	$(TESTOUTPUTDIR)/test_rm_main
 
 $(TESTOUTPUTDIR)/%: %.o
 	$(CC) $< -o $@ $(LDFLAGS)
