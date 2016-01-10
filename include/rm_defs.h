@@ -15,6 +15,7 @@
 #include <sys/stat.h>		// umask
 #include <sys/socket.h>         // socket.h etc.
 #include <netinet/in.h>         // networking
+#include <linux/netdevice.h>
 #include <arpa/inet.h>
 #include <string.h>             // memset, etc.
 #include <fcntl.h>              // open
