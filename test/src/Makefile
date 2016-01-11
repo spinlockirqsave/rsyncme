@@ -39,3 +39,5 @@ $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 
 clean:
 	find $(TESTOUTPUTDIR) -maxdepth 1 -type f -exec rm -f {} \;
+clean-logs:
+	find $(TESTOUTPUTDIR)/log  -maxdepth 1 -not -path '*/\.*' -type f -exec rm -f {} \;

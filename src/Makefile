@@ -75,3 +75,5 @@ clean:
 test-clean:
 	rm -rf $(TESTOBJECTS)
 	cd $(TESTSRCDIR) && make clean
+test-clean-logs:
+	cd $(TESTSRCDIR) && make clean-logs
