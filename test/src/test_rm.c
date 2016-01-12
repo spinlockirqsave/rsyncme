@@ -8,65 +8,83 @@
 #include "test_rm.h"
 
 
-char	rm_f_100_name[RM_FILE_LEN_MAX] = "rm_f_100.dat";
+char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_100.dat", "rm_f_511.dat",
+"rm_f_512.dat", "rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat" };
+
+uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 100, 511, 512, 513, 1023, 1024, 1025 };
+
+uint32_t
+rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 13, 50, 64, 100, 127, 128, 129,
+					200, 400, 499, 500, 501, 511, 512, 513,
+					600, 800, 1000, 1100, 1123, 1124, 1125, 1200 };
 
 int
 test_rm_setup(void **state)
 {
-	int err, i;
-	FILE *f;
+	int 		err;
+	uint32_t	i,j;
+	FILE 		*f;
 
 	err = rm_util_chdir_umask_openlog(
 		"../build", 1, "rsyncme_test");
 	if (err != 0)
 		exit(EXIT_FAILURE);
+	rm_state.l = rm_test_L_blocks;
 	*state = &rm_state;
 
-	f = fopen(rm_f_100_name, "rb+");
-	if (f == NULL)
+	i = 0;
+	for (; i < RM_TEST_FNAMES_N; ++i)
 	{
-		// file doesn't exist, create
-		RM_LOG_INFO("Creating file [%s]",
-				rm_f_100_name);
-		f = fopen(rm_f_100_name, "wb");
+		f = fopen(rm_test_fnames[i], "rb+");
 		if (f == NULL)
-			exit(EXIT_FAILURE);
-		RM_LOG_INFO("Writing 100 random bytes"
-			" to file [%s]", rm_f_100_name);
-		srand(time(NULL));
-		i = 100;
-		while (i--)
 		{
-			fputc(rand() % 0x100, f);
+			// file doesn't exist, create
+			RM_LOG_INFO("Creating file [%s]",
+					rm_test_fnames[i]);
+			f = fopen(rm_test_fnames[i], "wb");
+			if (f == NULL)
+				exit(EXIT_FAILURE);
+			j = rm_test_fsizes[i];
+			RM_LOG_INFO("Writing [%u] random bytes"
+			" to file [%s]", j, rm_test_fnames[i]);
+			srand(time(NULL));
+			while (j--)
+			{
+				fputc(rand() % 0x100, f);
+			}		
+		} else {
+			RM_LOG_INFO("Using previously created "
+				"file [%s]", rm_test_fnames[i]);
 		}
-		
-	} else {
-		RM_LOG_INFO("Using previously created "
-			"file [%s]", rm_f_100_name);
+		fclose(f);
 	}
-	fclose(f);
 	return 0;
 }
 
 int
 test_rm_teardown(void **state)
 {
-	FILE *f;
+	int	i;
+	FILE	*f;
 	struct test_rm_state *rm_state;
 
 	rm_state = *state;
 	if (RM_TEST_DELETE_FILES == 1)
 	{
 		// delete all test files
-		f = fopen(rm_f_100_name, "wb+");
-		if (f == NULL)
+		i = 0;
+		for (; i < RM_TEST_FNAMES_N; ++i)
 		{
-			RM_LOG_ERR("Can't open file [%s]",
-				rm_f_100_name);	
-		} else {
-			RM_LOG_INFO("Removing file [%s]",
-				rm_f_100_name);
-			remove(rm_f_100_name);
+			f = fopen(rm_test_fnames[i], "wb+");
+			if (f == NULL)
+			{
+				RM_LOG_ERR("Can't open file [%s]",
+					rm_test_fnames[i]);	
+			} else {
+				RM_LOG_INFO("Removing file [%s]",
+					rm_test_fnames[i]);
+				remove(rm_test_fnames[i]);
+			}
 		}
 	}
 	return 0;
@@ -75,40 +93,72 @@ test_rm_teardown(void **state)
 void
 test_rm_adler32_1(void **state)
 {
-	FILE *f;
-	(void) state;
-	int res;
+	FILE		*f;
+	int		fd;
 	uint32_t	sf;	// signature fast
-	unsigned char	buf[500];
-	uint32_t	r1, r2, i, adler;
+	unsigned char	buf[RM_TEST_L_MAX];
+	uint32_t	r1, r2, i, j, adler, file_sz, read;
+	struct test_rm_state	*rm_state;
+	struct stat	fs;
+	char		*fname;
 
-	f = fopen(rm_f_100_name, "rb");
-	if (f == NULL)
-	{
-		RM_LOG_PERR("Can't open file [%s], ",
-			"skipping", rm_f_100_name);
-		return;
-	}
-	assert_true(f != NULL);
-	res = fread(buf, 1, 100, f);
-	if (res != 100)
-	{
-		RM_LOG_PERR("Error reading file [%s], ",
-			"skipping", rm_f_100_name);
-	}
-	assert_true(res == 100);
-	// calc checksum
-	r1 = 1;
-	r2 = 0;
+	rm_state = *state;
+	assert_true(*state != NULL);
+
+	// test on all files
 	i = 0;
-	for (; i < 100; ++i)
+	for (; i < RM_TEST_FNAMES_N; ++i)
 	{
-		r1 = (r1 + buf[i]) % RM_ADLER32_MODULUS;
-		r2 = (r2 + r1) % RM_ADLER32_MODULUS;
-	}
-	adler = (r2 << 16) | r1;
+		fname = rm_test_fnames[i];
+		f = fopen(fname, "rb");
+		if (f == NULL)
+		{
+			RM_LOG_PERR("Can't open file [%s]",
+					fname);
+		}
+		assert_true(f != NULL);
+		// get file size
+		fd = fileno(f);
+		if (fstat(fd, &fs) != 0)
+		{
+			RM_LOG_PERR("Can't fstat file [%s], ",
+				"skipping", fname);
+			fclose(f);
+			assert_true(1 == 0);
+		}
+		file_sz = fs.st_size; 
+		if (file_sz > RM_TEST_L_MAX)
+		{
+			RM_LOG_ERR("File [%s] size [%u] is bigger ",
+				"than testing buffer's size of [%u],",
+				" reading only first [%u] bytes", fname,
+				file_sz, RM_TEST_L_MAX, RM_TEST_L_MAX);
+			file_sz = RM_TEST_L_MAX;
+		}
+		// read bytes
+		read = fread(buf, 1, file_sz, f);
+		if (read != file_sz)
+		{
+			RM_LOG_PERR("Error reading file [%s], ",
+				"skipping", fname);
+			fclose(f);
+		}
+		assert_true(read == file_sz);
+		// calc checksum
+		r1 = 1;
+		r2 = 0;
+		j = 0;
+		for (; j < file_sz; ++j)
+		{
+			r1 = (r1 + buf[j]) % RM_ADLER32_MODULUS;
+			r2 = (r2 + r1) % RM_ADLER32_MODULUS;
+		}
+		adler = (r2 << 16) | r1;
 	
-	sf = rm_adler32_1(buf, 100);
-	assert_true(adler == sf);
-	fclose(f);
+		sf = rm_adler32_1(buf, file_sz);
+		assert_true(adler == sf);
+		fclose(f);
+		RM_LOG_INFO("Adler32 checksum OK, file [%s], size [%u]",
+				fname, file_sz);
+	}
 }

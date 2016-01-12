@@ -12,7 +12,7 @@
 #include <stdlib.h>             // everything
 #include <stdio.h>              // most I/O
 #include <sys/types.h>          // syscalls
-#include <sys/stat.h>		// umask
+#include <sys/stat.h>		// umask, fstat
 #include <sys/socket.h>         // socket.h etc.
 #include <netinet/in.h>         // networking
 #include <linux/netdevice.h>
