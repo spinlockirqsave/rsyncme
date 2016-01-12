@@ -8,15 +8,18 @@
 #include "test_rm.h"
 
 
-char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_100.dat", "rm_f_511.dat",
-"rm_f_512.dat", "rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat" };
+char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
+"rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat", "rm_f_513.dat", "rm_f_1023.dat",
+"rm_f_1024.dat", "rm_f_1025.dat" };
 
-uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 100, 511, 512, 513, 1023, 1024, 1025 };
+uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 100, 511, 512, 513,
+							1023, 1024, 1025 };
 
 uint32_t
 rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 13, 50, 64, 100, 127, 128, 129,
 					200, 400, 499, 500, 501, 511, 512, 513,
-					600, 800, 1000, 1100, 1123, 1124, 1125, 1200 };
+					600, 800, 1000, 1100, 1123, 1124, 1125,
+					1200 };
 
 int
 test_rm_setup(void **state)
@@ -158,7 +161,7 @@ test_rm_adler32_1(void **state)
 		sf = rm_adler32_1(buf, file_sz);
 		assert_true(adler == sf);
 		fclose(f);
-		RM_LOG_INFO("Adler32 checksum OK, file [%s], size [%u]",
-				fname, file_sz);
+		RM_LOG_INFO("PASS Adler32 checksum [%u] OK, file [%s],"
+				" size [%u]", adler, fname, file_sz);
 	}
 }

@@ -20,6 +20,7 @@ TESTOBJECTS 		= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 DEBUGTARGET		= ../build/debug/rsyncme_d
 RELEASETARGET		= ../build/release/rsyncme_d
 CMDDEBUGTARGET		= ../build/debug/rsyncme
+CMDRELEASETARGET	= ../build/release/rsyncme
 
 debugall:	$(SOURCES) $(DEBUGTARGET)
 releaseall:	$(SOURCES) $(RELEASETARGET)
@@ -41,6 +42,8 @@ test-check:	test
 
 rsyncme-debug:	rm_cmd.c ../build/debug/rsyncme
 rsyncme-debug:	CFLAGS += -DDEBUG -g
+rsyncme-release:	rm_cmd.c ../build/release/rsyncme
+rsyncme-release:	CFLAGS += -DNDEBUG
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
 	$(CC) $(LDFLAGS) $(DEBUGOBJECTS) -o $@
@@ -54,8 +57,11 @@ $(CMDDEBUGTARGET): ../build/debug/rsyncme.o
 ../build/debug/rsyncme.o: rm_cmd.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
-#test: $(TESTSOURCES)
-#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+$(CMDRELEASETARGET): ../build/release/rsyncme.o 
+	$(CC) $(LDFLAGS) $(CMDRELEASETARGET).o -o $@
+
+../build/release/rsyncme.o: rm_cmd.c
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
 $(DEBUGOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
@@ -69,11 +75,15 @@ $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
 clean:
-	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET) $(CMDDEBUGTARGET) $(CMDDEBUGTARGET).o
+	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET) \
+		$(CMDDEBUGTARGET) $(CMDDEBUGTARGET).o $(CMDRELEASETARGET) $(CMDRELEASETARGET).o
 test-clean:
 	rm -rf $(TESTOBJECTS)
 	cd $(TESTSRCDIR) && make clean
 test-clean-logs:
 	cd $(TESTSRCDIR) && make clean-logs
 test-clean-all:
+	cd $(TESTSRCDIR) && make clean && make clean-logs
+clean-all:
+	make clean
 	cd $(TESTSRCDIR) && make clean && make clean-logs

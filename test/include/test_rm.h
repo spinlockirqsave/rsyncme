@@ -22,7 +22,7 @@
 #define RM_TEST_DELETE_FILES		1	// 0 no, 1 yes
 #define RM_TEST_L_BLOCKS_SIZE		24
 #define RM_TEST_L_MAX			65536
-#define RM_TEST_FNAMES_N		7
+#define RM_TEST_FNAMES_N		9
 char*		rm_test_fnames[RM_TEST_FNAMES_N];
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N];
 uint32_t	rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];

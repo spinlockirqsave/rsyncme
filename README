@@ -2,3 +2,61 @@ rsyncme
 
 A simple implementation of rsync algorithm
 for efficient file synchronization.
+
+
+DIRECTORY structure
+
+rsyncme/		<-- this directory
+	- README
+	- LICENSE
+	- include/
+		- twlist/
+	- src/
+	- build/
+		- debug/
+		- release/
+	- test/
+		- include/
+		- src/
+		- build/
+			-log/
+
+BUILD & TEST
+There are few targets available: rsyncme_d, rsyncme, test executables.
+
+To build rsyncme_d (daemon's executable):
+	cd src
+	make debug (or make release)
+
+To build rsyncme (commandline executable):
+	cd src
+	make rsyncme-debug (or make rsyncme-release)
+To build tests:
+	cd src
+	make test
+To run tests:
+	cd src
+	make test-check
+		Results are written in folder ./test/build/log. Short summary of run
+		is saved in rsyncme_<timestamp>.log file. Detailed log is saved
+		in rsyncme_<timestamp>.err. If you want to inspect intermadiate files
+		created in test run, change RM_TEST_DELETE_FILES definition in file
+		./test/include/test_rm.h to 0.
+
+
+CLEAN
+To clean rsyncme_d (daemon's executable) and rsyncme (commandline executable):
+	cd src
+	make clean
+To clean tests (but not test logs):
+	cd src
+	make test-clean
+To clean test logs:
+	cd src
+	make test-clean-logs
+To clean test and test logs:
+	cd src
+	make test-clean-all
+To clean rsyncme_d, rsyncme, tests & test logs:
+	cd src
+	make clean-all
