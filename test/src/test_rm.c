@@ -72,6 +72,7 @@ test_rm_teardown(void **state)
 	struct test_rm_state *rm_state;
 
 	rm_state = *state;
+	assert_true(rm_state != NULL);
 	if (RM_TEST_DELETE_FILES == 1)
 	{
 		// delete all test files
@@ -106,7 +107,7 @@ test_rm_adler32_1(void **state)
 	char		*fname;
 
 	rm_state = *state;
-	assert_true(*state != NULL);
+	assert_true(rm_state != NULL);
 
 	// test on all files
 	i = 0;
@@ -146,6 +147,7 @@ test_rm_adler32_1(void **state)
 				"skipping", fname);
 			fclose(f);
 		}
+		fclose(f);
 		assert_true(read == file_sz);
 		// calc checksum
 		r1 = 1;
@@ -160,8 +162,79 @@ test_rm_adler32_1(void **state)
 	
 		sf = rm_adler32_1(buf, file_sz);
 		assert_true(adler == sf);
+		RM_LOG_INFO("PASS Adler32 (1) checksum [%u] OK, "
+		"file [%s], size [%u]", adler, fname, file_sz);
+	}
+}
+
+void
+test_rm_adler32_2(void **state)
+{
+	FILE		*f;
+	int		fd;
+	unsigned char	buf[RM_TEST_L_MAX];
+	uint32_t	i, adler1, adler2, adler2_0,
+			file_sz, read, r1_0, r2_0, r1_1, r2_1;
+	struct test_rm_state	*rm_state;
+	struct stat	fs;
+	char		*fname;
+
+	rm_state = *state;
+	assert_true(rm_state != NULL);
+
+	// test on all files
+	i = 0;
+	for (; i < RM_TEST_FNAMES_N; ++i)
+	{
+		fname = rm_test_fnames[i];
+		f = fopen(fname, "rb");
+		if (f == NULL)
+		{
+			RM_LOG_PERR("Can't open file [%s]",
+					fname);
+		}
+		assert_true(f != NULL);
+		// get file size
+		fd = fileno(f);
+		if (fstat(fd, &fs) != 0)
+		{
+			RM_LOG_PERR("Can't fstat file [%s], ",
+				"skipping", fname);
+			fclose(f);
+			assert_true(1 == 0);
+		}
+		file_sz = fs.st_size; 
+		if (file_sz > RM_TEST_L_MAX)
+		{
+			RM_LOG_ERR("File [%s] size [%u] is bigger ",
+				"than testing buffer's size of [%u],",
+				" reading only first [%u] bytes", fname,
+				file_sz, RM_TEST_L_MAX, RM_TEST_L_MAX);
+			file_sz = RM_TEST_L_MAX;
+		}
+		// read bytes
+		read = fread(buf, 1, file_sz, f);
+		if (read != file_sz)
+		{
+			RM_LOG_PERR("Error reading file [%s], ",
+				"skipping", fname);
+			fclose(f);
+		}
 		fclose(f);
-		RM_LOG_INFO("PASS Adler32 checksum [%u] OK, file [%s],"
-				" size [%u]", adler, fname, file_sz);
+		assert_true(read == file_sz);
+		// checksum	
+		adler1 = rm_adler32_1(buf, file_sz);
+		adler2 = rm_adler32_2(1, buf, file_sz);
+		assert_true(adler1 == adler2);
+		adler2_0 = rm_adler32_2(0, buf, file_sz);
+		// (1 + X) % MOD == (1 % MOD + X % MOD) % MOD
+		r1_0 = adler2_0 & 0xffff;
+		r1_1 = (r1_0 + (1 % RM_ADLER32_MODULUS)) % RM_ADLER32_MODULUS;
+		assert_true((adler2 & 0xffff) == r1_1);
+		r2_0 = (adler2_0 >> 16) & 0xffff;
+		r2_1 = (r2_0 + (file_sz % RM_ADLER32_MODULUS)) % RM_ADLER32_MODULUS;
+		assert_true(((adler2 >> 16) & 0xffff) == r2_1);
+		RM_LOG_INFO("PASS Adler32 (2) checksum [%u] OK, i"
+		"file [%s], size [%u]", adler2, fname, file_sz);
 	}
 }

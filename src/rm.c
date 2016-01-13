@@ -13,7 +13,7 @@
 
 
 uint32_t
-rm_adler32_1(unsigned char *data, uint32_t len)
+rm_adler32_1(const unsigned char *data, uint32_t len)
 {
 #ifdef DEBUG
 	uint32_t res;
@@ -42,14 +42,14 @@ rm_adler32_1(unsigned char *data, uint32_t len)
 #define RM_DO16(buf)	RM_DO8(buf,0); RM_DO8(buf,8)
 
 uint32_t
-rm_adler32_2(uint32_t adler, unsigned char *data, uint32_t len)
+rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len)
 {
 #ifdef DEBUG
 	uint32_t res;
 #endif
 	uint32_t	k;
 	uint32_t	r1 = adler & 0xffff;
-	uint32_t	r2 = (adler >> 16) & 0xfff;
+	uint32_t	r2 = (adler >> 16) & 0xffff;
 
 	while(len)
 	{
@@ -83,7 +83,7 @@ rm_adler32_2(uint32_t adler, unsigned char *data, uint32_t len)
 }
 
 uint32_t
-rm_rolling_ch(unsigned char *data, uint32_t len,
+rm_rolling_ch(const unsigned char *data, uint32_t len,
 				uint32_t M)
 {
 	uint32_t	r1, r2, i;
@@ -107,7 +107,7 @@ rm_rolling_ch(unsigned char *data, uint32_t len,
  
 
 void
-rm_md5(unsigned char *data, uint32_t len,
+rm_md5(const unsigned char *data, uint32_t len,
 		unsigned char res[16])
 {
 	MD5_CTX ctx;

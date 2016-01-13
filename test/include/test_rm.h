@@ -53,5 +53,8 @@ rm_random_file(char *name, uint32_t len);
 void
 test_rm_adler32_1(void **state);
 
+void
+test_rm_adler32_2(void **state);
+
 
 #endif	// RSYNCME_TEST_RM_H

@@ -107,7 +107,7 @@ struct rm_ch_ch
 ///		but requires more computation effort. Adler32 is more
 ///		reliable than Fletcher16 but less than Fletcher32.
 uint32_t
-rm_adler32_1(unsigned char *data, uint32_t len);
+rm_adler32_1(const unsigned char *data, uint32_t len);
 
 /// @brief	Efficient version of Adler32. Postpones modulo reduction
 ///		up to the point when this is absolutely necessary
@@ -124,20 +124,20 @@ rm_adler32_1(unsigned char *data, uint32_t len);
 ///		and s2MAX MUST fit in 32bits.
 /// @param	adler: initial value, should be one if this is beginning
 uint32_t
-rm_adler32_2(uint32_t adler, unsigned char *data, uint32_t len);
+rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
 
 /// @brief	Calculate rolling checkum on a given file block
 ///		of size @len starting from @data, modulo @M.
 /// @details	@M MUST be less than 2^16, 0x10000
 uint32_t
-rm_rolling_ch(unsigned char *data, uint32_t len, uint32_t M); 
+rm_rolling_ch(const unsigned char *data, uint32_t len, uint32_t M); 
 
 /// @brief	Calculate strong checkum on a given file block
 ///		of size @len starting from @data.
 /// @details	Implemented reusing Brad Conte's MD5 code from his
 ///		crypto-algorithms repo (see include/md5.h).
 void
-rm_md5(unsigned char *data, uint32_t len, unsigned char res[16]);
+rm_md5(const unsigned char *data, uint32_t len, unsigned char res[16]);
 
 
 #endif	// RSYNCME_H
