@@ -125,8 +125,7 @@ test_rm_adler32_1(void **state)
 		fd = fileno(f);
 		if (fstat(fd, &fs) != 0)
 		{
-			RM_LOG_PERR("Can't fstat file [%s], ",
-				"skipping", fname);
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
 			fclose(f);
 			assert_true(1 == 0);
 		}
@@ -146,6 +145,7 @@ test_rm_adler32_1(void **state)
 			RM_LOG_PERR("Error reading file [%s], ",
 				"skipping", fname);
 			fclose(f);
+			continue;
 		}
 		fclose(f);
 		assert_true(read == file_sz);
@@ -198,8 +198,7 @@ test_rm_adler32_2(void **state)
 		fd = fileno(f);
 		if (fstat(fd, &fs) != 0)
 		{
-			RM_LOG_PERR("Can't fstat file [%s], ",
-				"skipping", fname);
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
 			fclose(f);
 			assert_true(1 == 0);
 		}
@@ -219,6 +218,7 @@ test_rm_adler32_2(void **state)
 			RM_LOG_PERR("Error reading file [%s], ",
 				"skipping", fname);
 			fclose(f);
+			continue;
 		}
 		fclose(f);
 		assert_true(read == file_sz);
@@ -236,5 +236,126 @@ test_rm_adler32_2(void **state)
 		assert_true(((adler2 >> 16) & 0xffff) == r2_1);
 		RM_LOG_INFO("PASS Adler32 (2) checksum [%u] OK, i"
 		"file [%s], size [%u]", adler2, fname, file_sz);
+	}
+}
+
+void
+test_rm_adler32_roll(void **state)
+{
+	FILE		*f;
+	int		fd;
+	unsigned char	buf[RM_TEST_L_MAX];
+	uint32_t	i, j, L, adler, k, k_max,
+			file_sz, read, read_left, read_now;
+	long		idx_min, idx_max, idx;
+	struct test_rm_state	*rm_state;
+	struct stat	fs;
+	char		*fname;
+
+	rm_state = *state;
+	assert_true(rm_state != NULL);
+
+	// test on all files
+	i = 0;
+	for (; i < RM_TEST_FNAMES_N; ++i)
+	{
+		fname = rm_test_fnames[i];
+		f = fopen(fname, "rb");
+		if (f == NULL)
+		{
+			RM_LOG_PERR("Can't open file [%s]", fname);
+		}
+		assert_true(f != NULL);
+		// get file size
+		fd = fileno(f);
+		if (fstat(fd, &fs) != 0)
+		{
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
+			fclose(f);
+			assert_true(1 == 0);
+		}
+		file_sz = fs.st_size; 
+		j = 0;
+		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
+		{
+			L = rm_test_L_blocks[j];
+			if (file_sz < L)
+			{
+				RM_LOG_INFO("File [%s] size [%u] is smaller "
+				"than block size L [%u], skipping", fname,
+				file_sz, L);
+				continue;
+			}
+			if (RM_TEST_L_MAX < L)
+			{
+				RM_LOG_INFO("Block size L [%u] is bigger than "
+				" testing buffer [%u], skipping file [%s]",
+				L, RM_TEST_L_MAX, fname);
+				continue;
+			}
+			
+			RM_LOG_INFO("Tesing Adler32 rolling checksum, "
+				"file [%s], size [%u], block size L [%u]",
+				fname, file_sz, L);
+			// read bytes
+			read = fread(buf, 1, L, f);
+			if (read != L)
+			{
+				RM_LOG_PERR("Error reading file [%s], "
+					"skipping", fname);
+				continue;
+			}
+			assert_true(read == L);
+
+			// initial checksum
+			adler = rm_adler32_2(1, buf, L);
+			// move file pointer back
+			fseek(f, 0, SEEK_SET);	// equivalent to rewind(f)
+
+			// number of times rolling will be called
+			k_max = file_sz - L;
+
+			read_left = file_sz;
+			do
+			{
+				idx_min = ftell(f);
+				// read all up to buffer size
+				read_now = rm_min(RM_TEST_L_MAX, read_left);
+				read = fread(buf, 1, read_now, f);
+				if (read != read_now)
+				{
+					RM_LOG_PERR("Error reading file [%s]",
+						fname);
+				}
+				assert_true(read == read_now);
+				idx_max = idx_min + read_now;	// idx_max is 1 past the end of buf
+				// rolling checksum needs previous byte
+				idx = idx_min + 1;
+				// checksums at offsets [1,idx_max-L]
+				while (idx < idx_max - L + 1)
+				{
+					// checksum for offset [idx]
+					adler = rm_adler32_roll(adler, buf[idx-1],
+								buf[idx+L-1], L);
+					++idx;
+				}
+				read_left -= read;
+				if (read_left > 0)
+				{
+					// there are bytes remaining to read
+					// we must start L bytes to the left from idx_max
+					// to include a_k
+					read_left += L;
+					fseek(f, -L, SEEK_CUR);
+				}
+			} while (read_left > 0);
+			
+			RM_LOG_INFO("PASS Adler32 rolling checksum [%u] OK, "
+				"file [%s], size [%u], L [%u]", adler, fname,
+				file_sz, L);
+			// move file pointer back to the beginning
+			rewind(f);
+		}
+		fclose(f);
 	}
 }

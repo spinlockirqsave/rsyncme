@@ -112,7 +112,7 @@ rm_util_log(FILE *stream, const char *fmt, ...)
 {
 	int	ret;
 	va_list	args;
-	char 	buf[1024];
+	char 	buf[4096];
 	char	dt[28];
 
 	ret = rm_util_dt_detail(dt);
@@ -132,7 +132,7 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...)
 {
 	int	ret;
 	va_list	args;
-	char 	buf[1024];
+	char 	buf[4096];
 	char	dt[28];
 
 	ret = rm_util_dt_detail(dt);
