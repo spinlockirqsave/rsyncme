@@ -126,6 +126,13 @@ rm_adler32_1(const unsigned char *data, uint32_t len);
 uint32_t
 rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
 
+/// @brief	Rolling Adler32 from block [k,k+L-1] to [k+1,k+L].
+/// @details	Updates @adler by removal of byte k and addition
+///		of byte k+L.
+uint32_t
+rm_adler32_roll(uint32_t adler, unsigned char a_k,
+		unsigned char a_kL, uint32_t L);
+
 /// @brief	Calculate rolling checkum on a given file block
 ///		of size @len starting from @data, modulo @M.
 /// @details	@M MUST be less than 2^16, 0x10000
