@@ -38,10 +38,10 @@ To run tests:
 	cd src
 	make test-check
 		Results are written in folder ./test/build/log. Short summary of run
-		is saved in rsyncme_<timestamp>.log file. Detailed log is saved
-		in rsyncme_<timestamp>.err. If you want to inspect intermadiate files
-		created in test run, change RM_TEST_DELETE_FILES definition in file
-		./test/include/test_rm.h to 0.
+		is saved in rsyncme_test_<timestamp>.log file. Detailed log is saved
+		in rsyncme_test_<timestamp>.err. If you would like to inspect intermadiate
+		files created during test run, please change RM_TEST_DELETE_FILES
+		definition in file test/include/test_rm.h to 0.
 
 
 CLEAN
