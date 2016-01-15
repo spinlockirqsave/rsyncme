@@ -53,7 +53,7 @@ test_rm_setup(void **state)
 			srand(time(NULL));
 			while (j--)
 			{
-				fputc(rand() % 0x100, f);
+				fputc(rand(), f);
 			}		
 		} else {
 			RM_LOG_INFO("Using previously created "
@@ -240,12 +240,12 @@ test_rm_adler32_2(void **state)
 }
 
 void
-test_rm_adler32_roll(void **state)
+test_rm_fast_check_roll(void **state)
 {
 	FILE		*f;
 	int		fd;
 	unsigned char	buf[RM_TEST_L_MAX];
-	uint32_t	i, j, L, adler, k, k_max,
+	uint32_t	i, j, L, adler1, adler2, tests_n, tests_max,
 			file_sz, read, read_left, read_now;
 	long		idx_min, idx_max, idx;
 	struct test_rm_state	*rm_state;
@@ -279,6 +279,12 @@ test_rm_adler32_roll(void **state)
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
 		{
 			L = rm_test_L_blocks[j];
+			if (file_sz < 2)
+			{
+				RM_LOG_INFO("File [%s] size [%u] is to small "
+				"for this test, skipping", fname, file_sz);
+				continue;
+			}
 			if (file_sz < L)
 			{
 				RM_LOG_INFO("File [%s] size [%u] is smaller "
@@ -294,7 +300,7 @@ test_rm_adler32_roll(void **state)
 				continue;
 			}
 			
-			RM_LOG_INFO("Tesing Adler32 rolling checksum, "
+			RM_LOG_INFO("Tesing fast rolling checksum, "
 				"file [%s], size [%u], block size L [%u]",
 				fname, file_sz, L);
 			// read bytes
@@ -308,12 +314,13 @@ test_rm_adler32_roll(void **state)
 			assert_true(read == L);
 
 			// initial checksum
-			adler = rm_adler32_2(1, buf, L);
+			adler1 = rm_fast_check_block(buf, L);
 			// move file pointer back
 			fseek(f, 0, SEEK_SET);	// equivalent to rewind(f)
 
-			// number of times rolling will be called
-			k_max = file_sz - L;
+			// number of times rolling checksum will be calculated
+			tests_max = file_sz - L;
+			tests_n = 0;
 
 			read_left = file_sz;
 			do
@@ -334,9 +341,14 @@ test_rm_adler32_roll(void **state)
 				// checksums at offsets [1,idx_max-L]
 				while (idx < idx_max - L + 1)
 				{
+					// count tests
+					++tests_n;
+					RM_LOG_INFO("Running test [%u]", tests_n);
+					adler2 = rm_fast_check_block(&buf[idx], L);
 					// checksum for offset [idx]
-					adler = rm_adler32_roll(adler, buf[idx-1],
+					adler1 = rm_fast_check_roll(adler1, buf[idx-1],
 								buf[idx+L-1], L);
+					assert_int_equal(adler1, adler2);
 					++idx;
 				}
 				read_left -= read;
@@ -349,9 +361,10 @@ test_rm_adler32_roll(void **state)
 					fseek(f, -L, SEEK_CUR);
 				}
 			} while (read_left > 0);
+			assert_int_equal(tests_n, tests_max);
 			
-			RM_LOG_INFO("PASS Adler32 rolling checksum [%u] OK, "
-				"file [%s], size [%u], L [%u]", adler, fname,
+			RM_LOG_INFO("PASSED [%u] fast rolling checksum tests, "
+				"file [%s], size [%u], L [%u]", tests_n, fname,
 				file_sz, L);
 			// move file pointer back to the beginning
 			rewind(f);

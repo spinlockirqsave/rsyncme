@@ -100,6 +100,17 @@ struct rm_ch_ch
 					// checksums in ch_ch vector.
 };
 
+/// @brief	Calculate similar to adler32 fast checkum on a given
+///		file block of size @len starting from @data.
+/// @details	Adler checksum uses prime number 65521 as modulus.
+///		This allows for better strength than if 2^16 was used
+///		but requires more computation effort (adler32 is more
+///		reliable than Fletcher16 but less than Fletcher32). But
+///		then rolling is not possible. To enable rolling feature
+///		RM_FASTCHECK_MODULUS is used (2^16).
+uint32_t
+rm_fast_check_block(const unsigned char *data, uint32_t len);
+
 /// @brief	Calculate adler32 checkum on a given file block
 ///		of size @len starting from @data.
 /// @details	Adler checksum uses prime number 65521 as modulus.
@@ -131,6 +142,9 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
 ///		of byte k+L.
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
+		unsigned char a_kL, uint32_t L);
+uint32_t
+rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
 
 /// @brief	Calculate rolling checkum on a given file block

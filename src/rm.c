@@ -13,6 +13,30 @@
 
 
 uint32_t
+rm_fast_check_block(const unsigned char *data, uint32_t len)
+{
+#ifdef DEBUG
+	uint32_t res;
+#endif
+	uint32_t	r1, r2, i;
+
+	assert(data != NULL);
+	r1 = 0;
+	r2 = 0;
+	i = 0;
+	for (; i < len; ++i)
+	{
+		r1 = (r1 + data[i]) % RM_FASTCHECK_MODULUS;
+		r2 = (r2 + r1) % RM_FASTCHECK_MODULUS;
+	}
+#ifdef DEBUG
+	res = (r2 << 16) | r1;
+	return res;
+#endif
+	return (r2 << 16) | r1;
+}
+
+uint32_t
 rm_adler32_1(const unsigned char *data, uint32_t len)
 {
 #ifdef DEBUG
@@ -84,6 +108,7 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L)
 	return (r2 << 16) | r1;
 }
 
+// rooling adler with prime modulus won't work
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L)
@@ -98,6 +123,27 @@ rm_adler32_roll(uint32_t adler, unsigned char a_k,
 	// update
 	r1 = (r1 - a_k + a_kL) % RM_ADLER32_MODULUS;
 	r2 = (r2 + r1 - L*a_k - 1) % RM_ADLER32_MODULUS;
+#ifdef DEBUG
+	res = (r2 << 16) | r1;
+	return res;
+#endif
+	return (r2 << 16) | r1;
+}
+
+uint32_t
+rm_fast_check_roll(uint32_t adler, unsigned char a_k,
+		unsigned char a_kL, uint32_t L)
+{
+#ifdef DEBUG
+	uint32_t res;
+#endif
+	uint32_t	r1, r2;
+	// r1 and r2 from adler on block [k,k+L]]
+	r1 = adler & 0xFFFF;
+	r2 = (adler >> 16) & 0xFFFF;
+	// update
+	r1 = (r1 - a_k + a_kL) % RM_FASTCHECK_MODULUS;
+	r2 = (r2 + r1 - L*a_k) % RM_FASTCHECK_MODULUS;
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;

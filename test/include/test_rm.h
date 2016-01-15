@@ -57,7 +57,7 @@ void
 test_rm_adler32_2(void **state);
 
 void
-test_rm_adler32_roll(void **state);
+test_rm_fast_check_roll(void **state);
 
 
 #endif	// RSYNCME_TEST_RM_H
