@@ -9,17 +9,18 @@
 
 
 char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
-"rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat", "rm_f_513.dat", "rm_f_1023.dat",
-"rm_f_1024.dat", "rm_f_1025.dat", "rm_f_4096.dat", "rm_f_20100.dat"};
+"rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
+"rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
+"rm_f_4096.dat", "rm_f_20100.dat"};
 
-uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 100, 511, 512, 513,
+uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 2, 65, 100, 511, 512, 513,
 						1023, 1024, 1025, 4096, 20100 };
 
 uint32_t
-rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 13, 50, 64, 100, 127, 128, 129,
+rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 128, 129,
 					200, 400, 499, 500, 501, 511, 512, 513,
 					600, 800, 1000, 1100, 1123, 1124, 1125,
-					1200 };
+					1200, 100000 };
 
 int
 test_rm_setup(void **state)
@@ -132,8 +133,8 @@ test_rm_adler32_1(void **state)
 		file_sz = fs.st_size; 
 		if (file_sz > RM_TEST_L_MAX)
 		{
-			RM_LOG_ERR("File [%s] size [%u] is bigger ",
-				"than testing buffer's size of [%u],",
+			RM_LOG_ERR("File [%s] size [%u] is bigger "
+				"than testing buffer's size of [%u],"
 				" reading only first [%u] bytes", fname,
 				file_sz, RM_TEST_L_MAX, RM_TEST_L_MAX);
 			file_sz = RM_TEST_L_MAX;
@@ -142,7 +143,7 @@ test_rm_adler32_1(void **state)
 		read = fread(buf, 1, file_sz, f);
 		if (read != file_sz)
 		{
-			RM_LOG_PERR("Error reading file [%s], ",
+			RM_LOG_PERR("Error reading file [%s], "
 				"skipping", fname);
 			fclose(f);
 			continue;
@@ -205,8 +206,8 @@ test_rm_adler32_2(void **state)
 		file_sz = fs.st_size; 
 		if (file_sz > RM_TEST_L_MAX)
 		{
-			RM_LOG_ERR("File [%s] size [%u] is bigger ",
-				"than testing buffer's size of [%u],",
+			RM_LOG_ERR("File [%s] size [%u] is bigger "
+				"than testing buffer's size of [%u],"
 				" reading only first [%u] bytes", fname,
 				file_sz, RM_TEST_L_MAX, RM_TEST_L_MAX);
 			file_sz = RM_TEST_L_MAX;
@@ -215,7 +216,7 @@ test_rm_adler32_2(void **state)
 		read = fread(buf, 1, file_sz, f);
 		if (read != file_sz)
 		{
-			RM_LOG_PERR("Error reading file [%s], ",
+			RM_LOG_PERR("Error reading file [%s], "
 				"skipping", fname);
 			fclose(f);
 			continue;
@@ -247,7 +248,7 @@ test_rm_fast_check_roll(void **state)
 	unsigned char	buf[RM_TEST_L_MAX];
 	uint32_t	i, j, L, adler1, adler2, tests_n, tests_max,
 			file_sz, read, read_left, read_now;
-	long		idx_min, idx_max, idx;
+	long		idx_min, idx_max, idx, idx_buf;
 	struct test_rm_state	*rm_state;
 	struct stat	fs;
 	char		*fname;
@@ -279,6 +280,10 @@ test_rm_fast_check_roll(void **state)
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
 		{
 			L = rm_test_L_blocks[j];
+			RM_LOG_INFO("Validating testing of fast rolling "
+				"checksum: file [%s], size [%u], block "
+				"size L [%u], buffer [%u]", fname, file_sz,
+				L, RM_TEST_L_MAX);
 			if (file_sz < 2)
 			{
 				RM_LOG_INFO("File [%s] size [%u] is to small "
@@ -292,17 +297,18 @@ test_rm_fast_check_roll(void **state)
 				file_sz, L);
 				continue;
 			}
-			if (RM_TEST_L_MAX < L)
+			if (RM_TEST_L_MAX < L + 1)
 			{
-				RM_LOG_INFO("Block size L [%u] is bigger than "
-				" testing buffer [%u], skipping file [%s]",
-				L, RM_TEST_L_MAX, fname);
+				RM_LOG_INFO("Testing buffer [%u] is too "
+				"small for this test (should be > [%u]), "
+				" skipping file [%s]", RM_TEST_L_MAX, L,
+				fname);
 				continue;
 			}
 			
-			RM_LOG_INFO("Tesing fast rolling checksum, "
-				"file [%s], size [%u], block size L [%u]",
-				fname, file_sz, L);
+			RM_LOG_INFO("Tesing fast rolling checksum: file "
+				"[%s], size [%u], block size L [%u], buffer"
+				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
 			// read bytes
 			read = fread(buf, 1, L, f);
 			if (read != L)
@@ -344,10 +350,11 @@ test_rm_fast_check_roll(void **state)
 					// count tests
 					++tests_n;
 					RM_LOG_INFO("Running test [%u]", tests_n);
-					adler2 = rm_fast_check_block(&buf[idx], L);
+					idx_buf = idx - idx_min;
+					adler2 = rm_fast_check_block(&buf[idx_buf], L);
 					// checksum for offset [idx]
-					adler1 = rm_fast_check_roll(adler1, buf[idx-1],
-								buf[idx+L-1], L);
+					adler1 = rm_fast_check_roll(adler1, buf[idx_buf-1],
+								buf[idx_buf+L-1], L);
 					assert_int_equal(adler1, adler2);
 					++idx;
 				}
@@ -358,7 +365,7 @@ test_rm_fast_check_roll(void **state)
 					// we must start L bytes to the left from idx_max
 					// to include a_k
 					read_left += L;
-					fseek(f, -L, SEEK_CUR);
+					fseek(f, -(long)L, SEEK_CUR);
 				}
 			} while (read_left > 0);
 			assert_int_equal(tests_n, tests_max);
