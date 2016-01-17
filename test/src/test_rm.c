@@ -29,8 +29,13 @@ test_rm_setup(void **state)
 	uint32_t	i,j;
 	FILE 		*f;
 
+#ifdef DEBUG
 	err = rm_util_chdir_umask_openlog(
-		"../build", 1, "rsyncme_test");
+		"../build/debug", 1, "rsyncme_test");
+#else
+	err = rm_util_chdir_umask_openlog(
+		"../build/release", 1, "rsyncme_test");
+#endif
 	if (err != 0)
 		exit(EXIT_FAILURE);
 	rm_state.l = rm_test_L_blocks;
