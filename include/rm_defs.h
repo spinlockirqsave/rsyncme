@@ -9,6 +9,9 @@
 #define RSYNCME_DEFS_H
 
 
+// to make off_t (used in calls to fseeko) 64 bits type
+#define _FILE_OFFSET_BITS 64
+
 #include <stdlib.h>             // everything
 #include <stdio.h>              // most I/O
 #include <sys/types.h>          // syscalls

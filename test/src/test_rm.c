@@ -365,7 +365,7 @@ test_rm_fast_check_roll(void **state)
 					// we must start L bytes to the left from idx_max
 					// to include a_k
 					read_left += L;
-					fseek(f, -(long)L, SEEK_CUR);
+					fseeko(f, -(long long)L, SEEK_CUR);
 				}
 			} while (read_left > 0);
 			assert_int_equal(tests_n, tests_max);
