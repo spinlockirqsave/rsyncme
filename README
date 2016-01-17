@@ -37,7 +37,19 @@ To build tests:
 To run tests:
 	cd src
 	make test-check
-		Results are written in folder ./test/build/log. Short summary of run
+		Results are written in folder ./test/build/release/log. Short summary of run
+		is saved in rsyncme_test_<timestamp>.log file. Detailed log is saved
+		in rsyncme_test_<timestamp>.err. If you would like to inspect intermadiate
+		files created during test run, please change RM_TEST_DELETE_FILES
+		definition in file test/include/test_rm.h to 0.
+To build tests in debug mode:
+	cd src
+	make test-debug
+		Output is written to ./test/build/debug.
+To run tests built in debug mode:
+	cd src
+	make test-debug-check
+		Results are written in folder ./test/build/debug/log. Short summary of run
 		is saved in rsyncme_test_<timestamp>.log file. Detailed log is saved
 		in rsyncme_test_<timestamp>.err. If you would like to inspect intermadiate
 		files created during test run, please change RM_TEST_DELETE_FILES
@@ -54,9 +66,15 @@ To clean tests (but not test logs):
 To clean test logs:
 	cd src
 	make test-clean-logs
-To clean test and test logs:
+To clean tests-debug build(but not test logs):
+	cd src
+	make test-clean-debug
+To clean test-debug logs:
+	cd src
+	make test-clean-logs-debug
+To clean test and test logs (release and debug):
 	cd src
 	make test-clean-all
-To clean rsyncme_d, rsyncme, tests & test logs:
+To clean rsyncme_d, rsyncme, tests & test logs (release & debug):
 	cd src
 	make clean-all
