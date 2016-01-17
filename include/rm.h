@@ -86,18 +86,19 @@ struct rm_md5
 /// @brief	Checksum checksum struct.
 struct rm_ch_ch
 {
-        uint32_t		f_ch;	// fast and very cheap
-					// 32-bit rolling checksum
+        uint32_t		f_ch;	// Fast and very cheap
+					// 32-bit rolling checksum,
 					// MUST be very cheap to compute
-					// at every byte offset
-	struct rm_md5		s_ch;	// strong and computationally
-					// expensive 128-bit checksum
+					// at every byte offset.
+	struct rm_md5		s_ch;	// Strong and computationally
+					// expensive 128-bit checksum,
 					// MUST have a very low
-					// probability of collision
+					// probability of collision.
 					// This is computed only when
 					// fast & cheap checksum matches
 					// one of the fast & cheap
 					// checksums in ch_ch vector.
+	struct twhlist_node	hlink;
 };
 
 /// @brief	Calculate similar to adler32 fast checkum on a given

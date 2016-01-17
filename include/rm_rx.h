@@ -11,14 +11,18 @@
 
 
 #include "rm.h"
+#include "rm_error.h"
 
 
-/// @brief	Produce list of ch_ch_h structs
-///		from file @f.
-/// @return	On success the size of list is returned,
-///		-1 on error.
-int
-rm_rx_ch_ch_h(FILE *f, struct twlist_head *h); 
+/// @brief	Calculates ch_ch structs for all non-overlapping
+///		@L bytes blocks (last one may be less than @L)
+///		from file @f and inserts them into table @h.
+/// @details	File @f MUST be already open.
+/// @return	On success the number of inserted entries
+///		is returned, -1 on error.
+long long int
+rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
+		struct twhlist_head *h, uint32_t L); 
 
 
 #endif	// RSYNCME_RX_H
