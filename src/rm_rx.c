@@ -63,7 +63,8 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 			return -4;
 		}
 		// compute checksums
-
+		e->f_ch = rm_fast_check_block(buf, read);
+		rm_md5(buf, read, e->s_ch.data);
 		// insert, hashing fast checksum
 		twhash_add(h, &e->hlink, e->f_ch);
 		entries_n++;
