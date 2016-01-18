@@ -52,13 +52,13 @@
 /// A[sender]     ->    B[receiver]
 /// F_A, F'A    sync_req       F_B
 /// ------------------------------------
-/// 2.	B calculates ch_ch_h vector.
-///	and sends ch_ch_h vector to A.
+/// 2.	B calculates ch_ch vector.
+///	and sends ch_ch vector to A.
 /// ------------------------------------
 /// A[sender]     <-    B[receiver]
-/// F_A, F'A    ch_ch_h        F_B
+/// F_A, F'A    ch_ch        F_B
 /// ------------------------------------
-/// 3.	A uses ch_ch_h vector to produce delta
+/// 3.	A uses ch_ch vector to produce delta
 /// 	vector of token matches and/or literal
 ///	bytes using rolling checksum and sends
 ///	delta vector to B.
@@ -98,6 +98,9 @@ struct rm_ch_ch
 					// fast & cheap checksum matches
 					// one of the fast & cheap
 					// checksums in ch_ch vector.
+	off_t			offset;	// reference to location in B's
+					// F_B file (taken from ch_ch vector)
+	
 	struct twhlist_node	hlink;
 };
 

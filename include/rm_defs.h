@@ -9,7 +9,12 @@
 #define RSYNCME_DEFS_H
 
 
-// to make off_t (used in calls to fseeko) 64 bits type
+// To make off_t (used in calls to fseeko) 64 bits type
+// on 32-bit architectures.
+// This will make the names of the (otherwise 32 bit) functions
+// and data types refer to their 64 bit counterparts.
+// off_t will be off64_t, lseek() will use lseek64(), etc.
+// The 32 bit interface is no longer available.
 #define _FILE_OFFSET_BITS 64
 
 #include <stdlib.h>             // everything
@@ -54,6 +59,7 @@
 #define RM_MSG_BYE			255	// close the controlling connection
 
 #define RM_SESSION_HASH_BITS		10	// 10 bits hash, array size == 1024
+#define RM_A_HASHTABLE_HASH_BITS	16	// 16 bits hash, array size == 65536
 #define RM_FILE_LEN_MAX			150	// max len of -x -y files
 
 #define RM_ADLER32_MODULUS		65521L	// biggest prime int less than 2^16

@@ -384,3 +384,9 @@ test_rm_fast_check_roll(void **state)
 		fclose(f);
 	}
 }
+
+void
+test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
+{
+        TWDECLARE_HASHTABLE(sessions, RM_SESSION_HASH_BITS);
+}

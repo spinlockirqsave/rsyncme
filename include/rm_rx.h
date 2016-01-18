@@ -10,6 +10,7 @@
 #define RSYNCME_RX_H
 
 
+#include "rm_defs.h"
 #include "rm.h"
 #include "rm_error.h"
 

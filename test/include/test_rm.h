@@ -9,6 +9,7 @@
 #define RSYNCME_TEST_RM_H
 
 
+#include "rm_defs.h"
 #include "rm.h"
 #include "rm_error.h"
 
@@ -58,6 +59,9 @@ test_rm_adler32_2(void **state);
 
 void
 test_rm_fast_check_roll(void **state);
+
+void
+test_rm_rx_insert_nonoverlapping_ch_ch(void **state);
 
 
 #endif	// RSYNCME_TEST_RM_H
