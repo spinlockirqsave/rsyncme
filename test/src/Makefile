@@ -5,9 +5,9 @@ CPPFLAGS		+=              #compiler flags
 LDFLAGS			= -lpthread -lcmocka -L../../include -L../include  #-lpcap
 TESTSRCDIR		= .
 AUXOBJDIR_D		= ../../build/debug
-AUXOBJECTS_D = $(filter-out $(AUXOBJDIR)/main.o, $(wildcard $(AUXOBJDIR)/*.o))
+AUXOBJECTS_D 		= $(filter-out $(AUXOBJDIR_D)/main.o, $(wildcard $(AUXOBJDIR_D)/*.o))
 AUXOBJDIR		= ../../build/release
-AUXOBJECTS = $(filter-out $(AUXOBJDIR)/main.o, $(wildcard $(AUXOBJDIR)/*.o))
+AUXOBJECTS 		= $(filter-out $(AUXOBJDIR)/main.o, $(wildcard $(AUXOBJDIR)/*.o))
 SRCDIR			= .
 
 SRCS = $(wildcard *.c)

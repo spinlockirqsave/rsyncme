@@ -445,7 +445,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
 			RM_LOG_INFO("Tesing fast rolling checksum: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			entries_n = rm_rx_insert_nonoverlapping_ch_ch(f, fname, &h, L);
+			entries_n = rm_rx_insert_nonoverlapping_ch_ch(f, fname, h, L);
 			
 			RM_LOG_INFO("PASSED test of hashing of non-overlapping"
 				" blocks, file [%s], size [%u], L [%u]", fname,

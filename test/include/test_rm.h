@@ -11,6 +11,7 @@
 
 #include "rm_defs.h"
 #include "rm.h"
+#include "rm_rx.h"
 #include "rm_error.h"
 
 
