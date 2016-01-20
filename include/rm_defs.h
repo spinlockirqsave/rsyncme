@@ -59,7 +59,7 @@
 #define RM_MSG_BYE			255	// close the controlling connection
 
 #define RM_SESSION_HASH_BITS		10	// 10 bits hash, array size == 1024
-#define RM_A_HASHTABLE_HASH_BITS	16	// 16 bits hash, array size == 65536
+#define RM_NONOVERLAPPING_HASH_BITS	16	// 16 bits hash, array size == 65536
 #define RM_FILE_LEN_MAX			150	// max len of -x -y files
 
 #define RM_ADLER32_MODULUS		65521L	// biggest prime int less than 2^16

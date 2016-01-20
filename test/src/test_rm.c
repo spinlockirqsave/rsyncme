@@ -388,5 +388,69 @@ test_rm_fast_check_roll(void **state)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
 {
-        TWDECLARE_HASHTABLE(sessions, RM_SESSION_HASH_BITS);
+	FILE		*f;
+	int		fd;
+	uint32_t	i, j, L, file_sz, blocks_n;
+	struct test_rm_state	*rm_state;
+	struct stat	fs;
+	char		*fname;
+	long long int	entries_n;
+
+        TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+	rm_state = *state;
+	assert_true(rm_state != NULL);
+
+	// test on all files
+	i = 0;
+	for (; i < RM_TEST_FNAMES_N; ++i)
+	{
+		fname = rm_test_fnames[i];
+		f = fopen(fname, "rb");
+		if (f == NULL)
+		{
+			RM_LOG_PERR("Can't open file [%s]", fname);
+		}
+		assert_true(f != NULL);
+		// get file size
+		fd = fileno(f);
+		if (fstat(fd, &fs) != 0)
+		{
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
+			fclose(f);
+			assert_true(1 == 0);
+		}
+		file_sz = fs.st_size; 
+		j = 0;
+		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
+		{
+			L = rm_test_L_blocks[j];
+			RM_LOG_INFO("Validating testing of hashing of non-"
+				"overlapping blocks: file [%s], size [%u],"
+				" block size L [%u]", fname, file_sz, L);
+			if (file_sz < 2)
+			{
+				RM_LOG_INFO("File [%s] size [%u] is to small "
+				"for this test, skipping", fname, file_sz);
+				continue;
+			}
+//			// in this test this is OK
+//			if (file_sz < L)
+//			{
+//				RM_LOG_INFO("File [%s] size [%u] is smaller "
+//				"than block size L [%u], skipping", fname,
+//				file_sz, L);
+//				continue;
+//			}
+			
+			RM_LOG_INFO("Tesing fast rolling checksum: file "
+				"[%s], size [%u], block size L [%u], buffer"
+				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			entries_n = rm_rx_insert_nonoverlapping_ch_ch(f, fname, &h, L);
+			
+			RM_LOG_INFO("PASSED test of hashing of non-overlapping"
+				" blocks, file [%s], size [%u], L [%u]", fname,
+				file_sz, L);
+		}
+		fclose(f);
+	}
 }
