@@ -62,11 +62,12 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 				"entry, malloc failed");
 			return -4;
 		}
+		TWINIT_HLIST_NODE(&e->hlink);
 		// compute checksums
 		e->f_ch = rm_fast_check_block(buf, read);
 		rm_md5(buf, read, e->s_ch.data);
 		// insert, hashing fast checksum
-		twhash_add(h, &e->hlink, e->f_ch);
+		twhash_add_bits(h, &e->hlink, e->f_ch, RM_NONOVERLAPPING_HASH_BITS);
 		entries_n++;
 
 		read_left -= read;

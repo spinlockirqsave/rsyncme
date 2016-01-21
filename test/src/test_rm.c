@@ -427,6 +427,13 @@ test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
 			RM_LOG_INFO("Validating testing of hashing of non-"
 				"overlapping blocks: file [%s], size [%u],"
 				" block size L [%u]", fname, file_sz, L);
+			if (0 == L)
+			{
+				RM_LOG_INFO("Block size [%u] is too "
+				"small for this test (should be > [%u]), "
+				" skipping file [%s]", L, 0, fname);
+				continue;
+			}
 			if (file_sz < 2)
 			{
 				RM_LOG_INFO("File [%s] size [%u] is to small "

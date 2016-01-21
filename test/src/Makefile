@@ -39,13 +39,13 @@ test-check:	test
 test-check-debug:	test
 	$(TESTOUTPUTDIR_D)/test_rm_main
 
-$(TESTOUTPUTDIR)/%: %.o
+$(TESTOUTPUTDIR)/%: $(AUXOBJECTS)/%.o
 	$(CC) $(AUXOBJECTS) $< -o $@ $(LDFLAGS)
 
 $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
-$(TESTOUTPUTDIR_D)/%: %.o
+$(TESTOUTPUTDIR_D)/%: $(AUXOBJECTS_D)/%.o
 	$(CC) $(AUXOBJECTS_D) $< -o $@ $(LDFLAGS)
 
 $(TESTOUTPUTDIR_D)/%.o: $(TESTSRCDIR)/%.c
