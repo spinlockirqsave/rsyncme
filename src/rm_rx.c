@@ -16,7 +16,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 	int		fd;
 	struct stat	fs;
 	uint32_t	file_sz, read_left, read_now, read;
-	long long int entries_n;
+	long long int	entries_n;
 	struct rm_ch_ch	*e;
 	unsigned char	*buf;
 
@@ -44,6 +44,8 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 		"read_now [%u]", L, read_now);
 		return -2;
 	}
+
+	entries_n = 0;
 	do
 	{
 		read = fread(buf, 1, read_now, f);
@@ -72,7 +74,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 
 		read_left -= read;
 		read_now = rm_min(L, read_left);
-	} while (read_now > 0); 
+	} while (read_now > 0);
 	
 	return	entries_n;
 }

@@ -452,11 +452,16 @@ test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
 			RM_LOG_INFO("Tesing fast rolling checksum: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			// number of blocks
+			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
 			entries_n = rm_rx_insert_nonoverlapping_ch_ch(f, fname, h, L);
+			assert_int_equal(entries_n, blocks_n);
 			
 			RM_LOG_INFO("PASSED test of hashing of non-overlapping"
 				" blocks, file [%s], size [%u], L [%u]", fname,
 				file_sz, L);
+			// move file pointer back to the beginning
+			rewind(f);
 		}
 		fclose(f);
 	}
