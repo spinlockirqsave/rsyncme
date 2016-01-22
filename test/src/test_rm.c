@@ -440,21 +440,14 @@ test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
 				"for this test, skipping", fname, file_sz);
 				continue;
 			}
-//			// in this test this is OK
-//			if (file_sz < L)
-//			{
-//				RM_LOG_INFO("File [%s] size [%u] is smaller "
-//				"than block size L [%u], skipping", fname,
-//				file_sz, L);
-//				continue;
-//			}
-			
+	
 			RM_LOG_INFO("Tesing fast rolling checksum: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
 			// number of blocks
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
-			entries_n = rm_rx_insert_nonoverlapping_ch_ch(f, fname, h, L);
+			entries_n = rm_rx_insert_nonoverlapping_ch_ch(
+					f, fname, h, L, NULL);
 			assert_int_equal(entries_n, blocks_n);
 			
 			RM_LOG_INFO("PASSED test of hashing of non-overlapping"

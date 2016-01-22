@@ -19,11 +19,15 @@
 ///		@L bytes blocks (last one may be less than @L)
 ///		from file @f and inserts them into table @h.
 /// @details	File @f MUST be already open.
+/// @param	h - hashtable to store checksums locally (B)
+/// @param	f_tx_ch_ch - function to transmit checksums
+///		to remote end A
 /// @return	On success the number of inserted entries
 ///		is returned, -1 on error.
 long long int
 rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
-		struct twhlist_head *h, uint32_t L); 
+		struct twhlist_head *h, uint32_t L,
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *));
 
 
 #endif	// RSYNCME_RX_H

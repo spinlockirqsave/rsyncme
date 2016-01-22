@@ -11,9 +11,10 @@
 
 long long int
 rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
-		struct twhlist_head *h, uint32_t L)
+		struct twhlist_head *h, uint32_t L,
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *))
 {
-	int		fd;
+	int		fd, res;
 	struct stat	fs;
 	uint32_t	file_sz, read_left, read_now, read;
 	long long int	entries_n;
@@ -71,7 +72,13 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 		// insert, hashing fast checksum
 		twhash_add_bits(h, &e->hlink, e->f_ch, RM_NONOVERLAPPING_HASH_BITS);
 		entries_n++;
-
+		// tx checksums to remote A
+		if (f_tx_ch_ch != NULL)
+		{
+			res = f_tx_ch_ch(e);
+			if (res < 0)
+				return -5;
+		}
 		read_left -= read;
 		read_now = rm_min(L, read_left);
 	} while (read_now > 0);
