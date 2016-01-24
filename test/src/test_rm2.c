@@ -131,12 +131,12 @@ __wrap_fstat64(int fd, struct stat *buf)
 void *
 __wrap_malloc(size_t size)
 {
-	int ret;
+	void *ret;
 
 	if (RM_TEST_MOCK_MALLOC == 0)
 		return __real_malloc(size);
 
-	ret = mock_type(int);
+	ret = mock_ptr_type(void *);
 	return ret;
 }
 
