@@ -386,7 +386,7 @@ test_rm_fast_check_roll(void **state)
 }
 
 void
-test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
+test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 {
 	FILE		*f;
 	int		fd;
@@ -453,6 +453,80 @@ test_rm_rx_insert_nonoverlapping_ch_ch(void **state)
 			RM_LOG_INFO("PASSED test of hashing of non-overlapping"
 				" blocks, file [%s], size [%u], L [%u]", fname,
 				file_sz, L);
+			// move file pointer back to the beginning
+			rewind(f);
+		}
+		fclose(f);
+	}
+}
+
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state)
+{
+	FILE		*f;
+	int		fd;
+	uint32_t	i, j, L, file_sz;
+	struct test_rm_state	*rm_state;
+	struct stat	fs;
+	char		*fname;
+	long long int	res, res_expected;
+
+        TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+	rm_state = *state;
+	assert_true(rm_state != NULL);
+
+	// test failed call to fstat
+	res_expected = -1;
+	// test on all files
+	i = 0;
+	for (; i < RM_TEST_FNAMES_N; ++i)
+	{
+		fname = rm_test_fnames[i];
+		f = fopen(fname, "rb");
+		if (f == NULL)
+		{
+			RM_LOG_PERR("Can't open file [%s]", fname);
+		}
+		assert_true(f != NULL);
+		// get file size
+		fd = fileno(f);
+		if (fstat(fd, &fs) != 0)
+		{
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
+			fclose(f);
+			assert_true(1 == 0);
+		}
+		file_sz = fs.st_size; 
+		j = 0;
+		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
+		{
+			L = rm_test_L_blocks[j];
+			RM_LOG_INFO("Validating testing of hashing of non-"
+				"overlapping blocks: file [%s], size [%u],"
+				" block size L [%u]", fname, file_sz, L);
+			if (0 == L)
+			{
+				RM_LOG_INFO("Block size [%u] is too "
+				"small for this test (should be > [%u]), "
+				" skipping file [%s]", L, 0, fname);
+				continue;
+			}
+			if (file_sz < 2)
+			{
+				RM_LOG_INFO("File [%s] size [%u] is to small "
+				"for this test, skipping", fname, file_sz);
+				continue;
+			}
+	
+			RM_LOG_INFO("Tesing fast rolling checksum: file "
+				"[%s], size [%u], block size L [%u], buffer"
+				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			res = rm_rx_insert_nonoverlapping_ch_ch(
+					f, fname, h, L, NULL);
+			assert_int_equal(res, res_expected);
+			
+			RM_LOG_INFO("PASSED test of error reporting correctness"
+				" of hashing of non-overlapping blocks");
 			// move file pointer back to the beginning
 			rewind(f);
 		}

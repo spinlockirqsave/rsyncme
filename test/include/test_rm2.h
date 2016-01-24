@@ -1,12 +1,12 @@
-/// @file	test_rm.h
+/// @file	test_rm2.h
 /// @author	peterg
 /// @version	0.1.1
-/// @date	10 Jan 2016 04:07 PM
+/// @date	24 Jan 2016 06:19 PM
 /// @copyright	LGPLv2.1
 
 
-#ifndef RSYNCME_TEST_RM_H
-#define RSYNCME_TEST_RM_H
+#ifndef RSYNCME_TEST_RM2_H
+#define RSYNCME_TEST_RM2_H
 
 
 #include "rm_defs.h"
@@ -50,28 +50,13 @@ int
 test_rm_teardown(void **state);
 
 int
-rm_random_file(char *name, uint32_t len);
-
-void
-test_rm_adler32_1(void **state);
-
-void
-test_rm_adler32_2(void **state);
-
-void
-test_rm_fast_check_roll(void **state);
+__wrap_fread(void);
 
 /// @brief	Test of checksums calculation on nonoverlapping
-///		blocks of. Tests number of blocks used (and insertions
-///		into hashtable).
-void
-test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
-
-/// @brief	Test of checksums calculation on nonoverlapping
-///		blocks of. Tests number of blocks used (and insertions
-///		into hashtable).
+///		blocks of. Tests reporting of error after failed
+///		call to fread.
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state);
 
 
-#endif	// RSYNCME_TEST_RM_H
+#endif	// RSYNCME_TEST_RM2_H

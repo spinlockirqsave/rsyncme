@@ -3,6 +3,7 @@ CFLAGS			= -c -Wall -o2 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUD
 CFLAGS_D		= -c -g -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
 CPPFLAGS		+=              #compiler flags
 LDFLAGS			= -lpthread -lcmocka -L../../include -L../include  #-lpcap
+LDFLAGS2		= -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fread#-lpcap
 TESTSRCDIR		= .
 AUXOBJDIR_D		= ../../build/debug
 AUXOBJECTS_D 		= $(filter-out $(AUXOBJDIR_D)/main.o, $(wildcard $(AUXOBJDIR_D)/*.o))
@@ -23,21 +24,29 @@ TESTOBJECTS		= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 ##
 all : test test-debug
 
-test:	$(TESTOUTPUTDIR)/test_rm_main
+test:	$(TESTOUTPUTDIR)/test_rm_main $(TESTOUTPUTDIR)/test_rm_main2
 
 $(TESTOUTPUTDIR)/test_rm_main:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o
 	$(CC) $(AUXOBJECTS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o -o $@
 
-test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main
+$(TESTOUTPUTDIR)/test_rm_main2:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o
+	$(CC) $(AUXOBJECTS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
+
+test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main $(TESTOUTPUTDIR_D)/test_rm_main2
 
 $(TESTOUTPUTDIR_D)/test_rm_main:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm.o $(TESTOUTPUTDIR_D)/test_rm_main.o
 	$(CC) $(AUXOBJECTS_D) $(LDFLAGS) $ $(TESTOUTPUTDIR_D)/test_rm.o $(TESTOUTPUTDIR_D)/test_rm_main.o -o $@
 
+$(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
+	$(CC) $(AUXOBJECTS_D) $(LDFLAGS) $ $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
+
 test-check:	test
 	$(TESTOUTPUTDIR)/test_rm_main
+	$(TESTOUTPUTDIR)/test_rm_main2
 
 test-check-debug:	test
 	$(TESTOUTPUTDIR_D)/test_rm_main
+	$(TESTOUTPUTDIR)/test_rm_main2
 
 $(TESTOUTPUTDIR)/%: $(AUXOBJECTS)/%.o
 	$(CC) $(AUXOBJECTS) $< -o $@ $(LDFLAGS)
