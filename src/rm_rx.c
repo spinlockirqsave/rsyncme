@@ -28,7 +28,8 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 
 	// get file size
 	fd = fileno(f);
-	if (fstat(fd, &fs) != 0)
+	res = fstat(fd, &fs);
+	if (res != 0)
 	{
 		RM_LOG_PERR("Can't fstat file [%s]", fname);
 		return -1;

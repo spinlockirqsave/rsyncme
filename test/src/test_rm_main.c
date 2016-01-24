@@ -15,8 +15,7 @@ int main(void)
 	cmocka_unit_test(test_rm_adler32_1),
 	cmocka_unit_test(test_rm_adler32_2),
 	cmocka_unit_test(test_rm_fast_check_roll),
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_1),
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_2)
+	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_1)
     };
     return cmocka_run_group_tests(tests,
 		test_rm_setup, test_rm_teardown);

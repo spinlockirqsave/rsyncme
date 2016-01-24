@@ -29,6 +29,11 @@ char*		rm_test_fnames[RM_TEST_FNAMES_N];
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N];
 uint32_t	rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
+int RM_TEST_MOCK_FSTAT;	
+int RM_TEST_MOCK_FSTAT64;	
+int RM_TEST_MOCK_MALLOC;	
+int RM_TEST_MOCK_FREAD;	
+
 struct test_rm_state
 {
 	uint32_t	*l;
@@ -49,14 +54,37 @@ test_rm_setup(void **state);
 int
 test_rm_teardown(void **state);
 
+/// @brief	Mocked fstat function.
 int
-__wrap_fread(void);
+__wrap_fstat(int fd, struct stat *buf);
+int
+__wrap_fstat64(int fd, struct stat *buf);
+
+/// @brief	Mocked malloc function.
+void *
+__wrap_malloc(size_t size);
+
+/// @brief	Mocked fread function.
+size_t
+__wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 
 /// @brief	Test of checksums calculation on nonoverlapping
-///		blocks of. Tests reporting of error after failed
-///		call to fread.
+///		blocks. Tests reporting of error after failed
+///		call to fstat.
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state);
+
+/// @brief	Test of checksums calculation on nonoverlapping
+///		blocks. Tests reporting of error after failed
+///		call to malloc.
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_3(void **state);
+
+/// @brief	Test of checksums calculation on nonoverlapping
+///		blocks. Tests reporting of error after failed
+///		call to fread.
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_4(void **state);
 
 
 #endif	// RSYNCME_TEST_RM2_H
