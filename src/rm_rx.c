@@ -42,7 +42,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 	buf = malloc(read_now);
 	if (buf == NULL)	
 	{
-		RM_LOG_PERR("Malloc failed, L [%u], "
+		RM_LOG_ERR("Malloc failed, L [%u], "
 		"read_now [%u]", L, read_now);
 		return -2;
 	}

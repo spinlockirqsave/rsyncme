@@ -6,7 +6,7 @@
 
 
 #include "rm_defs.h"
-#include "test_rm.h"
+#include "test_rm1.h"
 
 
 int main(void)

@@ -5,7 +5,7 @@
 /// @copyright	LGPLv2.1
 
 
-#include "test_rm.h"
+#include "test_rm1.h"
 
 
 char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",

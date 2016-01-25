@@ -139,7 +139,7 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...)
 	if (ret == -1) return -1;
 	
 	va_start(args, fmt);
-	snprintf(buf, sizeof(buf), "%s\t%s,%s\n",
+	snprintf(buf, sizeof(buf), "%s\t%s, %s\n",
 			dt, fmt, strerror(errno));
 	ret = vfprintf(stream, buf, args);
 	va_end(args);

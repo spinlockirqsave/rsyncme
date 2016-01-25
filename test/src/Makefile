@@ -25,28 +25,28 @@ TESTOBJECTS		= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 ##
 all : test test-debug
 
-test:	$(TESTOUTPUTDIR)/test_rm_main $(TESTOUTPUTDIR)/test_rm_main2
+test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2
 
-$(TESTOUTPUTDIR)/test_rm_main:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o
-	$(CC) $(AUXOBJECTS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm.o $(TESTOUTPUTDIR)/test_rm_main.o -o $@
+$(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o
+	$(CC) $(AUXOBJECTS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o -o $@
 
 $(TESTOUTPUTDIR)/test_rm_main2:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o
 	$(CC) $(AUXOBJECTS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
 
-test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main $(TESTOUTPUTDIR_D)/test_rm_main2
+test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2
 
-$(TESTOUTPUTDIR_D)/test_rm_main:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm.o $(TESTOUTPUTDIR_D)/test_rm_main.o
-	$(CC) $(AUXOBJECTS_D) $(LDFLAGS) $ $(TESTOUTPUTDIR_D)/test_rm.o $(TESTOUTPUTDIR_D)/test_rm_main.o -o $@
+$(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
+	$(CC) $(AUXOBJECTS_D) $(LDFLAGS) $ $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
 
 $(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
 	$(CC) $(AUXOBJECTS_D) $(LDFLAGS2) $ $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
 
 test-check:	test
-	$(TESTOUTPUTDIR)/test_rm_main
+	$(TESTOUTPUTDIR)/test_rm_main1
 	$(TESTOUTPUTDIR)/test_rm_main2
 
 test-check-debug:	test
-	$(TESTOUTPUTDIR_D)/test_rm_main
+	$(TESTOUTPUTDIR_D)/test_rm_main1
 	$(TESTOUTPUTDIR)/test_rm_main2
 
 $(TESTOUTPUTDIR)/%: $(AUXOBJECTS)/%.o
