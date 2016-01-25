@@ -37,6 +37,7 @@ int RM_TEST_MOCK_FREAD;
 struct test_rm_state
 {
 	uint32_t	*l;
+	void		*buf;
 };
 
 struct test_rm_state	rm_state;	// global tests state
@@ -85,6 +86,18 @@ test_rm_rx_insert_nonoverlapping_ch_ch_3(void **state);
 ///		call to fread.
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_4(void **state);
+
+/// @brief	Test of checksums calculation on nonoverlapping
+///		blocks. Tests reporting of error after failed second
+///		call to malloc (first call succedes).
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state);
+
+/// @brief	Test of checksums calculation on nonoverlapping
+///		blocks. Tests reporting of error after failed
+///		call to function sending checksums to remote A.
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_6(void **state);
 
 
 #endif	// RSYNCME_TEST_RM2_H
