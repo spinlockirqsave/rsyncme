@@ -19,7 +19,10 @@ rsyncme/		<-- this directory
 		- include/
 		- src/
 		- build/
-			-log/
+			-debug/
+				-log/
+			-release/
+				-log/
 
 BUILD & TEST
 There are few targets available: rsyncme_d, rsyncme, test executables.
@@ -37,11 +40,12 @@ To build tests:
 To run tests:
 	cd src
 	make test-check
-		Results are written in folder ./test/build/release/log. Short summary of run
-		is saved in rsyncme_test_<timestamp>.log file. Detailed log is saved
-		in rsyncme_test_<timestamp>.err. If you would like to inspect intermadiate
-		files created during test run, please change RM_TEST_DELETE_FILES
-		definition in file test/include/test_rm.h to 0.
+		Make will execute 2 cmocka test-suites.
+		Results of each are written in folder ./test/build/release/log. Short summary
+		is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
+		in rsyncme_test_<#>_<timestamp>.err. If you would like to inspect intermadiate
+		files created during test <#> run, please change RM_TEST_DELETE_FILES
+		definition in file test/include/test_rm<#>.h to 0.
 To build tests in debug mode:
 	cd src
 	make test-debug
@@ -49,11 +53,12 @@ To build tests in debug mode:
 To run tests built in debug mode:
 	cd src
 	make test-debug-check
-		Results are written in folder ./test/build/debug/log. Short summary of run
-		is saved in rsyncme_test_<timestamp>.log file. Detailed log is saved
-		in rsyncme_test_<timestamp>.err. If you would like to inspect intermadiate
-		files created during test run, please change RM_TEST_DELETE_FILES
-		definition in file test/include/test_rm.h to 0.
+		Make will execute 2 cmocka test-suites.
+		Results of each are written in folder ./test/build/debug/log. Short summary
+		is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
+		in rsyncme_test_<#>_<timestamp>.err. If you would like to inspect intermadiate
+		files created during test <#> run, please change RM_TEST_DELETE_FILES
+		definition in file test/include/test_rm<#>.h to 0.
 
 
 CLEAN

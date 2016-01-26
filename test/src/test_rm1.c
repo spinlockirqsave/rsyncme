@@ -31,10 +31,10 @@ test_rm_setup(void **state)
 
 #ifdef DEBUG
 	err = rm_util_chdir_umask_openlog(
-		"../build/debug", 1, "rsyncme_test");
+		"../build/debug", 1, "rsyncme_test_1");
 #else
 	err = rm_util_chdir_umask_openlog(
-		"../build/release", 1, "rsyncme_test");
+		"../build/release", 1, "rsyncme_test_1");
 #endif
 	if (err != 0)
 		exit(EXIT_FAILURE);
