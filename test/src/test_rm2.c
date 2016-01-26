@@ -228,7 +228,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state)
 			RM_LOG_INFO("Testing error reporting: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			RM_LOG_INFO("Mocking fread, expectation [%d]",
+			RM_LOG_INFO("Mocking fstat64, expectation [%d]",
 						res_expected);
 			RM_TEST_MOCK_FSTAT64 = 1;
 			will_return(__wrap_fstat64, -1);
@@ -308,8 +308,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_3(void **state)
 			RM_LOG_INFO("Testing error reporting: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			RM_LOG_INFO("Mocking fread, expectation [%d]",
-						res_expected);
+			RM_LOG_INFO("Mocking first call to malloc, "
+					"expectation [%d]", res_expected);
 			RM_TEST_MOCK_MALLOC = 1;
 			will_return(__wrap_malloc, NULL);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
@@ -422,7 +422,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state)
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	// test failed call to second malloc
+	// test failed second call to malloc
+	// (first succeedes)
 	res_expected = -4;
 	// test on all files
 	i = 0;
@@ -468,8 +469,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state)
 			RM_LOG_INFO("Testing error reporting: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			RM_LOG_INFO("Mocking fread, expectation [%d]",
-						res_expected);
+			RM_LOG_INFO("Mocking second call to malloc, "
+					"expectation [%d]", res_expected);
 			RM_TEST_MOCK_MALLOC = 1;
 			will_return(__wrap_malloc, rm_state->buf);
 			will_return(__wrap_malloc, NULL);
@@ -488,7 +489,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state)
 	}
 }
 
-/// @brief	Function sending checksums to remote A, returninga an error.
+/// @brief	Function sending checksums to remote A, returning an error.
 int
 f_tx_ch_ch(const struct rm_ch_ch *e)
 {
