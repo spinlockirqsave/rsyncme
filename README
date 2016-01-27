@@ -23,6 +23,11 @@ rsyncme/		<-- this directory
 				-log/
 			-release/
 				-log/
+/usr/
+	- local/
+		- rsyncme/
+			- log/
+				Logs are written here.
 
 BUILD & TEST
 There are few targets available: rsyncme_d, rsyncme, test executables.
