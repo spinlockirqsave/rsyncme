@@ -1,6 +1,6 @@
 /// @file	test_rm_main.c
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	10 Jan 2016 04:02 PM
 /// @copyright	LGPLv2.1
 

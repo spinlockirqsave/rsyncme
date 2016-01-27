@@ -1,7 +1,7 @@
 /// @file	rm_do_msg.h
 /// @brief	Execute TCP messages.
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	02 Nov 2016 04:29 PM
 /// @copyright	LGPLv2.1
 

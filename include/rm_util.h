@@ -1,7 +1,7 @@
 /// @file	rm_util.h
 /// @brief	Utilities.
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	04 Jan 2016 08:08 PM
 /// @copyright	LGPLv2.1
 

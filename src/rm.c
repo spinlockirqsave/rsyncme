@@ -4,7 +4,7 @@
 ///		for Sorting and Synchronization", 1999.
 /// @details	Common definitions used by sender and receiver.
 /// @author     Piotr Gregor piotrek.gregor at gmail.com
-/// @version    0.1.1
+/// @version    0.1.2
 /// @date       1 Jan 2016 07:50 PM
 /// @copyright  LGPLv2.1v2.1
 

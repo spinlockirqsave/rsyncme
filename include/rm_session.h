@@ -1,7 +1,7 @@
 /// @file      rm_session.h
 /// @brief     Rsync session.
 /// @author    peterg
-/// @version   0.1.1
+/// @version   0.1.2
 /// @date      02 Nov 2016 04:08 PM
 /// @copyright LGPLv2.1
 
@@ -28,23 +28,36 @@ struct rm_session
 };
 
 
-
-/// @brief      Rsync push session checksum on nonoverlaping
-///		blocks producing thread routine (outbound).
-void *
-rm_session_push_out_ch_ch_f(void *arg);
-
-/// @brief      Rsync push session delta reconstruction
-///		thread routine (outbound).
-void *
-rm_session_push_out_delta_f(void *arg);
-
 /// @brief	Creates new session.
 struct rm_session *
 rm_session_create(struct rsyncme *engine);
 
 void
 rm_session_free(struct rm_session *s);
+
+// PUSH_OUT
+
+/// @brief      Rx checksums calculated by receiver (B) on nonoverlapping
+///		blocks producing thread routine (outbound).
+void *
+rm_session_push_out_rx_ch_ch_f(void *arg);
+
+/// @brief      Tx delta reconstruction data
+///		thread routine (outbound).
+void *
+rm_session_push_out_tx_delta_f(void *arg);
+
+// PUSH_IN
+
+/// @brief      Tx checksums calculated by receiver (B) on nonoverlapping
+///		blocks to sender (A) (inbound).
+void *
+rm_session_push_in_tx_ch_ch_f(void *arg);
+
+/// @brief      Rx delta reconstruction data and do reconstruction
+///		thread routine (inbound).
+void *
+rm_session_push_in_rx_delta_f(void *arg);
 
 
 #endif  // RSYNCME_SESSION_H

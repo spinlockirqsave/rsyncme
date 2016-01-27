@@ -1,7 +1,7 @@
 ///  @file      rm_signal.h
 ///  @brief     Signal handlers.
 ///  @author    peterg
-///  @version   0.1.1
+///  @version   0.1.2
 ///  @date      02 Nov 2016 02:42 PM
 ///  @copyright LGPLv2.1
 

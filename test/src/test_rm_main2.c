@@ -1,7 +1,7 @@
 /// @file	test_rm_main2.c
 /// @brief	Test of rm_rx_insert_nonoverlapping_ch_ch fuction.
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	24 Jan 2016 06:16 PM
 /// @copyright	LGPLv2.1
 

@@ -1,31 +1,13 @@
 /// @file      rm_session.c
 /// @brief     Rsync session.
 /// @author    peterg
-/// @version   0.1.1
+/// @version   0.1.2
 /// @date      02 Nov 2016 04:08 PM
 /// @copyright LGPLv2.1
 
 
 #include "rm_session.h"
 
-
-void *
-rm_session_push_out_ch_ch_f(void *arg)
-{
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
-	return 0;
-}
-
-void *
-rm_session_push_out_delta_f(void *arg)
-{
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
-	return 0;
-}
 
 // TODO: generate GUID here
 struct rm_session *
@@ -50,3 +32,38 @@ rm_session_free(struct rm_session *s)
 	free(s);
 }
 
+void *
+rm_session_push_out_rx_ch_ch_f(void *arg)
+{
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
+}
+
+void *
+rm_session_push_out_tx_delta_f(void *arg)
+{
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
+}
+
+void *
+rm_session_push_in_tx_ch_ch_f(void *arg)
+{
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
+}
+
+void *
+rm_session_push_in_rx_delta_f(void *arg)
+{
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
+}

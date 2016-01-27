@@ -2,7 +2,7 @@
 /// @brief	Commandline tool for sending requests
 ///		to rsyncme daemon.
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	05 Jan 2016 11:15 PM
 /// @copyright	LGPLv2.1
 

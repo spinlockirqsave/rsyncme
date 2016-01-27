@@ -1,6 +1,6 @@
 /// @file	test_rm2.h
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	24 Jan 2016 06:19 PM
 /// @copyright	LGPLv2.1
 

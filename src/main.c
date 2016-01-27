@@ -1,7 +1,7 @@
 ///  @file      main.c
 ///  @brief     Server start up.
 ///  @author    peterg
-///  @version   0.1.1
+///  @version   0.1.2
 ///  @date      02 Jan 2015 02:35 PM
 ///  @copyright LGPLv2.1
 

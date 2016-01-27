@@ -1,7 +1,7 @@
 /// @file	rm_serialize.c
 /// @brief	Serialize TCP messages.
 /// @author	peterg
-/// @version	0.1.1
+/// @version	0.1.2
 /// @date	03 Nov 2016 01:56 PM
 /// @copyright	LGPLv2.1
 
