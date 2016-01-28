@@ -46,27 +46,27 @@ struct rm_msg_pull
 struct rsyncme;
 
 /// @brief	Handles incoming rsync push request in new sesion.
-/// @details	Daemon's message.
+/// @details	Starts ch_ch_tx and delta_rx threads. Used by daemon.
 int
-rm_do_msg_push_in(struct rsyncme* rm,
+rm_do_msg_push_rx(struct rsyncme* rm,
 		unsigned char *buf);
 
 /// @brief	Makes outgoing rsync push request.
-/// @details	rsyncme program message.
+/// @details	used by rsyncme executable.
 int
-rm_do_msg_push_out(struct rsyncme* rm,
+rm_do_msg_push_tx(struct rsyncme* rm,
 		unsigned char *buf);
 
 /// @brief	Handles incoming rsync pull request in new sesion.
 /// @details	Daemon's message.
 int
-rm_do_msg_pull_in(struct rsyncme* rm,
+rm_do_msg_pull_rx(struct rsyncme* rm,
 		unsigned char *buf);
 
 /// @brief	Makes outgoing rsync pull request.
-/// @details	rsyncme program message.
+/// @details	used by rsyncme executable.
 int
-rm_do_msg_pull_out(struct rsyncme* rm,
+rm_do_msg_pull_tx(struct rsyncme* rm,
 		unsigned char *buf);
 
 

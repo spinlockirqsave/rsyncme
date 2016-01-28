@@ -121,6 +121,12 @@ rm_fast_check_block(const unsigned char *data, uint32_t len);
 ///		This allows for better strength than if 2^16 was used
 ///		but requires more computation effort. Adler32 is more
 ///		reliable than Fletcher16 but less than Fletcher32.
+///		Adler32 detects all burst errors up to 7 bits long.
+///		Excluding burst errors that change data in the data
+///		blocks from all zeros to all ones or vice versa,
+///		all burst errors less than 31 bits are detected.
+///		This is 1-bit less than the Fletcher32 checksum. The
+///		The reason being that Adler32 uses prime modulus.
 uint32_t
 rm_adler32_1(const unsigned char *data, uint32_t len);
 

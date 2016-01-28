@@ -35,29 +35,23 @@ rm_session_create(struct rsyncme *engine);
 void
 rm_session_free(struct rm_session *s);
 
-// PUSH_OUT
-
 /// @brief      Rx checksums calculated by receiver (B) on nonoverlapping
-///		blocks producing thread routine (outbound).
+///		blocks.
 void *
-rm_session_push_out_rx_ch_ch_f(void *arg);
+rm_session_ch_ch_rx_f(void *arg);
 
-/// @brief      Tx delta reconstruction data
-///		thread routine (outbound).
+/// @brief      Tx delta reconstruction data.
 void *
-rm_session_push_out_tx_delta_f(void *arg);
-
-// PUSH_IN
+rm_session_delta_tx_f(void *arg);
 
 /// @brief      Tx checksums calculated by receiver (B) on nonoverlapping
-///		blocks to sender (A) (inbound).
+///		blocks to sender (A).
 void *
-rm_session_push_in_tx_ch_ch_f(void *arg);
+rm_session_ch_ch_tx_f(void *arg);
 
-/// @brief      Rx delta reconstruction data and do reconstruction
-///		thread routine (inbound).
+/// @brief      Rx delta reconstruction data and do reconstruction.
 void *
-rm_session_push_in_rx_delta_f(void *arg);
+rm_session_delta_rx_f(void *arg);
 
 
 #endif  // RSYNCME_SESSION_H

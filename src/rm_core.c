@@ -92,9 +92,17 @@ rm_core_authenticate(struct sockaddr_in *cli_addr)
 }
 
 int
+rm_core_tcp_msg_valid_pt(uint8_t pt)
+{
+	return (pt == RM_MSG_PUSH || pt == RM_MSG_PULL ||
+		pt == RM_MSG_BYE);
+}
+
+int
 rm_core_tcp_msg_validate(unsigned char *buf, int read_n)
 {
 	uint32_t	hash;
+	uint8_t		pt;
 
         assert(buf != NULL && read_n >= 0);
         if (read_n == 0)
@@ -106,5 +114,8 @@ rm_core_tcp_msg_validate(unsigned char *buf, int read_n)
 		RM_LOG_ERR("incorrect hash");
 		return -1;
 	}
-        return 0;
+	pt = rm_msg_hdr_pt(buf);
+	if (rm_core_tcp_msg_valid_pt(pt) == 0)
+		return -1;
+        return pt;
 }

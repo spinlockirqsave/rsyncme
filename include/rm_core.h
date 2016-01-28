@@ -1,7 +1,7 @@
 ///  @file      rm_core.h
 ///  @brief     Daemon's start up.
 ///  @author    peterg
-///  @version   0.1.2
+///  @version   0.1.1
 ///  @date      02 Jan 2016 02:50 PM
 ///  @copyright LGPLv2.1
 
@@ -64,7 +64,7 @@ struct rm_core_con
         // data, e.g. start time
 };
 
-/// @brief      Initialize deamon.
+/// @brief      Initialize daemon.
 int
 rm_core_init(struct rsyncme *rm);
 

@@ -11,7 +11,7 @@
 #include "rm_session.h"
 
 int
-rm_do_msg_push_in(struct rsyncme *rm,
+rm_do_msg_push_rx(struct rsyncme *rm,
 			unsigned char *buf)
 {
 	int			err;
@@ -26,7 +26,7 @@ rm_do_msg_push_in(struct rsyncme *rm,
         if (s == NULL)
                 return -1;
 	
-	// start tx_ch_ch thread
+	// start tx_ch_ch and rx delta threads
 	// save pid in session object
 	err = pthread_attr_init(&attr);
 	if (err != 0)
@@ -37,7 +37,23 @@ rm_do_msg_push_in(struct rsyncme *rm,
 		goto fail;
 
 	err = pthread_create(&s->ch_ch_tid, &attr,
-			rm_session_push_in_tx_ch_ch_f, s);
+			rm_session_ch_ch_tx_f, s);
+	if (err != 0)
+                goto fail;
+
+	// rx delta thread
+	pthread_attr_destroy(&attr);
+
+	err = pthread_attr_init(&attr);
+	if (err != 0)
+		return -1;
+	err = pthread_attr_setdetachstate(&attr,
+			PTHREAD_CREATE_JOINABLE);
+	if (err != 0)
+		goto fail;
+
+	err = pthread_create(&s->delta_tid, &attr,
+			rm_session_delta_rx_f, s);
 	if (err != 0)
                 goto fail;
 
@@ -50,7 +66,7 @@ fail:
 }
 
 int
-rm_do_msg_push_out(struct rsyncme *rm,
+rm_do_msg_push_tx(struct rsyncme *rm,
 			unsigned char *buf)
 {
 	int			err;
@@ -65,7 +81,7 @@ rm_do_msg_push_out(struct rsyncme *rm,
         if (s == NULL)
                 return -1;
 
-	// start rx_ch_ch thread and tx delta thread
+	// start rx_ch_ch thread and tx delta threads
 	// save pids in session object
 	err = pthread_attr_init(&attr);
 	if (err != 0)
@@ -76,11 +92,11 @@ rm_do_msg_push_out(struct rsyncme *rm,
 		goto fail;
 
 	err = pthread_create(&s->ch_ch_tid, &attr,
-			rm_session_push_out_rx_ch_ch_f, s);
+			rm_session_ch_ch_rx_f, s);
 	if (err != 0)
                 goto fail;
 
-	// delta thread
+	// tx delta thread
 	pthread_attr_destroy(&attr);
 
 	err = pthread_attr_init(&attr);
@@ -92,7 +108,7 @@ rm_do_msg_push_out(struct rsyncme *rm,
 		goto fail;
 
 	err = pthread_create(&s->delta_tid, &attr,
-			rm_session_push_out_tx_delta_f, s);
+			rm_session_delta_tx_f, s);
 	if (err != 0)
                 goto fail;
 
@@ -105,7 +121,7 @@ fail:
 }
 
 int
-rm_do_msg_pull_in(struct rsyncme *rm,
+rm_do_msg_pull_tx(struct rsyncme *rm,
 			unsigned char *buf)
 {
 	struct rm_session	*s;
@@ -121,7 +137,7 @@ rm_do_msg_pull_in(struct rsyncme *rm,
 }
 
 int
-rm_do_msg_pull_out(struct rsyncme *rm,
+rm_do_msg_pull_rx(struct rsyncme *rm,
 			unsigned char *buf)
 {
 	struct rm_session	*s;

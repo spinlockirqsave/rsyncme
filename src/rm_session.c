@@ -33,7 +33,7 @@ rm_session_free(struct rm_session *s)
 }
 
 void *
-rm_session_push_out_rx_ch_ch_f(void *arg)
+rm_session_ch_ch_rx_f(void *arg)
 {
 	struct rm_session *s =
 			(struct rm_session *)arg;
@@ -42,7 +42,7 @@ rm_session_push_out_rx_ch_ch_f(void *arg)
 }
 
 void *
-rm_session_push_out_tx_delta_f(void *arg)
+rm_session_delta_tx_f(void *arg)
 {
 	struct rm_session *s =
 			(struct rm_session *)arg;
@@ -51,7 +51,7 @@ rm_session_push_out_tx_delta_f(void *arg)
 }
 
 void *
-rm_session_push_in_tx_ch_ch_f(void *arg)
+rm_session_ch_ch_tx_f(void *arg)
 {
 	struct rm_session *s =
 			(struct rm_session *)arg;
@@ -60,7 +60,7 @@ rm_session_push_in_tx_ch_ch_f(void *arg)
 }
 
 void *
-rm_session_push_in_rx_delta_f(void *arg)
+rm_session_delta_rx_f(void *arg)
 {
 	struct rm_session *s =
 			(struct rm_session *)arg;
