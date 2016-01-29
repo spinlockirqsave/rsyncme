@@ -1,6 +1,6 @@
 /// @file	test_rm_main2.c
-/// @brief	Test of rm_rx_insert_nonoverlapping_ch_ch fuction.
-/// @author	peterg
+/// @brief      Execution of test suite #2.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2
 /// @date	24 Jan 2016 06:16 PM
 /// @copyright	LGPLv2.1

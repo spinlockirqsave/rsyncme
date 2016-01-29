@@ -1,9 +1,9 @@
-/// @file      rm_session.h
-/// @brief     Rsync session.
-/// @author    peterg
-/// @version   0.1.2
-/// @date      02 Nov 2016 04:08 PM
-/// @copyright LGPLv2.1
+/// @file	rm_session.h
+/// @brief	Rsync session.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
+/// @version	0.1.2
+/// @date	02 Nov 2016 04:08 PM
+/// @copyright	LGPLv2.1
 
 
 #ifndef RSYNCME_SESSION_H

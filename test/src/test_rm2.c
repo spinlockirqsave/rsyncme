@@ -1,5 +1,7 @@
 /// @file	test_rm.c
-/// @author	peterg
+/// @brief      Test suite #2.
+/// @details	Test of nonoverlapping checksums error reporting.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2
 /// @date	10 Jan 2016 04:13 PM
 /// @copyright	LGPLv2.1

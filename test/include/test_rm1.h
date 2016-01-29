@@ -1,5 +1,8 @@
 /// @file	test_rm.h
-/// @author	peterg
+/// @brief      Test suite #1.
+/// @details	Test of rolling checksums and of nonoverlapping
+///		checksums calculation correctness.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2
 /// @date	10 Jan 2016 04:07 PM
 /// @copyright	LGPLv2.1

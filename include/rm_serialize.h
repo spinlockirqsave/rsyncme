@@ -1,6 +1,6 @@
 /// @file	rm_serialize.h
 /// @brief	Serialize TCP messages.
-/// @author	peterg
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2
 /// @date	03 Nov 2016 01:56 PM
 /// @copyright	LGPLv2.1

@@ -52,8 +52,8 @@
 #define RM_BIT_7	(1 << 7)
 
 // TCP messages
-#define RM_MSG_PUSH			2	// rsync push outbound
-#define RM_MSG_PULL			3	// rsync pull inb
+#define RM_MSG_PUSH			2	// rsync push
+#define RM_MSG_PULL			3	// rsync pull
 #define RM_MSG_BYE			255	// close the controlling connection
 
 #define RM_SESSION_HASH_BITS		10	// 10 bits hash, array size == 1024

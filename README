@@ -1,3 +1,11 @@
+/// @file	README
+/// @brief	Project description.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
+/// @version	0.1.2
+/// @date	24 Jan 2016 06:16 PM
+/// @copyright	LGPLv2.1
+
+
 rsyncme
 
 A simple implementation of rsync algorithm
@@ -88,3 +96,7 @@ To clean test and test logs (release and debug):
 To clean rsyncme_d, rsyncme, tests & test logs (release & debug):
 	cd src
 	make clean-all
+
+
+
+Project website: http://github.com/spinlockirqsave/rsyncme

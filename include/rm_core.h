@@ -1,9 +1,9 @@
-///  @file      rm_core.h
-///  @brief     Daemon's start up.
-///  @author    peterg
-///  @version   0.1.1
-///  @date      02 Jan 2016 02:50 PM
-///  @copyright LGPLv2.1
+/// @file	rm_core.h
+/// @brief	Daemon's start up.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
+/// @version	0.1.2
+/// @date	02 Jan 2016 02:50 PM
+/// @copyright	LGPLv2.1
 
 
 #ifndef MPEU_CORE_H

@@ -1,6 +1,6 @@
 /// @file	rm_util.c
 /// @brief	Utilities.
-/// @author	peterg
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2
 /// @date	04 Jan 2016 08:08 PM
 /// @copyright	LGPLv2.1

@@ -1,9 +1,9 @@
-///  @file      rm_core.c
-///  @brief     Daemon's start up.
-///  @author    peterg
-///  @version   0.1.2
-///  @date      02 Jan 2016 02:50 PM
-///  @copyright LGPLv2.1
+/// @file	rm_core.c
+/// @brief	Daemon's start up.
+/// @author	Piotr Gregor piotrek.gregor at gmail.com
+/// @version	0.1.2
+/// @date	02 Jan 2016 02:50 PM
+/// @copyright	LGPLv2.1
 
 
 #include "rm_core.h"
@@ -117,5 +117,5 @@ rm_core_tcp_msg_validate(unsigned char *buf, int read_n)
 	pt = rm_msg_hdr_pt(buf);
 	if (rm_core_tcp_msg_valid_pt(pt) == 0)
 		return -1;
-        return pt;
+	return pt;
 }
