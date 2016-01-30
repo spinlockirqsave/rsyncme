@@ -1,5 +1,5 @@
 /// @file	test_rm_main2.c
-/// @brief      Execution of test suite #2.
+/// @brief	Execution of test suite #2.
 /// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2
 /// @date	24 Jan 2016 06:16 PM

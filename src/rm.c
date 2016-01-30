@@ -108,7 +108,7 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L)
 	return (r2 << 16) | r1;
 }
 
-// rooling adler with prime modulus won't work
+// rolling adler with prime modulus won't work
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L)
@@ -130,6 +130,7 @@ rm_adler32_roll(uint32_t adler, unsigned char a_k,
 	return (r2 << 16) | r1;
 }
 
+// modulus MUST be even
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L)

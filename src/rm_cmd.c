@@ -50,8 +50,8 @@ main( int argc, char *argv[])
 	char	x[RM_CMD_F_LEN_MAX] = {0};
 	char	y[RM_CMD_F_LEN_MAX] = {0};
 	uint8_t	flags = 0;		// bits		meaning
-					// 0		cmd (0 RM_MSG_PUSH_OUT,
-					//		     1 RM_MSG_PULL_OUT)
+					// 0		cmd (0 RM_MSG_PUSH,
+					//		     1 RM_MSG_PULL)
 					// 1		x
 					// 2		y
 					// 3		ip	
@@ -154,12 +154,12 @@ main( int argc, char *argv[])
 
 	if (strcmp(argv[optind], "push") == 0)
 	{
-		// RM_MSG_PUSH_OUT
+		// RM_MSG_PUSH
 		flags &= ~1;
 	}
 	else if (strcmp(argv[optind], "pull") == 0)
 	{
-		// RM_MSG_PULL_OUT;
+		// RM_MSG_PULL
 		flags |= 1;;
 	}
 	else {

@@ -1,5 +1,5 @@
 /// @file	test_rm.h
-/// @brief      Test suite #1.
+/// @brief	Test suite #1.
 /// @details	Test of rolling checksums and of nonoverlapping
 ///		checksums calculation correctness.
 /// @author	Piotr Gregor piotrek.gregor at gmail.com

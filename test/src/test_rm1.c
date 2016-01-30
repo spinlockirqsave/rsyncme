@@ -323,6 +323,7 @@ test_rm_fast_check_roll(void **state)
 			{
 				RM_LOG_PERR("Error reading file [%s], "
 					"skipping", fname);
+				fseek(f, 0, SEEK_SET);	// equivalent to rewind(f)
 				continue;
 			}
 			assert_true(read == L);

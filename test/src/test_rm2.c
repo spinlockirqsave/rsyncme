@@ -1,5 +1,5 @@
 /// @file	test_rm.c
-/// @brief      Test suite #2.
+/// @brief	Test suite #2.
 /// @details	Test of nonoverlapping checksums error reporting.
 /// @author	Piotr Gregor piotrek.gregor at gmail.com
 /// @version	0.1.2

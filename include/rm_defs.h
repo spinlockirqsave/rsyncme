@@ -62,7 +62,7 @@
 
 #define RM_ADLER32_MODULUS		65521L	// biggest prime int less than 2^16
 #define RM_FASTCHECK_MODULUS		65536L	// 2^16, this makes rolling calculation possible
-#define RM_ADLER32_NMAX			5552	// biggest integer that allows for
+#define RM_ADLER32_NMAX			5552L	// biggest integer that allows for
 						// deferring of modulo reduction so that
 						// s2 will still fit in 32 bits when modulo
 						// is being done with 65521 value
