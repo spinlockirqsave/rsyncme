@@ -17,6 +17,8 @@ _OBJECTS		= $(SOURCES:.c=.o)
 _TESTOBJECTS		= $(TESTSOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
 RELEASEOBJECTS 		= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
+DEBUGOBJECTS_NO_MAIN 	= $(filter-out $(DEBUGOUTPUTDIR)/main.o, $(DEBUGOBJECTS))
+RELEASEOBJECTS_NO_MAIN 	= $(filter-out $(RELEASEOUTPUTDIR)/main.o, $(RELEASEOBJECTS))
 #TESTOBJECTS 		= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 #TESTOBJECTS_D 		= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
 DEBUGTARGET		= ../build/debug/rsyncme_d
@@ -38,7 +40,7 @@ release: 	releaseall
 
 test-debug:	CFLAGS += -DDEBUG -g
 test-debug:	debugall
-	cd $(TESTSRCDIR) && make test-debug
+	make -C $(TESTSRCDIR) test-debug
 
 test:	CFLAGS += -DNDEBUG -o2
 test:	releaseall
@@ -49,9 +51,9 @@ test-check:	test
 test-check-debug:	test
 	cd $(TESTSRCDIR) && make test-check-debug
 
-rsyncme-debug:	rm_cmd.c ../build/debug/rsyncme
+rsyncme-debug:	../build/debug/rsyncme
 rsyncme-debug:	CFLAGS += -DDEBUG -g
-rsyncme-release:	rm_cmd.c ../build/release/rsyncme
+rsyncme-release:	../build/release/rsyncme
 rsyncme-release:	CFLAGS += -DNDEBUG
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
@@ -60,16 +62,16 @@ $(DEBUGTARGET): $(DEBUGOBJECTS)
 $(RELEASETARGET): $(RELEASEOBJECTS) 
 	$(CC) $(LDFLAGS) $(RELEASEOBJECTS) -o $@
 
-$(CMDDEBUGTARGET): ../build/debug/rsyncme.o 
-	$(CC) $(LDFLAGS) $(CMDDEBUGTARGET).o -o $@
+$(CMDDEBUGTARGET):	$(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o
+	$(CC) $(LDFLAGS) $(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o -o $@
 
-../build/debug/rsyncme.o: rm_cmd.c
+$(CMDDEBUGTARGET).o: rm_cmd.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
-$(CMDRELEASETARGET): ../build/release/rsyncme.o 
-	$(CC) $(LDFLAGS) $(CMDRELEASETARGET).o -o $@
+$(CMDRELEASETARGET):	$(RELEASEOBJECTS_NO_MAIN) $(CMDRELEASETARGET).o
+	$(CC) $(LDFLAGS) $(RELEASEOBJECTS_NO_MAIN) $(CMDRELEASETARGET).o -o $@
 
-../build/release/rsyncme.o: rm_cmd.c
+$(CMDRELEASETARGET).o: rm_cmd.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
 $(DEBUGOUTPUTDIR)/%.o: $(SRCDIR)/%.c
@@ -78,6 +80,8 @@ $(DEBUGOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
+#$(DEBUGOBJECTS_NO_MAIN)/%.o: $(SRCDIR)/%.c	the rule is already included in rule for $(DEBUGOUTPUTDIR)/%.o
+#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 #$(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 #	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 .c.o:

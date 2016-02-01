@@ -8,6 +8,7 @@
 
 
 #include "rm_defs.h"
+#include "rm_tx.h"
 
 
 #include <fcntl.h>
@@ -28,15 +29,15 @@ void usage(const char *name)
 	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
 	fprintf(stderr, "\nPossible options:\n");
-	fprintf(stderr, "	rsyncme push -x /tmp/dir.tar -i 245.298.125.22 -y /tmp/dir2.tar\n"
-			"		This will sync local /tmp/dir.tar with remote\n"
-			"		file /tmp/dir2.tar.\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/dir1.tar -i 245.298.125.22 -y /tmp/dir2.tar\n"
+			"		This will sync local /tmp/dir1.tar with remote\n"
+			"		file /tmp/dir2.tar (remote will be as local is).\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/dir.tar -i 245.298.125.22\n"
 			"		This will sync local /tmp/dir.tar with remote\n"
-			"		file with same name.\n");
+			"		file with same name (remote will be as local is).\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/dir1.tar -y /tmp/dir2.tar\n"
-			"		This will sync local /tmp/dir1.tar with local\n"
-			"		file /tmp/dir2.tar.\n");
+			"		This will sync local /tmp/dir1.tar with\n"
+			"		file /tmp/dir2.tar (dir2 will be as dir1 is).\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "For more information please consult documentation.\n");
 	fprintf(stderr, "\n");
@@ -46,7 +47,7 @@ void usage(const char *name)
 int
 main( int argc, char *argv[])
 {
-	int	c, idx;
+	int	c, idx, res;
 	char	x[RM_CMD_F_LEN_MAX] = {0};
 	char	y[RM_CMD_F_LEN_MAX] = {0};
 	uint8_t	flags = 0;		// bits		meaning
@@ -55,7 +56,7 @@ main( int argc, char *argv[])
 					// 1		x
 					// 2		y
 					// 3		ip	
-	struct sockaddr_in	server_addr = {0};
+	struct sockaddr_in	remote_addr = {0};
 
 	if (argc < 4)
 	{
@@ -108,7 +109,7 @@ main( int argc, char *argv[])
 			flags |= RM_BIT_2;
 			break;
 		case 'i':
-			if (inet_aton(optarg, &server_addr.sin_addr) == 0)
+			if (inet_aton(optarg, &remote_addr.sin_addr) == 0)
 			{
 				fprintf(stderr, "Invalid IPv4 address\n");
 				usage(argv[0]);
@@ -184,10 +185,15 @@ main( int argc, char *argv[])
 		if (((flags >> 0) & 1) == 0)
 		{
 			// push
-			fprintf(stdout, "\nRemote push.\n");
+			fprintf(stderr, "\nRemote push.\n");
+			res = rm_tx_remote_push(x, y, &remote_addr);
+			if (res < 0)
+			{
+				// report failure
+			}
 		} else {
 			// pull
-			fprintf(stdout, "\nRemote pull.\n");
+			fprintf(stderr, "\nRemote pull.\n");
 		}
 	
 	} else {
@@ -195,12 +201,19 @@ main( int argc, char *argv[])
 		if (((flags >> 0) & 1) == 0)
 		{
 			// push
-			fprintf(stdout, "\nLocal push.\n");
+			fprintf(stderr, "\nLocal push.\n");
+			res = rm_tx_local_push(x, y);
+			if (res < 0)
+			{
+				// report failure
+			}
 		} else {
 			// pull
-			fprintf(stdout, "\nLocal pull.\n");
+			fprintf(stderr, "\nLocal pull.\n");
 		}
 	}
 
+	// OK
+	fprintf(stderr, "\nOK.\n");
 	return 0;
 }

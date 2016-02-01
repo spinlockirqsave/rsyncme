@@ -143,7 +143,7 @@ rm_adler32_1(const unsigned char *data, uint32_t len);
 ///		s2MAX = (BASE-1)(n+1) + sum[i in 1:n]255i
 ///		s2MAX = (BASE-1)(n+1) + (1+n)n255/2,
 ///		and s2MAX MUST fit in 32bits.
-/// @param	adler: initial value, should be one if this is beginning
+/// @param	adler: initial value, should be 1 if this is beginning
 uint32_t
 rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
 

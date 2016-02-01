@@ -13,4 +13,11 @@
 #include "rm.h"
 
 
+int
+rm_tx_local_push(const char *x, const char *y);
+
+int
+rm_tx_remote_push(const char *x, const char *y,
+		struct sockaddr_in *remote_addr);
+
 #endif	// RSYNCME_TX_H

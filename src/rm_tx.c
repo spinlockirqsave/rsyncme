@@ -9,3 +9,15 @@
 #include "rm_tx.h"
 
 
+int
+rm_tx_local_push(const char *x, const char *y)
+{
+	return 0;
+}
+
+int
+rm_tx_remote_push(const char *x, const char *y,
+		struct sockaddr_in *remote_addr)
+{
+	return 0;
+}

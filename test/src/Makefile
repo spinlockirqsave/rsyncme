@@ -5,41 +5,43 @@ CFLAGS_D		= -c -g -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 
 CPPFLAGS		+=              #compiler flags
 LDFLAGS			= -lpthread -lcmocka -L../../include -L../include  #-lpcap
 LDFLAGS2		= -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
-TESTSRCDIR		= .
-AUXOBJDIR_D		= ../../build/debug
-AUXOBJECTS_D 		= $(filter-out $(AUXOBJDIR_D)/main.o, $(wildcard $(AUXOBJDIR_D)/*.o))
-AUXOBJDIR		= ../../build/release
-AUXOBJECTS 		= $(filter-out $(AUXOBJDIR)/main.o, $(wildcard $(AUXOBJDIR)/*.o))
-SRCDIR			= .
+TESTSRCDIR		:= .
+AUXOBJDIR_D		:= ../../build/debug
+AUXOBJDIR		:= ../../build/release
+AUXSRCS			:= $(filter-out ../../src/main.c, $(wildcard ../../src/*.c))
+AUXSRCS			:= $(filter-out ../../src/rm_cmd.c, $(AUXSRCS))
+AUXOBJS			:= $(patsubst %.c, $(AUXOBJDIR)/%.o, $(AUXSRCS))
+AUXOBJS_D		:= $(patsubst %.c, $(AUXOBJDIR_D)/%.o, $(AUXSRCS))
+SRCDIR			:= .
 
-SRCS = $(wildcard *.c)
-_SRCS = $(filter-out md5_test.c, $(SRCS))
-_TESTOBJECTS = $(patsubst %.c,%.o,$(_SRCS))
+SRCS := $(wildcard *.c)
+_SRCS := $(filter-out md5_test.c, $(SRCS))
+_TESTOBJECTS := $(patsubst %.c,%.o,$(_SRCS))
 INCLUDES  := -I. -I../../include -I../../include/twlist/include -I../include
 
-TESTOUTPUTDIR_D		= ../build/debug
-TESTOBJECTS_D		= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
-TESTOUTPUTDIR		= ../build/release
-TESTOBJECTS		= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
+TESTOUTPUTDIR_D		:= ../build/debug
+TESTOBJECTS_D		:= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
+TESTOUTPUTDIR		:= ../build/release
+TESTOBJECTS		:= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 
-##
+
 all : test test-debug
 
 test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2
 
-$(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o
-	$(CC) $(AUXOBJECTS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o -o $@
+$(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o
+	$(CC) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o -o $@
 
-$(TESTOUTPUTDIR)/test_rm_main2:	$(AUXOBJECTS) $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o
-	$(CC) $(AUXOBJECTS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
+$(TESTOUTPUTDIR)/test_rm_main2:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o
+	$(CC) $(AUXOBJS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
 
 test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2
 
-$(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
-	$(CC) $(AUXOBJECTS_D) $(LDFLAGS) $ $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
+$(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
+	$(CC) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
 
-$(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJECTS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
-	$(CC) $(AUXOBJECTS_D) $(LDFLAGS2) $ $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
+$(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
+	$(CC) $(AUXOBJS_D) $(LDFLAGS2) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
 
 test-check:	test
 	$(TESTOUTPUTDIR)/test_rm_main1
@@ -49,14 +51,10 @@ test-check-debug:	test
 	$(TESTOUTPUTDIR_D)/test_rm_main1
 	$(TESTOUTPUTDIR)/test_rm_main2
 
-$(TESTOUTPUTDIR)/%: $(AUXOBJECTS)/%.o
-	$(CC) $(AUXOBJECTS) $< -o $@ $(LDFLAGS)
 
 $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
-$(TESTOUTPUTDIR_D)/%: $(AUXOBJECTS_D)/%.o
-	$(CC) $(AUXOBJECTS_D) $< -o $@ $(LDFLAGS)
 
 $(TESTOUTPUTDIR_D)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS_D) $(INCLUDES) $< -o $@
