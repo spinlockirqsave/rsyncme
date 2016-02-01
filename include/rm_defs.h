@@ -75,6 +75,9 @@
 #define RM_CORE_DAEMONIZE		0	// become daemon or not, turn it to off
 						// while debugging for convenience
 
+// defaults
+#define RM_DEFAULT_L			512	// default block size in bytes
+
 #define rm_container_of(ptr, type, member) ({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
 	(type *)( (char *)__mptr - offsetof(type,member) );})

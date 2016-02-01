@@ -18,7 +18,7 @@
 
 #define RM_CMD_F_LEN_MAX 100
 
-void usage(const char *name)
+void rsyncme_usage(const char *name)
 {
 	if (!name)
 		return;
@@ -28,21 +28,32 @@ void usage(const char *name)
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
 	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
+	fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
+			"				: default value 512 is used\n");
 	fprintf(stderr, "\nPossible options:\n");
-	fprintf(stderr, "	rsyncme push -x /tmp/dir1.tar -i 245.298.125.22 -y /tmp/dir2.tar\n"
-			"		This will sync local /tmp/dir1.tar with remote\n"
-			"		file /tmp/dir2.tar (remote will be as local is).\n");
-	fprintf(stderr, "	rsyncme push -x /tmp/dir.tar -i 245.298.125.22\n"
-			"		This will sync local /tmp/dir.tar with remote\n"
-			"		file with same name (remote will be as local is).\n");
-	fprintf(stderr, "	rsyncme push -x /tmp/dir1.tar -y /tmp/dir2.tar\n"
-			"		This will sync local /tmp/dir1.tar with\n"
-			"		file /tmp/dir2.tar (dir2 will be as dir1 is).\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22 -y /tmp/bar.tar\n"
+			"		This will sync local /tmp/foo.tar with remote\n"
+			"		file /tmp/bar.tar (remote becomes same as local is).\n");
+	fprintf(stderr, "	rsyncme push -x foo.txt -i 245.298.125.22 -y bar.txt -l 2048\n"
+			"		This will sync local foo.txt with remote\n"
+			"		file bar.txt (remote becomes same as local is) using\n"
+			"		increased block size - good for big files.\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22\n"
+			"		This will sync local /tmp/foo.tar with remote\n"
+			"		file with same name (remote becomes same as local is).\n");
+	fprintf(stderr, "	rsyncme push -x foo.tar -y bar.tar\n"
+			"		This will sync local foo.tar with local bar.tar\n"
+			"		(bar.tar becomes same as foo.tar is).\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "For more information please consult documentation.\n");
 	fprintf(stderr, "\n");
 }
 
+static void
+rsyncme_range_error(char argument, unsigned long value)
+{
+	fprintf(stderr, "argument [%c] too big [%lu]\n", argument, value);
+}
 
 int
 main( int argc, char *argv[])
@@ -55,12 +66,15 @@ main( int argc, char *argv[])
 					//		     1 RM_MSG_PULL)
 					// 1		x
 					// 2		y
-					// 3		ip	
+					// 3		ip
+	char			*pCh;
+	unsigned long		helper;
 	struct sockaddr_in	remote_addr = {0};
+	uint32_t		L = RM_DEFAULT_L;
 
 	if (argc < 4)
 	{
-		usage(argv[0]);
+		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -74,7 +88,7 @@ main( int argc, char *argv[])
 	};
 
 	// parse optional command line arguments
-	while ((c = getopt_long(argc, argv, "x:y:i:", long_options, &option_index)) != -1)
+	while ((c = getopt_long(argc, argv, "x:y:i:l", long_options, &option_index)) != -1)
 	{
 		switch (c)
 		{
@@ -112,11 +126,28 @@ main( int argc, char *argv[])
 			if (inet_aton(optarg, &remote_addr.sin_addr) == 0)
 			{
 				fprintf(stderr, "Invalid IPv4 address\n");
-				usage(argv[0]);
+				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
 			flags |= RM_BIT_3;
 			break;
+
+		case 'l':
+			helper = strtoul(optarg, &pCh, 10);
+			if (helper > 0x10000 - 1)
+			{
+				rsyncme_range_error(c, helper);
+				exit(EXIT_FAILURE);
+			}
+			// check
+			if ((pCh == optarg) || (*pCh != '\0'))
+			{
+				fprintf(stderr, "Invalid argument\n");
+				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
+			L = helper;
 		case '?':
 			// check optopt
 			if (optopt == 'x' || optopt == 'y' || optopt == 'i')
@@ -129,12 +160,12 @@ main( int argc, char *argv[])
 					"Please check that you have typed them correctly.\n");
 			}
 
-			usage(argv[0]);
+			rsyncme_usage(argv[0]);
 			exit(EXIT_FAILURE);
 
 		default:
 
-			usage(argv[0]);
+			rsyncme_usage(argv[0]);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -149,7 +180,7 @@ main( int argc, char *argv[])
 		fprintf(stderr, "\nInvalid number of non-option arguments."
 				"\nThere should be 1 non-option arguments: "
 						"<push|pull>\n");
-		usage(argv[0]);
+		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -166,7 +197,7 @@ main( int argc, char *argv[])
 	else {
 		fprintf(stderr, "\nUnknown command.\nCommand should be one of: "
 						"<push|pull>\n");
-		usage(argv[0]);
+		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -175,7 +206,7 @@ main( int argc, char *argv[])
 	{
 		fprintf(stderr, "\n-x option not set.\n"
 			"What is the file you want to sync?\n");
-		usage(argv[0]);
+		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 	// if -i is set
@@ -186,7 +217,7 @@ main( int argc, char *argv[])
 		{
 			// push
 			fprintf(stderr, "\nRemote push.\n");
-			res = rm_tx_remote_push(x, y, &remote_addr);
+			res = rm_tx_remote_push(x, y, &remote_addr, L);
 			if (res < 0)
 			{
 				// report failure
@@ -202,7 +233,7 @@ main( int argc, char *argv[])
 		{
 			// push
 			fprintf(stderr, "\nLocal push.\n");
-			res = rm_tx_local_push(x, y);
+			res = rm_tx_local_push(x, y, L);
 			if (res < 0)
 			{
 				// report failure

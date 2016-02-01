@@ -13,11 +13,18 @@
 #include "rm.h"
 
 
+/// @brief	Locally sync files @x and @y such that
+///		@y becomes same as @x.
+/// @return	0 on success, negative value otherwise:
+///		-1 couldn't open @x
+///		-2 couldn't open @y
 int
-rm_tx_local_push(const char *x, const char *y);
+rm_tx_local_push(const char *x, const char *y,
+			uint32_t L);
 
 int
 rm_tx_remote_push(const char *x, const char *y,
-		struct sockaddr_in *remote_addr);
+		struct sockaddr_in *remote_addr,
+		uint32_t L);
 
 #endif	// RSYNCME_TX_H
