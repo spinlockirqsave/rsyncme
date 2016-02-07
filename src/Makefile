@@ -87,21 +87,28 @@ $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
+.PHONY: clean
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET) \
 	$(CMDDEBUGTARGET) $(CMDDEBUGTARGET).o $(CMDRELEASETARGET) $(CMDRELEASETARGET).o
+.PHONY: test-clean
 test-clean:
 	#rm -rf $(TESTOBJECTS)
 	cd $(TESTSRCDIR) && make clean
+.PHONY: test-clean-debug
 test-clean-debug:
 	#rm -rf $(TESTOBJECTS_D)
 	cd $(TESTSRCDIR) && make clean-debug
+.PHONY: test-clean-logs
 test-clean-logs:
 	cd $(TESTSRCDIR) && make clean-logs
+.PHONY: test-clean-logs-debug
 test-clean-logs-debug:
 	cd $(TESTSRCDIR) && make clean-logs-debug
+.PHONY: test-clean-all
 test-clean-all:
 	cd $(TESTSRCDIR) && make clean && make clean-logs && make clean-debug && make clean-logs-debug
+.PHONY: clean-all
 clean-all:
 	make clean
 	cd $(TESTSRCDIR) && make clean && make clean-logs && make clean-debug && make clean-logs-debug
