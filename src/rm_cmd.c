@@ -1,9 +1,9 @@
-/// @file	rm_cmd.c
-/// @brief	Commandline tool for sending requests
-///		to rsyncme daemon.
-/// @author	peterg
-/// @version	0.1.2
-/// @date	05 Jan 2016 11:15 PM
+/// @file	    rm_cmd.c
+/// @brief	    Commandline tool for sending requests
+///		        to rsyncme daemon.
+/// @author	    Piotr Gregor <piotrek.gregor at gmail.com>
+/// @version    0.1.2
+/// @date	    05 Jan 2016 11:15 PM
 /// @copyright	LGPLv2.1
 
 
@@ -62,11 +62,11 @@ main( int argc, char *argv[])
 	char	x[RM_CMD_F_LEN_MAX] = {0};
 	char	y[RM_CMD_F_LEN_MAX] = {0};
 	uint8_t	flags = 0;		// bits		meaning
-					// 0		cmd (0 RM_MSG_PUSH,
-					//		     1 RM_MSG_PULL)
-					// 1		x
-					// 2		y
-					// 3		ip
+					        // 0		cmd (0 RM_MSG_PUSH,
+					        //		     1 RM_MSG_PULL)
+					        // 1		x
+					        // 2		y
+					        // 3		ip
 	char			*pCh;
 	unsigned long		helper;
 	struct sockaddr_in	remote_addr = {0};

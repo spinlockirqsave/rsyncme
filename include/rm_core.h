@@ -1,8 +1,8 @@
-/// @file	rm_core.h
-/// @brief	Daemon's start up.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	02 Jan 2016 02:50 PM
+/// @file       rm_core.h
+/// @brief	    Daemon's start up.
+/// @author	    Piotr Gregor <piotrek.gregor at gmail.com>
+/// @version    0.1.2
+/// @date	    02 Jan 2016 02:50 PM
 /// @copyright	LGPLv2.1
 
 
@@ -23,29 +23,29 @@
 
 struct rsyncme
 {
-        pthread_mutex_t         mutex; 
-        int                     state;
+    pthread_mutex_t         mutex; 
+    int                     state;
 
-        TWDECLARE_HASHTABLE(sessions, RM_SESSION_HASH_BITS);
-        struct twlist_head      sessions_list;
-        uint32_t                sessions_n;
+    TWDECLARE_HASHTABLE(sessions, RM_SESSION_HASH_BITS);
+    struct twlist_head      sessions_list;
+    uint32_t                sessions_n;
 
-	uint32_t		L;	// block size, for a given L
-					// the worst case byte overhead
-					// of rsyncme is (s_f + s_s)
-					// * n/L
-					// where s_f is size of fast
-					// signature, s_s is strong
-					// signature size, n is the
-					// number of bytes in file
+	uint32_t		L;  // block size, for a given L
+					    // the worst case byte overhead
+					    // of rsyncme is (s_f + s_s)
+					    // * n/L
+					    // where s_f is size of fast
+					    // signature, s_s is strong
+					    // signature size, n is the
+					    // number of bytes in file
 	uint32_t		M;	// modulus in fast checksum
-					// computation, 2^16 is
-					// good choice for simplicity
-					// and speed
+					    // computation, 2^16 is
+					    // good choice for simplicity
+					    // and speed
 };
 
-/// @brief      Helper struct to pass connection
-///             settings into TCP events thread.
+/// @brief  Helper struct to pass connection
+///         settings into TCP events thread.
 struct rm_core_con_data
 {
         struct rsyncme	*rm;
@@ -74,7 +74,7 @@ struct rm_session *
 rm_core_session_find(struct rsyncme *rm,
                         uint32_t session_id);
 
-/// @brief	Creates and adds new sesion into table.
+/// @brief	    Creates and adds new sesion into table.
 /// @details	Generates SID.
 struct rm_session *
 rm_core_session_add(struct rsyncme *rm);
