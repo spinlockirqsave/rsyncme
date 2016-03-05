@@ -23,7 +23,6 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 
 	assert(f != NULL);
 	assert(fname != NULL);
-	assert(h != NULL);
 	assert(L > 0);
 
 	// get file size
@@ -58,7 +57,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 			free(buf);
 			return -3;
 		}
-		// alloc new table entry
+		/* alloc new table entry */
 		e = malloc(sizeof (*e));
 		if (e == NULL)	
 		{
@@ -66,14 +65,20 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 				"entry, malloc failed");
 			return -4;
 		}
-		TWINIT_HLIST_NODE(&e->hlink);
-		// compute checksums
+
+		/* compute checksums */
 		e->f_ch = rm_fast_check_block(buf, read);
 		rm_md5(buf, read, e->s_ch.data);
-		// insert, hashing fast checksum
-		twhash_add_bits(h, &e->hlink, e->f_ch, RM_NONOVERLAPPING_HASH_BITS);
+
+        if (h != NULL)
+        {
+		    /* insert into hashtable, hashing fast checksum */
+		    TWINIT_HLIST_NODE(&e->hlink);
+		    twhash_add_bits(h, &e->hlink, e->f_ch, RM_NONOVERLAPPING_HASH_BITS);
+        }
 		entries_n++;
-		// tx checksums to remote A
+
+		/* tx checksums to remote A ? */
 		if (f_tx_ch_ch != NULL)
 		{
 			res = f_tx_ch_ch(e);

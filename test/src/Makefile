@@ -10,14 +10,14 @@ AUXOBJDIR_D		:= ../../build/debug
 AUXOBJDIR		:= ../../build/release
 AUXSRCS			:= $(filter-out ../../src/main.c, $(wildcard ../../src/*.c))
 AUXSRCS			:= $(filter-out ../../src/rm_cmd.c, $(AUXSRCS))
-AUXOBJS			:= $(patsubst %.c, $(AUXOBJDIR)/%.o, $(AUXSRCS))
-AUXOBJS_D		:= $(patsubst %.c, $(AUXOBJDIR_D)/%.o, $(AUXSRCS))
+AUXOBJS			:= $(patsubst %/%.c, %/$(AUXOBJDIR)/%.o, $(AUXSRCS))
+AUXOBJS_D		:= $(patsubst %/%.c, %/$(AUXOBJDIR_D)/%.o, $(AUXSRCS))
 SRCDIR			:= .
 
 SRCS := $(wildcard *.c)
 _SRCS := $(filter-out md5_test.c, $(SRCS))
 _TESTOBJECTS := $(patsubst %.c,%.o,$(_SRCS))
-INCLUDES  := -I. -I../../include -I../../include/twlist/include -I../include
+INCLUDES  += -I. -I../../include -I../../include/twlist/include -I../include
 
 TESTOUTPUTDIR_D		:= ../build/debug
 TESTOBJECTS_D		:= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
@@ -30,18 +30,18 @@ all : test test-debug
 test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2
 
 $(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o
-	$(CC) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o -o $@
 
 $(TESTOUTPUTDIR)/test_rm_main2:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o
-	$(CC) $(AUXOBJS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
 
 test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2
 
 $(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
-	$(CC) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
 
 $(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
-	$(CC) $(AUXOBJS_D) $(LDFLAGS2) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS2) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
 
 test-check:	test
 	$(TESTOUTPUTDIR)/test_rm_main1
