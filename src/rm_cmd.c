@@ -70,7 +70,7 @@ main( int argc, char *argv[])
                              * 1		x
                              * 2		y
                              * 3		ip
-                             * 4        force creation if doesn't exist */
+                             * 4        force creation of @y if it doesn't exist */
 	char                *pCh;
 	unsigned long       helper;
 	struct sockaddr_in  remote_addr = {0};
@@ -255,6 +255,22 @@ main( int argc, char *argv[])
                     case -1:
                         fprintf(stderr, "Error. Couldn't open @x file [%s]\n", x);
                         goto fail;
+                    case -2:
+                        fprintf(stderr, "Error. @y [%s] doesn't exist "
+                                "and couldn't create @y\n", y);
+                        goto fail;
+                    case -3:
+                       fprintf(stderr, "Error. Couldn't open @y [%s] and --force "
+                               "flag not set, which file should I use?\nPlease "
+                               "check that file exists or add --force flag to force "
+                               "creation of @y file if it doesn't exist.\n", y);
+                       goto fail;
+                    case -4:
+                      fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
+                      goto fail;
+                    case -5:
+                      fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
+                      goto fail;
                     default:
                         return -1;
                 }

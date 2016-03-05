@@ -89,7 +89,15 @@
 			__typeof__ (b) _b = (b);	\
 			_a > _b ? _b : _a; })
 
-typedef uint8_t rm_push_flags;
+typedef uint8_t rm_push_flags;  /* Bit  meaning
+                                 * 0    force creation of @y if it doesn't exist
+                                 * 1    
+                                 * 2    
+                                 * 3
+                                 * 4
+                                 * 5
+                                 * 6
+                                 * 7 */
 typedef uint8_t rm_push_flags;
 
 #endif  // RSYNCME_DEFS_H

@@ -392,13 +392,13 @@ test_rm_fast_check_roll(void **state)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 {
-	FILE		*f;
-	int		fd;
+	FILE                    *f;
+	int                     fd;
 	uint32_t	i, j, L, file_sz, blocks_n;
-	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
-	long long int	entries_n;
+	struct test_rm_state    *rm_state;
+	struct stat             fs;
+	char                    *fname;
+	long long int           entries_n;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;

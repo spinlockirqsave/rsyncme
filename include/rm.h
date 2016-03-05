@@ -77,29 +77,25 @@
 #include "rm_defs.h"
 #include "md5.h"
 
-/// @brief	Strong checksum struct. MD5.
+/* @brief   Strong checksum struct. MD5. */
 struct rm_md5
 {
 	unsigned char data[16];
 };
 
-/// @brief	Checksum checksum struct.
+/* @brief   Checksum checksum struct. */
 struct rm_ch_ch
 {
-        uint32_t		f_ch;	// Fast and very cheap
-					// 32-bit rolling checksum,
-					// MUST be very cheap to compute
-					// at every byte offset.
-	struct rm_md5		s_ch;	// Strong and computationally
-					// expensive 128-bit checksum,
-					// MUST have a very low
-					// probability of collision.
-					// This is computed only when
-					// fast & cheap checksum matches
-					// one of the fast & cheap
-					// checksums in ch_ch vector.
-	off_t			offset;	// reference to location in B's
-					// F_B file (taken from ch_ch vector)
+    uint32_t		f_ch;   /*Fast and very cheap
+                            * 32-bit rolling checksum,
+                            * MUST be very cheap to compute
+                            * at every byte offset */
+    struct rm_md5   s_ch;   /* Strong and computationally expensive 128-bit checksum,
+                            * MUST have a very low probability of collision.
+                            * This is computed only when fast & cheap checksum matches
+                            * one of the fast & cheap checksums in ch_ch vector. */
+    off_t           offset; /* The reference to location in B's F_B file
+                            * (taken from ch_ch list) */
 	
 	struct twhlist_node	hlink;
 };
