@@ -491,7 +491,9 @@ test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state)
 	}
 }
 
-/// @brief	Function sending checksums to remote A, returning an error.
+/* @brief   Artificial function sending checksums to remote A,
+ *          returning an error.
+ */
 int
 f_tx_ch_ch(const struct rm_ch_ch *e)
 {
@@ -502,22 +504,21 @@ f_tx_ch_ch(const struct rm_ch_ch *e)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_6(void **state)
 {
-	FILE		*f;
-	int		fd;
-	uint32_t	i, j, L, file_sz;
+	FILE        *f;
+	int         fd;
+	uint32_t    i, j, L, file_sz;
 	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
-	long long int	res, res_expected;
+	struct stat             fs;
+	char		            *fname;
+	long long int           res, res_expected;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	// test failed call to function sending checksums
-	// to remote A
+	/* test failed call to function sending checksums to remote A */
 	res_expected = -5;
-	// test on all files
+	/* test on all files */
 	i = 0;
 	for (; i < RM_TEST_FNAMES_N; ++i)
 	{
