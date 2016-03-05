@@ -1,22 +1,25 @@
-/// @file       rm_tx.c
-/// @brief      Definitions used by rsync transmitter (A).
-/// @author     Piotr Gregor <piotrek.gregor at gmail.com>
-/// @version    0.1.2
-/// @date       2 Jan 2016 11:19 AM
-/// @copyright  LGPLv2.1
+/*
+ * @file       rm_tx.c
+ * @brief      Definitions used by rsync transmitter (A).
+ * @author     Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version    0.1.2
+ * @date       2 Jan 2016 11:19 AM
+ * @copyright  LGPLv2.1
+ */
 
 
 #include "rm_tx.h"
 
 
 int
-rm_tx_local_push(const char *x, const char *y, uint32_t L)
+rm_tx_local_push(const char *x, const char *y,
+        uint32_t L, rm_push_flags flags)
 {
-	int err;
-	FILE		*f_x, *f_y;
-	int		fd_x, fd_y;
-	struct stat	fs;
-	uint32_t	x_sz, y_sz, blocks_n, blocks_n_exp;
+	int         err;
+	FILE        *f_x, *f_y;
+	int         fd_x, fd_y;
+	struct      stat	fs;
+	uint32_t    x_sz, y_sz, blocks_n, blocks_n_exp;
 
 	(void) x_sz;
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
@@ -45,9 +48,9 @@ rm_tx_local_push(const char *x, const char *y, uint32_t L)
 		goto err_exit;
 	}
 	y_sz = fs.st_size; 
-	// split file into non-overlapping blocks
-	// and calculate checksums on these blocks
-	// expected number of blocks
+	/* split file into non-overlapping blocks
+     * and calculate checksums on these blocks
+     * expected number of blocks */
 	blocks_n = y_sz / L + (y_sz % L ? 1 : 0);
 	return 0;
 

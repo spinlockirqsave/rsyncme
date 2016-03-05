@@ -1,10 +1,12 @@
-/// @file	    rm_cmd.c
-/// @brief	    Commandline tool for sending requests
-///		        to rsyncme daemon.
-/// @author	    Piotr Gregor <piotrek.gregor at gmail.com>
-/// @version    0.1.2
-/// @date	    05 Jan 2016 11:15 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        rm_cmd.c
+ * @brief       Commandline tool for sending requests
+ *              to rsyncme daemon.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        05 Jan 2016 11:15 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #include "rm_defs.h"
@@ -23,14 +25,15 @@ void rsyncme_usage(const char *name)
 	if (!name)
 		return;
 
-	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]>\n", name);
+	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]>]\n", name);
+	fprintf(stderr, "\n      \t [--f(orce)]\n");
 	fprintf(stderr, "     \t -x			: local file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
 	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
 	fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
 			"				: default value 512 is used\n");
-	fprintf(stderr, "\nPossible options:\n");
+	fprintf(stderr, "\nExamples:\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
 			"		file /tmp/bar.tar (remote becomes same as local is).\n");
@@ -58,19 +61,21 @@ rsyncme_range_error(char argument, unsigned long value)
 int
 main( int argc, char *argv[])
 {
-	int	c, idx, res;
+	int     c, idx, res;
 	char	x[RM_CMD_F_LEN_MAX] = {0};
 	char	y[RM_CMD_F_LEN_MAX] = {0};
-	uint8_t	flags = 0;		// bits		meaning
-					        // 0		cmd (0 RM_MSG_PUSH,
-					        //		     1 RM_MSG_PULL)
-					        // 1		x
-					        // 2		y
-					        // 3		ip
-	char			*pCh;
-	unsigned long		helper;
-	struct sockaddr_in	remote_addr = {0};
-	uint32_t		L = RM_DEFAULT_L;
+	uint8_t	flags = 0;		/* bits		meaning
+                             * 0		cmd (0 RM_MSG_PUSH,
+                             *              1 RM_MSG_PULLi)
+                             * 1		x
+                             * 2		y
+                             * 3		ip
+                             * 4        force creation if doesn't exist */
+	char                *pCh;
+	unsigned long       helper;
+	struct sockaddr_in  remote_addr = {0};
+	uint32_t            L = RM_DEFAULT_L;
+    rm_push_flags       push_flags = 0;
 
 	if (argc < 4)
 	{
@@ -83,7 +88,7 @@ main( int argc, char *argv[])
 		{ "type", required_argument, 0, 17 },
 		{ "push", no_argument, 0, 1 },
 		{ "pull", no_argument, 0, 2 },
-		{ "file", required_argument, 0, 0 },
+		{ "force", no_argument, 0, 3 },
 		{ 0 }
 	};
 
@@ -111,6 +116,11 @@ main( int argc, char *argv[])
 		case 2:
 			// pull request
 			flags |= RM_BIT_0;
+			break;
+
+		case 3:
+			// --force
+			flags |= RM_BIT_4;
 			break;
 
 		case 'x':
@@ -172,7 +182,7 @@ main( int argc, char *argv[])
 
 	// parse non-optional arguments
 	for (idx = optind; idx < argc; idx++)
-		//fprintf(stderr, "Non-option argument[ %s]\n", argv[idx]);
+		fprintf(stderr, "Non-option argument[ %s]\n", argv[idx]);
 
 	// validation
 	if ((argc - optind) != 1)
@@ -187,12 +197,12 @@ main( int argc, char *argv[])
 	if (strcmp(argv[optind], "push") == 0)
 	{
 		// RM_MSG_PUSH
-		flags &= ~1;
+		flags &= ~RM_BIT_0;
 	}
 	else if (strcmp(argv[optind], "pull") == 0)
 	{
 		// RM_MSG_PULL
-		flags |= 1;;
+		flags |= RM_BIT_0;
 	}
 	else {
 		fprintf(stderr, "\nUnknown command.\nCommand should be one of: "
@@ -202,7 +212,7 @@ main( int argc, char *argv[])
 	}
 
 	// if -x not set report error
-	if (((flags >> 1) & 1) == 0)
+	if ((flags & RM_BIT_1) == 0u)
 	{
 		fprintf(stderr, "\n-x option not set.\n"
 			"What is the file you want to sync?\n");
@@ -210,12 +220,13 @@ main( int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	// if -i is set
-	if (((flags >> 3) & 1) == 1)
+	if ((flags & RM_BIT_3) != 0u)
 	{
-		// remote request
-		if (((flags >> 0) & 1) == 0)
+		/* remote request */
+        /* push? */
+		if ((flags & RM_BIT_0) == 0u)
 		{
-			// push
+			/* local push request */
 			fprintf(stderr, "\nRemote push.\n");
 			res = rm_tx_remote_push(x, y, &remote_addr, L);
 			if (res < 0)
@@ -223,23 +234,33 @@ main( int argc, char *argv[])
 				// report failure
 			}
 		} else {
-			// pull
+			/* local pull request */
 			fprintf(stderr, "\nRemote pull.\n");
 		}
 	
 	} else {
-		// local sync
-		if (((flags >> 0) & 1) == 0)
+		/* local sync */
+        /* push? */
+		if ((flags & RM_BIT_0) == 0u)
 		{
-			// push
+			/* local push request */
 			fprintf(stderr, "\nLocal push.\n");
-			res = rm_tx_local_push(x, y, L);
+            /* setup push flags */
+            push_flags |= ((flags & RM_BIT_4) >> 4);
+			res = rm_tx_local_push(x, y, L, push_flags);
 			if (res < 0)
 			{
-				// report failure
+                switch (res)    /* report failure */
+                {
+                    case -1:
+                        fprintf(stderr, "Error. Couldn't open @x file [%s]\n", x);
+                        goto fail;
+                    default:
+                        return -1;
+                }
 			}
 		} else {
-			// pull
+			/* local pull request */
 			fprintf(stderr, "\nLocal pull.\n");
 		}
 	}
@@ -247,4 +268,7 @@ main( int argc, char *argv[])
 	// OK
 	fprintf(stderr, "\nOK.\n");
 	return 0;
+
+fail:
+    return res;
 }

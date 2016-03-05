@@ -1,9 +1,11 @@
-/// @file	README
-/// @brief	Project description.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	24 Jan 2016 06:16 PM
-/// @copyright	LGPLv2.1
+/*
+* @file         README
+* @brief        Project description.
+* @author       Piotr Gregor <piotrek.gregor at gmail.com>
+* @version      0.1.2
+* @date         24 Jan 2016 06:16 PM
+* @copyright    LGPLv2.1
+*/
 
 
 rsyncme
