@@ -267,7 +267,7 @@ test_rm_adler32_2(void **state)
 		r2_0 = (adler2_0 >> 16) & 0xffff;
 		r2_1 = (r2_0 + (file_sz % RM_ADLER32_MODULUS)) % RM_ADLER32_MODULUS;
 		assert_true(((adler2 >> 16) & 0xffff) == r2_1);
-		RM_LOG_INFO("PASS Adler32 (2) checksum [%u] OK, i"
+		RM_LOG_INFO("PASS Adler32 (2) checksum [%u] OK, "
 		"file [%s], size [%u]", adler2, fname, file_sz);
 	}
 }
@@ -275,15 +275,15 @@ test_rm_adler32_2(void **state)
 void
 test_rm_fast_check_roll(void **state)
 {
-	FILE		*f;
+	FILE    *f;
 	int		fd;
 	unsigned char	buf[RM_TEST_L_MAX];
 	uint32_t	i, j, L, adler1, adler2, tests_n, tests_max,
 			file_sz, read, read_left, read_now;
-	long		idx_min, idx_max, idx, idx_buf;
-	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
+	long		            idx_min, idx_max, idx, idx_buf;
+	struct test_rm_state    *rm_state;
+	struct stat             fs;
+	char                    *fname;
 
 	rm_state = *state;
 	assert_true(rm_state != NULL);
