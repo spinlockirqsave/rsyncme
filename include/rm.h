@@ -208,5 +208,15 @@ rm_rolling_ch(const unsigned char *data, uint32_t len, uint32_t M);
 void
 rm_md5(const unsigned char *data, uint32_t len, unsigned char res[16]);
 
+/* @brief   Copy @bytes_n bytes from @x into @y.
+ * @details Calls fread/fwrite buffered API functions.
+ *          Files must be already opened.
+ * @return  0: succes,
+ *          -1: fwrite failed,
+ *          -2: fread failed,
+ *          -3: other error set on @y */
+int
+rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
+
 
 #endif	// RSYNCME_H

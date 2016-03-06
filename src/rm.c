@@ -186,3 +186,25 @@ rm_md5(const unsigned char *data, uint32_t len,
 	md5_update(&ctx, data, len);
 	md5_final(&ctx, res);
 }
+
+int
+rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
+{
+    size_t read, written, read_total;
+    char buf[RM_L1_CACHE_RECOMMENDED];
+
+    while ((read = fread(buf, 1, RM_L1_CACHE_RECOMMENDED, x)) > 0)
+    {
+        written = fwrite(buf, 1, read, y);
+        if (written != read)
+            return -1;
+    }
+
+    if (ferror(x) != 0)
+        return -2;
+    if (ferror(y) != 0)
+        return -3;
+
+    return 0;
+}
+
