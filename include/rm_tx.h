@@ -33,6 +33,7 @@
  *          -3 couldn't open @y and --force not set, what should I use?
  *          -4 couldn't stat @x
  *          -5 couldn't stat @y
+ *          -6 internal error: in rm_rx_insert_nonoverlapping_ch_ch_local
  */
 int
 rm_tx_local_push(const char *x, const char *y,

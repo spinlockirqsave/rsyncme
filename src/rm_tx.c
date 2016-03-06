@@ -9,6 +9,7 @@
 
 
 #include "rm_tx.h"
+#include "rm_rx.h"
 
 
 int
@@ -70,6 +71,7 @@ rm_tx_local_push(const char *x, const char *y,
 		    goto err_exit;
 	    }
 	    y_sz = fs.st_size;
+
 	    /* split @y file into non-overlapping blocks
         * and calculate checksums on these blocks,
         * expected number of blocks is */
