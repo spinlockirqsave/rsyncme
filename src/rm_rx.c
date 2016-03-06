@@ -37,7 +37,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
     }
     file_sz = fs.st_size;
 
-    // read L bytes chanks
+    /* read L bytes chanks */
     read_left = file_sz;
     read_now = rm_min(L, read_left);
     buf = malloc(read_now);
