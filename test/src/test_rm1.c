@@ -1,11 +1,13 @@
-/// @file	test_rm.c
-/// @brief      Test suite #1.
-/// @details	Test of rolling checksums and of nonoverlapping
-///		checksums calculation correctness.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	10 Jan 2016 04:13 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        test_rm1.c
+ * @brief       Test suite #1.
+ * @details     Test of rolling checksums and of nonoverlapping
+ *              checksums calculation correctness.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        10 Jan 2016 04:13 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #include "test_rm1.h"
