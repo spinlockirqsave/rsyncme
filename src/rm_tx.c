@@ -17,7 +17,9 @@ rm_tx_local_push(const char *x, const char *y,
         uint32_t L, rm_push_flags flags)
 {
 	int         err;
-	FILE        *f_x, *f_y, *f_z;
+	FILE        *f_x;   /* original file, to be synced into @y */
+    FILE        *f_y;   /* file for taking non-overlapping blocks */
+    FILE        *f_z;   /* result (with same name as @y) */
 	int         fd_x, fd_y, fd_z;
 	struct      stat	fs;
 	uint32_t    x_sz, y_sz, blocks_n_exp;
@@ -36,7 +38,7 @@ rm_tx_local_push(const char *x, const char *y,
 	f_y = fopen(y, "rb");
 	if (f_y == NULL)
 	{
-        if (flags & RM_BIT_0) /* force create if doesn't exist? */
+        if (flags & RM_BIT_0) /* force creation if @y doesn't exist? */
         {
             f_z = fopen(y, "wb+");
             if (f_z == NULL)
@@ -49,8 +51,10 @@ rm_tx_local_push(const char *x, const char *y,
             goto err_exit;
 	    }
     }
+    /* @y doesn't exist but --forced specified (f_y == NULL)
+     * or @y exists and is opened for reading  (f_y != NULL) */
 
-	// get file size
+	/* get input file size */
 	fd_x = fileno(f_x);
 	if (fstat(fd_x, &fs) != 0)
 	{
@@ -87,6 +91,14 @@ rm_tx_local_push(const char *x, const char *y,
         {
             err = -7;
             goto  err_exit;
+        }
+    } else {
+        /* @y doesn't exist and --forced flag is specified */
+        err = rm_copy_buffered(f_x, f_z, x_sz);
+        if (err < 0)
+        {
+           err = -7;
+           goto err_exit;
         }
     }
 
