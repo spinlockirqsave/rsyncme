@@ -15,6 +15,7 @@
 #include "rm.h"
 #include "rm_rx.h"
 
+
 /* @brief   Locally sync files @x and @y such that
  *          @y becomes same as @x.
  * @details If flags 0 bit is set @y will be created

@@ -100,6 +100,14 @@ rm_tx_local_push(const char *x, const char *y,
            err = -7;
            goto err_exit;
         }
+    } else {
+        /* @y doesn't exist and --forced flag is specified */
+        err = rm_copy_buffered(f_x, f_z, x_sz);
+        if (err < 0)
+        {
+           err = -7;
+           goto err_exit;
+        }
     }
 
     /* calc rolling checksums, produce delta vector */
