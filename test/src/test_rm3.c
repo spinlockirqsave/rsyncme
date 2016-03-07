@@ -30,97 +30,98 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 128, 129
 int
 test_rm_setup(void **state)
 {
-	int 		err;
-	uint32_t	i,j;
-	FILE 		*f;
+    int         err;
+    uint32_t    i,j;
+    FILE        *f;
 
 #ifdef DEBUG
-	err = rm_util_chdir_umask_openlog(
-		"../build/debug", 1, "rsyncme_test_3");
+    err = rm_util_chdir_umask_openlog(
+            "../build/debug", 1, "rsyncme_test_3");
 #else
-	err = rm_util_chdir_umask_openlog(
-		"../build/release", 1, "rsyncme_test_3");
+    err = rm_util_chdir_umask_openlog(
+            "../build/release", 1, "rsyncme_test_3");
 #endif
-	if (err != 0)
-		exit(EXIT_FAILURE);
-	rm_state.l = rm_test_L_blocks;
-	*state = &rm_state;
+    if (err != 0)
+        exit(EXIT_FAILURE);
+    rm_state.l = rm_test_L_blocks;
+    *state = &rm_state;
 
-	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i)
-	{
-		f = fopen(rm_test_fnames[i], "rb+");
-		if (f == NULL)
-		{
-			// file doesn't exist, create
-			RM_LOG_INFO("Creating file [%s]",
-					rm_test_fnames[i]);
-			f = fopen(rm_test_fnames[i], "wb");
-			if (f == NULL)
-				exit(EXIT_FAILURE);
-			j = rm_test_fsizes[i];
-			RM_LOG_INFO("Writing [%u] random bytes"
-			" to file [%s]", j, rm_test_fnames[i]);
-			srand(time(NULL));
-			while (j--)
-			{
-				fputc(rand(), f);
-			}		
-		} else {
-			RM_LOG_INFO("Using previously created "
-				"file [%s]", rm_test_fnames[i]);
-		}
-		fclose(f);
-	}
-	return 0;
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i)
+    {
+        f = fopen(rm_test_fnames[i], "rb+");
+        if (f == NULL)
+        {
+            /* file doesn't exist, create */
+            RM_LOG_INFO("Creating file [%s]",
+                    rm_test_fnames[i]);
+            f = fopen(rm_test_fnames[i], "wb");
+            if (f == NULL)
+                exit(EXIT_FAILURE);
+            j = rm_test_fsizes[i];
+            RM_LOG_INFO("Writing [%u] random bytes"
+                    " to file [%s]", j, rm_test_fnames[i]);
+            srand(time(NULL));
+            while (j--)
+            {
+                fputc(rand(), f);
+            }		
+        } else {
+            RM_LOG_INFO("Using previously created "
+                    "file [%s]", rm_test_fnames[i]);
+        }
+        fclose(f);
+    }
+    return 0;
 }
 
 int
 test_rm_teardown(void **state)
 {
-	int	i;
-	FILE	*f;
-	struct test_rm_state *rm_state;
+    int     i;
+    FILE    *f;
+    struct  test_rm_state *rm_state;
 
-	rm_state = *state;
-	assert_true(rm_state != NULL);
-	if (RM_TEST_DELETE_FILES == 1)
-	{
-		// delete all test files
-		i = 0;
-		for (; i < RM_TEST_FNAMES_N; ++i)
-		{
-			f = fopen(rm_test_fnames[i], "wb+");
-			if (f == NULL)
-			{
-				RM_LOG_ERR("Can't open file [%s]",
-					rm_test_fnames[i]);	
-			} else {
-				RM_LOG_INFO("Removing file [%s]",
-					rm_test_fnames[i]);
-				remove(rm_test_fnames[i]);
-			}
-		}
-	}
-	return 0;
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+    if (RM_TEST_DELETE_FILES == 1)
+    {
+        /* delete all test files */
+        i = 0;
+        for (; i < RM_TEST_FNAMES_N; ++i)
+        {
+            f = fopen(rm_test_fnames[i], "wb+");
+            if (f == NULL)
+            {
+                RM_LOG_ERR("Can't open file [%s]",
+                        rm_test_fnames[i]);	
+            } else {
+                RM_LOG_INFO("Removing file [%s]",
+                        rm_test_fnames[i]);
+                remove(rm_test_fnames[i]);
+            }
+        }
+    }
+    return 0;
 }
 
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
 {
-	FILE                    *f;
-	int                     fd;
-	uint32_t	i, j, L, file_sz, blocks_n;
-	struct test_rm_state    *rm_state;
-	struct stat             fs;
-	char                    *fname;
-	long long int           entries_n;
+    FILE                    *f;
+    int                     fd;
+	uint32_t                i, j, L, file_sz, blocks_n;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    char                    *fname;
+    long long int           entries_n;
+    struct rm_ch_ch_local   *e;
+    struct twlist_head      *pos, *tmp, l = TWLIST_HEAD_INIT(l);
 
-	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	// test on all files
+	/* test on all files */
 	i = 0;
 	for (; i < RM_TEST_FNAMES_N; ++i)
 	{
@@ -131,7 +132,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
 			RM_LOG_PERR("Can't open file [%s]", fname);
 		}
 		assert_true(f != NULL);
-		// get file size
+		/* get file size */
 		fd = fileno(f);
 		if (fstat(fd, &fs) != 0)
 		{
@@ -161,19 +162,30 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
 				continue;
 			}
 	
-			RM_LOG_INFO("Tesing fast rolling checksum: file "
-				"[%s], size [%u], block size L [%u], buffer"
+			RM_LOG_INFO("Testing of splitting file into non-overlapping "
+                    "blocks: file [%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			// number of blocks
+			/* number of blocks */
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
-			entries_n = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, NULL);
+            TWINIT_LIST_HEAD(&l);
+			entries_n = rm_rx_insert_nonoverlapping_ch_ch_local(
+					f, fname, &l, L);
+			assert_int_equal(entries_n, blocks_n);
+
+            /* free list entries */
+            blocks_n = 0;
+            twlist_for_each_safe(pos, tmp, &l)
+            {
+                e = tw_container_of(pos, struct rm_ch_ch_local, link); 
+                free(e);
+                ++blocks_n;
+            }
 			assert_int_equal(entries_n, blocks_n);
 			
 			RM_LOG_INFO("PASSED test of hashing of non-overlapping"
-				" blocks, file [%s], size [%u], L [%u]", fname,
-				file_sz, L);
-			// move file pointer back to the beginning
+				" blocks, file [%s], size [%u], L [%u], blocks [%u]",
+                fname, file_sz, L, blocks_n);
+			/* move file pointer back to the beginning */
 			rewind(f);
 		}
 		fclose(f);

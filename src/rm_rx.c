@@ -1,7 +1,7 @@
 /*
  * @file        rm_rx.c
  * @brief       Definitions used by rsync receiver (B).
- * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        2 Jan 2016 11:18 AM
  * @copyright   LGPLv2.1

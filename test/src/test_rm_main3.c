@@ -9,7 +9,7 @@
 
 
 #include "rm_defs.h"
-#include "test_rm2.h"
+#include "test_rm3.h"
 
 
 int main(void)

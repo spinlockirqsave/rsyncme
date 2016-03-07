@@ -157,57 +157,53 @@ rm_util_daemonize(const char *dir, int noclose,
 
 	assert(logname != NULL);
 
-	// background
+	/* background */
 	if ((pid = fork()) < 0)
 	{
-		// fork failed
 		return -1;
 	} else if (pid > 0)
 	{
-		// parent, terminate
+		/* parent, terminate */
 		exit(EXIT_SUCCESS);
 	}
 
-	// 1st child
+	/* 1st child */
 
-	// become session leader
+	/* become session leader */
 	if ((sid = setsid()) < 0)
 		return -2;
 
-	// fork again, loose controlling terminal forever
+	/* fork again, loose controlling terminal forever */
 	if ((pid = fork()) < 0)
 	{
-		// fork failed
 		return -3;
 	} else if (pid > 0)
 	{
-		// 1st child, terminate
+		/* 1st child, terminate */
 		exit(EXIT_SUCCESS);
 	}
 
-	// TODO: handle signals
+	/* TODO: handle signals */
 	signal(SIGINT, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
 
-	// set file mode to 0x622 (rw-r--r--)
-	// umask syscall always succeedes
+	/* set file mode to 0x622 (rw-r--r--)
+     * umask syscall always succeedes */
 	umask(S_IWGRP | S_IWOTH);
 
-	// TODO: open log here
-	//openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
 	fd = rm_util_openlogs("./log/", logname);
 	if (fd < 0)
 		return -4;
 
-	// change dir
+	/* change dir */
 	if (dir != NULL)
 		if (chdir(dir) == -1)
 			return -5;
 
 	if (noclose == 0)
 	{
-		// close open descriptors
+		/* close open descriptors */
 		fd = sysconf(_SC_OPEN_MAX);
 		for (; fd > 2; fd--)
 		{
@@ -226,29 +222,27 @@ rm_util_chdir_umask_openlog(const char *dir,
 
 	assert(logname != NULL);
 
-	// TODO: handle signals
+	/* TODO: handle signals */
 	signal(SIGINT, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
 
-	// set file mode to 0x622 (rw-r--r--)
-	// umask syscall always succeedes
+	/* set file mode to 0x622 (rw-r--r--)
+     * umask syscall always succeedes */
 	umask(S_IWGRP | S_IWOTH);
 
-	// change dir
+	/* change dir */
 	if (dir != NULL)
 		if (chdir(dir) == -1)
 			return -1;
 
-	// TODO: open log here
-	//openlog("rsyncme", LOG_CONS | LOG_PID, LOG_DAEMON);
 	fd = rm_util_openlogs("./log/", logname);
 	if (fd < 0)
 		return -2;
 
 	if (noclose == 0)
 	{
-		// close open descriptors
+		/* close open descriptors */
 		fd = sysconf(_SC_OPEN_MAX);
 		for (; fd > 2; fd--)
 		{

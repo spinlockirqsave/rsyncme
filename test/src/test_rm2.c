@@ -240,6 +240,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state)
 					f, fname, h, L, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_FSTAT64 = 0;
+            
+            /* TODO free hashtable entries */
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -320,6 +322,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_3(void **state)
 					f, fname, h, L, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_MALLOC = 0;
+            
+            /* TODO free hashtable entries */
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -400,6 +404,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_4(void **state)
 					f, fname, h, L, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_FREAD = 0;
+            
+            /* TODO free hashtable entries */
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -482,6 +488,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state)
 					f, fname, h, L, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_MALLOC = 0;
+            
+            /* TODO free hashtable entries */
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -568,6 +576,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_6(void **state)
 			res = rm_rx_insert_nonoverlapping_ch_ch(
 					f, fname, h, L, f_tx_ch_ch);
 			assert_int_equal(res, res_expected);
+            
+            /* TODO free hashtable entries */
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "

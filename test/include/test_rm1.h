@@ -67,7 +67,7 @@ void
 test_rm_fast_check_roll(void **state);
 
 /* @brief   Test of checksums calculation on nonoverlapping
- *          blocks of.
+ *          blocks.
  * @details Tests number of blocks used (and insertions
  *          into hashtable). */
 void

@@ -58,11 +58,11 @@ int
 rm_random_file(char *name, uint32_t len);
 
 /* @brief   Test of checksums calculation on nonoverlapping
- *          blocks of.
+ *          blocks.
  * @details Tests number of blocks used (and insertions
  *          into hashtable). */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state);
 
 
 #endif	// RSYNCME_TEST_RM3_H
