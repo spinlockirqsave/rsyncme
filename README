@@ -55,7 +55,7 @@ To build tests:
 To run tests:
 	cd src
 	make test-check
-		Make will execute 2 cmocka test-suites.
+		Make will execute all cmocka test-suites.
 		Results of each are written in folder ./test/build/release/log. Short summary
 		is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
 		in rsyncme_test_<#>_<timestamp>.err. If you would like to inspect intermadiate
@@ -68,7 +68,7 @@ To build tests in debug mode:
 To run tests built in debug mode:
 	cd src
 	make test-debug-check
-		Make will execute 2 cmocka test-suites.
+		Make will execute all cmocka test-suites.
 		Results of each are written in folder ./test/build/debug/log. Short summary
 		is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
 		in rsyncme_test_<#>_<timestamp>.err. If you would like to inspect intermadiate
