@@ -75,6 +75,9 @@ To run tests built in debug mode:
 		files created during test <#> run, please change RM_TEST_DELETE_FILES
 		definition in file test/include/test_rm<#>.h to 0.
 
+DEBUGGING
+Should be done from test/src folder. E.g:
+piotr@world:~/projects/rsyncme/test/src$ gdb ../build/debug/test_rm_main1
 
 CLEAN
 To clean rsyncme_d (daemon's executable) and rsyncme (commandline executable):

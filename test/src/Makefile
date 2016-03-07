@@ -1,8 +1,6 @@
-CC			= gcc
-CFLAGS			= -c -Wall -o2 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
-CFLAGS_D		= -c -g -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
-#CFLAGS_D2		= -c -g -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 -Wl,--wrap=fread$(INCLUDES)
-CPPFLAGS		+=              #compiler flags
+CC				= gcc
+CFLAGS			= -c -Wall -o3 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
+CFLAGS_D		= -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
 LDFLAGS			= -lpthread -lcmocka -L../../include -L../include  #-lpcap
 LDFLAGS2		= -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
 TESTSRCDIR		:= .
@@ -14,20 +12,21 @@ AUXOBJS			:= $(patsubst %/%.c, %/$(AUXOBJDIR)/%.o, $(AUXSRCS))
 AUXOBJS_D		:= $(patsubst %/%.c, %/$(AUXOBJDIR_D)/%.o, $(AUXSRCS))
 SRCDIR			:= .
 
-SRCS := $(wildcard *.c)
-_SRCS := $(filter-out md5_test.c, $(SRCS))
-_TESTOBJECTS := $(patsubst %.c,%.o,$(_SRCS))
-INCLUDES  += -I. -I../../include -I../../include/twlist/include -I../include
+SRCS			:= $(wildcard *.c)
+_SRCS			:= $(filter-out md5_test.c, $(SRCS))
+_TESTOBJECTS	:= $(patsubst %.c,%.o,$(_SRCS))
+INCLUDES		+= -I. -I../../include -I../../include/twlist/include -I../include
 
-TESTOUTPUTDIR_D		:= ../build/debug
-TESTOBJECTS_D		:= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
-TESTOUTPUTDIR		:= ../build/release
+TESTOUTPUTDIR_D	:= ../build/debug
+TESTOBJECTS_D	:= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
+TESTOUTPUTDIR	:= ../build/release
 TESTOBJECTS		:= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 
 
 all : test test-debug
 
-test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2
+
+test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2 $(TESTOUTPUTDIR)/test_rm_main3
 
 $(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o
 	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o -o $@
@@ -35,7 +34,11 @@ $(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUT
 $(TESTOUTPUTDIR)/test_rm_main2:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o
 	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS2) $ $(TESTOUTPUTDIR)/test_rm2.o $(TESTOUTPUTDIR)/test_rm_main2.o -o $@
 
-test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2
+$(TESTOUTPUTDIR)/test_rm_main3:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm3.o $(TESTOUTPUTDIR)/test_rm_main3.o
+	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm3.o $(TESTOUTPUTDIR)/test_rm_main3.o -o $@
+
+
+test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2 $(TESTOUTPUTDIR_D)/test_rm_main3
 
 $(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
 	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
@@ -43,23 +46,28 @@ $(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(T
 $(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
 	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS2) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
 
+$(TESTOUTPUTDIR_D)/test_rm_main3:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm3.o $(TESTOUTPUTDIR_D)/test_rm_main3.o
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm3.o $(TESTOUTPUTDIR_D)/test_rm_main3.o -o $@
+
+
 test-check:	test
 	$(TESTOUTPUTDIR)/test_rm_main1
 	$(TESTOUTPUTDIR)/test_rm_main2
+	$(TESTOUTPUTDIR)/test_rm_main3
 
-test-check-debug:	test
+
+test-check-debug:	test-debug
 	$(TESTOUTPUTDIR_D)/test_rm_main1
-	$(TESTOUTPUTDIR)/test_rm_main2
+	$(TESTOUTPUTDIR_D)/test_rm_main2
+	$(TESTOUTPUTDIR_D)/test_rm_main3
 
 
 $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
-
 $(TESTOUTPUTDIR_D)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS_D) $(INCLUDES) $< -o $@
-#.c.o:  
-#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+
 
 clean:
 	find $(TESTOUTPUTDIR) -maxdepth 1 -type f -exec rm -f {} \;

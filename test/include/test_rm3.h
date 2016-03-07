@@ -1,17 +1,17 @@
 /*
- * @file        test_rm1.h
- * @brief       Test suite #1.
- * @details     Test of rolling checksums and of nonoverlapping
+ * @file        test_rm3.h
+ * @brief       Test suite #3.
+ * @details     Test of local nonoverlapping
  *              checksums calculation correctness.
- * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
- * @date        10 Jan 2016 04:07 PM
+ * @date        6 Mar 2016 11:29 PM
  * @copyright   LGPLv2.1
  */
 
 
-#ifndef RSYNCME_TEST_RM1_H
-#define RSYNCME_TEST_RM1_H
+#ifndef RSYNCME_TEST_RM3_H
+#define RSYNCME_TEST_RM3_H
 
 
 #include "rm_defs.h"
@@ -57,21 +57,12 @@ test_rm_teardown(void **state);
 int
 rm_random_file(char *name, uint32_t len);
 
-void
-test_rm_adler32_1(void **state);
-
-void
-test_rm_adler32_2(void **state);
-
-void
-test_rm_fast_check_roll(void **state);
-
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
  * @details Tests number of blocks used (and insertions
  *          into hashtable). */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state);
 
 
-#endif	// RSYNCME_TEST_RM1_H
+#endif	// RSYNCME_TEST_RM3_H

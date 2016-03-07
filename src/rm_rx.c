@@ -1,7 +1,7 @@
 /*
  * @file        rm_rx.c
  * @brief       Definitions used by rsync receiver (B).
- * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        2 Jan 2016 11:18 AM
  * @copyright   LGPLv2.1
@@ -37,7 +37,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
     }
     file_sz = fs.st_size;
 
-    // read L bytes chanks
+    /* read L bytes chunks */
     read_left = file_sz;
     read_now = rm_min(L, read_left);
     buf = malloc(read_now);
@@ -120,7 +120,7 @@ rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, char *fname,
     }
     file_sz = fs.st_size;
 
-    // read L bytes chanks
+    /* read L bytes chunks */
     read_left = file_sz;
     read_now = rm_min(L, read_left);
     buf = malloc(read_now);
@@ -154,10 +154,11 @@ rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, char *fname,
         e->f_ch = rm_fast_check_block(buf, read);
         rm_md5(buf, read, e->s_ch.data);
 
-        /* insert into hashtable, hashing fast checksum */
+        /* insert into list */
         TWINIT_LIST_HEAD(&e->link);
         e->n = entries_n;
         twlist_add(&e->link, l);
+
         entries_n++;
 
         read_left -= read;

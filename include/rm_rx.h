@@ -25,6 +25,7 @@
  *          may be NULL, if NULL then do not insert checksums
  * @param   f_tx_ch_ch - function to transmit checksums
  *          to remote end (A), may be NULL
+ * @param   fname - file name, used only for logging
  * @return  On success the number of inserted entries
  *          is returned, -1 on error. */
 long long int
@@ -37,6 +38,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
  *          from file @f and inserts them into list @l.
  * @details	File @f MUST be already opened.
  * @param   l - list to store checksums locally (B), can't be NULL
+ * @param   fname - file name, used only for logging
  * @return  On success the number of inserted entries
  *          is returned, -1 on error. */
 long long int
