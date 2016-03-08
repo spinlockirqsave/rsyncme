@@ -15,7 +15,8 @@
 int main(void)
 {
     const struct CMUnitTest tests[] = {
-	    cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_local_1)
+	    cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_local_1),
+	    cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_local_2)
     };
     return cmocka_run_group_tests(tests,
 		test_rm_setup, test_rm_teardown);

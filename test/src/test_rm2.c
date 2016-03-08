@@ -86,7 +86,7 @@ test_rm_setup(void **state)
 	if (buf == NULL)	
 	{
 		RM_LOG_ERR("Can't allocate memory buffer"
-		"of [%u] bytes, malloc failed", j);
+		" of [%u] bytes, malloc failed", j);
 	}
 	assert_true(buf != NULL);
 	rm_state.buf = buf;

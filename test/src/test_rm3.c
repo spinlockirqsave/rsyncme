@@ -33,6 +33,7 @@ test_rm_setup(void **state)
     int         err;
     uint32_t    i,j;
     FILE        *f;
+    void		*buf;
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog(
@@ -63,15 +64,27 @@ test_rm_setup(void **state)
                     " to file [%s]", j, rm_test_fnames[i]);
             srand(time(NULL));
             while (j--)
-            {
                 fputc(rand(), f);
-            }		
         } else {
             RM_LOG_INFO("Using previously created "
                     "file [%s]", rm_test_fnames[i]);
         }
         fclose(f);
     }
+
+    /* find biggest L */
+    i = 0;
+    j = 0;
+    for (; i < RM_TEST_L_BLOCKS_SIZE; ++i)
+        if (rm_test_L_blocks[i] > j) j = rm_test_L_blocks[i];
+    buf = malloc(j);
+    if (buf == NULL)	
+    {
+        RM_LOG_ERR("Can't allocate memory buffer"
+                " of [%u] bytes, malloc failed", j);
+	}
+    assert_true(buf != NULL);
+    rm_state.buf = buf;
     return 0;
 }
 
@@ -102,6 +115,7 @@ test_rm_teardown(void **state)
             }
         }
     }
+	free(rm_state->buf);
     return 0;
 }
 
@@ -178,6 +192,123 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
                 free(e);
                 ++blocks_n;
             }
+            assert_int_equal(entries_n, blocks_n);
+
+            RM_LOG_INFO("PASSED test of hashing of non-overlapping"
+                    " blocks, file [%s], size [%u], L [%u], blocks [%u]",
+                    fname, file_sz, L, blocks_n);
+            /* move file pointer back to the beginning */
+            rewind(f);
+        }
+        fclose(f);
+    }
+}
+
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
+{
+    FILE                    *f;
+    int                     fd;
+    uint32_t                i, j, L, file_sz, blocks_n;
+    uint32_t                read_left, read_now, read;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    char                    *fname;
+    long long int           entries_n;
+    struct rm_ch_ch_local   *e;
+    struct rm_md5           s_ch;
+    unsigned char           *buf;
+    struct twlist_head      *pos, l = TWLIST_HEAD_INIT(l);
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    /* test on all files */
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i)
+    {
+        fname = rm_test_fnames[i];
+        f = fopen(fname, "rb");
+        if (f == NULL)
+            RM_LOG_PERR("Can't open file [%s]", fname);
+        assert_true(f != NULL);
+        /* get file size */
+        fd = fileno(f);
+        if (fstat(fd, &fs) != 0)
+        {
+            RM_LOG_PERR("Can't fstat file [%s]", fname);
+            fclose(f);
+            assert_true(1 == 0);
+        }
+        file_sz = fs.st_size; 
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
+        {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing of hashing of non-"
+                    "overlapping blocks: file [%s], size [%u],"
+                    " block size L [%u]", fname, file_sz, L);
+            if (0 == L)
+            {
+                RM_LOG_INFO("Block size [%u] is too "
+                        "small for this test (should be > [%u]), "
+                        " skipping file [%s]", L, 0, fname);
+                continue;
+            }
+            if (file_sz < 2)
+            {
+                RM_LOG_INFO("File [%s] size [%u] is to small "
+                        "for this test, skipping", fname, file_sz);
+                continue;
+            }
+
+            RM_LOG_INFO("Testing of splitting file into non-overlapping "
+                    "blocks: file [%s], size [%u], block size L [%u], buffer"
+                    " [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+            /* number of blocks */
+            blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
+            TWINIT_LIST_HEAD(&l);
+            entries_n = rm_rx_insert_nonoverlapping_ch_ch_local(
+                                                            f, fname, &l, L);
+            assert_int_equal(entries_n, blocks_n);
+            rewind(f);
+
+            /* check hashes and free list entries */
+            blocks_n = 0;
+            /* read L bytes chunks */
+            read_left = file_sz;
+            read_now = rm_min(L, read_left);
+            buf = rm_state->buf;
+            pos = l.next;
+            do
+            {
+                read = fread(buf, 1, read_now, f);
+                if (read != read_now)
+                {
+                    RM_LOG_PERR("Error reading file [%s] "
+                    "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
+                    " BEING TESTED ! [AND IT SHOULDN'T HAPPENED!]", fname);
+                    assert_true(1 == 0);
+                }
+
+                assert_true(pos != &l);
+                e = tw_container_of(pos, struct rm_ch_ch_local, link); 
+                /* check fast checksum */
+                assert_true(e->f_ch == rm_fast_check_block(buf, read));
+                /* check strong checksum */
+                rm_md5(buf, read, s_ch.data);
+                assert_true(memcmp(e->s_ch.data,
+                            s_ch.data, RM_STRONG_CHECK_BITS) == 0);
+
+                ++blocks_n;
+
+                /* next list entry */
+                pos = pos->next;
+                free(e);
+                read_left -= read;
+                read_now = rm_min(L, read_left);
+            } while (read_now > 0 && pos != &l);
+
             assert_int_equal(entries_n, blocks_n);
 
             RM_LOG_INFO("PASSED test of hashing of non-overlapping"

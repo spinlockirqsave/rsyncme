@@ -74,6 +74,7 @@
 #define RM_CORE_HASH_OK             84
 #define RM_CORE_DAEMONIZE           0	        // become daemon or not, turn it to off
 						                        // while debugging for convenience
+#define RM_STRONG_CHECK_BITS        16
 
 // defaults
 #define RM_DEFAULT_L                512	        // default block size in bytes

@@ -157,7 +157,7 @@ rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, char *fname,
         /* insert into list */
         TWINIT_LIST_HEAD(&e->link);
         e->n = entries_n;
-        twlist_add(&e->link, l);
+        twlist_add_tail(&e->link, l);
 
         entries_n++;
 
