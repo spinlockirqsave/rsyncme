@@ -37,6 +37,7 @@ uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 struct test_rm_state
 {
 	uint32_t	*l;
+	void        *buf;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -63,6 +64,10 @@ rm_random_file(char *name, uint32_t len);
  *          into hashtable). */
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state);
+
+/* @brief   Test of checksums correctness. */
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state);
 
 
 #endif	// RSYNCME_TEST_RM3_H

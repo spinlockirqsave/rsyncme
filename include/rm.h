@@ -83,7 +83,7 @@
 /* @brief   Strong checksum struct. MD5. */
 struct rm_md5
 {
-	unsigned char data[16];
+	unsigned char data[RM_STRONG_CHECK_BITS];
 };
 
 /* @brief   Checksum checksum struct. */
