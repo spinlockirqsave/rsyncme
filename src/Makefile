@@ -28,6 +28,10 @@ RELEASETARGET			= ../build/release/rsyncme_d
 CMDDEBUGTARGET			= ../build/debug/rsyncme
 CMDRELEASETARGET		= ../build/release/rsyncme
 
+all:				all-release
+all-release:		rsyncme-release release
+all-debug:			rsyncme-debug debugall
+
 debugall:	$(SOURCES) $(DEBUGTARGET)
 releaseall:	$(SOURCES) $(RELEASETARGET)
 
