@@ -42,6 +42,14 @@ rsyncme/		<-- this directory
 BUILD & TEST
 There are few targets available: rsyncme_d, rsyncme, test executables.
 
+Default release build:
+    cd src
+    make    (will build rsyncme and rsyncme_d in release mode
+            same as "make all" and "make all-release")
+Default debug build:
+    cd src
+    make all-debug  (will build rsymcme and rsyncme_d in debug mode)
+
 To build rsyncme_d (daemon's executable):
 	cd src
 	make debug (or make release)
