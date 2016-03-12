@@ -49,11 +49,9 @@ Default release build:
 Default debug build:
     cd src
     make all-debug  (will build rsymcme and rsyncme_d in debug mode)
-
 To build rsyncme_d (daemon's executable):
 	cd src
 	make debug (or make release)
-
 To build rsyncme (commandline executable):
 	cd src
 	make rsyncme-debug (or make rsyncme-release)
