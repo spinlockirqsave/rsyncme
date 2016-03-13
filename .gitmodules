@@ -1,6 +1,3 @@
 [submodule "include/twlist"]
 	path = include/twlist
 	url = https://github.com/spinlockirqsave/twlist.git
-[submodule "Wiki"]
-	path = Wiki
-	url = https://piotrgregor@bitbucket.org/piotrgregor/rsyncme.git/Wiki
