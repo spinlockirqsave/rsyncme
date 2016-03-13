@@ -287,7 +287,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
                 {
                     RM_LOG_PERR("Error reading file [%s] "
                     "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
-                    " BEING TESTED ! [AND IT SHOULDN'T HAPPENED!]", fname);
+                    " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
                     assert_true(1 == 0);
                 }
 
