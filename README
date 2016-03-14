@@ -14,8 +14,11 @@ A simple implementation of rsync algorithm
 for efficient file synchronization.
 
 
-DIRECTORY structure
+DOWNLOAD
+git clone --recursive https://piotrgregor@bitbucket.org/piotrgregor/rsyncme.git
 
+
+DIRECTORY structure
 rsyncme/		<-- this directory
 	- README
 	- LICENSE
@@ -110,6 +113,6 @@ To clean rsyncme_d, rsyncme, tests & test logs (release & debug):
 
 
 
-Project website:    https://bitbucket.org/piotrgregor/rsyncme
+Project website:    https://bitbucket.org/piotrgregor/rsyncme/wiki/Home
 mirror:             http://github.com/spinlockirqsave/rsyncme
 
