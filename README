@@ -114,5 +114,6 @@ To clean rsyncme_d, rsyncme, tests & test logs (release & debug):
 
 
 Project website:    https://bitbucket.org/piotrgregor/rsyncme/wiki/Home
-mirror:             http://github.com/spinlockirqsave/rsyncme
+Project source:     https://bitbucket.org/piotrgregor/rsyncme
+Mirror:             https://github.com/spinlockirqsave/rsyncme/blob/master/Home.md
 
