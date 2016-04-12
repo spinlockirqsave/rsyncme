@@ -14,11 +14,12 @@ int
 rm_do_msg_push_rx(struct rsyncme *rm,
 			unsigned char *buf)
 {
-	int			err;
-	pthread_attr_t          attr;
+	int                 err;
+	pthread_attr_t      attr;
 	struct rm_session	*s;
 
-        assert(rm != NULL && buf != NULL);
+    (void) buf;
+    assert(rm != NULL && buf != NULL);
 
 	// create session, assign SID, insert
 	// session into table
@@ -69,17 +70,18 @@ int
 rm_do_msg_push_tx(struct rsyncme *rm,
 			unsigned char *buf)
 {
-	int			err;
-	pthread_attr_t          attr;
-	struct rm_session	*s;
+	int                 err;
+	pthread_attr_t      attr;
+	struct rm_session   *s;
 
-        assert(rm != NULL && buf != NULL);
+    (void) buf;
+    assert(rm != NULL && buf != NULL);
 
 	// create session, assign SID, insert
 	// session into table
-        s = rm_core_session_add(rm);
-        if (s == NULL)
-                return -1;
+    s = rm_core_session_add(rm);
+    if (s == NULL)
+        return -1;
 
 	// start rx_ch_ch thread and tx delta threads
 	// save pids in session object
@@ -94,7 +96,7 @@ rm_do_msg_push_tx(struct rsyncme *rm,
 	err = pthread_create(&s->ch_ch_tid, &attr,
 			rm_session_ch_ch_rx_f, s);
 	if (err != 0)
-                goto fail;
+        goto fail;
 
 	// tx delta thread
 	pthread_attr_destroy(&attr);
@@ -110,7 +112,7 @@ rm_do_msg_push_tx(struct rsyncme *rm,
 	err = pthread_create(&s->delta_tid, &attr,
 			rm_session_delta_tx_f, s);
 	if (err != 0)
-                goto fail;
+        goto fail;
 
         return 0;
 fail:
@@ -126,14 +128,15 @@ rm_do_msg_pull_tx(struct rsyncme *rm,
 {
 	struct rm_session	*s;
 
-        assert(rm != NULL && buf != NULL);
+    (void) buf;
+    assert(rm != NULL && buf != NULL);
 
 	// create session, assign SID, insert
 	// session into table
-        s = rm_core_session_add(rm);
-        if (s == NULL)
-                return -1;
-        return 0;
+    s = rm_core_session_add(rm);
+    if (s == NULL)
+        return -1;
+    return 0;
 }
 
 int
@@ -142,12 +145,13 @@ rm_do_msg_pull_rx(struct rsyncme *rm,
 {
 	struct rm_session	*s;
 
-        assert(rm != NULL && buf != NULL);
+    (void) buf;
+    assert(rm != NULL && buf != NULL);
 
 	// create session, assign SID, insert
 	// session into table
-        s = rm_core_session_add(rm);
-        if (s == NULL)
-                return -1;
-        return 0;
+    s = rm_core_session_add(rm);
+    if (s == NULL)
+        return -1;
+    return 0;
 }

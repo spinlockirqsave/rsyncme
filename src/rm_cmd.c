@@ -226,7 +226,7 @@ main( int argc, char *argv[])
         /* push? */
 		if ((flags & RM_BIT_0) == 0u)
 		{
-			/* local push request */
+			/* remote push request */
 			fprintf(stderr, "\nRemote push.\n");
 			res = rm_tx_remote_push(x, y, &remote_addr, L);
 			if (res < 0)
