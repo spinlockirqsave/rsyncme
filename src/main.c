@@ -17,13 +17,13 @@
 int
 main()
 {
-        struct rsyncme		rm;	// global rsyncme object
-	int			read_n;
-	unsigned char		buf[RM_TCP_MSG_MAX_LEN];
+    struct rsyncme  rm;	// global rsyncme object
+	int             read_n;
+	unsigned char   buf[RM_TCP_MSG_MAX_LEN];
 
 	// sockets
-	int			listenfd, connfd;
-	socklen_t		cli_len;
+	int         listenfd, connfd;
+	socklen_t   cli_len;
 	struct sockaddr_in	cli_addr, server_addr;
 	int			err, errsv;
 

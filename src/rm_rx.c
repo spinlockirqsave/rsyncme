@@ -12,7 +12,7 @@
 
 
 long long int
-rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
+rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
 		int (*f_tx_ch_ch)(const struct rm_ch_ch *))
 {
@@ -172,8 +172,8 @@ rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
 {
     int         fd, res;
     struct stat fs;
-    uint32_t	file_sz, read_left, read_now, read;
-    long long int           entries_n;
+    uint32_t	            file_sz, read_left, read_now, read;
+    size_t                  entries_n;
     struct rm_ch_ch_local   *e;
     unsigned char           *buf;
 

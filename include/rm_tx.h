@@ -13,7 +13,7 @@
 
 
 #include "rm.h"
-
+#include "rm_rx.h"
 
 /*
  * @brief   Locally sync files @x and @y such that

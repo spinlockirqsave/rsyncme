@@ -1,9 +1,10 @@
-/// @file      rm_session.c
-/// @brief	Rsync session.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	02 Nov 2016 04:08 PM
-/// @copyright	LGPLv2.1
+/*  @file       rm_session.c
+ *  @brief      Rsync session.
+ *  @author     Piotr Gregor <piotrek.gregor at gmail.com>
+ *  @version    0.1.2
+ *  @date       02 Nov 2016 04:08 PM
+ *  @copyright  LGPLv2.1
+ */
 
 
 #include "rm_session.h"
@@ -20,8 +21,10 @@ rm_session_create(struct rsyncme *rm)
 		return NULL;
 	memset(s, 0, sizeof(*s));
 	pthread_mutex_init(&s->session_mutex, NULL);
+	pthread_mutex_init(&s->rx_ch_ch_list_mutex, NULL);
+    TWINIT_LIST_HEAD(&s->rx_ch_ch_list);
 	s->rm = rm;
-        return s;
+    return s;
 }
 
 void
