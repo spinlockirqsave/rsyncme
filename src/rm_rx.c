@@ -14,12 +14,13 @@
 int
 rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n)
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
+        size_t limit, size_t *blocks_n)
 {
     int         fd, res;
     struct stat fs;
     uint32_t	file_sz, read_left, read_now, read;
-    long long int	entries_n;
+    size_t      entries_n;
     struct rm_ch_ch	*e;
     unsigned char	*buf;
 
@@ -89,7 +90,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
         }
         read_left -= read;
         read_now = rm_min(L, read_left);
-    } while (read_now > 0);
+    } while (read_now > 0 && entries_n < limit);
 
     if (blocks_n != NULL)
         *blocks_n = entries_n;
@@ -99,12 +100,13 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch_ref)(const struct rm_ch_ch_ref_hlink *), size_t *blocks_n)
+		int (*f_tx_ch_ch_ref)(const struct rm_ch_ch_ref_hlink *),
+        size_t limit, size_t *blocks_n)
 {
     int                 fd, res;
     struct stat         fs;
     uint32_t	        file_sz, read_left, read_now, read;
-    long long int	    entries_n;
+    size_t              entries_n;
     struct rm_ch_ch_ref_hlink	*e;
     unsigned char	    *buf;
 
@@ -177,7 +179,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
         }
         read_left -= read;
         read_now = rm_min(L, read_left);
-    } while (read_now > 0);
+    } while (read_now > 0 && entries_n < limit);
 
     if (blocks_n != NULL)
         *blocks_n = entries_n;
@@ -187,12 +189,13 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 int
 rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 		struct rm_ch_ch *checksums, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n)
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
+        size_t limit, size_t *blocks_n)
 {
     int         fd, res;
     struct stat fs;
     uint32_t	file_sz, read_left, read_now, read;
-    long long int	entries_n;
+    size_t      entries_n;
     struct rm_ch_ch	*e;
     unsigned char	*buf;
 
@@ -250,7 +253,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 
         read_left -= read;
         read_now = rm_min(L, read_left);
-    } while (read_now > 0);
+    } while (read_now > 0 && entries_n < limit);
 
     if (blocks_n != NULL)
         *blocks_n = entries_n;
@@ -259,7 +262,8 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 
 int
 rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
-		struct twlist_head *l, uint32_t L, size_t *blocks_n)
+		struct twlist_head *l, uint32_t L,
+        size_t limit, size_t *blocks_n)
 {
     int                     fd, res;
     struct stat             fs;
@@ -326,7 +330,7 @@ rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
 
         read_left -= read;
         read_now = rm_min(L, read_left);
-    } while (read_now > 0);
+    } while (read_now > 0 && entries_n < limit);
 
     *blocks_n = entries_n;
     return	0;

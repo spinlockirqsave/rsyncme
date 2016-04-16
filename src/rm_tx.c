@@ -75,7 +75,7 @@ rm_tx_local_push(const char *x, const char *y,
         * expected number of blocks is */
 	    blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
 		err = rm_rx_insert_nonoverlapping_ch_ch_local(
-                f_y, y, &l, L, &blocks_n);
+                f_y, y, &l, L, blocks_n_exp, &blocks_n);
         if (err != 0)
         {
             err = -6;

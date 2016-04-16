@@ -1,9 +1,11 @@
-///  @file      main.c
-///  @brief     Server start up.
-/// @author     Piotr Gregor piotrek.gregor at gmail.com
-///  @version   0.1.2
-///  @date      02 Jan 2015 02:35 PM
-///  @copyright LGPLv2.1
+/*
+ * @file        main.c
+ * @brief       Server start up.
+ * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @version     0.1.2
+ * @date        02 Jan 2015 02:35 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #include "rm_defs.h"
@@ -21,7 +23,6 @@ main()
 	int             read_n;
 	unsigned char   buf[RM_TCP_MSG_MAX_LEN];
 
-	// sockets
 	int         listenfd, connfd;
 	socklen_t   cli_len;
 	struct sockaddr_in	cli_addr, server_addr;
@@ -48,7 +49,6 @@ main()
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port        = htons(RM_SERVER_PORT);
 
-	// allow to rebind
 	int reuseaddr_on = 1;
 	err = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
 		&reuseaddr_on, sizeof(reuseaddr_on));
