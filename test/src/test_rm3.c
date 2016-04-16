@@ -1,6 +1,6 @@
 /*
  * @file        test_rm3.c
- * @brief       Test suite #1.
+ * @brief       Test suite #3.
  * @details     Test of local nonoverlapping
  *              checksums calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
@@ -124,11 +124,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
 {
     FILE                    *f;
     int                     fd;
+    int                     res;
     uint32_t                i, j, L, file_sz, blocks_n;
     struct test_rm_state    *rm_state;
     struct stat             fs;
     char                    *fname;
-    long long int           entries_n;
+    size_t                  entries_n;
     struct rm_ch_ch_local   *e;
     struct twlist_head      *pos, *tmp, l = TWLIST_HEAD_INIT(l);
 
@@ -180,8 +181,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
             /* number of blocks */
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             TWINIT_LIST_HEAD(&l);
-            entries_n = rm_rx_insert_nonoverlapping_ch_ch_local(
-                                                            f, fname, &l, L);
+            res = rm_rx_insert_nonoverlapping_ch_ch_local(f, fname, &l, L, &entries_n);
+            assert_int_equal(res, 0u);
             assert_int_equal(entries_n, blocks_n);
 
             /* free list entries */
@@ -209,12 +210,13 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
 {
     FILE                    *f;
     int                     fd;
+    int                     res;
     uint32_t                i, j, L, file_sz, blocks_n;
     uint32_t                read_left, read_now, read;
     struct test_rm_state    *rm_state;
     struct stat             fs;
     char                    *fname;
-    long long int           entries_n;
+    size_t                  entries_n;
     struct rm_ch_ch_local   *e;
     struct rm_md5           s_ch;
     unsigned char           *buf;
@@ -268,8 +270,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
             /* number of blocks */
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             TWINIT_LIST_HEAD(&l);
-            entries_n = rm_rx_insert_nonoverlapping_ch_ch_local(
-                                                            f, fname, &l, L);
+            res = rm_rx_insert_nonoverlapping_ch_ch_local(f, fname, &l, L, &entries_n);
+            assert_int_equal(res, 0u);
             assert_int_equal(entries_n, blocks_n);
             rewind(f);
 

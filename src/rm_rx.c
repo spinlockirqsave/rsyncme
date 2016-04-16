@@ -96,7 +96,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 
 int
 rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
-		struct rm_ch_ch checksums[], uint32_t L,
+		struct rm_ch_ch *checksums, uint32_t L,
 		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n)
 {
     int         fd, res;
@@ -109,6 +109,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
     assert(f != NULL);
     assert(fname != NULL);
     assert(L > 0);
+    assert(checksums != NULL);
 
     /* get file size */
     fd = fileno(f);
@@ -132,6 +133,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
     }
 
     entries_n = 0;
+    e = &checksums[0];
     do
     {
         read = fread(buf, 1, read_now, f);
@@ -143,11 +145,8 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
         }
 
         /* compute checksums */
-        e = &checksums[entries_n];
         e->f_ch = rm_fast_check_block(buf, read);
         rm_md5(buf, read, e->s_ch.data);
-
-        entries_n++;
 
         /* tx checksums to remote A ? */
         if (f_tx_ch_ch != NULL)
@@ -156,6 +155,9 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
             if (res < 0)
                 return -5;
         }
+        ++entries_n;
+        ++e;
+
         read_left -= read;
         read_now = rm_min(L, read_left);
     } while (read_now > 0);

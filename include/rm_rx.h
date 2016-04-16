@@ -36,13 +36,15 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, char *fname,
 /* @brief       Calculates ch_ch structs for all non-overlapping
  *              @L bytes blocks (last one may be less than @L)
  *              from file @f and inserts them into array @checkums.
- * @param       checksums - array of structs rm_ch_ch with size suitable
- *              to contain all checksums
+ * @param       checksums - pointer to array of structs rm_ch_ch,
+ *              array size must be sufficient to contain all checksums,
+ *              i.e. it must be >= than
+ *              (blocks_n = file_sz / L + (file_sz % L ? 1 : 0))
  * @blocks_n    on success - set to the number of inserted entries
  * @return      0 on succes, negative error code on error */
 int
 rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
-		struct rm_ch_ch checksums[], uint32_t L,
+		struct rm_ch_ch *checksums, uint32_t L,
 		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n);
 
 /* @brief       Calculates ch_ch_local structs for all non-overlapping
