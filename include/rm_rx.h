@@ -28,10 +28,16 @@
  * @param   fname - file name, used only for logging
  * @return  On success the number of inserted entries
  *          is returned, -1 on error. */
-long long int
+int
 rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *));
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n);
+
+int
+rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
+		struct twhlist_head *h, uint32_t L,
+		int (*f_tx_ch_ch_ref)(const struct rm_ch_ch_ref_hlink *),
+        size_t *blocks_n);
 
 /* @brief       Calculates ch_ch structs for all non-overlapping
  *              @L bytes blocks (last one may be less than @L)
