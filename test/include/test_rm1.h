@@ -37,6 +37,9 @@ uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 struct test_rm_state
 {
 	uint32_t	*l;
+    size_t      array_entries;
+    struct rm_ch_ch *array; /* will be big enough to serve as storage
+                               for checksums for all test files */
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -79,6 +82,13 @@ test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
  *          into hashtable). */
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state);
+
+/* @brief   Test of checksums calculation on nonoverlapping
+ *          blocks.
+ * @details Tests number of blocks used (and insertions
+ *          into array). */
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state);
 
 
 #endif	// RSYNCME_TEST_RM1_H
