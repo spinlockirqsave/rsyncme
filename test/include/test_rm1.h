@@ -3,7 +3,7 @@
  * @brief       Test suite #1.
  * @details     Test of rolling checksums and of nonoverlapping
  *              checksums calculation correctness.
- * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        10 Jan 2016 04:07 PM
  * @copyright   LGPLv2.1
@@ -72,6 +72,13 @@ test_rm_fast_check_roll(void **state);
  *          into hashtable). */
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
+
+/* @brief   Test of checksums calculation on nonoverlapping
+ *          blocks.
+ * @details Tests number of blocks used (and insertions
+ *          into hashtable). */
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state);
 
 
 #endif	// RSYNCME_TEST_RM1_H

@@ -130,7 +130,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
     struct stat             fs;
     char                    *fname;
     size_t                  entries_n;
-    struct rm_ch_ch_local   *e;
+    struct rm_ch_ch_ref_link    *e;
     struct twlist_head      *pos, *tmp, l = TWLIST_HEAD_INIT(l);
 
     rm_state = *state;
@@ -189,7 +189,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
             blocks_n = 0;
             twlist_for_each_safe(pos, tmp, &l)
             {
-                e = tw_container_of(pos, struct rm_ch_ch_local, link); 
+                e = tw_container_of(pos, struct rm_ch_ch_ref_link, link); 
                 free(e);
                 ++blocks_n;
             }
@@ -217,7 +217,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
     struct stat             fs;
     char                    *fname;
     size_t                  entries_n;
-    struct rm_ch_ch_local   *e;
+    struct rm_ch_ch_ref_link    *e;
     struct rm_md5           s_ch;
     unsigned char           *buf;
     struct twlist_head      *pos, l = TWLIST_HEAD_INIT(l);
@@ -294,7 +294,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
                 }
 
                 assert_true(pos != &l);
-                e = tw_container_of(pos, struct rm_ch_ch_local, link); 
+                e = tw_container_of(pos, struct rm_ch_ch_ref_link, link); 
                 /* check fast checksum */
                 assert_true(e->f_ch == rm_fast_check_block(buf, read));
                 /* check strong checksum */
