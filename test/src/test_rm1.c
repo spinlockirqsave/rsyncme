@@ -666,9 +666,9 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
  *          it was called. */
 size_t  f_tx_ch_ch_ref_2_callback_count;
 int
-f_tx_ch_ch_ref(const struct rm_ch_ch_ref_hlink *e_ref)
+f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_hlink_arg arg)
 {
-	(void) e_ref;
+	(void) arg;
     f_tx_ch_ch_ref_2_callback_count++;
 	return 0;
 }
@@ -737,7 +737,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
             /* reset callback counter */
             f_tx_ch_ch_ref_2_callback_count = 0;
 			rm_rx_insert_nonoverlapping_ch_ch_ref(
-					f, fname, h, L, f_tx_ch_ch_ref, blocks_n, &entries_n);
+					f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n);
             assert_int_equal(f_tx_ch_ch_ref_2_callback_count, blocks_n);
 
             /* TODO free hashtable entries */

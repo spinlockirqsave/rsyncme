@@ -25,8 +25,8 @@ rm_tx_local_push(const char *x, const char *y,
 	(void) x_sz;
     (void) fd_z;
     f_x = f_y = f_z = NULL;
-	/*TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);*/
-    struct twlist_head      l = TWLIST_HEAD_INIT(l);
+	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    /*struct twlist_head      l = TWLIST_HEAD_INIT(l);*/
 
     f_x = fopen(x, "rb");
 	if (f_x == NULL)
@@ -59,7 +59,7 @@ rm_tx_local_push(const char *x, const char *y,
 	x_sz = fs.st_size;
 
     /* get nonoverlapping checksums if we have @y */
-    TWINIT_LIST_HEAD(&l);
+    /*TWINIT_LIST_HEAD(&l);*/
 	if (f_y != NULL)
     {
         /* reference file exists, split it and calc checksums */
@@ -74,8 +74,8 @@ rm_tx_local_push(const char *x, const char *y,
         * and calculate checksums on these blocks,
         * expected number of blocks is */
 	    blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-		err = rm_rx_insert_nonoverlapping_ch_ch_local(
-                f_y, y, &l, L, blocks_n_exp, &blocks_n);
+		err = rm_rx_insert_nonoverlapping_ch_ch_ref(
+                f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
         if (err != 0)
         {
             err = -6;
