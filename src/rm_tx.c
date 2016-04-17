@@ -87,19 +87,9 @@ rm_tx_local_push(const char *x, const char *y,
             err = -6;
             goto  err_exit;
         }
-        if (blocks_n != blocks_n_exp)
-        {
-            err = -7;
-            goto  err_exit;
-        }
-    } else {
-        /* @y doesn't exist and --forced flag is specified */
-        err = rm_copy_buffered(f_x, f_z, x_sz);
-        if (err < 0)
-        {
-           err = -7;
-           goto err_exit;
-        }
+        assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed"
+                " indicating ERROR in blocks count either here "
+                "or inin rm_rx_insert_nonoverlapping_ch_ch_local");
     } else {
         /* @y doesn't exist and --forced flag is specified */
         err = rm_copy_buffered(f_x, f_z, x_sz);
