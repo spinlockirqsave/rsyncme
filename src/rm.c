@@ -190,14 +190,24 @@ rm_md5(const unsigned char *data, uint32_t len,
 int
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
 {
-    size_t read, written, read_total;
+    size_t read, read_exp;
     char buf[RM_L1_CACHE_RECOMMENDED];
 
-    while ((read = fread(buf, 1, RM_L1_CACHE_RECOMMENDED, x)) > 0)
+    read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    while ((read = fread(buf, 1, read_exp, x)) == read_exp)
     {
-        written = fwrite(buf, 1, read, y);
-        if (written != read)
+        if (fwrite(buf, 1, read_exp, y) != read_exp)
             return -1;
+        bytes_n -= read;
+        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    }
+
+    if (read == 0)
+    {
+        /* EOF reached */
+        return 0;
     }
 
     if (ferror(x) != 0)
