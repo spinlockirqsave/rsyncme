@@ -34,10 +34,17 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
         size_t limit, size_t *blocks_n);
 
+struct f_tx_ch_ch_ref_hlink_arg
+{
+    const struct rm_ch_ch_ref_hlink   *e;
+    const struct rm_session           *s;
+};
+int
+rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_hlink_arg arg);
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch_ref)(const struct rm_ch_ch_ref_hlink *),
+		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_hlink_arg),
         size_t limit, size_t *blocks_n);
 
 /* @brief       Calculates ch_ch structs for all non-overlapping

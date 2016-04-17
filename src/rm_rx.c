@@ -98,9 +98,20 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 }
 
 int
+rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_hlink_arg arg)
+{
+    const struct rm_ch_ch_ref_hlink *e;
+    const struct rm_session         *s;
+    e = arg.e;
+    s = arg.s;
+    if (e == NULL || s == NULL)
+        return -1;
+    return 0;
+}
+int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch_ref)(const struct rm_ch_ch_ref_hlink *),
+		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_hlink_arg),
         size_t limit, size_t *blocks_n)
 {
     int                 fd, res;
@@ -109,6 +120,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
     size_t              entries_n;
     struct rm_ch_ch_ref_hlink	*e;
     unsigned char	    *buf;
+    struct f_tx_ch_ch_ref_hlink_arg arg;
 
     assert(f != NULL);
     assert(fname != NULL);
@@ -173,7 +185,9 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
         /* tx checksums to remote A ? */
         if (f_tx_ch_ch_ref != NULL)
         {
-            res = f_tx_ch_ch_ref(e);
+            arg.e = e;
+            arg.s = NULL;
+            res = f_tx_ch_ch_ref(arg);
             if (res < 0)
                 return -5;
         }
