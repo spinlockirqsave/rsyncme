@@ -9,6 +9,7 @@
 
 
 #include "rm_rx.h"
+#include "rm_session.h"
 
 
 int
@@ -102,10 +103,28 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_hlink_arg arg)
 {
     const struct rm_ch_ch_ref_hlink *e;
     const struct rm_session         *s;
+    enum rm_session_type            s_type;
+    struct rm_session_push_rx       *rm_push_rx;
+    struct rm_session_pull_rx       *rm_pull_rx;
+
     e = arg.e;
     s = arg.s;
     if (e == NULL || s == NULL)
         return -1;
+    s_type = s->type;
+    if (s_type != RM_PUSH_RX && s_type != RM_PULL_RX)
+        return -2;
+    switch (s_type)
+    {
+        case RM_PUSH_RX:
+            rm_push_rx = (struct rm_session_push_rx*) s->prvt;
+            break;
+        case RM_PULL_RX:
+            break;
+        default:
+            return -2;
+    }
+
     return 0;
 }
 int

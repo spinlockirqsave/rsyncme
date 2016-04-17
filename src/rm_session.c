@@ -10,7 +10,7 @@
 #include "rm_session.h"
 
 
-// TODO: generate GUID here
+/* TODO: generate GUID here */
 struct rm_session *
 rm_session_create(struct rsyncme *rm)
 {

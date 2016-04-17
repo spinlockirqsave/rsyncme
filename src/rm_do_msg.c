@@ -1,9 +1,11 @@
-/// @file	rm_do_msg.c
-/// @brief	Execute TCP messages.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	02 Nov 2016 04:29 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        rm_do_msg.c
+ * @brief       Execute TCP messages.
+ * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @version     0.1.2
+ * @date        02 Nov 2016 04:29 PM
+ * @copyright   LGPLv2.1
+ */
 
 #include "rm_defs.h"
 #include "rm_core.h"
