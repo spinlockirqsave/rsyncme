@@ -237,7 +237,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state)
 			RM_TEST_MOCK_FSTAT64 = 1;
 			will_return(__wrap_fstat64, -1);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, NULL, NULL);
+					f, fname, h, L, NULL, 0, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_FSTAT64 = 0;
             
@@ -319,7 +319,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_3(void **state)
 			RM_TEST_MOCK_MALLOC = 1;
 			will_return(__wrap_malloc, NULL);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, NULL, NULL);
+					f, fname, h, L, NULL, 0, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_MALLOC = 0;
             
@@ -401,7 +401,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_4(void **state)
 			RM_TEST_MOCK_FREAD = 1;
 			will_return(__wrap_fread, file_sz);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, NULL, NULL);
+					f, fname, h, L, NULL, 0, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_FREAD = 0;
             
@@ -485,7 +485,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state)
 			will_return(__wrap_malloc, rm_state->buf);
 			will_return(__wrap_malloc, NULL);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, NULL, NULL);
+					f, fname, h, L, NULL, 1, NULL);
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_MALLOC = 0;
             
@@ -574,7 +574,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_6(void **state)
 			RM_LOG_INFO("Mocking fread, expectation [%d]",
 						res_expected);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, f_tx_ch_ch, NULL);
+					f, fname, h, L, f_tx_ch_ch, 0, NULL);
 			assert_int_equal(res, res_expected);
             
             /* TODO free hashtable entries */

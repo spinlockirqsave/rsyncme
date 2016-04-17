@@ -31,13 +31,14 @@
 int
 rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n);
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
+        size_t limit, size_t *blocks_n);
 
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
 		int (*f_tx_ch_ch_ref)(const struct rm_ch_ch_ref_hlink *),
-        size_t *blocks_n);
+        size_t limit, size_t *blocks_n);
 
 /* @brief       Calculates ch_ch structs for all non-overlapping
  *              @L bytes blocks (last one may be less than @L)
@@ -51,7 +52,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 int
 rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 		struct rm_ch_ch *checksums, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t *blocks_n);
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
+        size_t limit, size_t *blocks_n);
 
 /* @brief       Calculates ch_ch_local structs for all non-overlapping
  *              @L bytes blocks (last one may be less than @L)
@@ -63,7 +65,8 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
  * @return      0 on success, negative error code on error. */
 int
 rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
-		struct twlist_head *l, uint32_t L, size_t *blocks_n);
+		struct twlist_head *l, uint32_t L,
+        size_t limit, size_t *blocks_n);
 
 
 #endif	// RSYNCME_RX_H

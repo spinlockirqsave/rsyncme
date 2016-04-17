@@ -85,11 +85,11 @@ test_rm_setup(void **state)
 	if (array == NULL)	
 	{
 		RM_LOG_ERR("Can't allocate memory for array buffer"
-		" of [%u] bytes, malloc failed", j * sizeof(*array);
+		" of [%u] bytes, malloc failed", j * sizeof(*array));
 	}
 	assert_true(array != NULL);
-    rm_state->array_entries = j;
-	rm_state->array = array;
+    rm_state.array_entries = j;
+	rm_state.array = array;
 	return 0;
 }
 
@@ -477,7 +477,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 			/* number of blocks */
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
-					f, fname, h, L, NULL, &entries_n);
+					f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, 0u);
             assert_int_equal(entries_n, blocks_n);
 
@@ -557,7 +557,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
 			/* number of blocks */
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
 			res = rm_rx_insert_nonoverlapping_ch_ch_ref(
-					f, fname, h, L, NULL, &entries_n);
+					f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, 0u);
 			assert_int_equal(entries_n, blocks_n);
 
@@ -585,7 +585,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
 	struct stat             fs;
 	char                    *fname;
 	size_t                  blocks_n, entries_n;
-    struct rm_ch_ch         *arr;
+    struct rm_ch_ch         *array;
 
 	rm_state = *state;
 	assert_true(rm_state != NULL);
@@ -642,7 +642,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
             assert(array != NULL && "Assertion failed, array buffer "
                     "not allocated!\n");
 			res = rm_rx_insert_nonoverlapping_ch_ch_array(
-					f, fname, array, L, NULL, &entries_n);
+					f, fname, array, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, 0);
             assert_int_equal(entries_n, blocks_n);
 
