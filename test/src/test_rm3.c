@@ -302,7 +302,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
                 /* check strong checksum */
                 rm_md5(buf, read, s_ch.data);
                 assert_true(memcmp(e->data.ch_ch.s_ch.data,
-                            s_ch.data, RM_STRONG_CHECK_BITS) == 0);
+                            s_ch.data, RM_STRONG_CHECK_BYTES) == 0);
 
                 ++blocks_n;
 

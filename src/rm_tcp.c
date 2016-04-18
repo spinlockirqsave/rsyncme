@@ -26,7 +26,7 @@ rm_tcp_rx(int fd, void *buf, size_t bytes_n)
         {
             bytes_read = read(fd, buf + bytes_read_total,
                                 (bytes_n - bytes_read_total));
-        } while((bytes_read == -1) && (errno == EINTR));
+        } while ((bytes_read == -1) && (errno == EINTR));
 
         if (bytes_read == -1)
         {
@@ -35,23 +35,48 @@ rm_tcp_rx(int fd, void *buf, size_t bytes_n)
         }
         bytes_read_total += bytes_read;
     }
+    return bytes_read_total;
 }
 
-int
+ssize_t
 rm_tcp_tx(int fd, void *buf, size_t bytes_n)
 {
-    return 0;
+    size_t      bytes_written_total = 0;
+    ssize_t     bytes_written;
+
+    while (bytes_written_total != bytes_n)
+    {
+        do
+        {
+            bytes_written = write(fd, buf + bytes_written_total,
+                            (bytes_n - bytes_written_total));
+        } while ((bytes_written == -1) && (errno == EINTR));
+
+        if (bytes_written == -1)
+        {
+            /* Bad. */
+            return -1;
+        }
+        bytes_written_total += bytes_written;
+    }
+    return bytes_written_total;
 }
 
 int
 rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e)
 {
-    unsigned char buf[RM_CHECKSUMS_SIZE], *pbuf;
+    ssize_t bytes_written;
+    unsigned char buf[RM_CH_CH_REF_SIZE], *pbuf;
 
     /* serialize data */
     pbuf = rm_serialize_u32(buf, e->ch_ch.f_ch);
+    memcpy(pbuf, &e->ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
+    pbuf += RM_STRONG_CHECK_BYTES;
+    pbuf = rm_serialize_size_t(pbuf, e->ref);
 
     /* tx over TCP connection */
-    /* rm_tcp_tx */
+    bytes_written = rm_tcp_tx(fd, buf, RM_CH_CH_REF_SIZE);
+    if (bytes_written == -1 || (size_t)bytes_written != RM_CH_CH_REF_SIZE)
+        return -1;
     return 0;
 }
