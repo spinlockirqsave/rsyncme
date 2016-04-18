@@ -14,8 +14,8 @@
 unsigned char *
 rm_serialize_u32(unsigned char *buf, uint32_t v)
 {
-	// write big-endian int value into buffer
-	// assumes 32-bit int and 8-bit char.
+	/* write big-endian int value into buffer
+     * assumes 32-bit int and 8-bit char */
 	buf[0] = v >> 24;
 	buf[1] = v >> 16;
 	buf[2] = v >> 8;

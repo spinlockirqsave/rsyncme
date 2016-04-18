@@ -9,14 +9,6 @@
 
 #include "rm_session.h"
 
-enum rm_session_type
-{
-    RM_PUSH_LOCAL,
-    RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
-    RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
-    RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
-    RM_PULL_TX,     /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
-};
 
 /* TODO: generate GUID here */
 struct rm_session *

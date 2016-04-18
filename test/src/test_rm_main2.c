@@ -15,11 +15,11 @@
 int main(void)
 {
     const struct CMUnitTest tests[] = {
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_2),
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_3),
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_4),
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_5),
-	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_6)
+	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_ref_2),
+	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_ref_3),
+	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_ref_4),
+	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_ref_5),
+	cmocka_unit_test(test_rm_rx_insert_nonoverlapping_ch_ch_ref_6)
     };
     return cmocka_run_group_tests(tests,
 		test_rm_setup, test_rm_teardown);

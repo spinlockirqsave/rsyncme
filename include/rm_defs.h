@@ -76,6 +76,8 @@
 #define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off
                                                    while debugging for convenience */
 #define RM_STRONG_CHECK_BITS        16
+#define RM_CHECKSUMS_SIZE (sizeof(uint32_t) \
+        + (sizeof(unsigned char) * (RM_STRONG_CHECK_BITS)))
 
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */

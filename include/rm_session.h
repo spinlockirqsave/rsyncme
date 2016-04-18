@@ -39,10 +39,13 @@ struct rm_session
 /* receiver of file (delta vector) */
 struct rm_session_push_rx
 {
+    int     fd; /* socket handle */
 };
+
 /* receiver of file (delta vector) */
 struct rm_session_pull_rx
 {
+    int     fd; /* socket handle */
 };
 
 /* @brief   Creates new session. */

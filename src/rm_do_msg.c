@@ -12,6 +12,7 @@
 #include "rm_serialize.h"
 #include "rm_session.h"
 
+
 int
 rm_do_msg_push_rx(struct rsyncme *rm,
 			unsigned char *buf)
@@ -25,9 +26,9 @@ rm_do_msg_push_rx(struct rsyncme *rm,
 
 	// create session, assign SID, insert
 	// session into table
-        s = rm_core_session_add(rm);
-        if (s == NULL)
-                return -1;
+    s = rm_core_session_add(rm, RM_PUSH_RX);
+    if (s == NULL)
+        return -1;
 	
 	// start tx_ch_ch and rx delta threads
 	// save pid in session object
@@ -81,7 +82,7 @@ rm_do_msg_push_tx(struct rsyncme *rm,
 
 	// create session, assign SID, insert
 	// session into table
-    s = rm_core_session_add(rm);
+    s = rm_core_session_add(rm, RM_PUSH_TX);
     if (s == NULL)
         return -1;
 
@@ -135,7 +136,7 @@ rm_do_msg_pull_tx(struct rsyncme *rm,
 
 	// create session, assign SID, insert
 	// session into table
-    s = rm_core_session_add(rm);
+    s = rm_core_session_add(rm, RM_PULL_TX);
     if (s == NULL)
         return -1;
     return 0;
@@ -152,7 +153,7 @@ rm_do_msg_pull_rx(struct rsyncme *rm,
 
 	// create session, assign SID, insert
 	// session into table
-    s = rm_core_session_add(rm);
+    s = rm_core_session_add(rm, RM_PULL_RX);
     if (s == NULL)
         return -1;
     return 0;
