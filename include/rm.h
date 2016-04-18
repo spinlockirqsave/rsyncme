@@ -97,48 +97,29 @@ struct rm_ch_ch
                             * MUST have a very low probability of collision.
                             * This is computed only when fast & cheap checksum matches
                             * one of the fast & cheap checksums in ch_ch vector. */
-	struct twhlist_node	hlink;
-};
-
-/* @brief   Checksum checksum struct used for local syncs.
- * @details Checkums are inserted into list and offset
- *          is needed inside struct to keep reference to location
- *          in file these checksums correspond to. */
-struct rm_ch_ch_ref_link
-{
-    uint32_t		f_ch;   /*Fast and very cheap
-                            * 32-bit rolling checksum,
-                            * MUST be very cheap to compute
-                            * at every byte offset */
-    struct rm_md5   s_ch;   /* Strong and computationally expensive 128-bit checksum,
-                            * MUST have a very low probability of collision.
-                            * This is computed only when fast & cheap checksum matches
-                            * one of the fast & cheap checksums in ch_ch vector. */
-/*    off_t           offset; The reference to location in B's F_B file
-*                             (taken from ch_ch list) */
-    size_t          ref;      /* The reference to location in B's F_B file
-                            * (taken from ch_ch list), block number */
-	struct twlist_head  link;
 };
 
 /* @brief   Checksum checksum struct used for remote/local syncs.
- * @details Checkums are inserted into hashtable and offset
- *          is needed inside struct to keep reference to location
+ * @details Contains offset to keep reference to location
  *          in file these checksums correspond to. */
+struct rm_ch_ch_ref
+{
+    struct rm_ch_ch     ch_ch;
+    size_t              ref;    /* The reference to location in B's F_B file
+                                 * (taken from ch_ch list), block number */
+};
+
+/* @brief   Checksum checksum struct used for local syncs. */
+struct rm_ch_ch_ref_link
+{
+    struct rm_ch_ch_ref data;
+	struct twlist_head  link;
+};
+
+/* @brief   Checksum checksum struct used for remote/local syncs. */
 struct rm_ch_ch_ref_hlink
 {
-    uint32_t		f_ch;   /*Fast and very cheap
-                            * 32-bit rolling checksum,
-                            * MUST be very cheap to compute
-                            * at every byte offset */
-    struct rm_md5   s_ch;   /* Strong and computationally expensive 128-bit checksum,
-                            * MUST have a very low probability of collision.
-                            * This is computed only when fast & cheap checksum matches
-                            * one of the fast & cheap checksums in ch_ch vector. */
-/*    off_t           offset; The reference to location in B's F_B file
-*                             (taken from ch_ch list) */
-    size_t          ref;      /* The reference to location in B's F_B file
-                            * (taken from ch_ch list), block number */
+    struct rm_ch_ch_ref data;
 	struct twhlist_node hlink;
 };
 

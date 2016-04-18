@@ -118,11 +118,16 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_hlink_arg arg)
     {
         case RM_PUSH_RX:
             rm_push_rx = (struct rm_session_push_rx*) s->prvt;
+            if (rm_push_rx == NULL)
+                return -3;
+            if (rm_tcp_write(rm_push_rx->remote_sock, e, sizeof *e
+
             break;
         case RM_PULL_RX:
+            rm_pull_rx = (struct rm_session_pull_rx*) s->prvt;
             break;
         default:
-            return -2;
+            return -4;
     }
 
     return 0;

@@ -47,7 +47,7 @@ struct rm_session_pull_rx
 
 /* @brief   Creates new session. */
 struct rm_session *
-rm_session_create(struct rsyncme *engine);
+rm_session_create(struct rsyncme *engine, enum rm_session_type t);
 
 void
 rm_session_free(struct rm_session *s);
