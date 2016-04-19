@@ -11,7 +11,7 @@
 #ifndef RSYNCME_SESSION_H
 #define RSYNCME_SESSION_H
 
-#include "rm_defs.h"
+#include "rm.h"
 #include "twlist.h"
 
 
@@ -36,13 +36,13 @@ struct rm_session
     void                    *prvt;
 };
 
-/* receiver of file (delta vector) */
+/* Receiver of file (delta vector) */
 struct rm_session_push_rx
 {
     int     fd; /* socket handle */
 };
 
-/* receiver of file (delta vector) */
+/* Receiver of file (delta vector) */
 struct rm_session_pull_rx
 {
     int     fd; /* socket handle */
@@ -55,21 +55,35 @@ rm_session_create(struct rsyncme *engine, enum rm_session_type t);
 void
 rm_session_free(struct rm_session *s);
 
-/* @brief   Rx checksums calculated by receiver (B) on nonoverlapping
- * blocks. */
-void *
-rm_session_ch_ch_rx_f(void *arg);
 
-/* @brief Tx delta reconstruction data. */
-void *
-rm_session_delta_tx_f(void *arg);
+/* HIGH LEVEL API */
 
-/* @brief  Tx checksums calculated by receiver (B) on nonoverlapping
- * blocks to sender (A). */
+/* @brief   Tx nonoverlapping checksums (B calculates
+ *          them and B calls this method)*/
 void *
 rm_session_ch_ch_tx_f(void *arg);
 
-/* @brief  Rx delta reconstruction data and do reconstruction. */
+/* @brief   Rx checksums calculated by receiver (B)
+ *          on nonoverlapping blocks (B calculates
+ *          them and A calls this method). */
+void *
+rm_session_ch_ch_rx_f(void *arg);
+
+struct rm_session_delta_tx_f_arg
+{
+    struct twhlist_head     *h;             /* nonoverlapping checkums */
+    FILE                    *f_x;           /* file on which rolling is performed */              
+    rm_delta_f              *delta_f;       /* tx/reconstruct callback */
+};
+/* @brief       Process delta reconstruction data (tx|reconstruct|etc...).
+ * @details     Runs rolling checksums procedure and compares checksums
+ *              to those calculated on nonoverlapping blocks of @y in (B)
+ *              producing delta elements. Calls callback on each element
+ *              to transmit those to (B) or reconstruct file locally, etc.
+ */
+void *
+rm_session_delta_tx_f(void *arg);
+
 void *
 rm_session_delta_rx_f(void *arg);
 

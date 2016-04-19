@@ -18,7 +18,10 @@
 
 /* @brief   Locally sync files @x and @y such that
  *          @y becomes same as @x.
- * @details If flags 0 bit is set @y will be created
+ * @details 1. Calc nonoverlapping checksums (insert into hashtable)
+ *          2. Run rolling checksums procedure (calc delta vector)
+ *          3. Reconstruct the file
+ *          If flags 0 bit is set @y will be created
  *          if it doesn't exist and sync will be simple
  *          copying of @x into new file with name @y.
  * @param   flags: bits
@@ -42,9 +45,16 @@ int
 rm_tx_local_push(const char *x, const char *y,
 			uint32_t L, rm_push_flags flags);
 
+/* Initialize PUSH, ask for nonoverlapping checksums,
+ * send delta vector. */
 int
 rm_tx_remote_push(const char *x, const char *y,
 		struct sockaddr_in *remote_addr,
 		uint32_t L);
 
-#endif	// RSYNCME_TX_H
+/* @brief   Tx delta element from (A) to (B). */
+rm_delta_f
+rm_tx_delta_e_f_1;
+
+
+#endif	/* RSYNCME_TX_H */
