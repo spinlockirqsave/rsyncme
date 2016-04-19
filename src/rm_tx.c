@@ -24,6 +24,7 @@ rm_tx_local_push(const char *x, const char *y,
 	struct      stat	fs;
 	uint32_t    x_sz, y_sz, blocks_n_exp;
     size_t      blocks_n;
+    struct rm_session_delta_tx_f_arg    delta_tx_f_arg;
 
 	(void) x_sz;
     (void) fd_z;
@@ -89,7 +90,7 @@ rm_tx_local_push(const char *x, const char *y,
         }
         assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed"
                 " indicating ERROR in blocks count either here "
-                "or inin rm_rx_insert_nonoverlapping_ch_ch_local");
+                "or in rm_rx_insert_nonoverlapping_ch_ch_local");
     } else {
         /* @y doesn't exist and --forced flag is specified */
         err = rm_copy_buffered(f_x, f_z, x_sz);
@@ -100,7 +101,13 @@ rm_tx_local_push(const char *x, const char *y,
         }
     }
 
-    /* calc rolling checksums, produce delta vector */
+    /* calc rolling checksums, produce delta vector
+     * and do file reconstruction */
+    /* pack h, f_x, rm_rx_reconstruct_1 to arg */
+    delta_tx_f_arg.h = h;
+    delta_tx_f_arg.f_x = f_x;
+    delta_tx_f_arg.delta_f = rm_rx_delta_e_reconstruct_f_1;
+    rm_session_delta_tx_f(&delta_tx_f_arg);
     /* reconstruct */
   
 	return 0;

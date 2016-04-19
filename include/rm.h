@@ -123,6 +123,11 @@ struct rm_ch_ch_ref_hlink
 	struct twhlist_node hlink;
 };
 
+/* Delta vector element. */
+struct rm_delta_e
+{
+};
+
 /* @brief   Calculate similar to adler32 fast checkum on a given
  *          file block of size @len starting from @data.
  * @details Adler checksum uses prime number 65521 as modulus.
@@ -200,4 +205,7 @@ int
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
 
 
-#endif	// RSYNCME_H
+typedef int (rm_delta_f)(void*);
+
+
+#endif	/* RSYNCME_H */

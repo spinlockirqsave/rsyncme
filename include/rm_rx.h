@@ -45,7 +45,7 @@ struct f_tx_ch_ch_ref_arg
 int
 rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg arg);
 int
-rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
+rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f_x, const char *fname,
 		struct twhlist_head *h, uint32_t L,
 		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg),
         size_t limit, size_t *blocks_n);
@@ -60,7 +60,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
  * @blocks_n    on success - set to the number of inserted entries
  * @return      0 on succes, negative error code on error */
 int
-rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
+rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f_x, const char *fname,
 		struct rm_ch_ch *checksums, uint32_t L,
 		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
         size_t limit, size_t *blocks_n);
@@ -74,9 +74,18 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
  * @blocks_n    on success - set to the number of inserted entries
  * @return      0 on success, negative error code on error. */
 int
-rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
+rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f_x, const char *fname,
 		struct twlist_head *l, uint32_t L,
         size_t limit, size_t *blocks_n);
 
+struct rm_rx_delta_e_reconstruct_arg
+{
+    FILE    *f_z;
+    struct  rm_delta_e e;
+    FILE    *f_y;
+};
+rm_delta_f
+rm_rx_delta_e_reconstruct_f_1;
 
-#endif	// RSYNCME_RX_H
+
+#endif	/* RSYNCME_RX_H */
