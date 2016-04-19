@@ -71,12 +71,14 @@ test_rm_fast_check_roll(void **state);
 
 /* #1 Test of checksums calculation on nonoverlapping blocks */
 
-/* @brief   Test of checksums calculation on nonoverlapping
+/*
+ * @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
  * @details Tests number of blocks used (and insertions
- *          into hashtable). */
+ *          into hashtable).
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
+*/
 
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.

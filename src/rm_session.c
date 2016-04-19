@@ -10,9 +10,9 @@
 #include "rm_session.h"
 
 
-// TODO: generate GUID here
+/* TODO: generate GUID here */
 struct rm_session *
-rm_session_create(struct rsyncme *rm)
+rm_session_create(struct rsyncme *rm, enum rm_session_type t)
 {
 	struct rm_session *s;
 
@@ -24,7 +24,32 @@ rm_session_create(struct rsyncme *rm)
 	pthread_mutex_init(&s->rx_ch_ch_list_mutex, NULL);
     TWINIT_LIST_HEAD(&s->rx_ch_ch_list);
 	s->rm = rm;
+
+    switch (t)
+    {
+        case RM_PUSH_RX:
+            s->prvt = malloc(sizeof(struct rm_session_push_rx));
+            if (s->prvt == NULL)
+                goto fail;
+            break;
+        case RM_PULL_RX:
+            s->prvt = malloc(sizeof(struct rm_session_pull_rx));
+            if (s->prvt == NULL)
+                goto fail;
+            break;
+        default:
+            goto fail;
+    }
+
     return s;
+
+fail:
+    if (s->prvt)
+        free(s->prvt);
+    pthread_mutex_destroy(&s->session_mutex);
+    pthread_mutex_destroy(&s->rx_ch_ch_list_mutex);
+    free(s);
+    return NULL;
 }
 
 void

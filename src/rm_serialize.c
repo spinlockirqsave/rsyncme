@@ -1,25 +1,15 @@
-/// @file	rm_serialize.c
-/// @brief	Serialize TCP messages.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	03 Nov 2016 01:56 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        rm_serialize.c
+ * @brief       Serialize TCP messages, checksums.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        03 Nov 2016 01:56 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #include "rm_serialize.h"
 
-
-unsigned char *
-rm_serialize_u32(unsigned char *buf, uint32_t v)
-{
-	// write big-endian int value into buffer
-	// assumes 32-bit int and 8-bit char.
-	buf[0] = v >> 24;
-	buf[1] = v >> 16;
-	buf[2] = v >> 8;
-	buf[3] = v;
-	return buf + 4;
-}
 
 unsigned char *
 rm_serialize_char(unsigned char *buf, char v)
@@ -41,6 +31,43 @@ rm_serialize_u16(unsigned char *buf, uint16_t v)
 	buf[0] = v >> 8;
 	buf[1] = v;
 	return buf + 2;
+}
+
+unsigned char *
+rm_serialize_u32(unsigned char *buf, uint32_t v)
+{
+	/* write big-endian int value into buffer
+     * assumes 32-bit int and 8-bit char */
+	buf[0] = v >> 24;
+	buf[1] = v >> 16;
+	buf[2] = v >> 8;
+	buf[3] = v;
+	return buf + 4;
+}
+
+unsigned char *
+rm_serialize_size_t(unsigned char *buf, size_t v)
+{
+    if (sizeof(size_t) == 4)
+    {
+        buf = rm_serialize_u32(buf, v);
+        return buf;
+    } else if (sizeof(size_t) == 8)
+    {
+        /* write big-endian int value into buffer
+         * assumes 8-bit char */
+        buf[0] = v >> (24 + 32);
+        buf[1] = v >> (16 + 32);
+        buf[2] = v >> (8 + 32);
+        buf[3] = v >> 32;
+        buf[4] = v >> 24;
+        buf[5] = v >> 16;
+        buf[6] = v >> 8;
+        buf[7] = v;
+        return buf + 8;
+    } else {
+        assert(0 && "Unsuported architecture!");
+    }
 }
 
 unsigned char *

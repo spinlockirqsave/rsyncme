@@ -413,7 +413,7 @@ test_rm_fast_check_roll(void **state)
 	}
 }
 
-/* @brief   Tests number of calculated entries. */
+/* @brief   Tests number of calculated entries.
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 {
@@ -430,7 +430,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	/* test on all files */
+	 test on all files 
 	i = 0;
 	for (; i < RM_TEST_FNAMES_N; ++i)
 	{
@@ -441,7 +441,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 			RM_LOG_PERR("Can't open file [%s]", fname);
 		}
 		assert_true(f != NULL);
-		/* get file size */
+		 get file size 
 		fd = fileno(f);
 		if (fstat(fd, &fs) != 0)
 		{
@@ -474,24 +474,24 @@ test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state)
 			RM_LOG_INFO("Testing of splitting file into non-overlapping "
 				"blocks: file [%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			/* number of blocks */
+			 number of blocks 
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
 			res = rm_rx_insert_nonoverlapping_ch_ch(
 					f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, 0);
             assert_int_equal(entries_n, blocks_n);
 
-            /* TODO free hashtable entries */
+             TODO free hashtable entries 
 			
 			RM_LOG_INFO("PASSED test of hashing of non-overlapping"
 				" blocks, file [%s], size [%u], L [%u]", fname,
 				file_sz, L);
-			/* move file pointer back to the beginning */
+			 move file pointer back to the beginning 
 			rewind(f);
 		}
 		fclose(f);
 	}
-}
+}*/
 
 /* @brief   Tests number of calculated entries. */
 void
@@ -666,7 +666,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
  *          it was called. */
 size_t  f_tx_ch_ch_ref_2_callback_count;
 int
-f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_hlink_arg arg)
+f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg arg)
 {
 	(void) arg;
     f_tx_ch_ch_ref_2_callback_count++;

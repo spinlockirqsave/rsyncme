@@ -78,31 +78,31 @@ __wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
  * @details Tests reporting of error after failed
  *          call to fstat. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_2(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state);
 
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
  * @details Tests reporting of error after failed call to malloc. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_3(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state);
 
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
  * @details Tests reporting of error after failed call to fread. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_4(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state);
 
 /* @brief   Test of checksums calculation on nonoverlapping blocks.
  * @details Tests reporting of error after failed second call to malloc
  *          (first call is successfull). */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_5(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state);
 
 /* @brief   Test of checksums calculation on nonoverlapping blocks.
  * @details Tests reporting of error after failed call to function
  *          sending checksums to remote A. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_6(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state);
 
 
 #endif	// RSYNCME_TEST_RM2_H

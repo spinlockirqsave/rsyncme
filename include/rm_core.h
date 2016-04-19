@@ -77,7 +77,8 @@ rm_core_session_find(struct rsyncme *rm,
 /// @brief	    Creates and adds new sesion into table.
 /// @details	Generates SID.
 struct rm_session *
-rm_core_session_add(struct rsyncme *rm);
+rm_core_session_add(struct rsyncme *rm,
+                    enum rm_session_type type);
 
 /// @brief      Shut down.
 int

@@ -45,13 +45,14 @@ rm_core_session_find(struct rsyncme *rm,
 }
 
 struct rm_session *
-rm_core_session_add(struct rsyncme *rm)
+rm_core_session_add(struct rsyncme *rm,
+                        enum rm_session_type type)
 {
         struct rm_session	*s = NULL;
 
         assert(rm != NULL);
 
-        s = rm_session_create(rm);
+        s = rm_session_create(rm, type);
         if (s == NULL)
                 return NULL;
 	pthread_mutex_lock(&rm->mutex);

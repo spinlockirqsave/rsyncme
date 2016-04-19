@@ -10,7 +10,7 @@ DEBUGOUTPUTDIR			= ../build/debug
 RELEASEOUTPUTDIR		= ../build/release
 #TESTOUTPUTDIR			= ../test/build/release
 #TESTOUTPUTDIR_D		= ../test/build/debug
-SOURCES					= main.c rm.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c	\
+SOURCES					= main.c rm.c rm_tcp.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c	\
 				  		rm_session.c rm_signal.c rm_serialize.c rm_util.c	\
 				  		md5.c
 #TESTSOURCES			= ../test/src/test_rsyncme.c

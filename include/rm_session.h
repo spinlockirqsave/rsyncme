@@ -1,9 +1,11 @@
-/// @file	rm_session.h
-/// @brief	Rsync session.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	02 Nov 2016 04:08 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        rm_session.h
+ * @brief       Rsync session.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        02 Nov 2016 04:08 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #ifndef RSYNCME_SESSION_H
@@ -29,12 +31,26 @@ struct rm_session
 
 	struct rsyncme          *rm;    /* pointer to global
                                        rsyncme object */
+
+    enum rm_session_type    type;
+    void                    *prvt;
 };
 
+/* receiver of file (delta vector) */
+struct rm_session_push_rx
+{
+    int     fd; /* socket handle */
+};
+
+/* receiver of file (delta vector) */
+struct rm_session_pull_rx
+{
+    int     fd; /* socket handle */
+};
 
 /* @brief   Creates new session. */
 struct rm_session *
-rm_session_create(struct rsyncme *engine);
+rm_session_create(struct rsyncme *engine, enum rm_session_type t);
 
 void
 rm_session_free(struct rm_session *s);

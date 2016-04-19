@@ -1,9 +1,11 @@
-/// @file	rm_serialize.h
-/// @brief	Serialize TCP messages.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	03 Nov 2016 01:56 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        rm_serialize.h
+ * @brief       Serialize TCP messages, checksums.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        03 Nov 2016 01:56 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #ifndef RSYNCME_SERIALIZE_H
@@ -15,18 +17,19 @@
 
 
 unsigned char *
-rm_serialize_u32(unsigned char *buf, uint32_t v);
-
-unsigned char *
 rm_serialize_char(unsigned char *buf, char v);
-
 
 unsigned char *
 rm_serialize_u8(unsigned char *buf, uint8_t v);
 
-
 unsigned char *
 rm_serialize_u16(unsigned char *buf, uint16_t v);
+
+unsigned char *
+rm_serialize_u32(unsigned char *buf, uint32_t v);
+
+unsigned char *
+rm_serialize_size_t(unsigned char *buf, size_t v);
 
 unsigned char *
 rm_serialize_msg_hdr(unsigned char *buf,
@@ -58,4 +61,4 @@ uint8_t
 rm_msg_hdr_z(unsigned char *buf);
 
 
-#endif	// RSYNCME_SERIALIZE_H
+#endif	/* RSYNCME_SERIALIZE_H */

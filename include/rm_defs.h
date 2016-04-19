@@ -75,7 +75,10 @@
 #define RM_CORE_HASH_OK             84
 #define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off
                                                    while debugging for convenience */
-#define RM_STRONG_CHECK_BITS        16
+#define RM_STRONG_CHECK_BYTES       16
+#define RM_CH_CH_SIZE (sizeof((((struct rm_ch_ch_ref*)0)->ch_ch)))
+#define RM_CH_CH_REF_SIZE (RM_CH_CH_SIZE + \
+        (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
 
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */
@@ -102,6 +105,13 @@ typedef uint8_t rm_push_flags;  /* Bit  meaning
                                  * 5
                                  * 6
                                  * 7 */
-typedef uint8_t rm_push_flags;
+enum rm_session_type
+{
+    RM_PUSH_LOCAL,
+    RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
+    RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
+    RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
+    RM_PULL_TX,     /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
+};
 
 #endif  // RSYNCME_DEFS_H
