@@ -477,7 +477,10 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
 			/* number of blocks */
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
 
-            /* allocate array */
+            /* reference array (it was allocated in setup function and
+             * points to valid memory, no need to free entries as we will
+             * simply overwritten them in this test and free array memory
+             * in test's teardown function) */
             array = rm_state->array;
             assert(array != NULL && "Assertion failed, array buffer "
                     "not allocated!\n");
