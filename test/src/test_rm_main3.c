@@ -1,6 +1,6 @@
 /*
  * @file        test_rm_main3.c
- * @brief       Execution of test suite #3.
+ * @brief       Execution of test suite #3 [local].
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        6 Mar 2016 11:13 PM

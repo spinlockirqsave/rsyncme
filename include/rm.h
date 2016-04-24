@@ -204,6 +204,14 @@ rm_md5(const unsigned char *data, uint32_t len, unsigned char res[16]);
 int
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
 
+/* @brief   Read @items_n blocks of @size bytes each from stream @f
+ *          at offset @offset.
+ * @return  As fread, on success the number of blocks (each of @size size)
+ *          read by fread. This number equals the number of bytes only when @size
+ *          is sizeof(char).*/
+size_t
+rm_fpread(void *buf, size_t size, size_t items_n,
+                            size_t offset, FILE *f);
 
 typedef int (rm_delta_f)(void*);
 

@@ -218,3 +218,10 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
     return 0;
 }
 
+size_t
+rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
+{
+    if (fseek(f, offset, SEEK_SET) != 0)
+        return 0;
+    return fread(buf, size, items_n, f);
+}

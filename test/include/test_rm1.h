@@ -69,24 +69,6 @@ test_rm_adler32_2(void **state);
 void
 test_rm_fast_check_roll(void **state);
 
-/* #1 Test of checksums calculation on nonoverlapping blocks */
-
-/*
- * @brief   Test of checksums calculation on nonoverlapping
- *          blocks.
- * @details Tests number of blocks used (and insertions
- *          into hashtable).
-void
-test_rm_rx_insert_nonoverlapping_ch_ch_1(void **state);
-*/
-
-/* @brief   Test of checksums calculation on nonoverlapping
- *          blocks.
- * @details Tests number of blocks used (and insertions
- *          into hashtable). */
-void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state);
-
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
  * @details Tests number of blocks used (and insertions
@@ -95,10 +77,4 @@ void
 test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state);
 
 
-/* #2 Test the number of callback calls made */
-
-void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state);
-
-
-#endif	// RSYNCME_TEST_RM1_H
+#endif	/* RSYNCME_TEST_RM1_H */

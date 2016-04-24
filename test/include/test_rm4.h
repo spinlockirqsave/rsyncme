@@ -1,16 +1,16 @@
 /*
- * @file        test_rm3.h
- * @brief       Test suite #3.
- * @details     Test of [local] checksums calculation correctness.
+ * @file        test_rm4.h
+ * @brief       Test suite #4.
+ * @details     Test of rm_rx_insert_nonoverlapping_ch_ch_ref.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
- * @date        6 Mar 2016 11:29 PM
+ * @date        24 Apr 2016 10:39 AM
  * @copyright   LGPLv2.1
  */
 
 
-#ifndef RSYNCME_TEST_RM3_H
-#define RSYNCME_TEST_RM3_H
+#ifndef RSYNCME_TEST_RM4_H
+#define RSYNCME_TEST_RM4_H
 
 
 #include "rm_defs.h"
@@ -37,6 +37,7 @@ struct test_rm_state
 {
 	uint32_t	*l;
 	void        *buf;
+	void        *buf2;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -59,14 +60,18 @@ rm_random_file(char *name, uint32_t len);
 
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
- * @details Tests number of blocks used (and insertions
- *          into hashtable). */
+ * @details Tests number of blocks used (number of computed
+ *          checksums and insertions into hashtable). */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state);
+
+/* @brief   Test the number of callback calls made */
+void
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state);
 
 /* @brief   Test of checksums correctness. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state);
 
 
-#endif	// RSYNCME_TEST_RM3_H
+#endif	/* RSYNCME_TEST_RM4_H */
