@@ -174,13 +174,16 @@ __wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
 {
-	FILE		*f;
-	int		fd;
-	uint32_t	i, j, L, file_sz;
-	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
-	long long int	res, res_expected;
+	FILE                    *f;
+	int                     fd;
+	uint32_t                i, j, L, file_sz;
+	struct test_rm_state    *rm_state;
+	struct stat             fs;
+	char                    *fname;
+	long long int           res, res_expected;
+    size_t                  bkt;    /* hashtable bucket index */
+    const struct rm_ch_ch_ref_hlink *e;
+    struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
@@ -241,7 +244,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_FSTAT64 = 0;
             
-            /* TODO free hashtable entries */
+            bkt = 0;
+            twhash_for_each_safe(h, bkt, tmp, e, hlink)
+            {
+                twhash_del((struct twhlist_node*)&e->hlink);
+                free((struct rm_ch_ch_ref_hlink*)e);
+            }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -256,13 +264,16 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 {
-	FILE		*f;
-	int		fd;
-	uint32_t	i, j, L, file_sz;
-	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
-	long long int	res, res_expected;
+	FILE                    *f;
+	int                     fd;
+	uint32_t                i, j, L, file_sz;
+	struct test_rm_state    *rm_state;
+	struct stat             fs;
+	char                    *fname;
+	long long int           res, res_expected;
+    size_t                  bkt;    /* hashtable bucket index */
+    const struct rm_ch_ch_ref_hlink *e;
+    struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
@@ -323,7 +334,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_MALLOC = 0;
             
-            /* TODO free hashtable entries */
+            bkt = 0;
+            twhash_for_each_safe(h, bkt, tmp, e, hlink)
+            {
+                twhash_del((struct twhlist_node*)&e->hlink);
+                free((struct rm_ch_ch_ref_hlink*)e);
+            }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -338,13 +354,16 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
 {
-	FILE		*f;
-	int		fd;
-	uint32_t	i, j, L, file_sz;
-	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
-	long long int	res, res_expected;
+	FILE                    *f;
+	int                     fd;
+	uint32_t                i, j, L, file_sz;
+	struct test_rm_state    *rm_state;
+	struct stat             fs;
+	char                    *fname;
+	long long int           res, res_expected;
+    size_t                  bkt;    /* hashtable bucket index */
+    const struct rm_ch_ch_ref_hlink *e;
+    struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
@@ -405,7 +424,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_FREAD = 0;
             
-            /* TODO free hashtable entries */
+            bkt = 0;
+            twhash_for_each_safe(h, bkt, tmp, e, hlink)
+            {
+                twhash_del((struct twhlist_node*)&e->hlink);
+                free((struct rm_ch_ch_ref_hlink*)e);
+            }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -420,13 +444,16 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state)
 {
-	FILE		*f;
-	int		fd;
-	uint32_t	i, j, L, file_sz;
-	struct test_rm_state	*rm_state;
-	struct stat	fs;
-	char		*fname;
-	long long int	res, res_expected;
+	FILE                    *f;
+	int                     fd;
+	uint32_t                i, j, L, file_sz;
+	struct test_rm_state    *rm_state;
+	struct stat             fs;
+	char                    *fname;
+	long long int           res, res_expected;
+    size_t                  bkt;    /* hashtable bucket index */
+    const struct rm_ch_ch_ref_hlink *e;
+    struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
@@ -489,7 +516,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state)
 			assert_int_equal(res, res_expected);
 			RM_TEST_MOCK_MALLOC = 0;
             
-            /* TODO free hashtable entries */
+            bkt = 0;
+            twhash_for_each_safe(h, bkt, tmp, e, hlink)
+            {
+                twhash_del((struct twhlist_node*)&e->hlink);
+                free((struct rm_ch_ch_ref_hlink*)e);
+            }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "
@@ -513,13 +545,16 @@ f_tx_ch_ch_ref(const struct f_tx_ch_ch_ref_arg arg)
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state)
 {
-	FILE        *f;
-	int         fd;
-	uint32_t    i, j, L, file_sz;
+	FILE                    *f;
+	int                     fd;
+	uint32_t                i, j, L, file_sz;
 	struct test_rm_state	*rm_state;
 	struct stat             fs;
 	char		            *fname;
 	long long int           res, res_expected;
+    size_t                  bkt;    /* hashtable bucket index */
+    const struct rm_ch_ch_ref_hlink *e;
+    struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	rm_state = *state;
@@ -577,7 +612,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state)
 					f, fname, h, L, f_tx_ch_ch_ref, 0, NULL);
 			assert_int_equal(res, res_expected);
             
-            /* TODO free hashtable entries */
+            bkt = 0;
+            twhash_for_each_safe(h, bkt, tmp, e, hlink)
+            {
+                twhash_del((struct twhlist_node*)&e->hlink);
+                free((struct rm_ch_ch_ref_hlink*)e);
+            }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness"
 				" of hashing of non-overlapping blocks against "

@@ -190,7 +190,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
             blocks_n = 0;
             twlist_for_each_safe(pos, tmp, &l)
             {
-                e = tw_container_of(pos, struct rm_ch_ch_ref_link, link); 
+                e = tw_container_of(pos, struct rm_ch_ch_ref_link, link);
+                twlist_del(pos);
                 free(e);
                 ++blocks_n;
             }
