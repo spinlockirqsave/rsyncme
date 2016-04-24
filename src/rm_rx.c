@@ -378,3 +378,12 @@ rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
     *blocks_n = entries_n;
     return	0;
 }
+
+int
+rm_rx_delta_e_reconstruct_f_1(void *arg)
+{
+	struct rm_rx_delta_e_reconstruct_arg *delta_pack =
+			(struct rm_rx_delta_e_reconstruct_arg*) arg;
+	assert(delta_pack != NULL);
+	return 0;
+}

@@ -1,9 +1,10 @@
-/*  @file       rm_session.c
- *  @brief      Rsync session.
- *  @author     Piotr Gregor <piotrek.gregor at gmail.com>
- *  @version    0.1.2
- *  @date       02 Nov 2016 04:08 PM
- *  @copyright  LGPLv2.1
+/*
+ * @file        rm_session.c
+ * @brief       Rsync session.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        02 Nov 2016 04:08 PM
+ * @copyright   LGPLv2.1
  */
 
 
@@ -61,6 +62,15 @@ rm_session_free(struct rm_session *s)
 }
 
 void *
+rm_session_ch_ch_tx_f(void *arg)
+{
+	struct rm_session *s =
+			(struct rm_session *)arg;
+	assert(s != NULL);
+	return 0;
+}
+
+void *
 rm_session_ch_ch_rx_f(void *arg)
 {
 	struct rm_session *s =
@@ -78,14 +88,6 @@ rm_session_delta_tx_f(void *arg)
 	return 0;
 }
 
-void *
-rm_session_ch_ch_tx_f(void *arg)
-{
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
-	return 0;
-}
 
 void *
 rm_session_delta_rx_f(void *arg)
