@@ -32,7 +32,7 @@ test_rm_setup(void **state)
     int         err;
     uint32_t    i,j;
     FILE        *f;
-    void		*buf;
+    void        *buf;
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog(
@@ -122,8 +122,8 @@ test_rm_teardown(void **state)
             }
         }
     }
-	free(rm_state->buf);
-	free(rm_state->buf2);
+    free(rm_state->buf);
+    free(rm_state->buf2);
     return 0;
 }
 
@@ -204,8 +204,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
             bkt = 0;
             twhash_for_each_safe(h, bkt, tmp, e, hlink)
             {
-                /*e = tw_container_of(pos, struct rm_ch_ch_ref_link, link);
-                free((struct rm_ch_ch_ref_hlink*)e);*/
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
@@ -311,8 +309,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
             bkt = 0;
             twhash_for_each_safe(h, bkt, tmp, e, hlink)
             {
-                /*e = tw_container_of(pos, struct rm_ch_ch_ref_link, link);
-                free((struct rm_ch_ch_ref_hlink*)e);*/
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
@@ -353,61 +349,59 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
     unsigned int            hash;               /* iterator over the buckets */
     const struct rm_ch_ch_ref_hlink *e, *e_prev;
 
-	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
-	rm_state = *state;
-	assert_true(rm_state != NULL);
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    rm_state = *state;
+    assert_true(rm_state != NULL);
 
-	/* test on all files */
-	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i)
-	{
-		fname = rm_test_fnames[i];
-		f = fopen(fname, "rb");
-		if (f == NULL)
-		{
-			RM_LOG_PERR("Can't open file [%s]", fname);
-		}
-		assert_true(f != NULL);
-		/* get file size */
-		fd = fileno(f);
-		if (fstat(fd, &fs) != 0)
-		{
-			RM_LOG_PERR("Can't fstat file [%s]", fname);
-			fclose(f);
-			assert_true(1 == 0);
-		}
-		file_sz = fs.st_size; 
-		j = 0;
-		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
-		{
-			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-"
-				"overlapping blocks: file [%s], size [%u],"
-				" block size L [%u]", fname, file_sz, L);
-			if (0 == L)
-			{
-				RM_LOG_INFO("Block size [%u] is too "
-				"small for this test (should be > [%u]), "
-				" skipping file [%s]", L, 0, fname);
-				continue;
-			}
-			if (file_sz < 2)
-			{
-				RM_LOG_INFO("File [%s] size [%u] is to small "
-				"for this test, skipping", fname, file_sz);
-				continue;
-			}
-	
-			RM_LOG_INFO("Testing checksum correctness: "
-				"file [%s], size [%u], block size L [%u], buffer"
-				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
-			/* number of blocks */
-			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
-			res = rm_rx_insert_nonoverlapping_ch_ch_ref(
-					f, fname, h, L, NULL, blocks_n, &entries_n);
+    /* test on all files */
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i)
+    {
+        fname = rm_test_fnames[i];
+        f = fopen(fname, "rb");
+        if (f == NULL)
+        {
+            RM_LOG_PERR("Can't open file [%s]", fname);
+        }
+        assert_true(f != NULL);
+        /* get file size */
+        fd = fileno(f);
+        if (fstat(fd, &fs) != 0)
+        {
+            RM_LOG_PERR("Can't fstat file [%s]", fname);
+            fclose(f);
+            assert_true(1 == 0);
+        }
+        file_sz = fs.st_size; 
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
+        {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing of checksum "
+                    "correctness, file [%s], size [%u],"
+                    " block size L [%u]", fname, file_sz, L);
+            if (0 == L)
+            {
+                RM_LOG_INFO("Block size [%u] is too "
+                        "small for this test (should be > [%u]), "
+                        " skipping file [%s]", L, 0, fname);
+                continue;
+            }
+            if (file_sz < 2)
+            {
+                RM_LOG_INFO("File [%s] size [%u] is to small "
+                        "for this test, skipping", fname, file_sz);
+                continue;
+            }
+            RM_LOG_INFO("Testing checksum correctness: "
+                    "file [%s], size [%u], block size L [%u], buffer"
+                    " [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+            /* number of blocks */
+            blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref(
+                    f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, 0);
-			assert_int_equal(entries_n, blocks_n);
-/* ---------------------------- */
+            assert_int_equal(entries_n, blocks_n);
             rewind(f);
 
             /* check hashes and free hashtable entries */
@@ -423,11 +417,11 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                 if (read != read_now)
                 {
                     RM_LOG_PERR("Error reading file [%s] "
-                    "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
-                    " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
+                            "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
+                            " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
                     assert_true(1 == 0);
                 }
-
+                
                 /* fill in reference data */
                 /* compute fast checksum on the block*/
                 e_reference.data.ch_ch.f_ch = rm_fast_check_block(buf, read);
@@ -440,26 +434,21 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 
                 /* assert this is also present in the hashtable */
                 hash = twhash_min(e_reference.data.ch_ch.f_ch,
-                                                RM_NONOVERLAPPING_HASH_BITS);
+                                    RM_NONOVERLAPPING_HASH_BITS);
                 e = NULL;
                 collisions_1st_level = 0;
                 collisions_2nd_level = 0;
                 twhlist_for_each_entry(e, &h[hash], hlink)
                 {
-                    /* found, 1st Level match, hashtable hash match */
-                    /* BUT we may have collisions, either on 1st Level search or on 2nd Level
-                         * search, it is not important here (one would need to check
-                         * if fast checksums are same [fast rolling checksum collision,
-                         * 2nd Level search] or different [hashtable collision, 1st Level
-                         * search collision]) */
+                    /* hit 1, 1st Level match, hashtable hash match */
                     if (e->data.ch_ch.f_ch == e_reference.data.ch_ch.f_ch)
                     {
-                        /* found, 2nd Level match, fast rolling checksum match */
+                        /* hit 2, 2nd Level match, fast rolling checksum match */
                         if (0 == memcmp(&e->data.ch_ch.s_ch.data,
                                     &e_reference.data.ch_ch.s_ch.data,
                                     RM_STRONG_CHECK_BYTES))
                         {
-                            /* found, 3rd Level match, strong checksum match */
+                            /* hit 3, 3rd Level match, strong checksum match */
                             if (e->data.ref == e_reference.data.ref)
                             {
                                 /* OK, FOUND */
@@ -477,10 +466,10 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                                 }
                                 if (0 == memcmp(buf, buf2, read))
                                 {
-                                    /* OK, blocks are same, just reset the file pointer */
+                                    /* OK, blocks are same, just reset the file pointer nad go ahead */
                                     if (fseek(f, entries_n * L + read_now, SEEK_SET) != 0)
                                     {
-                                        RM_LOG_PERR("Error reading file [%s] "
+                                        RM_LOG_PERR("Error reseting file pointer, file [%s] "
                                                 "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
                                                 " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
                                         assert_true(1 == 0);
@@ -489,7 +478,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                                 }
                                 /* collision on 3rd Level, fast checksums are same, strong checksums
                                  * too, but blocks differ, THIS REALLY SHOULDN'T HAPPEN */
-                                RM_LOG_INFO("WTF COLLISION 3d Level ref [%u], reference ref [%u]",
+                                RM_LOG_ERR("WTF COLLISION 3d Level ref [%u], reference ref [%u]:"
+                                        " THIS REALLY SHOULDN'T HAPPEN, please REPORT",
                                         e->data.ref, e_reference.data.ref);
                                 assert_true(0 == 1);
                             }
@@ -511,15 +501,14 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                     e_prev = tw_container_of(*e->hlink.pprev, struct rm_ch_ch_ref_hlink, hlink);
                     assert_true(e_prev != NULL);
                     RM_LOG_INFO("COLLISIONS 1st Level [%u], 2nd Level [%u], file [%s], size [%u],"
-                           " L [%u], entry [%u], f_ch [%u], prev f_ch [%u], hash [%u]", collisions_1st_level,
-                           collisions_2nd_level, fname, file_sz, L, entries_n, e_reference.data.ch_ch.f_ch,
-                           e_prev->data.ch_ch.f_ch, hash);
+                            " L [%u], entry [%u], f_ch [%u], prev f_ch [%u], hash [%u]", collisions_1st_level,
+                            collisions_2nd_level, fname, file_sz, L, entries_n, e_reference.data.ch_ch.f_ch,
+                            e_prev->data.ch_ch.f_ch, hash);
                 }
 
                 assert_true(memcmp(&e->data.ch_ch.s_ch.data,
                             &e_reference.data.ch_ch.s_ch.data,
                             RM_STRONG_CHECK_BYTES) == 0 && "WTF f_ch hashed not found!");
-
                 ++entries_n;
 
                 /* next list entry */
@@ -534,14 +523,11 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                     fname, file_sz, L, blocks_n);
             /* move file pointer back to the beginning */
             rewind(f);
-/* ---------------------------- */
 
             blocks_n = 0;
             bkt = 0;
             twhash_for_each_safe(h, bkt, tmp, e, hlink)
             {
-                /*e = tw_container_of(pos, struct rm_ch_ch_ref_link, link);
-                free((struct rm_ch_ch_ref_hlink*)e);*/
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
