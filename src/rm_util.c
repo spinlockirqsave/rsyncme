@@ -1,9 +1,11 @@
-/// @file	rm_util.c
-/// @brief	Utilities.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	04 Jan 2016 08:08 PM
-/// @copyright	LGPLv2.1
+/*
+ * @file        rm_util.c
+ * @brief       Utilities.
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version     0.1.2
+ * @date        04 Jan 2016 08:08 PM
+ * @copyright   LGPLv2.1
+ */
 
 
 #include "rm_util.h"

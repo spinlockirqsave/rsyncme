@@ -478,7 +478,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                                 }
                                 /* collision on 3rd Level, fast checksums are same, strong checksums
                                  * too, but blocks differ, THIS REALLY SHOULDN'T HAPPEN */
-                                RM_LOG_ERR("WTF COLLISION 3d Level ref [%u], reference ref [%u]:"
+                                RM_LOG_CRIT("WTF COLLISION 3d Level ref [%u], reference ref [%u]:"
                                         " THIS REALLY SHOULDN'T HAPPEN, please REPORT",
                                         e->data.ref, e_reference.data.ref);
                                 assert_true(0 == 1);
