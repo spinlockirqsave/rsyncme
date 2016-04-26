@@ -123,9 +123,19 @@ struct rm_ch_ch_ref_hlink
 	struct twhlist_node hlink;
 };
 
-/* Delta vector element. */
+enum RM_DELTA_ELEMENT_TYPE
+{
+    RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
+    RM_DELTA_ELEMENT_RAW_BYTES  /* data bytes */
+};
+
+/* HIGH LEVEL API
+ * Delta vector element. As created from bytes on wire. */
 struct rm_delta_e
 {
+    enum RM_DELTA_ELEMENT_TYPE  type;
+    size_t                      ref;
+    unsigned char               *raw_bytes;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given

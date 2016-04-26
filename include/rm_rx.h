@@ -65,7 +65,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f_x, const char *fname,
 		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
         size_t limit, size_t *blocks_n);
 
-/* @brief       Calculates ch_ch_local structs for all non-overlapping
+/* @brief       Creates ch_ch_ref_link structs for all non-overlapping
  *              @L bytes blocks (last one may be less than @L)
  *              from file @f and inserts them into list @l.
  * @details	    File @f MUST be already opened.
@@ -74,7 +74,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f_x, const char *fname,
  * @blocks_n    on success - set to the number of inserted entries
  * @return      0 on success, negative error code on error. */
 int
-rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f_x, const char *fname,
+rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f_x, const char *fname,
 		struct twlist_head *l, uint32_t L,
         size_t limit, size_t *blocks_n);
 

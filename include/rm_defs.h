@@ -1,7 +1,7 @@
 /*
  * @file        rm_defs.h
  * @brief       Basic includes and definitions.
- * @author      Piotr Gregor < piotrek.gregor at gmail.com >
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        2 Jan 2016 11:29 AM
  * @copyright	LGPLv2.1
