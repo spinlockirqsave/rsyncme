@@ -1,7 +1,7 @@
 /*
  * @file        test_rm3.c
  * @brief       Test suite #3.
- * @details     Test of local nonoverlapping
+ * @details     Test of ref_link nonoverlapping
  *              checksums calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
@@ -120,7 +120,7 @@ test_rm_teardown(void **state)
 }
 
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_1(void **state)
 {
     FILE                    *f;
     int                     fd;
@@ -181,7 +181,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
             /* number of blocks */
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             TWINIT_LIST_HEAD(&l);
-            res = rm_rx_insert_nonoverlapping_ch_ch_local(
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref_link(
                                     f, fname, &l, L, blocks_n, &entries_n);
             assert_int_equal(res, 0);
             assert_int_equal(entries_n, blocks_n);
@@ -208,7 +208,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state)
 }
 
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state)
 {
     FILE                    *f;
     int                     fd;
@@ -272,7 +272,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state)
             /* number of blocks */
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             TWINIT_LIST_HEAD(&l);
-            res = rm_rx_insert_nonoverlapping_ch_ch_local(
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref_link(
                                     f, fname, &l, L, blocks_n, &entries_n);
             assert_int_equal(res, 0);
             assert_int_equal(entries_n, blocks_n);

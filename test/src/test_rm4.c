@@ -1,7 +1,7 @@
 /*
  * @file        test_rm4.c
  * @brief       Test suite #4.
- * @details     Test of rm_rx_insert_nonoverlapping_ch_ch_ref.
+ * @details     Test of [ref_hlink] rm_rx_insert_nonoverlapping_ch_ch_ref.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        24 Apr 2016 10:40 AM

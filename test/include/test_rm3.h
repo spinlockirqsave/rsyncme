@@ -1,7 +1,7 @@
 /*
  * @file        test_rm3.h
  * @brief       Test suite #3.
- * @details     Test of [local] checksums calculation correctness.
+ * @details     Test of [ref_link checksums calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        6 Mar 2016 11:29 PM
@@ -62,11 +62,11 @@ rm_random_file(char *name, uint32_t len);
  * @details Tests number of blocks used (and insertions
  *          into hashtable). */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_local_1(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_1(void **state);
 
 /* @brief   Test of checksums correctness. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_local_2(void **state);
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state);
 
 
 #endif	// RSYNCME_TEST_RM3_H

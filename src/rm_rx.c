@@ -304,7 +304,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 }
 
 int
-rm_rx_insert_nonoverlapping_ch_ch_local(FILE *f, const char *fname,
+rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname,
 		struct twlist_head *l, uint32_t L,
         size_t limit, size_t *blocks_n)
 {

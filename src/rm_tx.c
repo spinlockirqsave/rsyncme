@@ -90,7 +90,7 @@ rm_tx_local_push(const char *x, const char *y,
         }
         assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed"
                 " indicating ERROR in blocks count either here "
-                "or in rm_rx_insert_nonoverlapping_ch_ch_local");
+                "or in rm_rx_insert_nonoverlapping_ch_ch_ref");
     } else {
         /* @y doesn't exist and --forced flag is specified */
         err = rm_copy_buffered(f_x, f_z, x_sz);

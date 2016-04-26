@@ -1,6 +1,6 @@
 /*
  * @file        test_rm_main4.c
- * @brief       Execution of test suite #4
+ * @brief       Execution of test suite #4 [ref_hlink]
  *              (rm_rx_insert_nonoverlapping_ch_ch_ref).
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
