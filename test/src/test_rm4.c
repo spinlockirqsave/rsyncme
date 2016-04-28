@@ -466,7 +466,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                                 }
                                 if (0 == memcmp(buf, buf2, read))
                                 {
-                                    /* OK, blocks are same, just reset the file pointer nad go ahead */
+                                    /* OK, blocks are same, just reset the file pointer and go ahead */
                                     if (fseek(f, entries_n * L + read_now, SEEK_SET) != 0)
                                     {
                                         RM_LOG_PERR("Error reseting file pointer, file [%s] "
