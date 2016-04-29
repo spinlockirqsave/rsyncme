@@ -181,12 +181,17 @@ rm_adler32_1(const unsigned char *data, uint32_t len);
 uint32_t
 rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
 
-/* @brief   Rolling Adler32 from block [k,k+L-1] to [k+1,k+L].
+/* @brief   Rolls fast checksum @adler computed on block [k,k+L-1]
+ *          to [k+1,k+L].
  * @details	Updates @adler by removal of byte k and addition
- *          of byte k+L. */
+ *          of byte k+L using RM_ADLER32_MODULUS. */
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
+/* @brief   Rolls fast checksum @adler computed on bytes [k,k+L-1]
+ *          to [k+1,k+L].
+ * @details	Updates @adler by removal of byte k and addition
+ *          of byte k+L using RM_FASTCHECK_MODULUS. */
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
@@ -225,5 +230,16 @@ rm_fpread(void *buf, size_t size, size_t items_n,
 
 typedef int (rm_delta_f)(void*);
 
+/* @brief   Rolling checksum procedure.
+ * @details Runs rolling checksum procedure using @rm_fast_check_roll
+ *          to move the checksum, starting from byte @from.
+ * @param   h - hashtable of nonoverlapping checkums,
+ * @param   f_x - file on which rolling is performed,
+ * @param   delta_f - tx/reconstruct callback,
+ * @param   L - block size,
+ * @param   from - starting point, 0 to start from beginning */
+int
+rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
+        uint32_t L, size_t from);
 
 #endif	/* RSYNCME_H */

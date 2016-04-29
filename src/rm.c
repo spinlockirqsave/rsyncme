@@ -225,3 +225,10 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
         return 0;
     return fread(buf, size, items_n, f);
 }
+
+int
+rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
+        uint32_t L, size_t from)
+{
+    return 0;
+}

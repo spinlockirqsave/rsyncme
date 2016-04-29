@@ -82,9 +82,19 @@ rm_session_ch_ch_rx_f(void *arg)
 void *
 rm_session_delta_tx_f(void *arg)
 {
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
+    struct twhlist_head     *h;             /* nonoverlapping checkums */
+    FILE                    *f_x;           /* file on which rolling is performed */
+    rm_delta_f              *delta_f;       /* tx/reconstruct callback */
+
+	struct rm_session_delta_tx_f_arg *f_arg =
+                        (struct rm_session_delta_tx_f_arg*) arg;
+	assert(f_arg != NULL);
+
+    h       = f_arg->h;
+    f_x     = f_arg->f_x;
+    delta_f = f_arg->delta_f;
+
+    /* 1. run rolling checksum procedure */
 	return 0;
 }
 
