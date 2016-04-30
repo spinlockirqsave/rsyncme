@@ -228,7 +228,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
  *          it was called. */
 size_t  f_tx_ch_ch_ref_2_callback_count;
 int
-f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg arg)
+f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg_1 arg)
 {
 	(void) arg;
     f_tx_ch_ch_ref_2_callback_count++;

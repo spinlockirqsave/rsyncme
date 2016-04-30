@@ -313,3 +313,30 @@ rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
 end:
     return 0;
 }
+
+int
+rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate)
+{
+	int                 err;
+	pthread_attr_t      attr;
+
+	err = pthread_attr_init(&attr);
+	if (err != 0)
+    {
+		return -1;
+    }
+	err = pthread_attr_setdetachstate(&attr, detachstate);
+	if (err != 0)
+    {
+		goto fail;
+    }
+	err = pthread_create(t, &attr, f, arg);
+	if (err != 0)
+    {
+        goto fail;
+    }
+    return 0;
+fail:
+	pthread_attr_destroy(&attr);
+	return -1;
+}

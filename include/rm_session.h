@@ -22,12 +22,6 @@ struct rm_session
 
 	uint32_t                session_id;
 	pthread_mutex_t         session_mutex;
-	pthread_t               ch_ch_tid;
-	pthread_t               delta_tid;
-
-    /* receiver */
-    struct twlist_head      rx_ch_ch_list;
-    pthread_mutex_t         rx_ch_ch_list_mutex;
 
 	struct rsyncme          *rm;    /* pointer to global
                                        rsyncme object */
@@ -39,14 +33,53 @@ struct rm_session
 /* Receiver of file (delta vector) */
 struct rm_session_push_rx
 {
-    int     fd; /* socket handle */
+    int fd;                                     /* socket handle */
+	pthread_t               ch_ch_tid;
+	pthread_t               delta_tid;
+    twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */
+    pthread_mutex_t rx_delta_e_queue_mutex;
+    pthread_cond_t  rx_delta_e_queue_signal;    /* signalled by receiving proc when
+                                                   delta elements are received on the socket */
+};
+
+/* Transmitter of file (delta vector) */
+struct rm_session_push_tx
+{
+    int fd;                                     /* socket handle */
+	pthread_t               ch_ch_tid;
+	pthread_t               delta_tid;
+    twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
+    pthread_mutex_t tx_delta_e_queue_mutex;
+    pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
+                                                   new delta element has been produced */
 };
 
 /* Receiver of file (delta vector) */
 struct rm_session_pull_rx
 {
     int     fd; /* socket handle */
+	pthread_t               ch_ch_tid;
+	pthread_t               delta_tid;
 };
+
+/* Transmitter/receiver, local. */
+struct rm_session_push_local
+{
+    int fd;                                     /* socket handle */
+	pthread_t               ch_ch_tid;
+	pthread_t               delta_tid;
+    twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
+    pthread_mutex_t tx_delta_e_queue_mutex;
+    pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
+                                                   new delta element has been produced */
+};
+
+void
+rm_session_push_rx_init(struct rm_session_push_rx *prvt);
+void
+rm_session_push_tx_init(struct rm_session_push_tx *prvt);
+void
+rm_session_push_local_init(struct rm_session_push_local *prvt);
 
 /* @brief   Creates new session. */
 struct rm_session *

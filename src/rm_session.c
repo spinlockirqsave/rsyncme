@@ -11,6 +11,45 @@
 #include "rm_session.h"
 
 
+void
+rm_session_push_rx_init(struct rm_session_push_rx *prvt)
+{
+    if (prvt == NULL)
+    {
+        return;
+    }
+    TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
+    pthread_mutex_init(&prvt->rx_delta_e_queue_mutex, NULL);
+    pthread_cond_init(&prvt->rx_delta_e_queue_signal, NULL);
+    return;
+}
+
+void
+rm_session_push_tx_init(struct rm_session_push_tx *prvt)
+{
+    if (prvt == NULL)
+    {
+        return;
+    }
+    TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
+    pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
+    pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
+    return;
+}
+
+void
+rm_session_push_local_init(struct rm_session_push_local *prvt)
+{
+    if (prvt == NULL)
+    {
+        return;
+    }
+    TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
+    pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
+    pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
+    return;
+}
+
 /* TODO: generate GUID here */
 struct rm_session *
 rm_session_create(struct rsyncme *rm, enum rm_session_type t)
@@ -21,9 +60,9 @@ rm_session_create(struct rsyncme *rm, enum rm_session_type t)
 	if (s == NULL)
 		return NULL;
 	memset(s, 0, sizeof(*s));
+    s->type = t;
 	pthread_mutex_init(&s->session_mutex, NULL);
-	pthread_mutex_init(&s->rx_ch_ch_list_mutex, NULL);
-    TWINIT_LIST_HEAD(&s->rx_ch_ch_list);
+
 	s->rm = rm;
 
     switch (t)
@@ -38,6 +77,16 @@ rm_session_create(struct rsyncme *rm, enum rm_session_type t)
             if (s->prvt == NULL)
                 goto fail;
             break;
+        case RM_PUSH_TX:
+            s->prvt = malloc(sizeof(struct rm_session_push_tx));
+            if (s->prvt == NULL)
+                goto fail;
+            rm_session_push_tx_init(s->prvt);
+        case RM_PUSH_LOCAL:
+            s->prvt = malloc(sizeof(struct rm_session_push_local));
+            if (s->prvt == NULL)
+                goto fail;
+            rm_session_push_local_init(s->prvt);
         default:
             goto fail;
     }
@@ -46,9 +95,10 @@ rm_session_create(struct rsyncme *rm, enum rm_session_type t)
 
 fail:
     if (s->prvt)
+    {
         free(s->prvt);
+    }
     pthread_mutex_destroy(&s->session_mutex);
-    pthread_mutex_destroy(&s->rx_ch_ch_list_mutex);
     free(s);
     return NULL;
 }

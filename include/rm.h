@@ -228,7 +228,7 @@ size_t
 rm_fpread(void *buf, size_t size, size_t items_n,
                             size_t offset, FILE *f);
 
-typedef int (rm_delta_f)(void*);
+typedef void* (rm_delta_f)(void*);
 
 /* @brief   Rolling checksum procedure.
  * @details Runs rolling checksum procedure using @rm_fast_check_roll
@@ -241,5 +241,9 @@ typedef int (rm_delta_f)(void*);
 int
 rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
         uint32_t L, size_t from);
+
+int
+rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
+
 
 #endif	/* RSYNCME_H */

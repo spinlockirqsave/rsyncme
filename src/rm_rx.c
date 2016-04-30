@@ -99,7 +99,7 @@ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
 }*/
 
 int
-rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg arg)
+rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
 {
     const struct rm_ch_ch_ref       *e;
     const struct rm_session         *s;
@@ -140,7 +140,7 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg arg)
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg),
+		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1),
         size_t limit, size_t *blocks_n)
 {
     int                 fd, res;
@@ -149,7 +149,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
     size_t              entries_n;
     struct rm_ch_ch_ref_hlink	*e;
     unsigned char	    *buf;
-    struct f_tx_ch_ch_ref_arg arg;
+    struct f_tx_ch_ch_ref_arg_1 arg;
 
     assert(f != NULL);
     assert(fname != NULL);
@@ -379,11 +379,12 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname,
     return	0;
 }
 
-int
+void*
 rm_rx_delta_e_reconstruct_f_1(void *arg)
 {
 	struct rm_rx_delta_e_reconstruct_arg *delta_pack =
 			(struct rm_rx_delta_e_reconstruct_arg*) arg;
 	assert(delta_pack != NULL);
-	return 0;
+    (void)delta_pack;
+	return NULL;
 }

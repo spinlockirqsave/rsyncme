@@ -207,8 +207,7 @@ test_rm_adler32_2(void **state)
 	unsigned char   buf[RM_TEST_L_MAX];
 	uint32_t        i, adler1, adler2, adler2_0,
                     file_sz, read, r1_0, r2_0, r1_1, r2_1;
-	struct
-    test_rm_state   *rm_state;
+	struct test_rm_state   *rm_state;
 	struct stat     fs;
 	char            *fname;
 
