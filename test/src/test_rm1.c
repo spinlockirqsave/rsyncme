@@ -164,7 +164,7 @@ test_rm_adler32_1(void **state)
 		file_sz = fs.st_size; 
 		if (file_sz > RM_TEST_L_MAX)
 		{
-			RM_LOG_ERR("File [%s] size [%u] is bigger "
+			RM_LOG_WARN("File [%s] size [%u] is bigger "
 				"than testing buffer's size of [%u],"
 				" reading only first [%u] bytes", fname,
 				file_sz, RM_TEST_L_MAX, RM_TEST_L_MAX);
@@ -174,7 +174,7 @@ test_rm_adler32_1(void **state)
 		read = fread(buf, 1, file_sz, f);
 		if (read != file_sz)
 		{
-			RM_LOG_PERR("Error reading file [%s], "
+			RM_LOG_WARN("Error reading file [%s], "
 				"skipping", fname);
 			fclose(f);
 			continue;
@@ -238,7 +238,7 @@ test_rm_adler32_2(void **state)
 		file_sz = fs.st_size; 
 		if (file_sz > RM_TEST_L_MAX)
 		{
-			RM_LOG_ERR("File [%s] size [%u] is bigger "
+			RM_LOG_WARN("File [%s] size [%u] is bigger "
 				"than testing buffer's size of [%u],"
 				" reading only first [%u] bytes", fname,
 				file_sz, RM_TEST_L_MAX, RM_TEST_L_MAX);
@@ -318,20 +318,20 @@ test_rm_fast_check_roll(void **state)
 				L, RM_TEST_L_MAX);
 			if (file_sz < 2)
 			{
-				RM_LOG_INFO("File [%s] size [%u] is to small "
+				RM_LOG_WARN("File [%s] size [%u] is to small "
 				"for this test, skipping", fname, file_sz);
 				continue;
 			}
 			if (file_sz < L)
 			{
-				RM_LOG_INFO("File [%s] size [%u] is smaller "
+				RM_LOG_WARN("File [%s] size [%u] is smaller "
 				"than block size L [%u], skipping", fname,
 				file_sz, L);
 				continue;
 			}
 			if (RM_TEST_L_MAX < L + 1)
 			{
-				RM_LOG_INFO("Testing buffer [%u] is too "
+				RM_LOG_WARN("Testing buffer [%u] is too "
 				"small for this test (should be > [%u]), "
 				" skipping file [%s]", RM_TEST_L_MAX, L,
 				fname);
@@ -385,7 +385,7 @@ test_rm_fast_check_roll(void **state)
 					RM_LOG_INFO("Running test [%u]", tests_n);
 					idx_buf = idx - idx_min;
 					adler2 = rm_fast_check_block(&buf[idx_buf], L);
-					/* checksum for offset [idx] */
+					/* rolling checksum for offset [idx] */
 					adler1 = rm_fast_check_roll(adler1, buf[idx_buf-1],
 								buf[idx_buf+L-1], L);
 					assert_int_equal(adler1, adler2);
@@ -459,14 +459,14 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
 				" block size L [%u]", fname, file_sz, L);
 			if (0 == L)
 			{
-				RM_LOG_INFO("Block size [%u] is too "
+				RM_LOG_WARN("Block size [%u] is too "
 				"small for this test (should be > [%u]), "
 				" skipping file [%s]", L, 0, fname);
 				continue;
 			}
 			if (file_sz < 2)
 			{
-				RM_LOG_INFO("File [%s] size [%u] is to small "
+				RM_LOG_WARN("File [%s] size [%u] is to small "
 				"for this test, skipping", fname, file_sz);
 				continue;
 			}

@@ -95,6 +95,9 @@ rm_util_chdir_umask_openlog(const char *dir,
 #define RM_LOG_INFO(fmt, args...) rm_util_log(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
                 "INFO", __FILE__, __LINE__, __func__, ##args)
+#define RM_LOG_WARN(fmt, args...) rm_util_log(stderr, \
+			"%s\t%s:%d:%s(): " fmt,       \
+                "WARNING", __FILE__, __LINE__, __func__, ##args)
 #define RM_LOG_CRIT(fmt, args...) rm_util_log(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
                 "CRIT", __FILE__, __LINE__, __func__, ##args)

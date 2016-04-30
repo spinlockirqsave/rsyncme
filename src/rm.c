@@ -230,5 +230,86 @@ int
 rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
         uint32_t L, size_t from)
 {
+    uint32_t        hash;
+    unsigned char   buf[L];
+    int             fd;
+	struct stat     fs;
+    size_t          file_sz, read_left, read_now, read;
+    uint8_t         match;
+    const struct rm_ch_ch_ref_hlink   *e;
+    struct rm_ch_ch ch;
+    size_t          collisions_1st_level = 0;
+    size_t          collisions_2nd_level = 0;
+
+    if (L == 0)
+        return -1;
+    /* get file size */
+    fd = fileno(f_x);
+    if (fstat(fd, &fs) != 0)
+    {
+        /* Can't fstat file */
+        return -2;
+    }
+    file_sz = fs.st_size;
+    read_left = file_sz - from;
+    if (read_left == 0)
+    {
+        goto end;
+    }
+    read_now = rm_min(L, read_left);
+
+    read = fread(buf, 1, read_now, f_x);
+    if (read != read_now)
+    {
+        return -3;
+    }
+
+    /* 1. initial checksum and it's hash */
+    ch.f_ch = rm_fast_check_block(buf, L);
+    hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
+
+    /* roll hash, lookup in table, produce delta elemenets */
+    do
+    {
+        match = 0;
+        /* hash lookup */
+        twhlist_for_each_entry(e, &h[hash], hlink)
+        {
+            /* hit 1, 1st Level match, hashtable hash match */
+            if (e->data.ch_ch.f_ch == ch.f_ch)
+            {
+                /* hit 2, 2nd Level match, fast rolling checksum match */
+                /* compute strong checksum */
+                rm_md5(buf, read, ch.s_ch.data);
+                if (0 == memcmp(&e->data.ch_ch.s_ch.data, &ch.s_ch.data,
+                                                        RM_STRONG_CHECK_BYTES))
+                {
+                    /* hit 3, 3rd Level match, strong checksum match */
+                    /* tx e->data.ref */
+                    /* OK, FOUND */
+                    match = 1;
+                    break;
+                } else {
+                    /* 2nd Level collision, fast checksum match but strong checksum doesn't */
+                    ++collisions_2nd_level;
+                }
+            } else {
+                /* 1st Level collision, fast checksums are different but hashed
+                * to the same bucket */
+                ++collisions_1st_level;
+            }
+        }
+        /* build delta */
+        /* found a match? */
+        if (match == 1)
+        {
+            // TODO tx RM_DELTA_ELEMENT_REFERENCE, move file pointer accordingly
+        } else {
+            // TODO tx bytes, consider some buffering strategy
+        }
+        read_left = 0;// temporary
+    } while (read_left > 0);
+
+end:
     return 0;
 }

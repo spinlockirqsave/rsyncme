@@ -234,7 +234,7 @@ typedef int (rm_delta_f)(void*);
  * @details Runs rolling checksum procedure using @rm_fast_check_roll
  *          to move the checksum, starting from byte @from.
  * @param   h - hashtable of nonoverlapping checkums,
- * @param   f_x - file on which rolling is performed,
+ * @param   f_x - file on which rolling is performed, must be already opened,
  * @param   delta_f - tx/reconstruct callback,
  * @param   L - block size,
  * @param   from - starting point, 0 to start from beginning */
