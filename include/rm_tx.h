@@ -52,17 +52,5 @@ rm_tx_remote_push(const char *x, const char *y,
 		struct sockaddr_in *remote_addr,
 		uint32_t L);
 
-/* @brief   Tx delta element from (A) to (B) (RM_PUSH_TX).
- * @details Thread proc. Pass session as initialization argument.
- *          Conditionally waits on a queue of delta elements,
- *          transmitting them to remote (B) once awoken each time
- *          rolling procedure enqueues new delta element. */
-rm_delta_f
-rm_tx_delta_e_f_1;
-
-/* @brief   Start rm_tx_delta_e_f_1 thread. */
-int
-rm_tx_launch_delta_e_f_1(const struct rm_session *s);
-
 
 #endif	/* RSYNCME_TX_H */

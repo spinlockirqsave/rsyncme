@@ -230,6 +230,8 @@ rm_fpread(void *buf, size_t size, size_t items_n,
 
 typedef void* (rm_delta_f)(void*);
 
+struct rm_session;
+
 /* @brief   Rolling checksum procedure.
  * @details Runs rolling checksum procedure using @rm_fast_check_roll
  *          to move the checksum, starting from byte @from.
@@ -239,11 +241,32 @@ typedef void* (rm_delta_f)(void*);
  * @param   L - block size,
  * @param   from - starting point, 0 to start from beginning */
 int
-rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
-        uint32_t L, size_t from);
+rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
+        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from);
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
+
+
+struct rm_roll_proc_cb_arg
+{
+    struct rm_delta_e       delta_e;
+    const struct rm_session *s;
+};
+/* @brief   Tx delta element locally (RM_PUSH_LOCAL).
+ * @details Rolling proc callback.
+ *          This is being called from rolling checkum proc
+ *          rm_rolling_ch_proc. Enqueues delta elements to queue
+ *          and signals this to delta_rx_tid in local push session. */
+rm_delta_f
+rm_roll_proc_cb_1;
+
+/* @brief   Tx delta element from (A) to (B) (RM_PUSH_TX).
+ * @details Rolling proc callback.
+ *          Transmits delta elements to remote (B) once called
+ *          each time rolling procedure enqueues new delta element. */
+rm_delta_f
+rm_roll_proc_cb_2;
 
 
 #endif	/* RSYNCME_H */

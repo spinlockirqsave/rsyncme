@@ -227,8 +227,8 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
 }
 
 int
-rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
-        uint32_t L, size_t from)
+rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
+        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from)
 {
     uint32_t        hash;
     unsigned char   buf[L];
@@ -238,11 +238,15 @@ rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
     uint8_t         match;
     const struct rm_ch_ch_ref_hlink   *e;
     struct rm_ch_ch ch;
+    struct rm_roll_proc_cb_arg  cb_arg;
     size_t          collisions_1st_level = 0;
     size_t          collisions_2nd_level = 0;
 
-    if (L == 0)
+    if (L == 0 || s == NULL)
         return -1;
+    /* setup callback argument */
+    cb_arg.s = s;
+
     /* get file size */
     fd = fileno(f_x);
     if (fstat(fd, &fs) != 0)
@@ -304,9 +308,14 @@ rm_rolling_ch_proc(const struct twhlist_head *h, FILE *f_x, rm_delta_f *delta_f,
         if (match == 1)
         {
             // TODO tx RM_DELTA_ELEMENT_REFERENCE, move file pointer accordingly
+            // init cb_arg to RM_DELTA_ELEMENT_REFERENCE
         } else {
             // TODO tx bytes, consider some buffering strategy
+            // init cb_arg to RM_DELTA_ELEMENT_RAW_BYTES
         }
+        /* tx/signal delta_rx_tid, etc */
+        delta_f(&cb_arg);
+
         read_left = 0;// temporary
     } while (read_left > 0);
 
