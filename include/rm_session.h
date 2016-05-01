@@ -34,8 +34,8 @@ struct rm_session
 struct rm_session_push_rx
 {
     int fd;                                     /* socket handle */
-	pthread_t               ch_ch_tid;
-	pthread_t               delta_tid;
+	pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
+	pthread_t               delta_rx_tid;       /* receiver of delta elements */
     twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */
     pthread_mutex_t rx_delta_e_queue_mutex;
     pthread_cond_t  rx_delta_e_queue_signal;    /* signalled by receiving proc when
@@ -46,8 +46,10 @@ struct rm_session_push_rx
 struct rm_session_push_tx
 {
     int fd;                                     /* socket handle */
-	pthread_t               ch_ch_tid;
-	pthread_t               delta_tid;
+	pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
+	pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
+    struct twhlist_head     *h;                 /* nonoverlapping checkums */
+    FILE                    *f_x;               /* file on which rolling is performed */              
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
@@ -66,12 +68,15 @@ struct rm_session_pull_rx
 struct rm_session_push_local
 {
     int fd;                                     /* socket handle */
-	pthread_t               ch_ch_tid;
-	pthread_t               delta_tid;
+	pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
+    struct twhlist_head     *h;                 /* nonoverlapping checkums */
+    FILE                    *f_x;               /* file on which rolling is performed */              
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
+	pthread_t               delta_rx_tid;       /* consumer (of delta elements, reconstruction function) */
+    rm_delta_f              *delta_f;           /* reconstruct callback */
 };
 
 void
@@ -102,17 +107,13 @@ rm_session_ch_ch_tx_f(void *arg);
 void *
 rm_session_ch_ch_rx_f(void *arg);
 
-struct rm_session_delta_tx_f_arg
-{
-    struct twhlist_head     *h;             /* nonoverlapping checkums */
-    FILE                    *f_x;           /* file on which rolling is performed */              
-    rm_delta_f              *delta_f;       /* tx/reconstruct callback */
-};
 /* @brief       Process delta reconstruction data (tx|reconstruct|etc...).
  * @details     Runs rolling checksums procedure and compares checksums
  *              to those calculated on nonoverlapping blocks of @y in (B)
  *              producing delta elements. Calls callback on each element
  *              to transmit those to (B) or reconstruct file locally, etc.
+ *              This function must check what kind of session it has been
+ *              called on (RM_PUSH_LOCAL/RM_PUSH_TX) and act accordingly.
  */
 void *
 rm_session_delta_tx_f(void *arg);

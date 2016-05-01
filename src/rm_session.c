@@ -135,17 +135,42 @@ rm_session_delta_tx_f(void *arg)
     struct twhlist_head     *h;             /* nonoverlapping checkums */
     FILE                    *f_x;           /* file on which rolling is performed */
     rm_delta_f              *delta_f;       /* tx/reconstruct callback */
+    struct rm_session       *s;
+    enum rm_session_type    t;
+    struct rm_session_push_local    *prvt_local;
+    struct rm_session_push_tx       *prvt_tx;
 
-	struct rm_session_delta_tx_f_arg *f_arg =
-                        (struct rm_session_delta_tx_f_arg*) arg;
-	assert(f_arg != NULL);
+	s = (struct rm_session*) arg;
+	assert(s != NULL);
 
-    h       = f_arg->h;
-    f_x     = f_arg->f_x;
-    delta_f = f_arg->delta_f;
+    t = s->type;
+
+    switch (t)
+    {
+        case RM_PUSH_LOCAL:
+
+            prvt_local = s->prvt;
+            if (prvt_local == NULL)
+            {
+                goto exit;
+            }
+            h       = prvt_local->h;
+            f_x     = prvt_local->f_x;
+            delta_f = prvt_local->delta_f;
+            /* TODO complete */
+            break;
+
+        case RM_PUSH_TX:
+            break;
+
+        default:
+            goto exit;
+    }
 
     /* 1. run rolling checksum procedure */
 	return 0;
+exit:
+    return NULL;
 }
 
 

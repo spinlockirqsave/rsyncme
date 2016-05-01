@@ -104,12 +104,7 @@ rm_tx_local_push(const char *x, const char *y,
     }
 
     /* calc rolling checksums, produce delta vector
-     * and do file reconstruction */
-    /* pack h, f_x, rm_rx_reconstruct_1 to arg */
-    //delta_tx_f_arg.h = h;
-    //delta_tx_f_arg.f_x = f_x;
-    //delta_tx_f_arg.delta_f = rm_rx_delta_e_reconstruct_f_1;
-    //rm_session_delta_tx_f(&delta_tx_f_arg);
+     * and do file reconstruction in local session */
 
     s = rm_session_create(NULL, RM_PUSH_LOCAL);
     if (s == NULL)
@@ -117,9 +112,15 @@ rm_tx_local_push(const char *x, const char *y,
         err = -8;
         goto err_exit;
     }
+    /* setup private session's arguments */
     prvt = s->prvt;
-	/* start tx delta vec thread */
-	err = rm_launch_thread(&prvt->delta_tid, rm_session_delta_tx_f,
+    prvt->h = h;
+    prvt->f_x = f_x;
+    prvt->delta_f = rm_rx_delta_e_reconstruct_f_1;
+ 
+	/* start tx delta vec thread (enqueue delta elements
+     * and signal to delta_rx_tid thread */
+	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
     {
@@ -127,7 +128,7 @@ rm_tx_local_push(const char *x, const char *y,
         goto err_exit;
     }
     /* reconstruct */
-	err = rm_launch_thread(&prvt->ch_ch_tid, rm_session_ch_ch_rx_f,
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
     {
@@ -163,35 +164,4 @@ rm_tx_remote_push(const char *x, const char *y,
     (void) remote_addr;
     (void) L;
 	return 0;
-}
-
-void*
-rm_tx_delta_e_f_1(void* data)
-{
-    /* tx delta element */
-    (void)data;
-    return NULL;
-}
-int
-rm_tx_launch_delta_e_f_1(const struct rm_session *s)
-{
-    int err;
-    struct rm_session_push_tx   *prvt;
-
-    if (s == NULL)
-    {
-        return -1;
-    }
-    prvt = (struct rm_session_push_tx*) s->prvt;
-    if (prvt == NULL)
-    {
-        return -2;
-    }
-	err = rm_launch_thread(&prvt->delta_tid, rm_tx_delta_e_f_1,
-                        (void*)s, PTHREAD_CREATE_JOINABLE);
-	if (err != 0)
-    {
-        return -3;
-    }
-    return 0;
 }

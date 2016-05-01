@@ -35,13 +35,13 @@ rm_do_msg_push_rx(struct rsyncme *rm,
 	
 	/* start tx_ch_ch and rx delta threads,
      * save pids in session object */
-	err = rm_launch_thread(&prvt->ch_ch_tid, rm_session_ch_ch_tx_f,
+	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
         goto fail;
 
 	/* start rx delta thread */
-	err = rm_launch_thread(&prvt->delta_tid, rm_session_delta_rx_f,
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
         goto fail;
@@ -75,13 +75,13 @@ rm_do_msg_push_tx(struct rsyncme *rm,
 
 	/* start rx_ch_ch thread and tx delta threads,
      * save pids in session object */
-	err = rm_launch_thread(&prvt->ch_ch_tid, rm_session_ch_ch_rx_f,
+	err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
         goto fail;
 
 	/* start tx delta vec thread */
-	err = rm_launch_thread(&prvt->delta_tid, rm_session_delta_tx_f,
+	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
         goto fail;
