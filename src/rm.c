@@ -273,9 +273,14 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         return -3;
     }
 
-    /* 1. initial checksum and it's hash */
+    if (read_left < L)
+    {
+        /* TODO copy all raw bytes in single delta */
+        goto copy_tail;
+    }
+
+    /* 1. initial checksum */
     ch.f_ch = rm_fast_check_block(buf, L);
-    hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
 
     a_k_pos = 0;
     a_kL_pos = L;
@@ -295,6 +300,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         raw_bytes_n = 0;
 
         /* hash lookup */
+        hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
         twhlist_for_each_entry(e, &h[hash], hlink)
         {
             /* hit 1, 1st Level match, hashtable hash match */
@@ -358,8 +364,9 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             delta_e->raw_bytes_n = 0;
             cb_arg.delta_e = delta_e;
             delta_f(&cb_arg);                               /* TX, enqueue delta */
+            read_left -= L;
         } else {
-            // tx bytes, TODO consider some buffering strategy
+            /* raw byte */
             if (raw_bytes == NULL)
             {
                 /* alloc new buffer */
@@ -373,6 +380,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             }
             /* copy byte into the buffer*/
             raw_bytes[raw_bytes_n] = a_k;
+            read_left -= 1;
             ++raw_bytes_n;
             /* tx? */
             if ((raw_bytes_n == L) || (read_left == 0))     /* TODO there will be more conditions on final transmit here! */
@@ -397,31 +405,58 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         }
 
         /* roll */
-        /* read a_k, a_kL bytes */
-        if (a_k_pos < L)
+        if (match == 1)
         {
-            /* we have read L bytes at the beginning */
-            a_k = buf[a_k_pos];
-        } else {
-            if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f_x) != 1)
+            read_now = rm_min(L, read_left);
+            if (read_now < L)
+            {
+                goto copy_tail;
+            }
+            read = rm_fpread(buf, 1, L, a_kL_pos - 1, f_x);
+            if (read != read_now)
             {
                 return -10;
             }
-        }
-        if (rm_fpread(&a_kL, sizeof(unsigned char), 1, a_kL_pos, f_x) != 1)
-        {
-            return -10;
-        }
-        ch.f_ch = rm_fast_check_roll(ch.f_ch, a_k, a_kL, L);
+            /* fast checksum */
+            ch.f_ch = rm_fast_check_block(buf, L);
 
-        /* move */
-        ++a_k_pos;
-        ++a_kL_pos;
+            /* move */
+            a_k_pos = a_kL_pos;
+            a_kL_pos = a_k + L;
+        } else {
+            /* read a_k, a_kL bytes */
+            if (a_k_pos < L)
+            {
+                /* we have read L bytes at the beginning */
+                a_k = buf[a_k_pos];
+            } else {
+                if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f_x) != 1)
+                {
+                    return -11;
+                }
+            }
+            if (a_kL_pos < file_sz)
+            {
+                /* usual case */
+                if (rm_fpread(&a_kL, sizeof(unsigned char), 1, a_kL_pos, f_x) != 1)
+                {
+                    return -12;
+                }
+                ch.f_ch = rm_fast_check_roll(ch.f_ch, a_k, a_kL, L);
 
-        read_left = 0;// temporary
+                /* move */
+                ++a_k_pos;
+                ++a_kL_pos;
+            } else {
+                /* TODO */
+                /* we are on the tail, this must be handled in a different way */
+            }
+        }
     } while (read_left > 0);
 
 end:
+    return 0;
+copy_tail:
     return 0;
 }
 
