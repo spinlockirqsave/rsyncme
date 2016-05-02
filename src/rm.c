@@ -238,7 +238,12 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     uint8_t         match;
     const struct rm_ch_ch_ref_hlink   *e;
     struct rm_ch_ch ch;
-    struct rm_roll_proc_cb_arg  cb_arg;
+    struct rm_roll_proc_cb_arg  cb_arg;         /* callback argument */
+    struct rm_delta_e           *delta_e;
+    size_t                      raw_bytes_n;
+    unsigned char               *raw_bytes;     /* buffer */
+    size_t                      a_k_pos, a_kL_pos;
+    unsigned char               a_k, a_kL;      /* bytes to remove/add from rolling checksum */
     size_t          collisions_1st_level = 0;
     size_t          collisions_2nd_level = 0;
 
@@ -272,10 +277,23 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     ch.f_ch = rm_fast_check_block(buf, L);
     hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
 
+    a_k_pos = 0;
+    a_kL_pos = L;
+
     /* roll hash, lookup in table, produce delta elemenets */
     do
     {
         match = 0;
+
+        /* buffer for a raw bytes, callback will take ownership of this! */
+        raw_bytes = malloc(L * sizeof(*raw_bytes));
+        if (raw_bytes == NULL)
+        {
+            return -4;
+        }
+        memset(raw_bytes, 0, L * sizeof(*raw_bytes));
+        raw_bytes_n = 0;
+
         /* hash lookup */
         twhlist_for_each_entry(e, &h[hash], hlink)
         {
@@ -303,18 +321,102 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 ++collisions_1st_level;
             }
         }
-        /* build delta */
+        /* build delta, TODO free in callback! */
         /* found a match? */
         if (match == 1)
         {
             // TODO tx RM_DELTA_ELEMENT_REFERENCE, move file pointer accordingly
-            // init cb_arg to RM_DELTA_ELEMENT_REFERENCE
+            /* any raw bytes buffered? */
+            if (raw_bytes_n > 0)
+            {
+                /* send them first */
+                delta_e = malloc(sizeof *delta_e);
+                if (delta_e == NULL)
+                {
+                    return -5;
+                }
+                delta_e->type = RM_DELTA_ELEMENT_RAW_BYTES;
+                delta_e->ref = 0;
+                delta_e->raw_bytes = raw_bytes;
+                delta_e->raw_bytes_n = raw_bytes_n;         /* move ownership, TODO cleanup in callback! */
+                /* tx, signal delta_rx_tid, etc */
+                cb_arg.delta_e = delta_e;
+                delta_f(&cb_arg);                           /* TX, enqueue delta */
+                /* cleanup */
+                raw_bytes = NULL;
+                raw_bytes_n = 0;
+            }
+            /* tx delta ref */
+            delta_e = malloc(sizeof *delta_e);
+            if (delta_e == NULL)
+            {
+                return -7;
+            }
+            delta_e->type = RM_DELTA_ELEMENT_REFERENCE;
+            delta_e->ref = e->data.ref;
+            delta_e->raw_bytes = NULL;
+            delta_e->raw_bytes_n = 0;
+            cb_arg.delta_e = delta_e;
+            delta_f(&cb_arg);                               /* TX, enqueue delta */
         } else {
-            // TODO tx bytes, consider some buffering strategy
-            // init cb_arg to RM_DELTA_ELEMENT_RAW_BYTES
+            // tx bytes, TODO consider some buffering strategy
+            if (raw_bytes == NULL)
+            {
+                /* alloc new buffer */
+                raw_bytes = malloc(L * sizeof(*raw_bytes));
+                if (raw_bytes == NULL)
+                {
+                    return -8;
+                }
+                memset(raw_bytes, 0, L * sizeof(*raw_bytes));
+                raw_bytes_n = 0;
+            }
+            /* copy byte into the buffer*/
+            raw_bytes[raw_bytes_n] = a_k;
+            ++raw_bytes_n;
+            /* tx? */
+            if ((raw_bytes_n == L) || (read_left == 0))     /* TODO there will be more conditions on final transmit here! */
+            {
+                /* tx */
+                delta_e = malloc(sizeof *delta_e);
+                if (delta_e == NULL)
+                {
+                    return -9;
+                }
+                delta_e->type = RM_DELTA_ELEMENT_RAW_BYTES;
+                delta_e->ref = 0;
+                delta_e->raw_bytes = raw_bytes;
+                delta_e->raw_bytes_n = raw_bytes_n;         /* move ownership, TODO cleanup in callback! */
+                /* tx, signal delta_rx_tid, etc */
+                cb_arg.delta_e = delta_e;
+                delta_f(&cb_arg);                           /* TX, enqueue delta */
+                /* cleanup */
+                raw_bytes = NULL;
+                raw_bytes_n = 0;
+            }
         }
-        /* tx/signal delta_rx_tid, etc */
-        delta_f(&cb_arg);
+
+        /* roll */
+        /* read a_k, a_kL bytes */
+        if (a_k_pos < L)
+        {
+            /* we have read L bytes at the beginning */
+            a_k = buf[a_k_pos];
+        } else {
+            if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f_x) != 1)
+            {
+                return -10;
+            }
+        }
+        if (rm_fpread(&a_kL, sizeof(unsigned char), 1, a_kL_pos, f_x) != 1)
+        {
+            return -10;
+        }
+        ch.f_ch = rm_fast_check_roll(ch.f_ch, a_k, a_kL, L);
+
+        /* move */
+        ++a_k_pos;
+        ++a_kL_pos;
 
         read_left = 0;// temporary
     } while (read_left > 0);

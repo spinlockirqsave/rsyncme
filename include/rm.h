@@ -136,6 +136,7 @@ struct rm_delta_e
     enum RM_DELTA_ELEMENT_TYPE  type;
     size_t                      ref;
     unsigned char               *raw_bytes;
+    size_t                      raw_bytes_n;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -250,7 +251,7 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate);
 
 struct rm_roll_proc_cb_arg
 {
-    struct rm_delta_e       delta_e;
+    struct rm_delta_e       *delta_e;
     const struct rm_session *s;
 };
 /* @brief   Tx delta element locally (RM_PUSH_LOCAL).
