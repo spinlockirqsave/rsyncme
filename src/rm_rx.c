@@ -378,8 +378,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname,
     *blocks_n = entries_n;
     return	0;
 }
-
-void*
+/*
+int
 rm_rx_delta_e_reconstruct_f_1(void *arg)
 {
 	struct rm_rx_delta_e_reconstruct_arg *delta_pack =
@@ -388,3 +388,4 @@ rm_rx_delta_e_reconstruct_f_1(void *arg)
     (void)delta_pack;
 	return NULL;
 }
+*/

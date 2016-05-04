@@ -84,8 +84,10 @@ struct rm_rx_delta_e_reconstruct_arg
     struct  rm_delta_e e;
     FILE    *f_y;
 };
+/*
 rm_delta_f
 rm_rx_delta_e_reconstruct_f_1;
+*/
 
 
 #endif	/* RSYNCME_RX_H */

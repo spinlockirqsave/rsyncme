@@ -157,7 +157,7 @@ rm_session_delta_tx_f(void *arg)
             h       = prvt_local->h;
             f_x     = prvt_local->f_x;
             delta_f = prvt_local->delta_f;
-            /* TODO complete */
+            /* TODO complete, call rolling ch procedure */
             break;
 
         case RM_PUSH_TX:
@@ -180,5 +180,21 @@ rm_session_delta_rx_f(void *arg)
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
+    /* TODO complete, call reconstruct proc */
+    /* call this in there */
+    /* check delta type 
+    switch (delta_e->type)
+    {
+        case RM_DELTA_ELEMENT_REFERENCE:
+            break;
+        case RM_DELTA_ELEMENT_RAW_BYTES:
+            break;
+        default:
+            RM_LOG_CRIT("WTF WTF WTF! Unknown delta type?! Have you added"
+                " some neat code recently?");
+        assert(1 == 0);;
+        return -5;
+    }
 	return 0;
+    */
 }

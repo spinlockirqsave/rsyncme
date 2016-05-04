@@ -80,6 +80,7 @@
 #include "rm_defs.h"
 #include "md5.h"
 
+
 /* @brief   Strong checksum struct. MD5. */
 struct rm_md5
 {
@@ -137,6 +138,7 @@ struct rm_delta_e
     size_t                      ref;
     unsigned char               *raw_bytes;
     size_t                      raw_bytes_n;
+    struct twlist_head          link;           /* to link me in list/stack/queue */
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -229,7 +231,7 @@ size_t
 rm_fpread(void *buf, size_t size, size_t items_n,
                             size_t offset, FILE *f);
 
-typedef void* (rm_delta_f)(void*);
+typedef int (rm_delta_f)(void*);
 
 struct rm_session;
 
@@ -255,17 +257,19 @@ struct rm_roll_proc_cb_arg
     const struct rm_session *s;
 };
 /* @brief   Tx delta element locally (RM_PUSH_LOCAL).
- * @details Rolling proc callback.
- *          This is being called from rolling checkum proc
+ * @details Rolling proc callback. Called synchronously.
+ *          This is being called from rolling checksum proc
  *          rm_rolling_ch_proc. Enqueues delta elements to queue
  *          and signals this to delta_rx_tid in local push session. */
 rm_delta_f
 rm_roll_proc_cb_1;
 
 /* @brief   Tx delta element from (A) to (B) (RM_PUSH_TX).
- * @details Rolling proc callback.
- *          Transmits delta elements to remote (B) once called
- *          each time rolling procedure enqueues new delta element. */
+ * @details Rolling proc callback. Called synchronously.
+ *          This is being called from rolling checksum proc
+ *          rm_rolling_ch_proc. Transmits delta elements to remote (B)
+ *          once called each time rolling procedure produces new delta
+ *          element (may want to transmit already buffered bytes first). */
 rm_delta_f
 rm_roll_proc_cb_2;
 

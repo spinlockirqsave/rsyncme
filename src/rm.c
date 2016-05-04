@@ -1,15 +1,19 @@
-/// @file       rm.c
-/// @brief      Simple rsync algorithm implementation
-///		as described in Tridgell A., "Efficient Algorithms
-///		for Sorting and Synchronization", 1999.
-/// @details	Common definitions used by sender and receiver.
-/// @author     Piotr Gregor piotrek.gregor at gmail.com
-/// @version    0.1.2
-/// @date       1 Jan 2016 07:50 PM
-/// @copyright  LGPLv2.1v2.1
+/*
+ * @file        rm.c
+ * @brief       Simple rsync algorithm implementation
+ *              as described in Tridgell A., "Efficient Algorithms
+ *              for Sorting and Synchronization", 1999.
+ * @details     Common definitions used by sender and receiver.
+ * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @version     0.1.2
+ * @date        1 Jan 2016 07:50 PM
+ * @copyright   LGPLv2.1v2.1
+ */
 
 
 #include "rm.h"
+#include "rm_util.h"
+#include "rm_session.h"
 
 
 uint32_t
@@ -331,7 +335,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         /* found a match? */
         if (match == 1)
         {
-            // TODO tx RM_DELTA_ELEMENT_REFERENCE, move file pointer accordingly
+            /* tx RM_DELTA_ELEMENT_REFERENCE */
             /* any raw bytes buffered? */
             if (raw_bytes_n > 0)
             {
@@ -345,6 +349,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 delta_e->ref = 0;
                 delta_e->raw_bytes = raw_bytes;
                 delta_e->raw_bytes_n = raw_bytes_n;         /* move ownership, TODO cleanup in callback! */
+                TWINIT_LIST_HEAD(&delta_e->link);
                 /* tx, signal delta_rx_tid, etc */
                 cb_arg.delta_e = delta_e;
                 delta_f(&cb_arg);                           /* TX, enqueue delta */
@@ -362,11 +367,12 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             delta_e->ref = e->data.ref;
             delta_e->raw_bytes = NULL;
             delta_e->raw_bytes_n = 0;
+            TWINIT_LIST_HEAD(&delta_e->link);
             cb_arg.delta_e = delta_e;
             delta_f(&cb_arg);                               /* TX, enqueue delta */
             read_left -= L;
         } else {
-            /* raw byte */
+            /* tx raw byte */
             if (raw_bytes == NULL)
             {
                 /* alloc new buffer */
@@ -395,6 +401,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 delta_e->ref = 0;
                 delta_e->raw_bytes = raw_bytes;
                 delta_e->raw_bytes_n = raw_bytes_n;         /* move ownership, TODO cleanup in callback! */
+                TWINIT_LIST_HEAD(&delta_e->link);
                 /* tx, signal delta_rx_tid, etc */
                 cb_arg.delta_e = delta_e;
                 delta_f(&cb_arg);                           /* TX, enqueue delta */
@@ -402,7 +409,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 raw_bytes = NULL;
                 raw_bytes_n = 0;
             }
-        }
+        } /* match */
 
         /* roll */
         if (match == 1)
@@ -435,7 +442,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                     return -11;
                 }
             }
-            if (a_kL_pos < file_sz)
+            if (a_kL_pos < file_sz - 1)
             {
                 /* usual case */
                 if (rm_fpread(&a_kL, sizeof(unsigned char), 1, a_kL_pos, f_x) != 1)
@@ -451,7 +458,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 /* TODO */
                 /* we are on the tail, this must be handled in a different way */
             }
-        }
+        } /* roll */
     } while (read_left > 0);
 
 end:
@@ -485,4 +492,55 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate)
 fail:
 	pthread_attr_destroy(&attr);
 	return -1;
+}
+
+int
+rm_roll_proc_cb_1(void *arg)
+{
+    struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
+    const struct rm_session         *s;
+    struct rm_session_push_local    *prvt;
+    struct rm_delta_e               *delta_e;
+
+    cb_arg = (struct rm_roll_proc_cb_arg*) arg;
+    if (cb_arg == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added"
+                " some neat code recently?");
+        assert(cb_arg != NULL);
+        return -1;
+    }
+
+    s = cb_arg->s;
+    delta_e = cb_arg->delta_e;
+    if (s == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL session?! Have you added"
+                " some neat code recently?");
+        assert(s != NULL);
+        return -2;
+    }
+    if (delta_e == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL delta element?! Have you added"
+                " some neat code recently?");
+        assert(delta_e != NULL);
+        return -3;
+    }
+    prvt = (struct rm_session_push_local*) s->prvt;
+    if (prvt == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL private session?! Have you added"
+                " some neat code recently?");
+        assert(prvt != NULL);
+        return -4;
+    }
+
+    /* enqueue delta (and move ownership to delta_rx_tid!) */
+    pthread_mutex_lock(&prvt->tx_delta_e_queue_mutex);
+    twfifo_enqueue(&delta_e->link, &prvt->tx_delta_e_queue);
+    pthread_cond_signal(&prvt->tx_delta_e_queue_signal);
+    pthread_mutex_unlock(&prvt->tx_delta_e_queue_mutex);
+
+    return 0;
 }

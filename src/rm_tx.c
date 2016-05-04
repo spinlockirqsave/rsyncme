@@ -116,7 +116,7 @@ rm_tx_local_push(const char *x, const char *y,
     prvt = s->prvt;
     prvt->h = h;
     prvt->f_x = f_x;
-    prvt->delta_f = rm_rx_delta_e_reconstruct_f_1;
+    prvt->delta_f = rm_roll_proc_cb_1;
  
 	/* start tx delta vec thread (enqueue delta elements
      * and signal to delta_rx_tid thread */
