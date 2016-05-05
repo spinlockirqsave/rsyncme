@@ -538,8 +538,10 @@ rm_roll_proc_cb_1(void *arg)
 
     /* enqueue delta (and move ownership to delta_rx_tid!) */
     pthread_mutex_lock(&prvt->tx_delta_e_queue_mutex);
+
     twfifo_enqueue(&delta_e->link, &prvt->tx_delta_e_queue);
     pthread_cond_signal(&prvt->tx_delta_e_queue_signal);
+
     pthread_mutex_unlock(&prvt->tx_delta_e_queue_mutex);
 
     return 0;

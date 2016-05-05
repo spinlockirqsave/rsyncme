@@ -27,6 +27,7 @@ struct rm_session
                                        rsyncme object */
 
     enum rm_session_type    type;
+    size_t                  L;
     void                    *prvt;
 };
 
@@ -69,6 +70,7 @@ struct rm_session_push_local
 {
     int fd;                                     /* socket handle */
 	pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
+    int                     delta_tx_status;
     struct twhlist_head     *h;                 /* nonoverlapping checkums */
     FILE                    *f_x;               /* file on which rolling is performed */              
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
@@ -76,6 +78,7 @@ struct rm_session_push_local
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
 	pthread_t               delta_rx_tid;       /* consumer (of delta elements, reconstruction function) */
+    int                     delta_rx_status;
     rm_delta_f              *delta_f;           /* reconstruct callback */
 };
 
