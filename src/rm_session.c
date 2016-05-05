@@ -139,9 +139,10 @@ rm_session_delta_tx_f(void *arg)
     enum rm_session_type    t;
     struct rm_session_push_local    *prvt_local;
     struct rm_session_push_tx       *prvt_tx;
+    int err;
 
-	s = (struct rm_session*) arg;
-	assert(s != NULL);
+    s = (struct rm_session*) arg;
+    assert(s != NULL);
 
     t = s->type;
 
@@ -157,7 +158,6 @@ rm_session_delta_tx_f(void *arg)
             h       = prvt_local->h;
             f_x     = prvt_local->f_x;
             delta_f = prvt_local->delta_f;
-            /* TODO complete, call rolling ch procedure */
             break;
 
         case RM_PUSH_TX:
@@ -168,8 +168,17 @@ rm_session_delta_tx_f(void *arg)
     }
 
     /* 1. run rolling checksum procedure */
-	return 0;
+    err = rm_rolling_ch_proc(s, h, f_x, delta_f, s->L, 0);
+
+    pthread_mutex_lock(&s->session_mutex);
+    prvt_local->delta_tx_status = err;
+    pthread_mutex_unlock(&s->session_mutex);
+
+    /* normal exit */
+	pthread_exit(&prvt_local->delta_tx_status);
+
 exit:
+    /* abnormal exit */
     return NULL;
 }
 
@@ -197,4 +206,5 @@ rm_session_delta_rx_f(void *arg)
     }
 	return 0;
     */
+    return NULL;
 }
