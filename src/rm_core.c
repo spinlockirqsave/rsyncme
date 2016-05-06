@@ -48,13 +48,14 @@ struct rm_session *
 rm_core_session_add(struct rsyncme *rm,
                         enum rm_session_type type)
 {
-        struct rm_session	*s = NULL;
+    struct rm_session	*s = NULL;
+    assert(rm != NULL);
 
-        assert(rm != NULL);
-
-        s = rm_session_create(rm, type);
-        if (s == NULL)
-                return NULL;
+    s = rm_session_create(rm, type);
+    if (s == NULL)
+    {
+        return NULL;
+    }
 	pthread_mutex_lock(&rm->mutex);
 	// create SID
 	s->session_id = rm->sessions_n + 1;

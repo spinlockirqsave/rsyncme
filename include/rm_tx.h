@@ -52,9 +52,5 @@ rm_tx_remote_push(const char *x, const char *y,
 		struct sockaddr_in *remote_addr,
 		uint32_t L);
 
-/* @brief   Tx delta element from (A) to (B). */
-rm_delta_f
-rm_tx_delta_e_f_1;
-
 
 #endif	/* RSYNCME_TX_H */

@@ -80,6 +80,7 @@
 #include "rm_defs.h"
 #include "md5.h"
 
+
 /* @brief   Strong checksum struct. MD5. */
 struct rm_md5
 {
@@ -136,6 +137,8 @@ struct rm_delta_e
     enum RM_DELTA_ELEMENT_TYPE  type;
     size_t                      ref;
     unsigned char               *raw_bytes;
+    size_t                      raw_bytes_n;
+    struct twlist_head          link;           /* to link me in list/stack/queue */
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -181,12 +184,17 @@ rm_adler32_1(const unsigned char *data, uint32_t len);
 uint32_t
 rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
 
-/* @brief   Rolling Adler32 from block [k,k+L-1] to [k+1,k+L].
+/* @brief   Rolls fast checksum @adler computed on block [k,k+L-1]
+ *          to [k+1,k+L].
  * @details	Updates @adler by removal of byte k and addition
- *          of byte k+L. */
+ *          of byte k+L using RM_ADLER32_MODULUS. */
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
+/* @brief   Rolls fast checksum @adler computed on bytes [k,k+L-1]
+ *          to [k+1,k+L].
+ * @details	Updates @adler by removal of byte k and addition
+ *          of byte k+L using RM_FASTCHECK_MODULUS. */
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
@@ -224,6 +232,46 @@ rm_fpread(void *buf, size_t size, size_t items_n,
                             size_t offset, FILE *f);
 
 typedef int (rm_delta_f)(void*);
+
+struct rm_session;
+
+/* @brief   Rolling checksum procedure.
+ * @details Runs rolling checksum procedure using @rm_fast_check_roll
+ *          to move the checksum, starting from byte @from.
+ * @param   h - hashtable of nonoverlapping checkums,
+ * @param   f_x - file on which rolling is performed, must be already opened,
+ * @param   delta_f - tx/reconstruct callback,
+ * @param   L - block size,
+ * @param   from - starting point, 0 to start from beginning */
+int
+rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
+        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from);
+
+int
+rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
+
+
+struct rm_roll_proc_cb_arg
+{
+    struct rm_delta_e       *delta_e;
+    const struct rm_session *s;
+};
+/* @brief   Tx delta element locally (RM_PUSH_LOCAL).
+ * @details Rolling proc callback. Called synchronously.
+ *          This is being called from rolling checksum proc
+ *          rm_rolling_ch_proc. Enqueues delta elements to queue
+ *          and signals this to delta_rx_tid in local push session. */
+rm_delta_f
+rm_roll_proc_cb_1;
+
+/* @brief   Tx delta element from (A) to (B) (RM_PUSH_TX).
+ * @details Rolling proc callback. Called synchronously.
+ *          This is being called from rolling checksum proc
+ *          rm_rolling_ch_proc. Transmits delta elements to remote (B)
+ *          once called each time rolling procedure produces new delta
+ *          element (may want to transmit already buffered bytes first). */
+rm_delta_f
+rm_roll_proc_cb_2;
 
 
 #endif	/* RSYNCME_H */

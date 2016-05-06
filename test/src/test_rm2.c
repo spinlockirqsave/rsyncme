@@ -536,7 +536,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state)
 /* @brief   Artificial function sending checksums to remote A,
  *          returning an error. */
 int
-f_tx_ch_ch_ref(const struct f_tx_ch_ch_ref_arg arg)
+f_tx_ch_ch_ref(const struct f_tx_ch_ch_ref_arg_1 arg)
 {
 	(void) arg;
 	return -1;

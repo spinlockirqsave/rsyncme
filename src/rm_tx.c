@@ -24,7 +24,9 @@ rm_tx_local_push(const char *x, const char *y,
 	struct      stat	fs;
 	uint32_t    x_sz, y_sz, blocks_n_exp;
     size_t      blocks_n;
-    struct rm_session_delta_tx_f_arg    delta_tx_f_arg;
+    //struct rm_session_delta_tx_f_arg    delta_tx_f_arg;
+    struct rm_session               *s;
+    struct rm_session_push_local    *prvt;
 
 	(void) x_sz;
     (void) fd_z;
@@ -102,20 +104,53 @@ rm_tx_local_push(const char *x, const char *y,
     }
 
     /* calc rolling checksums, produce delta vector
-     * and do file reconstruction */
-    /* pack h, f_x, rm_rx_reconstruct_1 to arg */
-    delta_tx_f_arg.h = h;
-    delta_tx_f_arg.f_x = f_x;
-    delta_tx_f_arg.delta_f = rm_rx_delta_e_reconstruct_f_1;
-    rm_session_delta_tx_f(&delta_tx_f_arg);
+     * and do file reconstruction in local session */
+
+    s = rm_session_create(NULL, RM_PUSH_LOCAL);
+    if (s == NULL)
+    {
+        err = -8;
+        goto err_exit;
+    }
+    /* setup private session's arguments */
+    prvt = s->prvt;
+    prvt->h = h;
+    prvt->f_x = f_x;
+    prvt->delta_f = rm_roll_proc_cb_1;
+ 
+	/* start tx delta vec thread (enqueue delta elements
+     * and signal to delta_rx_tid thread */
+	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f,
+                                    s, PTHREAD_CREATE_JOINABLE);
+	if (err != 0)
+    {
+        err = -9;
+        goto err_exit;
+    }
     /* reconstruct */
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f,
+                                    s, PTHREAD_CREATE_JOINABLE);
+	if (err != 0)
+    {
+        err = -10;
+        goto err_exit;
+    }
   
 	return 0;
 
 err_exit:
-	if (f_x != NULL) fclose(f_x);
-	if (f_y != NULL) fclose(f_y);
-    if (f_z != NULL) fclose(f_z);
+	if (f_x != NULL) {
+        fclose(f_x);
+    }
+	if (f_y != NULL) {
+        fclose(f_y);
+    }
+    if (f_z != NULL) {
+        fclose(f_z);
+    }
+	if (s != NULL) {
+		rm_session_free(s);
+    }
 	return err;
 }
 
