@@ -13,7 +13,7 @@
 #include "test_rm3.h"
 
 
-char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
 "rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
 "rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
 "rm_f_4096.dat", "rm_f_20100.dat"};
@@ -128,7 +128,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_1(void **state)
     uint32_t                i, j, L, file_sz, blocks_n;
     struct test_rm_state    *rm_state;
     struct stat             fs;
-    char                    *fname;
+    const char              *fname;
     size_t                  entries_n;
     struct rm_ch_ch_ref_link    *e;
     struct twlist_head      *pos, *tmp, l = TWLIST_HEAD_INIT(l);
@@ -217,7 +217,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state)
     uint32_t                read_left, read_now, read;
     struct test_rm_state    *rm_state;
     struct stat             fs;
-    char                    *fname;
+    const char              *fname;
     size_t                  entries_n;
     struct rm_ch_ch_ref_link    *e;
     struct rm_md5           s_ch;

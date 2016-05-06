@@ -23,9 +23,6 @@ struct rm_session
 	uint32_t                session_id;
 	pthread_mutex_t         session_mutex;
 
-	struct rsyncme          *rm;    /* pointer to global
-                                       rsyncme object */
-
     enum rm_session_type    type;
     size_t                  L;
     void                    *prvt;
@@ -48,13 +45,16 @@ struct rm_session_push_tx
 {
     int fd;                                     /* socket handle */
 	pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
+    int                     delta_rx_status;
 	pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
+    int                     delta_tx_status;
     struct twhlist_head     *h;                 /* nonoverlapping checkums */
     FILE                    *f_x;               /* file on which rolling is performed */              
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
+    rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
 };
 
 /* Receiver of file (delta vector) */
@@ -79,20 +79,30 @@ struct rm_session_push_local
                                                    new delta element has been produced */
     pthread_t               delta_rx_tid;       /* consumer (of delta elements, reconstruction function) */
     int                     delta_rx_status;
-    rm_delta_f              *delta_f;           /* reconstruct callback */
+    rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
 };
 
 void
 rm_session_push_rx_init(struct rm_session_push_rx *prvt);
 void
 rm_session_push_tx_init(struct rm_session_push_tx *prvt);
+/* @brief   Frees private session, DON'T TOUCH private
+ *          session after this returns */ 
+void
+rm_session_push_tx_free(struct rm_session_push_tx *prvt);
 void
 rm_session_push_local_init(struct rm_session_push_local *prvt);
+/* @brief   Frees private session, DON'T TOUCH private
+ *          session after this returns */ 
+void
+rm_session_push_local_free(struct rm_session_push_local *prvt);
 
 /* @brief   Creates new session. */
 struct rm_session *
-rm_session_create(struct rsyncme *engine, enum rm_session_type t);
+rm_session_create(enum rm_session_type t);
 
+/* @brief   Frees session with it's private object, DON'T TOUCH
+ *          session after this returns */ 
 void
 rm_session_free(struct rm_session *s);
 
