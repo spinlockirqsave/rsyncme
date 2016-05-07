@@ -419,7 +419,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             {
                 goto copy_tail;
             }
-            read = rm_fpread(buf, 1, L, a_kL_pos - 1, f_x);
+            read = rm_fpread(buf, 1, L, a_kL_pos, f_x);
             if (read != read_now)
             {
                 return -10;
@@ -429,7 +429,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
             /* move */
             a_k_pos = a_kL_pos;
-            a_kL_pos = a_k + L;
+            a_kL_pos = a_k_pos + L;
         } else {
             /* read a_k, a_kL bytes */
             if (a_k_pos < L)

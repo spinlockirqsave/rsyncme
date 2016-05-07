@@ -3,6 +3,8 @@ CFLAGS			= -c -Wall -o3 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
 CFLAGS_D		= -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
 LDFLAGS			= -lpthread -lcmocka -L../../include -L../include  #-lpcap
 LDFLAGS2		= -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
+LDFLAGS_D		= -g -lpthread -lcmocka -L../../include -L../include  #-lpcap
+LDFLAGS2_D		= -g -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
 TESTSRCDIR		:= .
 AUXOBJDIR_D		:= ../../build/debug
 AUXOBJDIR		:= ../../build/release
@@ -47,19 +49,19 @@ $(TESTOUTPUTDIR)/test_rm_main5:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm5.o $(TESTOUT
 test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2 $(TESTOUTPUTDIR_D)/test_rm_main3 $(TESTOUTPUTDIR_D)/test_rm_main4 $(TESTOUTPUTDIR_D)/test_rm_main5
 
 $(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
-	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o -o $@
 
 $(TESTOUTPUTDIR_D)/test_rm_main2:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o
-	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS2) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS2_D) $(TESTOUTPUTDIR_D)/test_rm2.o $(TESTOUTPUTDIR_D)/test_rm_main2.o -o $@
 
 $(TESTOUTPUTDIR_D)/test_rm_main3:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm3.o $(TESTOUTPUTDIR_D)/test_rm_main3.o
-	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm3.o $(TESTOUTPUTDIR_D)/test_rm_main3.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS_D) $(TESTOUTPUTDIR_D)/test_rm3.o $(TESTOUTPUTDIR_D)/test_rm_main3.o -o $@
 
 $(TESTOUTPUTDIR_D)/test_rm_main4:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm4.o $(TESTOUTPUTDIR_D)/test_rm_main4.o
-	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm4.o $(TESTOUTPUTDIR_D)/test_rm_main4.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS_D) $(TESTOUTPUTDIR_D)/test_rm4.o $(TESTOUTPUTDIR_D)/test_rm_main4.o -o $@
 
 $(TESTOUTPUTDIR_D)/test_rm_main5:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm5.o $(TESTOUTPUTDIR_D)/test_rm_main5.o
-	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS) $(TESTOUTPUTDIR_D)/test_rm5.o $(TESTOUTPUTDIR_D)/test_rm_main5.o -o $@
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS_D) $(TESTOUTPUTDIR_D)/test_rm5.o $(TESTOUTPUTDIR_D)/test_rm_main5.o -o $@
 
 
 test-check:	test

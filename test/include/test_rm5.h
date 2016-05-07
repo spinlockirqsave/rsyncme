@@ -9,8 +9,8 @@
  */
 
 
-#ifndef RSYNCME_TEST_RM4_H
-#define RSYNCME_TEST_RM4_H
+#ifndef RSYNCME_TEST_RM5_H
+#define RSYNCME_TEST_RM5_H
 
 
 #include "rm_defs.h"
@@ -69,4 +69,4 @@ void
 test_rm_rolling_ch_proc_2(void **state);
 
 
-#endif	/* RSYNCME_TEST_RM4_H */
+#endif	/* RSYNCME_TEST_RM5_H */
