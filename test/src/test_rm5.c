@@ -147,22 +147,23 @@ test_rm_rolling_ch_proc_1(void **state)
     int                     fd;
     int                     err;
     size_t                  i, j, L, file_sz, y_sz;
-    size_t                  read_left, read_now, read;
-    unsigned char           *buf, *buf2;
     struct test_rm_state    *rm_state;
     struct stat             fs;
     const char              *fname, *y;
     size_t                  blocks_n_exp, blocks_n;
-    size_t                  collisions_1st_level, collisions_2nd_level;
-    struct rm_ch_ch_ref_hlink e_reference;
     struct twhlist_node     *tmp;
     struct rm_session       *s;
     struct rm_session_push_local    *prvt;
 
-    /* hashtable search */
-    unsigned int            bkt;                /* hashtable bucket index */
-    unsigned int            hash;               /* iterator over the buckets */
-    const struct rm_ch_ch_ref_hlink *e, *e_prev;
+    /* hashtable deletion */
+    unsigned int            bkt;
+    const struct rm_ch_ch_ref_hlink *e;
+
+    /* delta queue's content verification */
+    const twfifo_queue          *q;             /* produced queue of delta elements */
+    const struct rm_delta_e     *delta_e;       /* iterator over delta elements */
+    struct twlist_head          *lh;
+    size_t                      reconstructed, delta_ref_n, delta_raw_n;
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     rm_state = *state;
@@ -204,7 +205,7 @@ test_rm_rolling_ch_proc_1(void **state)
             }
             if (file_sz < 2)
             {
-                RM_LOG_INFO("File [%s] size [%u] is to small "
+                RM_LOG_INFO("File [%s] size [%u] is too small "
                         "for this test, skipping", fname, file_sz);
                 continue;
             }
@@ -240,14 +241,36 @@ test_rm_rolling_ch_proc_1(void **state)
             err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->L, 0);
             assert_int_equal(err, 0);
 
-            /* TODO verify s->prvt delta queue content */
+            /* verify s->prvt delta queue content */
+            q = &prvt->tx_delta_e_queue;
+            assert_true(q != NULL);
 
-
+            reconstructed = 0;
+            delta_ref_n = delta_raw_n = 0;
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh))
+            {
+                delta_e = tw_container_of(lh, struct rm_delta_e, link);
+                switch (delta_e->type)
+                {
+                    case RM_DELTA_ELEMENT_REFERENCE:
+                        reconstructed += L;
+                        ++delta_ref_n;
+                        break;
+                    case RM_DELTA_ELEMENT_RAW_BYTES:
+                        reconstructed += delta_e->raw_bytes_n;
+                        ++delta_raw_n;
+                        break;
+                    default:
+                        RM_LOG_ERR("Unknown delta element type!");
+                        assert_true(1 == 0 && "Unknown delta element type!");
+                }
+            }
+            //assert_int_equal(reconstructed, y_sz);
 
             RM_LOG_INFO("PASSED test #1 of rolling checksum procedure: "
-                    "delta elements cover all file, "
-                    "file [%s], size [%u], L [%u], blocks [%u]",
-                    fname, file_sz, L, blocks_n);
+                    "delta elements cover whole file, file [%s], size [%u], "
+                    "L [%u], blocks [%u], DELTA REF [%u], DELTA RAW [%u]",
+                    fname, file_sz, L, blocks_n, delta_ref_n, delta_raw_n);
             /* move file pointer back to the beginning */
             rewind(f);
 

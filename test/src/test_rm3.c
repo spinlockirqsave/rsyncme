@@ -170,7 +170,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_1(void **state)
             }
             if (file_sz < 2)
             {
-                RM_LOG_INFO("File [%s] size [%u] is to small "
+                RM_LOG_INFO("File [%s] size [%u] is too small "
                         "for this test, skipping", fname, file_sz);
                 continue;
             }
@@ -261,7 +261,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state)
             }
             if (file_sz < 2)
             {
-                RM_LOG_INFO("File [%s] size [%u] is to small "
+                RM_LOG_INFO("File [%s] size [%u] is too small "
                         "for this test, skipping", fname, file_sz);
                 continue;
             }
