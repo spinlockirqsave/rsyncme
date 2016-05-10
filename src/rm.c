@@ -199,7 +199,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
 
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while ((read = fread(buf, 1, read_exp, x)) == read_exp)
+    while (((read = fread(buf, 1, read_exp, x)) == read_exp) && bytes_n > 0)
     {
         if (fwrite(buf, 1, read_exp, y) != read_exp)
             return -1;
@@ -208,17 +208,40 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0)
-    {
-        /* EOF reached */
+    if (read == 0) {
+        /* read all bytes_n or EOF reached */
         return 0;
     }
-
     if (ferror(x) != 0)
         return -2;
     if (ferror(y) != 0)
         return -3;
+    return 0;
+}
 
+int
+rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n)
+{
+    size_t read = 0, read_exp;
+
+    if (fseek(x, offset, SEEK_SET) != 0)
+        return -1;
+    read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    while (((read = fread(dst, 1, read_exp, x)) == read_exp) && (bytes_n > 0))
+    {
+        bytes_n -= read;
+        dst += read;
+        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    }
+
+    if (read == 0) {
+        /* read all bytes_n or EOF reached */
+        return 0;
+    }
+    if (ferror(x) != 0)
+        return -2;
     return 0;
 }
 
@@ -234,6 +257,7 @@ int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from)
 {
+    int err;
     uint32_t        hash;
     unsigned char   buf[L];
     int             fd;
@@ -251,6 +275,11 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     size_t          collisions_1st_level = 0;
     size_t          collisions_2nd_level = 0;
 
+    raw_bytes = NULL;
+    delta_e = NULL;
+    e = NULL;
+    a_k_pos = 0;
+
     if (L == 0 || s == NULL)
         return -1;
     /* setup callback argument */
@@ -265,28 +294,26 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     }
     file_sz = fs.st_size;
     read_left = file_sz - from;
-    if (read_left == 0)
+    if (read_left == 0)                 /* Nothing to do */
+        return -3;
+    if (read_left < L)
     {
-        goto end;
+        /* copy all bytes starting from a_kL_pos = 0 */
+        a_kL_pos = 0;
+        read_now = read_left;
+        goto copy_tail;
     }
+
     read_now = rm_min(L, read_left);
 
     read = fread(buf, 1, read_now, f_x);
     if (read != read_now)
     {
-        return -3;
-    }
-
-    if (read_left < L)
-    {
-        /* TODO copy all raw bytes in single delta */
-        goto copy_tail;
+        return -4;
     }
 
     /* 1. initial checksum */
     ch.f_ch = rm_fast_check_block(buf, L);
-
-    a_k_pos = 0;
     a_kL_pos = L;
 
     /* roll hash, lookup in table, produce delta elemenets */
@@ -298,7 +325,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         raw_bytes = malloc(L * sizeof(*raw_bytes));
         if (raw_bytes == NULL)
         {
-            return -4;
+            return -5;
         }
         memset(raw_bytes, 0, L * sizeof(*raw_bytes));
         raw_bytes_n = 0;
@@ -343,7 +370,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 delta_e = malloc(sizeof *delta_e);
                 if (delta_e == NULL)
                 {
-                    return -5;
+                    return -6;
                 }
                 delta_e->type = RM_DELTA_ELEMENT_RAW_BYTES;
                 delta_e->ref = 0;
@@ -377,10 +404,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             {
                 /* alloc new buffer */
                 raw_bytes = malloc(L * sizeof(*raw_bytes));
-                if (raw_bytes == NULL)
-                {
-                    return -8;
-                }
+                if (raw_bytes == NULL) return -8;
                 memset(raw_bytes, 0, L * sizeof(*raw_bytes));
                 raw_bytes_n = 0;
             }
@@ -463,7 +487,32 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
 end:
     return 0;
+
 copy_tail:
+    if (raw_bytes == NULL)
+    {
+        raw_bytes = malloc(L * sizeof(*raw_bytes));
+        if (raw_bytes == NULL) return -13;
+        memset(raw_bytes, 0, L * sizeof(*raw_bytes));
+    }
+    err = rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, read_now);
+    if (err < 0)
+        return -14;
+    /* tx */
+    delta_e = malloc(sizeof *delta_e);
+    if (delta_e == NULL) return -15;
+    delta_e->type = RM_DELTA_ELEMENT_RAW_BYTES;
+    delta_e->ref = 0;
+    delta_e->raw_bytes = raw_bytes;
+    delta_e->raw_bytes_n = read_now;         /* move ownership, TODO cleanup in callback! */
+    TWINIT_LIST_HEAD(&delta_e->link);
+    /* tx, signal delta_rx_tid, etc */
+    cb_arg.delta_e = delta_e;
+    delta_f(&cb_arg);                       /* TX, enqueue delta */
+    /* cleanup */
+    raw_bytes = NULL;
+    raw_bytes_n = 0;
+
     return 0;
 }
 

@@ -215,12 +215,22 @@ rm_md5(const unsigned char *data, uint32_t len, unsigned char res[16]);
 /* @brief   Copy @bytes_n bytes from @x into @y.
  * @details Calls fread/fwrite buffered API functions.
  *          Files must be already opened.
- * @return  0: succes,
+ * @return  0: success,
  *          -1: fwrite failed,
  *          -2: fread failed,
  *          -3: other error set on @y */
 int
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
+
+/* @brief   Copy @bytes_n bytes from @x starting at @offset
+ *          into @dst buffer.
+ * @details Calls fread buffered API functions writing directly to @dst.
+ *          File @x must be already opened.
+ * @return  0: success,
+ *          -1: fseek failed,
+ *          -2: fread failed */
+int
+rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 
 /* @brief   Read @items_n blocks of @size bytes each from stream @f
  *          at offset @offset.

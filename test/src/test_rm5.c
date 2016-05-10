@@ -163,7 +163,7 @@ test_rm_rolling_ch_proc_1(void **state)
     const twfifo_queue          *q;             /* produced queue of delta elements */
     const struct rm_delta_e     *delta_e;       /* iterator over delta elements */
     struct twlist_head          *lh;
-    size_t                      reconstructed, delta_ref_n, delta_raw_n;
+    size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n;
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     rm_state = *state;
@@ -245,7 +245,7 @@ test_rm_rolling_ch_proc_1(void **state)
             q = &prvt->tx_delta_e_queue;
             assert_true(q != NULL);
 
-            reconstructed = 0;
+            rec_by_ref = rec_by_raw = 0;
             delta_ref_n = delta_raw_n = 0;
             for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh))
             {
@@ -253,11 +253,11 @@ test_rm_rolling_ch_proc_1(void **state)
                 switch (delta_e->type)
                 {
                     case RM_DELTA_ELEMENT_REFERENCE:
-                        reconstructed += L;
+                        rec_by_ref += L;
                         ++delta_ref_n;
                         break;
                     case RM_DELTA_ELEMENT_RAW_BYTES:
-                        reconstructed += delta_e->raw_bytes_n;
+                        rec_by_raw += delta_e->raw_bytes_n;
                         ++delta_raw_n;
                         break;
                     default:
@@ -265,12 +265,12 @@ test_rm_rolling_ch_proc_1(void **state)
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
             }
-            //assert_int_equal(reconstructed, y_sz);
+            assert_int_equal(rec_by_ref + rec_by_raw, y_sz);
 
             RM_LOG_INFO("PASSED test #1 of rolling checksum procedure: "
                     "delta elements cover whole file, file [%s], size [%u], "
-                    "L [%u], blocks [%u], DELTA REF [%u], DELTA RAW [%u]",
-                    fname, file_sz, L, blocks_n, delta_ref_n, delta_raw_n);
+                    "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
+                    fname, file_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
             /* move file pointer back to the beginning */
             rewind(f);
 
