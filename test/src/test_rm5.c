@@ -210,8 +210,8 @@ test_rm_rolling_ch_proc_1(void **state)
                 continue;
             }
             RM_LOG_INFO("Testing rolling checksum procedure #1: "
-                    "file [%s], size [%u], block size L [%u], buffer"
-                    " [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+                    "file [%s], size [%u], block size L [%u]",
+                    fname, file_sz, L);
 
             /* reference file exists, split it and calc checksums */
             f_y = f;
@@ -259,6 +259,11 @@ test_rm_rolling_ch_proc_1(void **state)
                     case RM_DELTA_ELEMENT_RAW_BYTES:
                         rec_by_raw += delta_e->raw_bytes_n;
                         ++delta_raw_n;
+                        break;
+                    case RM_DELTA_ELEMENT_ZERO_DIFF:
+                        rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched
+                                                               (whole file) so we can nevertheless check at receiver size is correct */
+                        ++delta_ref_n;
                         break;
                     default:
                         RM_LOG_ERR("Unknown delta element type!");

@@ -127,7 +127,10 @@ struct rm_ch_ch_ref_hlink
 enum RM_DELTA_ELEMENT_TYPE
 {
     RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
-    RM_DELTA_ELEMENT_RAW_BYTES  /* data bytes */
+    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes */
+    RM_DELTA_ELEMENT_ZERO_DIFF  /* send always as single element in delta vector,
+                                   when L > f_x.sz and checksums computed on the whole file match,
+                                   means files are the same */
 };
 
 /* HIGH LEVEL API
