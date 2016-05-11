@@ -156,6 +156,20 @@ rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 	return (r2 << 16) | r1;
 }
 
+
+uint32_t
+rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L)
+{
+    uint32_t r1, r2;
+
+    r1 = adler && 0xFFFF;
+    r2 = (adler >> 16) & 0xFFFF;
+
+    r1 = (r1 - a_k) % RM_FASTCHECK_MODULUS;
+    r2 = (r2 - L * a_k) % RM_FASTCHECK_MODULUS;
+    return r1 + RM_FASTCHECK_MODULUS * r2;
+}
+
 uint32_t
 rm_rolling_ch(const unsigned char *data, uint32_t len,
 				uint32_t M)
@@ -434,9 +448,11 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 goto end;
             }
             read_now = rm_min(L, read_left);
-/*            if (read_now < L) {
+            /* It may be better to simply send few bytes than perform normal lookup
+             * in the table just for these few bytes */
+            if (read_left < 4) {
                 goto copy_tail;
-            }*/
+            }
             read = rm_fpread(buf, 1, read_now, a_kL_pos, f_x);
             if (read != read_now) {
                 return -9;
@@ -457,7 +473,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                     return -10;
                 }
             }
-            if (a_kL_pos < file_sz - 1)
+            if (a_kL_pos < file_sz)
             {
                 /* usual case */
                 if (rm_fpread(&a_kL, sizeof(unsigned char), 1, a_kL_pos, f_x) != 1) {
@@ -471,6 +487,8 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             } else {
                 /* TODO */
                 /* we are on the tail, this must be handled in a different way */
+                ch.f_ch = rm_fast_check_roll_tail(ch.f_ch, a_k, L);
+                ++a_k_pos;
             }
         } /* roll */
     } while (read_left > 0);
@@ -484,7 +502,7 @@ copy_tail:
         if (raw_bytes == NULL) return -12;
         memset(raw_bytes, 0, L * sizeof(*raw_bytes));
     }
-    err = rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, read_now);
+    err = rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, read_left);
     if (err < 0) {
         return -13;
     }
@@ -494,7 +512,7 @@ copy_tail:
     delta_e->type = RM_DELTA_ELEMENT_RAW_BYTES;
     delta_e->ref = 0;
     delta_e->raw_bytes = raw_bytes;
-    delta_e->raw_bytes_n = read_now;         /* move ownership, TODO cleanup in callback! */
+    delta_e->raw_bytes_n = read_left;         /* move ownership, TODO cleanup in callback! */
     TWINIT_LIST_HEAD(&delta_e->link);
     /* tx, signal delta_rx_tid, etc */
     cb_arg.delta_e = delta_e;

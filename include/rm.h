@@ -204,6 +204,9 @@ uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
 
+uint32_t
+rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L);
+
 /* @brief   Calculate rolling checkum on a given file block
  *          of size @len starting from @data, modulo @M.
  * @details @M MUST be less than 2^16, 0x10000 */
