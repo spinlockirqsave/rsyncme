@@ -4,6 +4,7 @@ CFLAGS_RELEASE			= -c -Wall -o3 -DNDEBUG -Wextra -D_GNU_SOURCE -Wfatal-errors -s
 CFLAGS_DEBUG			= -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
 CPPFLAGS				+= #compiler flags
 LDFLAGS					= -lpthread 	#-lpcap
+LDFLAGS_D				= -g -lpthread 	#-lpcap
 SRCDIR					= .
 TESTSRCDIR				= ../test/src
 DEBUGOUTPUTDIR			= ../build/debug
@@ -54,7 +55,7 @@ test:	releaseall
 
 test-check:	test
 	cd $(TESTSRCDIR) && make test-check
-test-check-debug:	test
+test-check-debug:	test-debug
 	cd $(TESTSRCDIR) && make test-check-debug
 
 rsyncme-debug:		../build/debug/rsyncme
@@ -63,13 +64,13 @@ rsyncme-release:	../build/release/rsyncme
 rsyncme-release:	CFLAGS += $(CFLAGS_RELEASE)
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
-	$(CC) $(LDFLAGS) $(DEBUGOBJECTS) -o $@
+	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@
 
 $(RELEASETARGET): $(RELEASEOBJECTS) 
 	$(CC) $(LDFLAGS) $(RELEASEOBJECTS) -o $@
 
 $(CMDDEBUGTARGET):	$(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o
-	$(CC) $(LDFLAGS) $(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o -o $@
+	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o -o $@
 
 $(CMDDEBUGTARGET).o: rm_cmd.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@

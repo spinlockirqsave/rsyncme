@@ -36,6 +36,22 @@ rm_session_push_tx_init(struct rm_session_push_tx *prvt)
     pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
     return;
 }
+/* frees private session, DON'T TOUCH private session after this returns */ 
+void
+rm_session_push_tx_free(struct rm_session_push_tx *prvt)
+{
+    if (prvt == NULL)
+    {
+        return;
+    }
+    /* queue of delta elements MUST be empty now */
+    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 
+            && "Delta elements queue NOT EMPTY!\n");
+    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
+    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
+    free(prvt);
+    return;
+}
 
 void
 rm_session_push_local_init(struct rm_session_push_local *prvt)
@@ -49,10 +65,26 @@ rm_session_push_local_init(struct rm_session_push_local *prvt)
     pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
     return;
 }
+/* frees private session, DON'T TOUCH private session after this returns */ 
+void
+rm_session_push_local_free(struct rm_session_push_local *prvt)
+{
+    if (prvt == NULL)
+    {
+        return;
+    }
+    /* queue of delta elements MUST be empty now */
+    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 
+            && "Delta elements queue NOT EMPTY!\n");
+    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
+    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
+    free(prvt);
+    return;
+}
 
 /* TODO: generate GUID here */
 struct rm_session *
-rm_session_create(struct rsyncme *rm, enum rm_session_type t)
+rm_session_create(enum rm_session_type t)
 {
 	struct rm_session *s;
 
@@ -62,8 +94,6 @@ rm_session_create(struct rsyncme *rm, enum rm_session_type t)
 	memset(s, 0, sizeof(*s));
     s->type = t;
 	pthread_mutex_init(&s->session_mutex, NULL);
-
-	s->rm = rm;
 
     switch (t)
     {
@@ -82,15 +112,16 @@ rm_session_create(struct rsyncme *rm, enum rm_session_type t)
             if (s->prvt == NULL)
                 goto fail;
             rm_session_push_tx_init(s->prvt);
+            break;
         case RM_PUSH_LOCAL:
             s->prvt = malloc(sizeof(struct rm_session_push_local));
             if (s->prvt == NULL)
                 goto fail;
             rm_session_push_local_init(s->prvt);
+            break;
         default:
             goto fail;
     }
-
     return s;
 
 fail:
@@ -106,9 +137,34 @@ fail:
 void
 rm_session_free(struct rm_session *s)
 {
+    enum rm_session_type    t;
+
 	assert(s != NULL);
 	pthread_mutex_destroy(&s->session_mutex);
-	free(s);
+    t = s->type;
+    if (s->prvt == NULL)
+        goto end;
+
+    switch (t)
+    {
+        case RM_PUSH_RX:
+            break;
+        case RM_PULL_RX:
+            break;
+        case RM_PUSH_TX:
+            rm_session_push_tx_free(s->prvt);
+            break;
+        case RM_PUSH_LOCAL:
+            rm_session_push_local_free(s->prvt);
+            break;
+        default:
+            assert(0 == 1 && "WTF Unknown prvt type!\n");
+    }
+
+end:
+    pthread_mutex_destroy(&s->session_mutex);
+    free(s);
+    return;
 }
 
 void *
@@ -161,6 +217,14 @@ rm_session_delta_tx_f(void *arg)
             break;
 
         case RM_PUSH_TX:
+            prvt_tx = s->prvt;
+            if (prvt_tx == NULL)
+            {
+                goto exit;
+            }
+            h       = prvt_tx->h;
+            f_x     = prvt_tx->f_x;
+            delta_f = prvt_tx->delta_f;
             break;
 
         default:

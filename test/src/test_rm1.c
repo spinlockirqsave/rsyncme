@@ -13,7 +13,7 @@
 #include "test_rm1.h"
 
 
-char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
 "rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
 "rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
 "rm_f_4096.dat", "rm_f_20100.dat"};
@@ -136,7 +136,7 @@ test_rm_adler32_1(void **state)
 	struct
     test_rm_state   *rm_state;
 	struct stat     fs;
-	char            *fname;
+	const char      *fname;
 
 	rm_state = *state;
 	assert_true(rm_state != NULL);
@@ -209,7 +209,7 @@ test_rm_adler32_2(void **state)
                     file_sz, read, r1_0, r2_0, r1_1, r2_1;
 	struct test_rm_state   *rm_state;
 	struct stat     fs;
-	char            *fname;
+	const char      *fname;
 
 	rm_state = *state;
 	assert_true(rm_state != NULL);
@@ -282,7 +282,7 @@ test_rm_fast_check_roll(void **state)
 	long		            idx_min, idx_max, idx, idx_buf;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 
 	rm_state = *state;
 	assert_true(rm_state != NULL);
@@ -422,7 +422,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state)
 	uint32_t	i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	size_t                  blocks_n, entries_n;
     struct rm_ch_ch         *array;
 

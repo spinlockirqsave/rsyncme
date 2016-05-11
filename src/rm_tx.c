@@ -106,7 +106,7 @@ rm_tx_local_push(const char *x, const char *y,
     /* calc rolling checksums, produce delta vector
      * and do file reconstruction in local session */
 
-    s = rm_session_create(NULL, RM_PUSH_LOCAL);
+    s = rm_session_create(RM_PUSH_LOCAL);
     if (s == NULL)
     {
         err = -8;

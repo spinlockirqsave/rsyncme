@@ -12,7 +12,7 @@
 #include "test_rm4.h"
 
 
-char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
 "rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
 "rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
 "rm_f_4096.dat", "rm_f_20100.dat"};
@@ -139,7 +139,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
 	uint32_t	i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	size_t                  blocks_n, entries_n;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
@@ -185,7 +185,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
 			}
 			if (file_sz < 2)
 			{
-				RM_LOG_INFO("File [%s] size [%u] is to small "
+				RM_LOG_INFO("File [%s] size [%u] is too small "
 				"for this test, skipping", fname, file_sz);
 				continue;
 			}
@@ -243,7 +243,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
 	uint32_t	i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	size_t                  blocks_n, entries_n;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
@@ -289,7 +289,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
 			}
 			if (file_sz < 2)
 			{
-				RM_LOG_INFO("File [%s] size [%u] is to small "
+				RM_LOG_INFO("File [%s] size [%u] is too small "
 				"for this test, skipping", fname, file_sz);
 				continue;
 			}
@@ -338,7 +338,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
     unsigned char           *buf, *buf2;
     struct test_rm_state    *rm_state;
     struct stat             fs;
-    char                    *fname;
+    const char              *fname;
     size_t                  blocks_n, entries_n;
     size_t                  collisions_1st_level, collisions_2nd_level;
     struct rm_ch_ch_ref_hlink e_reference;
@@ -389,7 +389,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
             }
             if (file_sz < 2)
             {
-                RM_LOG_INFO("File [%s] size [%u] is to small "
+                RM_LOG_INFO("File [%s] size [%u] is too small "
                         "for this test, skipping", fname, file_sz);
                 continue;
             }

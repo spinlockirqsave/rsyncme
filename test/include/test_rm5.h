@@ -1,16 +1,16 @@
 /*
- * @file        test_rm3.h
- * @brief       Test suite #3.
- * @details     Test of [ref_link checksums calculation correctness.
+ * @file        test_rm5.h
+ * @brief       Test suite #5.
+ * @details     Test of rm_rolling_ch_proc.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
- * @date        6 Mar 2016 11:29 PM
+ * @date        06 May 2016 04:00 PM
  * @copyright   LGPLv2.1
  */
 
 
-#ifndef RSYNCME_TEST_RM3_H
-#define RSYNCME_TEST_RM3_H
+#ifndef RSYNCME_TEST_RM5_H
+#define RSYNCME_TEST_RM5_H
 
 
 #include "rm_defs.h"
@@ -35,8 +35,10 @@ uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_state
 {
-	uint32_t	*l;
-	void        *buf;
+	uint32_t	        *l;
+	void                *buf;
+	void                *buf2;
+    struct rm_session   *s;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -57,16 +59,14 @@ test_rm_teardown(void **state);
 int
 rm_random_file(char *name, uint32_t len);
 
-/* @brief   Test of checksums calculation on nonoverlapping
- *          blocks.
- * @details Tests number of blocks used (and insertions
- *          into hashtable). */
+
+/* @brief   Test if created delta elements cover all file. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_1(void **state);
+test_rm_rolling_ch_proc_1(void **state);
 
-/* @brief   Test of checksums correctness. */
+/* @brief   Test #2. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state);
+test_rm_rolling_ch_proc_2(void **state);
 
 
-#endif	// RSYNCME_TEST_RM3_H
+#endif	/* RSYNCME_TEST_RM5_H */

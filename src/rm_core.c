@@ -51,7 +51,7 @@ rm_core_session_add(struct rsyncme *rm,
     struct rm_session	*s = NULL;
     assert(rm != NULL);
 
-    s = rm_session_create(rm, type);
+    s = rm_session_create(type);
     if (s == NULL)
     {
         return NULL;
@@ -63,34 +63,30 @@ rm_core_session_add(struct rsyncme *rm,
 	twhash_add(rm->sessions, &s->hlink, s->session_id);
 	rm->sessions_n++;
 	pthread_mutex_unlock(&rm->mutex);
-
-        return s;
+    return s;
 }
 
 int
 rm_core_session_stop(struct rm_session *s)
 {
-        assert((s != NULL) && (s->rm != NULL));
-        pthread_mutex_lock(&s->rm->mutex);
-        twlist_del(&s->link);
-        twhash_del(&s->hlink);
-        s->rm->sessions_n--;
-        pthread_mutex_unlock(&s->rm->mutex);
-        return 0;
+    assert(s != NULL);
+    twlist_del(&s->link);
+    twhash_del(&s->hlink);
+    return 0;
 }
 
 int
 rm_core_authenticate(struct sockaddr_in *cli_addr)
 {
-        char a[INET_ADDRSTRLEN];
+    char a[INET_ADDRSTRLEN];
 	// IPv4
 	//cli_ip = cli_addr.sin_addr.s_addr;
 	//inet_ntop(AF_INET, &cli_ip, cli_ip_str, INET_ADDRSTRLEN);
 	//cli_port = ntohs(cli_addr.sin_port);
-        inet_ntop(AF_INET, &cli_addr->sin_addr, a, INET_ADDRSTRLEN);
-        if (strcmp(a, RM_IP_AUTH) != 0)
-                return -1;
-        return 0;
+    inet_ntop(AF_INET, &cli_addr->sin_addr, a, INET_ADDRSTRLEN);
+    if (strcmp(a, RM_IP_AUTH) != 0)
+        return -1;
+    return 0;
 }
 
 int

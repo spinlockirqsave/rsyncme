@@ -12,7 +12,7 @@
 #include "test_rm2.h"
 
 
-char*		rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
 "rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
 "rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
 "rm_f_4096.dat", "rm_f_20100.dat"};
@@ -179,7 +179,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
 	uint32_t                i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	long long int           res, res_expected;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
@@ -269,7 +269,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 	uint32_t                i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	long long int           res, res_expected;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
@@ -359,7 +359,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
 	uint32_t                i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	long long int           res, res_expected;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
@@ -449,7 +449,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state)
 	uint32_t                i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
-	char                    *fname;
+	const char              *fname;
 	long long int           res, res_expected;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
@@ -550,7 +550,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state)
 	uint32_t                i, j, L, file_sz;
 	struct test_rm_state	*rm_state;
 	struct stat             fs;
-	char		            *fname;
+	const char              *fname;
 	long long int           res, res_expected;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;

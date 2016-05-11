@@ -127,7 +127,12 @@ struct rm_ch_ch_ref_hlink
 enum RM_DELTA_ELEMENT_TYPE
 {
     RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
-    RM_DELTA_ELEMENT_RAW_BYTES  /* data bytes */
+    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes */
+    RM_DELTA_ELEMENT_ZERO_DIFF, /* send always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
+                                   when L => f_x.sz and checksums computed on the whole file match,
+                                   means files are the same. raw_bytes_n set to file size*/
+    RM_DELTA_ELEMENT_TAIL       /* match is found on the tail, bytes matched(raw_bytes_n set) < L < file_sz,
+                                 * raw_bytes_n set to number of bytes that matched */
 };
 
 /* HIGH LEVEL API
@@ -215,12 +220,22 @@ rm_md5(const unsigned char *data, uint32_t len, unsigned char res[16]);
 /* @brief   Copy @bytes_n bytes from @x into @y.
  * @details Calls fread/fwrite buffered API functions.
  *          Files must be already opened.
- * @return  0: succes,
+ * @return  0: success,
  *          -1: fwrite failed,
  *          -2: fread failed,
  *          -3: other error set on @y */
 int
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
+
+/* @brief   Copy @bytes_n bytes from @x starting at @offset
+ *          into @dst buffer.
+ * @details Calls fread buffered API functions writing directly to @dst.
+ *          File @x must be already opened.
+ * @return  0: success,
+ *          -1: fseek failed,
+ *          -2: fread failed */
+int
+rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 
 /* @brief   Read @items_n blocks of @size bytes each from stream @f
  *          at offset @offset.
