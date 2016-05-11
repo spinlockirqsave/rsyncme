@@ -379,6 +379,9 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             if (read == file_sz) {
                 delta_e->type = RM_DELTA_ELEMENT_ZERO_DIFF;
                 delta_e->raw_bytes_n = file_sz;
+            } else if (read < L) {
+                delta_e->type = RM_DELTA_ELEMENT_TAIL;
+                delta_e->raw_bytes_n = read;
             } else {
                 delta_e->type = RM_DELTA_ELEMENT_REFERENCE;
                 delta_e->raw_bytes_n = 0;
@@ -431,15 +434,15 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 goto end;
             }
             read_now = rm_min(L, read_left);
-            if (read_now < L) {
+/*            if (read_now < L) {
                 goto copy_tail;
-            }
-            read = rm_fpread(buf, 1, L, a_kL_pos, f_x);
+            }*/
+            read = rm_fpread(buf, 1, read_now, a_kL_pos, f_x);
             if (read != read_now) {
                 return -9;
             }
             /* calc new fast checksum */
-            ch.f_ch = rm_fast_check_block(buf, L);
+            ch.f_ch = rm_fast_check_block(buf, read);
 
             /* move */
             a_k_pos = a_kL_pos;         /* a_k for next fast checksum calculation */

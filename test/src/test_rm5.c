@@ -262,7 +262,12 @@ test_rm_rolling_ch_proc_1(void **state)
                         break;
                     case RM_DELTA_ELEMENT_ZERO_DIFF:
                         rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched
-                                                               (whole file) so we can nevertheless check at receiver size is correct */
+                                                               (whole file) so we can nevertheless check at receiver that is correct */
+                        ++delta_ref_n;
+                        break;
+                    case RM_DELTA_ELEMENT_TAIL:
+                        rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched
+                                                               (that tail) so we can nevertheless check at receiver there is no error */
                         ++delta_ref_n;
                         break;
                     default:
