@@ -162,12 +162,12 @@ rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L)
 {
     uint32_t r1, r2;
 
-    r1 = adler && 0xFFFF;
+    r1 = adler & 0xFFFF;
     r2 = (adler >> 16) & 0xFFFF;
 
     r1 = (r1 - a_k) % RM_FASTCHECK_MODULUS;
     r2 = (r2 - L * a_k) % RM_FASTCHECK_MODULUS;
-    return r1 + RM_FASTCHECK_MODULUS * r2;
+    return (r2 << 16) | r1;
 }
 
 uint32_t
@@ -487,7 +487,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             } else {
                 /* TODO */
                 /* we are on the tail, this must be handled in a different way */
-                ch.f_ch = rm_fast_check_roll_tail(ch.f_ch, a_k, L);
+                ch.f_ch = rm_fast_check_roll_tail(ch.f_ch, a_k, file_sz - a_k_pos); /* current checksum was calculated on (file_sz - a_k_pos) bytes, the a_k * (file_sz - a_k_pos) will be subtructed from r2 */
                 ++a_k_pos;
             }
         } /* roll */
