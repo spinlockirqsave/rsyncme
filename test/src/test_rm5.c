@@ -12,10 +12,10 @@
 #include "test_rm5.h"
 
 
-const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
-"rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
-"rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
-"rm_f_4096.dat", "rm_f_20100.dat"};
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0_ts5", "rm_f_1_ts5",
+    "rm_f_2_ts5","rm_f_65_ts5", "rm_f_100_ts5", "rm_f_511_ts5", "rm_f_512_ts5",
+    "rm_f_513_ts5", "rm_f_1023_ts5", "rm_f_1024_ts5", "rm_f_1025_ts5",
+    "rm_f_4096_ts5", "rm_f_20100_ts5"};
 
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 2, 65, 100, 511, 512, 513,
 						1023, 1024, 1025, 4096, 20100 };
@@ -25,6 +25,114 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 128, 129
 					200, 400, 499, 500, 501, 511, 512, 513,
 					600, 800, 1000, 1100, 1123, 1124, 1125,
 					1200, 100000 };
+
+static int
+test_rm_copy_files_and_prefix(const char *postfix)
+{
+    int         err;
+    FILE        *f, *f_copy;
+    uint32_t    i, j;
+    char        buf[RM_FILE_LEN_MAX + 50];
+
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i)
+    {
+        f = fopen(rm_test_fnames[i], "rb+");
+        if (f == NULL)
+        {
+            /* file doesn't exist, create */
+            RM_LOG_INFO("Creating file [%s]",
+                    rm_test_fnames[i]);
+            f = fopen(rm_test_fnames[i], "wb");
+            if (f == NULL)
+                exit(EXIT_FAILURE);
+            j = rm_test_fsizes[i];
+            RM_LOG_INFO("Writing [%u] random bytes"
+                    " to file [%s]", j, rm_test_fnames[i]);
+            srand(time(NULL));
+            while (j--)
+                fputc(rand(), f);
+        } else {
+            RM_LOG_INFO("Using previously created "
+                    "file [%s]", rm_test_fnames[i]);
+        }
+        /* create copy */
+        strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
+        strncpy(buf + strlen(buf), postfix, 49);
+        buf[RM_FILE_LEN_MAX + 49] = '\0';
+        f_copy = fopen(buf, "rb+");
+        if (f_copy == NULL)
+        {
+            /* doesn't exist, create */
+            RM_LOG_INFO("Creating copy [%s] of file [%s]", buf, rm_test_fnames[i]);
+            f_copy = fopen(buf, "wb+");
+            if (f_copy == NULL)
+            {
+                RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
+                return -1;
+            }
+            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
+            switch (err)
+            {
+                case 0:
+                    break;
+                case -2:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s]", buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
+                    return -2;
+                case -3:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s],"
+                            " error set on original file", buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
+                    return -3;
+                case -4:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s],"
+                            " error set on copy", buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
+                    return -4;
+                default:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], unknown error", 
+                            buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
+                    return -13;
+            }
+            fclose(f);
+            fclose(f_copy);
+        } else {
+            RM_LOG_INFO("Using previously created copy of file [%s]", rm_test_fnames[i]);
+        }
+    }
+    return 0;
+}
+
+static int
+test_rm_delete_copies_of_files_prefixed(const char *postfix)
+{
+    int         err;
+    uint32_t    i;
+    char        buf[RM_FILE_LEN_MAX + 50];
+
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i)
+    {
+        /* open copy */
+        strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
+        strncpy(buf + strlen(buf), postfix, 49);
+        buf[RM_FILE_LEN_MAX + 49] = '\0';
+        RM_LOG_ERR("Removing (unlink) [%s] copy of file [%s]", buf, rm_test_fnames[i]);
+        err = unlink(buf);
+        if (err != 0)
+        {
+            RM_LOG_ERR("Can't unlink [%s] copy of file [%s]", buf, rm_test_fnames[i]);
+            return -1;
+        }
+    }
+    return 0;
+}
 
 int
 test_rm_setup(void **state)
@@ -306,6 +414,24 @@ test_rm_rolling_ch_proc_1(void **state)
 void
 test_rm_rolling_ch_proc_2(void **state)
 {
+    int err;
     (void)state;
+
+    err = test_rm_copy_files_and_prefix("_test_2");
+    if (err != 0)
+    {
+        RM_LOG_ERR("Error copying files, skipping test");
+        return;
+    }
+    if (RM_TEST_DELETE_FILES == 1)
+    {
+        err = test_rm_delete_copies_of_files_prefixed("_test_2");
+        if (err != 0)
+        {
+            RM_LOG_ERR("Error removing files (unlink)");
+            assert_true(1 == 0 && "Error removing files (unlink)");
+            return;
+        }
+    }
     return;
 }
