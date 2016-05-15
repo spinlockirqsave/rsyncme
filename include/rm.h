@@ -248,6 +248,9 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 size_t
 rm_fpread(void *buf, size_t size, size_t items_n,
                             size_t offset, FILE *f);
+size_t
+rm_fpwrite(const void *buf, size_t size, size_t items_n,
+                            size_t offset, FILE *f);
 
 typedef int (rm_delta_f)(void*);
 

@@ -25,10 +25,10 @@
 #include <cmocka.h>
 
 
-#define RM_TEST_DELETE_FILES        1	/* 0 no, 1 yes */
-#define RM_TEST_L_BLOCKS_SIZE       26
+#define RM_TEST_5_DELETE_FILES      1	/* 0 no, 1 yes */
+#define RM_TEST_L_BLOCKS_SIZE       34
 #define RM_TEST_L_MAX               1024UL
-#define RM_TEST_FNAMES_N            13
+#define RM_TEST_FNAMES_N            15
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
 uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
