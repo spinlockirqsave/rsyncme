@@ -204,6 +204,9 @@ uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 		unsigned char a_kL, uint32_t L);
 
+uint32_t
+rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L);
+
 /* @brief   Calculate rolling checkum on a given file block
  *          of size @len starting from @data, modulo @M.
  * @details @M MUST be less than 2^16, 0x10000 */
@@ -245,6 +248,9 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 size_t
 rm_fpread(void *buf, size_t size, size_t items_n,
                             size_t offset, FILE *f);
+size_t
+rm_fpwrite(const void *buf, size_t size, size_t items_n,
+                            size_t offset, FILE *f);
 
 typedef int (rm_delta_f)(void*);
 
@@ -260,7 +266,8 @@ struct rm_session;
  * @param   from - starting point, 0 to start from beginning */
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from);
+        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
+        size_t copy_all_threshold, size_t copy_tail_threshold);
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 

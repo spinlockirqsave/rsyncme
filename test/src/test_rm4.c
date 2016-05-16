@@ -12,10 +12,10 @@
 #include "test_rm4.h"
 
 
-const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
-"rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
-"rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
-"rm_f_4096.dat", "rm_f_20100.dat"};
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0_ts4", "rm_f_1_ts4",
+"rm_f_2_ts4","rm_f_65_ts4", "rm_f_100_ts4", "rm_f_511_ts4", "rm_f_512_ts4",
+"rm_f_513_ts4", "rm_f_1023_ts4", "rm_f_1024_ts4", "rm_f_1025_ts4",
+"rm_f_4096_ts4", "rm_f_20100_ts4"};
 
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 2, 65, 100, 511, 512, 513,
 						1023, 1024, 1025, 4096, 20100 };

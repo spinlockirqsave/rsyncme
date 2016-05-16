@@ -25,10 +25,10 @@
 #include <cmocka.h>
 
 
-#define RM_TEST_DELETE_FILES        1	/* 0 no, 1 yes */
-#define RM_TEST_L_BLOCKS_SIZE       26
+#define RM_TEST_5_DELETE_FILES      1	/* 0 no, 1 yes */
+#define RM_TEST_L_BLOCKS_SIZE       34
 #define RM_TEST_L_MAX               1024UL
-#define RM_TEST_FNAMES_N            13
+#define RM_TEST_FNAMES_N            15
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
 uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
@@ -60,11 +60,13 @@ int
 rm_random_file(char *name, uint32_t len);
 
 
-/* @brief   Test if created delta elements cover all file. */
+/* @brief   Test if created delta elements cover all file
+ *          when x file is same as y (file has no changes). */
 void
 test_rm_rolling_ch_proc_1(void **state);
 
-/* @brief   Test #2. */
+/* @brief   Test if created delta elements cover all file
+ *          when x is copy of y, but first byte in x is changed. */
 void
 test_rm_rolling_ch_proc_2(void **state);
 

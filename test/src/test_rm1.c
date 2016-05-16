@@ -13,10 +13,10 @@
 #include "test_rm1.h"
 
 
-const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0.dat", "rm_f_1.dat",
-"rm_f_2.dat","rm_f_65.dat", "rm_f_100.dat", "rm_f_511.dat", "rm_f_512.dat",
-"rm_f_513.dat", "rm_f_1023.dat", "rm_f_1024.dat", "rm_f_1025.dat",
-"rm_f_4096.dat", "rm_f_20100.dat"};
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0_ts1", "rm_f_1_ts1",
+"rm_f_2_ts1","rm_f_65_ts1", "rm_f_100_ts1", "rm_f_511_ts1", "rm_f_512_ts1",
+"rm_f_513_ts1", "rm_f_1023_ts1", "rm_f_1024_ts1", "rm_f_1025_ts1",
+"rm_f_4096_ts1", "rm_f_20100_ts1"};
 
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 2, 65, 100, 511, 512, 513,
 						1023, 1024, 1025, 4096, 20100 };
@@ -31,7 +31,7 @@ int
 test_rm_setup(void **state)
 {
 	int 		err;
-	uint32_t	i,j;
+	uint32_t	i, j;
 	FILE 		*f;
     struct rm_ch_ch *array;
 
@@ -274,11 +274,11 @@ test_rm_adler32_2(void **state)
 void
 test_rm_fast_check_roll(void **state)
 {
-	FILE    *f;
-	int		fd;
-	unsigned char	buf[RM_TEST_L_MAX];
-	uint32_t	i, j, L, adler1, adler2, tests_n, tests_max,
-			file_sz, read, read_left, read_now;
+	FILE                    *f;
+	int                     fd;
+	unsigned char           buf[RM_TEST_L_MAX];
+	uint32_t                i, j, L, adler1, adler2, tests_n, tests_max;
+    size_t                  file_sz, read, read_left, read_now;
 	long		            idx_min, idx_max, idx, idx_buf;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
@@ -337,7 +337,7 @@ test_rm_fast_check_roll(void **state)
 				continue;
 			}
 			
-			RM_LOG_INFO("Tesing fast rolling checksum: file "
+			RM_LOG_INFO("Testing fast rolling checksum: file "
 				"[%s], size [%u], block size L [%u], buffer"
 				" [%u]", fname, file_sz, L, RM_TEST_L_MAX);
 			/* read bytes */
@@ -381,7 +381,7 @@ test_rm_fast_check_roll(void **state)
 				{
 					/* count tests */
 					++tests_n;
-					RM_LOG_INFO("Running test [%u]", tests_n);
+
 					idx_buf = idx - idx_min;
 					adler2 = rm_fast_check_block(&buf[idx_buf], L);
 					/* rolling checksum for offset [idx] */

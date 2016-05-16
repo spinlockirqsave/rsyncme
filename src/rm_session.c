@@ -31,6 +31,7 @@ rm_session_push_tx_init(struct rm_session_push_tx *prvt)
     {
         return;
     }
+    memset(prvt, 0, sizeof(*prvt));
     TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
     pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
     pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
@@ -60,6 +61,7 @@ rm_session_push_local_init(struct rm_session_push_local *prvt)
     {
         return;
     }
+    memset(prvt, 0, sizeof(*prvt));
     TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
     pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
     pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
@@ -86,7 +88,7 @@ rm_session_push_local_free(struct rm_session_push_local *prvt)
 struct rm_session *
 rm_session_create(enum rm_session_type t)
 {
-	struct rm_session *s;
+	struct rm_session   *s;
 
 	s = malloc(sizeof *s);
 	if (s == NULL)
@@ -196,6 +198,7 @@ rm_session_delta_tx_f(void *arg)
     struct rm_session_push_local    *prvt_local;
     struct rm_session_push_tx       *prvt_tx;
     int err;
+    size_t                  copy_all_threshold, copy_tail_threshold;
 
     s = (struct rm_session*) arg;
     assert(s != NULL);
@@ -214,6 +217,8 @@ rm_session_delta_tx_f(void *arg)
             h       = prvt_local->h;
             f_x     = prvt_local->f_x;
             delta_f = prvt_local->delta_f;
+            copy_all_threshold = prvt_local->copy_all_threshold;
+            copy_tail_threshold = prvt_local->copy_tail_threshold;
             break;
 
         case RM_PUSH_TX:
@@ -225,6 +230,8 @@ rm_session_delta_tx_f(void *arg)
             h       = prvt_tx->h;
             f_x     = prvt_tx->f_x;
             delta_f = prvt_tx->delta_f;
+            copy_all_threshold = prvt_tx->copy_all_threshold;
+            copy_tail_threshold = prvt_tx->copy_tail_threshold;
             break;
 
         default:
@@ -232,7 +239,7 @@ rm_session_delta_tx_f(void *arg)
     }
 
     /* 1. run rolling checksum procedure */
-    err = rm_rolling_ch_proc(s, h, f_x, delta_f, s->L, 0);
+    err = rm_rolling_ch_proc(s, h, f_x, delta_f, s->L, 0, copy_all_threshold, copy_tail_threshold);
 
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_tx_status = err;

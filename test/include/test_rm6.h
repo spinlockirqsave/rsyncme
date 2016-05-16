@@ -1,17 +1,16 @@
 /*
- * @file        test_rm1.h
- * @brief       Test suite #1.
- * @details     Test of rolling checksums and of nonoverlapping
- *              checksums calculation correctness.
+ * @file        test_rm6.h
+ * @brief       Test suite #6.
+ * @details     Test of checksums on tail calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
- * @date        10 Jan 2016 04:07 PM
+ * @date        13 May 2016 03:52 PM
  * @copyright   LGPLv2.1
  */
 
 
-#ifndef RSYNCME_TEST_RM1_H
-#define RSYNCME_TEST_RM1_H
+#ifndef RSYNCME_TEST_RM6_H
+#define RSYNCME_TEST_RM6_H
 
 
 #include "rm_defs.h"
@@ -27,8 +26,8 @@
 
 
 #define RM_TEST_DELETE_FILES        1	/* 0 no, 1 yes */
-#define RM_TEST_L_BLOCKS_SIZE       26
-#define RM_TEST_L_MAX               1024UL
+#define RM_TEST_L_BLOCKS_SIZE       28
+#define RM_TEST_L_MAX               2048UL
 #define RM_TEST_FNAMES_N            13
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
@@ -37,9 +36,6 @@ uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 struct test_rm_state
 {
 	uint32_t	*l;
-    size_t      array_entries;
-    struct rm_ch_ch *array; /* will be big enough to serve as storage
-                               for checksums for each test file */
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -60,21 +56,9 @@ test_rm_teardown(void **state);
 int
 rm_random_file(char *name, uint32_t len);
 
+/* @brief   Test of checksums calculation on tail correctness. */
 void
-test_rm_adler32_1(void **state);
-
-void
-test_rm_adler32_2(void **state);
-
-void
-test_rm_fast_check_roll(void **state);
-
-/* @brief   Test of checksums calculation on nonoverlapping
- *          blocks.
- * @details Tests number of blocks used (and insertions
- *          into array). */
-void
-test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state);
+test_rm_fast_check_roll_tail(void **state);
 
 
-#endif	/* RSYNCME_TEST_RM1_H */
+#endif	/* RSYNCME_TEST_RM6_H */

@@ -51,7 +51,7 @@ rm_util_chdir_umask_openlog(const char *dir,
 
 #ifdef DDEBUG
 #define RM_D_ERR(fmt, args...) fprintf(stderr,        \
-                        "DEBUG: %s:%d:%s(): " fmt,      \
+                        "DEBUG ERR: %s:%d:%s(): " fmt,      \
                 __FILE__, __LINE__, __func__, ##args)
 #else
 #define RM_D_ERR(fmt, args...)    do { } while (0)
@@ -88,16 +88,16 @@ rm_util_chdir_umask_openlog(const char *dir,
 /* log */
 #define RM_LOG_ERR(fmt, args...) rm_util_log(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
-                "ERR", __FILE__, __LINE__, __func__, ##args)
+                "ERR ", __FILE__, __LINE__, __func__, ##args)
 #define RM_LOG_PERR(fmt, args...) rm_util_log_perr(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
-                "ERR", __FILE__, __LINE__, __func__, ##args)
+                "ERR ", __FILE__, __LINE__, __func__, ##args)
 #define RM_LOG_INFO(fmt, args...) rm_util_log(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
                 "INFO", __FILE__, __LINE__, __func__, ##args)
 #define RM_LOG_WARN(fmt, args...) rm_util_log(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
-                "WARNING", __FILE__, __LINE__, __func__, ##args)
+                "WARN", __FILE__, __LINE__, __func__, ##args)
 #define RM_LOG_CRIT(fmt, args...) rm_util_log(stderr, \
 			"%s\t%s:%d:%s(): " fmt,       \
                 "CRIT", __FILE__, __LINE__, __func__, ##args)
