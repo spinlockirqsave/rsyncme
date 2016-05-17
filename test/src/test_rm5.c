@@ -275,6 +275,7 @@ test_rm_rolling_ch_proc_1(void **state)
     struct twlist_head          *lh;
     size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
                                 rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
+    size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     rm_state = *state;
@@ -291,7 +292,6 @@ test_rm_rolling_ch_proc_1(void **state)
             RM_LOG_PERR("Can't open file [%s]", fname);
         }
         assert_true(f != NULL);
-        /* get file size */
         fd = fileno(f);
         if (fstat(fd, &fs) != 0)
         {
@@ -306,6 +306,9 @@ test_rm_rolling_ch_proc_1(void **state)
             fclose(f);
             continue;
         }
+        detail_case_1_n = 0;
+        detail_case_2_n = 0;
+        detail_case_3_n = 0;
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
         {
@@ -343,7 +346,6 @@ test_rm_rolling_ch_proc_1(void **state)
             /* run rolling checksum procedure */
             s = rm_state->s;
             s->L = L;
-            /* setup private session's arguments */
             prvt = s->prvt;
             prvt->h = h;
             prvt->f_x = f_x;                        /* run on same file */
@@ -399,6 +401,46 @@ test_rm_rolling_ch_proc_1(void **state)
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
             assert_true(delta_zero_diff_n == 0 || (delta_zero_diff_n == 1 && rec_by_ref == y_sz && rec_by_zero_diff == y_sz && delta_tail_n == 0 && delta_raw_n == 0));
 
+            /* detail cases */
+            /* 1. if L is >= file size, delta must be ZERO_DIFF */
+            if (L >= y_sz) {
+                assert_true(delta_zero_diff_n == 1);
+                assert_true(delta_ref_n == 1);
+                assert_true(delta_tail_n == 0);
+                assert_true(delta_raw_n == 0);
+                assert_true(rec_by_ref == y_sz);
+                assert_true(rec_by_zero_diff == y_sz);
+                assert_true(rec_by_tail == 0);
+                assert_true(rec_by_raw == 0);
+                ++detail_case_1_n;
+            }
+            /* 2. if L is not equal file_sz and does divide evenly file_sz, there must be file_sz/L delta reference blocks present
+             * and zero raw bytes, zero ZERO_DIFF, zero TAIL blocks */
+            if ((L != y_sz) && (y_sz % L == 0)) {
+                assert_true(delta_zero_diff_n == 0);
+                assert_true(delta_ref_n == y_sz / L);
+                assert_true(delta_tail_n == 0);
+                assert_true(delta_raw_n == 0);
+                assert_true(rec_by_ref == y_sz);
+                assert_true(rec_by_zero_diff == 0);
+                assert_true(rec_by_tail == 0);
+                assert_true(rec_by_raw == 0);
+                ++detail_case_2_n;
+            }
+            /* 3. if L is less than file_sz and doesn't divide evenly file_sz, there must be delta TAIL reference block present
+             * file_sz/L + 1 reference blocks (includes TAIL block), zero raw bytes, zero ZERO_DIFF */
+            if ((L < y_sz) && (y_sz % L != 0)) {
+                assert_true(delta_zero_diff_n == 0);
+                assert_true(delta_ref_n == y_sz / L + 1);
+                assert_true(delta_tail_n == 1);
+                assert_true(delta_raw_n == 0);
+                assert_true(rec_by_ref == y_sz);
+                assert_true(rec_by_zero_diff == 0);
+                assert_true(rec_by_tail == y_sz % L);
+                assert_true(rec_by_raw == 0);
+                ++detail_case_3_n;
+            }
+
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0)
                 {
@@ -434,6 +476,8 @@ test_rm_rolling_ch_proc_1(void **state)
 			rewind(f);
 		}
 		fclose(f);
+        RM_LOG_INFO("PASSED test #1 detail cases, file [%s], size [%u], detail case #1 [%u] #2 [%u] #3 [%u]",
+                fname, y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
     return;
 }
