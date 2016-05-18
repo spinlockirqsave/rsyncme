@@ -510,6 +510,7 @@ test_rm_rolling_ch_proc_2(void **state)
     struct twlist_head          *lh;
     size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
                                 rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
+    size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
     err = test_rm_copy_files_and_prefix("_test_2");
     if (err != 0)
@@ -587,8 +588,9 @@ test_rm_rolling_ch_proc_2(void **state)
             fclose(f_y);
             continue;
         }
-
-
+        detail_case_1_n = 0;
+        detail_case_2_n = 0;
+        detail_case_3_n = 0;
 
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
@@ -680,12 +682,9 @@ test_rm_rolling_ch_proc_2(void **state)
                 }
             }
             assert_int_equal(rec_by_ref + rec_by_raw, f_y_sz);
-            if (L >= f_x_sz/2)
-            {
-                assert_true(delta_raw_n > 0);
-            }
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
             assert_true(delta_zero_diff_n == 0);
+            assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0)
@@ -704,6 +703,46 @@ test_rm_rolling_ch_proc_2(void **state)
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
             }
+            /* detail cases */
+            /* 1. if L is >= file size, delta must be single RAW element */
+            if (L >= f_y_sz) {
+                assert_true(delta_ref_n == 0);
+                assert_true(delta_tail_n == 0);
+                assert_true(delta_raw_n == 1);
+                assert_true(rec_by_ref == 0);
+                assert_true(rec_by_tail == 0);
+                assert_true(rec_by_raw == f_y_sz);
+                ++detail_case_1_n;
+            }
+            /* 2. if L is less than file size and does divide evenly file size, there will usually be f_y_sz/L - 1 delta reference blocks present
+             * and 1 raw byte block because the first block in @x doesn't match the first block in @y (all other blocks in @x always match corresponding blocks in @y in this test #2),
+             * and none of the checksums computed by rolling checksum procedure starting from second byte in @x up to Lth byte, i.e. on blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
+             * will match some of the nonoverlapping checksums from @y.
+             * But there is a chance one of nonoverlapping blocks in @y will match first block in @x (which has first byte changed), e.g if L is 1, size is 100 and @y file is 0x1 0x2 0x3 0x78 0x5 ...
+             * the @x file is then 0x78 0x2 0x3 0x78 0x5 ... and first block will match 4th block in @y. There is also a chance this won't match BUT some of blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
+             * will find a match and rolling proc will move on offsets different that nonoverlapping blocks. All next blocks may match or up to L bytes may be transferred as raw elements in any
+             * possible way: L blocks each 1 byte size, or L/2 each 2 bytes or 1 block 1 byte long and one L-1, etc. */
+            if ((L < f_y_sz) && (f_y_sz % L == 0)) {
+                assert_true(rec_by_raw <= L);
+                assert_true(delta_raw_n <= L);
+                assert_true((delta_ref_n == f_y_sz/L - 1 && delta_raw_n > 0 && rec_by_raw == L) || (delta_ref_n == f_y_sz/L && delta_raw_n == 0)); /* the first block in @x will not match the first block in @y, but it can match some other block in @y */
+                assert_true(delta_ref_n * L == f_y_sz - rec_by_raw);
+                assert_true(delta_tail_n == 0);
+                assert_true((rec_by_ref == f_y_sz - L && rec_by_raw == L) || (rec_by_ref == f_y_sz && rec_by_raw == 0));
+                assert_true(rec_by_tail == 0);
+                ++detail_case_2_n;
+            }
+            /* 3. if L is less than file size and doesn't divide evenly file size, there can be delta TAIL reference block present,
+             * regarding delta reference blocks it is the same situation as in test #2 (plus remember that TAIL is also counted as reference). */
+            if ((L < f_y_sz) && (f_y_sz % L != 0)) {
+                assert_true(rec_by_raw <= L);
+                assert_true(delta_raw_n <= L);
+                assert_true((delta_ref_n == f_y_sz/L && delta_raw_n > 0 && rec_by_raw == L) || (delta_ref_n == f_y_sz/L + 1 && delta_raw_n == 0)); /* the first block in @x will not match the first block in @y, but it can match some other block in @y */
+                assert_true((delta_tail_n == 1 && (rec_by_tail == f_y_sz % L) && ((delta_ref_n - 1) * L + rec_by_tail == f_y_sz - rec_by_raw)) || (delta_tail_n == 0 && delta_ref_n * L == f_y_sz - rec_by_raw));
+                assert_true((rec_by_ref == f_y_sz - L && rec_by_raw == L) || (rec_by_ref == f_y_sz && rec_by_raw == 0));
+                ++detail_case_3_n;
+            }
+
             /* move file pointer back to the beginning */
             rewind(f_x);
             rewind(f_y);
@@ -720,6 +759,8 @@ test_rm_rolling_ch_proc_2(void **state)
 		}
 		fclose(f_x);
         fclose(f_y);
+        RM_LOG_INFO("PASSED test #2 detail cases, file [%s], size [%u], detail case #1 [%u] #2 [%u] #3 [%u]",
+                f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
     if (RM_TEST_5_DELETE_FILES == 1)
