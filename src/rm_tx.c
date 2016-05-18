@@ -128,7 +128,7 @@ rm_tx_local_push(const char *x, const char *y,
         goto err_exit;
     }
     /* reconstruct */
-	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f,
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
     {

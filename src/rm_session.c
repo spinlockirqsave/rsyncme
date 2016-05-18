@@ -175,7 +175,11 @@ rm_session_ch_ch_tx_f(void *arg)
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
-	return 0;
+    if (s == NULL) {
+        goto exit;
+    }
+exit:
+	return NULL;
 }
 
 void *
@@ -184,7 +188,11 @@ rm_session_ch_ch_rx_f(void *arg)
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
-	return 0;
+    if (s == NULL) {
+        goto exit;
+    }
+exit:
+	return NULL;
 }
 
 void *
@@ -255,11 +263,19 @@ exit:
 
 
 void *
-rm_session_delta_rx_f(void *arg)
+rm_session_delta_rx_f_local(void *arg)
 {
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
+    FILE                            *f_y;           /* file on which reconstruction is performed */
+    struct rm_session_push_local    *prvt_local;
+    twfifo_queue                    *q;
+    const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
+    struct twlist_head              *lh;
+    /*size_t                          rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
+                                    rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;*/
+    int err;
+    size_t                          bytes_to_rx;
+	struct rm_session               *s;
+
     /* TODO complete, call reconstruct proc */
     /* call this in there */
     /* check delta type 
@@ -277,5 +293,110 @@ rm_session_delta_rx_f(void *arg)
     }
 	return 0;
     */
+
+    s = (struct rm_session*) arg;
+    if (s == NULL) {
+        goto exit;
+    }
+    assert(s != NULL);
+
+    if (s->type != RM_PUSH_LOCAL) {
+        goto exit;
+    }
+    prvt_local = s->prvt;
+    if (prvt_local == NULL)
+    {
+        goto exit;
+    }
+    assert(prvt_local != NULL);
+
+    pthread_mutex_lock(&s->session_mutex);
+    bytes_to_rx = prvt_local->f_x_sz;
+    f_y         = prvt_local->f_y;
+    pthread_mutex_unlock(&s->session_mutex);
+
+    if (bytes_to_rx == 0) {
+        goto done;
+    }
+
+    /* TODO sleep on delta queue and reconstruct element once awoken */
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);
+    q = &prvt_local->tx_delta_e_queue;
+
+    while (bytes_to_rx > 0) { /* our predicate */
+        pthread_cond_wait(&prvt_local->tx_delta_e_queue_signal, &prvt_local->tx_delta_e_queue_mutex);
+        if (bytes_to_rx == 0) {
+            pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+            goto done;
+        }
+        /* TODO process delta element */
+    }
+    pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+
+exit:
+    return NULL;
+done:
+    return NULL;
+}
+
+void *
+rm_session_delta_rx_f_remote(void *arg)
+{
+    FILE                            *f_y;           /* file on which reconstruction is performed */
+    twfifo_queue                    *q;
+    const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
+    struct twlist_head              *lh;
+    struct rm_session_push_rx       *prvt_rx;
+    size_t                          bytes_to_rx;
+	struct rm_session               *s;
+
+    /* TODO complete, call reconstruct proc */
+    /* call this in there */
+    /* check delta type 
+    switch (delta_e->type)
+    {
+        case RM_DELTA_ELEMENT_REFERENCE:
+            break;
+        case RM_DELTA_ELEMENT_RAW_BYTES:
+            break;
+        default:
+            RM_LOG_CRIT("WTF WTF WTF! Unknown delta type?! Have you added"
+                " some neat code recently?");
+        assert(1 == 0);;
+        return -5;
+    }
+	return 0;
+    */
+
+    s = (struct rm_session*) arg;
+    if (s == NULL) {
+        goto exit;
+    }
+    assert(s != NULL);
+
+    if (s->type != RM_PUSH_RX) {
+        goto exit;
+    }
+    prvt_rx = s->prvt;
+    if (prvt_rx == NULL)
+    {
+        goto exit;
+    }
+    assert(prvt_rx != NULL);
+
+    pthread_mutex_lock(&s->session_mutex);
+    bytes_to_rx = prvt_rx->f_x_sz;
+    f_y         = prvt_rx->f_y;
+    pthread_mutex_unlock(&s->session_mutex);
+
+    if (bytes_to_rx == 0) {
+        goto done;
+    }
+
+    /* TODO read delta elements from rx socket and do reconstruction */
+
+exit:
+    return NULL;
+done:
     return NULL;
 }
