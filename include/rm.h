@@ -145,6 +145,19 @@ struct rm_delta_e
     size_t                      raw_bytes_n;
     struct twlist_head          link;           /* to link me in list/stack/queue */
 };
+enum rm_delta_rx_status
+{
+    RM_DELTA_RX_STATUS_OK               = 0,    /* most wanted */
+    RM_DELTA_RX_STATUS_INTERNAL_ERR     = 1,    /* bad call, NULL session, prvt session or file pointers */
+    RM_DELTA_RX_STATUS_DELTA_PROC_FAIL  = 2     /* error processing delta element */
+};
+struct rm_delta_reconstruct_ctx
+{
+    size_t                      rec_by_ref, rec_by_raw,
+                                delta_ref_n, delta_raw_n,
+                                rec_by_tail, rec_by_zero_diff,
+                                delta_tail_n, delta_zero_diff_n;
+};
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
  *          file block of size @len starting from @data.
@@ -251,6 +264,16 @@ rm_fpread(void *buf, size_t size, size_t items_n,
 size_t
 rm_fpwrite(const void *buf, size_t size, size_t items_n,
                             size_t offset, FILE *f);
+
+/* @brief   Copy @bytes_n bytes from @x at offset @x_offset into @y at @y_offset.
+ * @details Calls rm_fpread/rm_fpwrite buffered API functions.
+ *          Files must be already opened.
+ * @return  0: success,
+ *          -1: rm_fpwrite failed,
+ *          -2: rm_fpread failed,
+ *          -3: other error set on @y */
+int
+rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
 
 typedef int (rm_delta_f)(void*);
 

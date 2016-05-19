@@ -101,6 +101,15 @@ rm_tx_local_push(const char *x, const char *y,
            err = -7;
            goto err_exit;
         }
+        goto done;
+    }
+    fclose(f_y);            /* close opened for reading */
+    /* TODO generate unique temporary name based on session uuid for result file,
+     * after reconstruction is finished remove @f_y and rename @f_z to @y */
+    f_z = fopen("f_z_tmp", "rb+");  /* and open @f for reading and writing */
+    if (f_z == NULL) {
+        err = -13;
+        goto err_exit;
     }
 
     /* calc rolling checksums, produce delta vector
@@ -116,6 +125,8 @@ rm_tx_local_push(const char *x, const char *y,
     prvt = s->prvt;
     prvt->h = h;
     prvt->f_x = f_x;
+    prvt->f_y = f_y;
+    prvt->f_z = f_z;
     prvt->delta_f = rm_roll_proc_cb_1;
  
 	/* start tx delta vec thread (enqueue delta elements
@@ -128,14 +139,27 @@ rm_tx_local_push(const char *x, const char *y,
         goto err_exit;
     }
     /* reconstruct */
-	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f,
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local,
                                     s, PTHREAD_CREATE_JOINABLE);
 	if (err != 0)
     {
         err = -10;
         goto err_exit;
     }
-  
+
+done:  
+	if (f_x != NULL) {
+        fclose(f_x);
+    }
+	if (f_y != NULL) {
+        fclose(f_y);
+    }
+    if (f_z != NULL) {
+        fclose(f_z);
+    }
+	if (s != NULL) {
+		rm_session_free(s);
+    }
 	return 0;
 
 err_exit:

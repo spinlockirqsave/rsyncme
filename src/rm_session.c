@@ -175,7 +175,11 @@ rm_session_ch_ch_tx_f(void *arg)
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
-	return 0;
+    if (s == NULL) {
+        goto exit;
+    }
+exit:
+	return NULL;
 }
 
 void *
@@ -184,7 +188,11 @@ rm_session_ch_ch_rx_f(void *arg)
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
-	return 0;
+    if (s == NULL) {
+        goto exit;
+    }
+exit:
+	return NULL;
 }
 
 void *
@@ -255,27 +263,138 @@ exit:
 
 
 void *
-rm_session_delta_rx_f(void *arg)
+rm_session_delta_rx_f_local(void *arg)
 {
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
-    /* TODO complete, call reconstruct proc */
-    /* call this in there */
-    /* check delta type 
-    switch (delta_e->type)
-    {
-        case RM_DELTA_ELEMENT_REFERENCE:
-            break;
-        case RM_DELTA_ELEMENT_RAW_BYTES:
-            break;
-        default:
-            RM_LOG_CRIT("WTF WTF WTF! Unknown delta type?! Have you added"
-                " some neat code recently?");
-        assert(1 == 0);;
-        return -5;
+    FILE                            *f_x;           /* file on which rolling is performed */              
+    FILE                            *f_y;           /* reference file, on which reconstruction is performed */
+    FILE                            *f_z;           /* result file */
+    struct rm_session_push_local    *prvt_local;
+    twfifo_queue                    *q;
+    const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
+    struct twlist_head              *lh;
+    size_t                          bytes_to_rx;
+	struct rm_session               *s;
+    struct rm_delta_reconstruct_ctx delta_reconstruct_ctx = { 0 };  /* describes result of reconstruction,
+                                                                       we will copy this to session reconstruct context
+                                                                       after all is done to avoid locking on each delta element */
+    int err;
+    enum rm_delta_rx_status         status = RM_DELTA_RX_STATUS_OK;
+
+    s = (struct rm_session*) arg;
+    if (s == NULL) {
+        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        goto err_exit;
     }
-	return 0;
-    */
+    assert(s != NULL);
+
+    if (s->type != RM_PUSH_LOCAL) {
+        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        goto err_exit;
+    }
+    prvt_local = s->prvt;
+    if (prvt_local == NULL)
+    {
+        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        goto err_exit;
+    }
+    assert(prvt_local != NULL);
+
+    pthread_mutex_lock(&s->session_mutex);
+    bytes_to_rx = prvt_local->f_x_sz;
+    f_y         = prvt_local->f_y;
+    f_z         = prvt_local->f_z;
+    pthread_mutex_unlock(&s->session_mutex);
+
+    assert(f_y != NULL);
+    assert(f_z != NULL);
+    if (f_y == NULL || f_z == NULL) {
+        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        goto err_exit;
+    }
+
+    if (bytes_to_rx == 0) {
+        goto done;
+    }
+
+    /* TODO sleep on delta queue and reconstruct element once awoken */
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);
+    q = &prvt_local->tx_delta_e_queue;
+
+    while (bytes_to_rx > 0) { /* our predicate */
+        pthread_cond_wait(&prvt_local->tx_delta_e_queue_signal, &prvt_local->tx_delta_e_queue_mutex);
+        if (bytes_to_rx == 0) { /* checking for missing signal is not needed here as bytes_to_rx is local variable */
+            pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+            goto done;
+        }
+        /* TODO process delta element */
+        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
+            delta_e = tw_container_of(lh, struct rm_delta_e, link);
+            err = rm_rx_process_delta_element(delta_e, f_y, f_z, &delta_reconstruct_ctx);
+            if (err != 0) {
+                pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+                status = RM_DELTA_RX_STATUS_DELTA_PROC_FAIL;
+                goto err_exit;
+            }
+            bytes_to_rx -= delta_e->raw_bytes_n;
+        }
+        assert(delta_reconstruct_ctx.rec_by_ref + delta_reconstruct_ctx.rec_by_raw == bytes_to_rx);
+        assert(delta_reconstruct_ctx.delta_tail_n == 0 || delta_reconstruct_ctx.delta_tail_n == 1);
+    }
+    pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+
+err_exit:
+
+    pthread_mutex_lock(&s->session_mutex);
+    prvt_local->delta_rx_status = status;
+    pthread_mutex_unlock(&s->session_mutex);
+    return NULL;
+done:
+    pthread_mutex_lock(&s->session_mutex);
+    prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
+    pthread_mutex_unlock(&s->session_mutex);
+    return NULL;
+}
+
+void *
+rm_session_delta_rx_f_remote(void *arg)
+{
+    FILE                            *f_y;           /* file on which reconstruction is performed */
+    //twfifo_queue                    *q;
+    //const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
+    //struct twlist_head              *lh;
+    struct rm_session_push_rx       *prvt_rx;
+    size_t                          bytes_to_rx;
+	struct rm_session               *s;
+
+    s = (struct rm_session*) arg;
+    if (s == NULL) {
+        goto exit;
+    }
+    assert(s != NULL);
+
+    if (s->type != RM_PUSH_RX) {
+        goto exit;
+    }
+    prvt_rx = s->prvt;
+    if (prvt_rx == NULL)
+    {
+        goto exit;
+    }
+    assert(prvt_rx != NULL);
+
+    pthread_mutex_lock(&s->session_mutex);
+    bytes_to_rx = prvt_rx->f_x_sz;
+    f_y         = prvt_rx->f_y;
+    pthread_mutex_unlock(&s->session_mutex);
+
+    if (bytes_to_rx == 0) {
+        goto done;
+    }
+
+    /* TODO read delta elements from rx socket and do reconstruction */
+
+exit:
+    return NULL;
+done:
     return NULL;
 }

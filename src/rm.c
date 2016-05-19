@@ -275,6 +275,37 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
     return fwrite(buf, size, items_n, f);
 }
 
+int
+rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset)
+{
+    size_t read, read_exp;
+    size_t offset;
+    char buf[RM_L1_CACHE_RECOMMENDED];
+
+    read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    offset = 0;
+    while (((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp) && bytes_n > 0)
+    {
+        if (rm_fpwrite(buf, 1, read_exp, y_offset + offset, y) != read_exp)
+            return -1;
+        bytes_n -= read;
+        offset += read;
+        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    }
+
+    if (read == 0) {
+        /* read all bytes_n or EOF reached */
+        return 0;
+    }
+    if (ferror(x) != 0)
+        return -2;
+    if (ferror(y) != 0)
+        return -3;
+    return 0;
+}
+
 static int
 rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
                                     size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n)
@@ -313,7 +344,6 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     const struct rm_ch_ch_ref_hlink   *e;
     struct rm_ch_ch ch;
     struct rm_roll_proc_cb_arg  cb_arg;         /* callback argument */
-    struct rm_delta_e           *delta_e;
     size_t                      raw_bytes_n;
     unsigned char               *raw_bytes;     /* buffer */
     size_t                      a_k_pos, a_kL_pos;
@@ -323,7 +353,6 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
     raw_bytes = NULL;
     raw_bytes_n = 0;
-    delta_e = NULL;
     e = NULL;
     a_k_pos = 0;
 
@@ -419,7 +448,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             } else if (read < L) {
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, e->data.ref, NULL, read);
             } else {
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, 0);
+                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, L);
             }
             if (err != 0) {
                 return -6;
