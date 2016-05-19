@@ -391,27 +391,41 @@ rm_rx_delta_e_reconstruct_f_1(void *arg)
 */
 
 int
-rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f,
+rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
         struct rm_delta_reconstruct_ctx *ctx)
 {
-    assert(delta_e != NULL && f_y != NULL && f != NULL && ctx != NULL);
-    if (delta_e == NULL || f_y == NULL || f == NULL || ctx == NULL) {
+    size_t  z_offset;   /* current offset in @f_z */
+    assert(delta_e != NULL && f_y != NULL && f_z != NULL && ctx != NULL);
+    if (delta_e == NULL || f_y == NULL || f_z == NULL || ctx == NULL) {
         return -1;
     }
+    z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
     switch (delta_e->type)
     {
         case RM_DELTA_ELEMENT_REFERENCE:
-            /* TODO copy referenced bytes from @f_y to @f */
+            /* copy referenced bytes from @f_y to @f_z */
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref, z_offset) != 0) {
+                return -2;
+            }
+
             ctx->rec_by_ref += delta_e->raw_bytes_n;    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
             ++ctx->delta_ref_n;
             break;
         case RM_DELTA_ELEMENT_RAW_BYTES:
-            /* TODO copy raw bytes to @f directly */
+            /* copy raw bytes to @f_z directly */
+            if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z) != 1) {
+                return -3;
+            }
+
             ctx->rec_by_raw += delta_e->raw_bytes_n;
             ++ctx->delta_raw_n;
             break;
         case RM_DELTA_ELEMENT_ZERO_DIFF:
-            /* TODO copy all bytes from @f_y to @f */
+            /* copy all bytes from @f_y to @f_z */
+            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != 0) {
+                return -4;
+            }
+
             ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched
                                                         (whole file) so we can nevertheless check here at receiver that is correct */
             ++ctx->delta_ref_n;
@@ -420,7 +434,10 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
             ++ctx->delta_zero_diff_n;
             break;
         case RM_DELTA_ELEMENT_TAIL:
-            /* TODO copy referenced bytes from @f_y to @f */
+            /* copy referenced bytes from @f_y to @f_z */
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref, z_offset) != 0) {
+                return -5;
+            }
             ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched
                                                         (that tail) so we can nevertheless check here at receiver there is no error */
             ++ctx->delta_ref_n;
@@ -430,7 +447,7 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
             break;
         default:
             assert(1 == 0 && "Unknown delta element type!");
-            return -2;
+            return -6;
     }
     return 0;
 }

@@ -106,7 +106,7 @@ rm_tx_local_push(const char *x, const char *y,
     fclose(f_y);            /* close opened for reading */
     /* TODO generate unique temporary name based on session uuid for result file,
      * after reconstruction is finished remove @f_y and rename @f_z to @y */
-    f_z = fopen("f_z_tmp", "rb+");  /* and open @f for writing */
+    f_z = fopen("f_z_tmp", "rb+");  /* and open @f for reading and writing */
     if (f_z == NULL) {
         err = -13;
         goto err_exit;

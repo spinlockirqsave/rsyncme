@@ -280,24 +280,6 @@ rm_session_delta_rx_f_local(void *arg)
     int err;
     enum rm_delta_rx_status         status = RM_DELTA_RX_STATUS_OK;
 
-    /* TODO complete, call reconstruct proc */
-    /* call this in there */
-    /* check delta type 
-    switch (delta_e->type)
-    {
-        case RM_DELTA_ELEMENT_REFERENCE:
-            break;
-        case RM_DELTA_ELEMENT_RAW_BYTES:
-            break;
-        default:
-            RM_LOG_CRIT("WTF WTF WTF! Unknown delta type?! Have you added"
-                " some neat code recently?");
-        assert(1 == 0);;
-        return -5;
-    }
-	return 0;
-    */
-
     s = (struct rm_session*) arg;
     if (s == NULL) {
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
@@ -383,24 +365,6 @@ rm_session_delta_rx_f_remote(void *arg)
     struct rm_session_push_rx       *prvt_rx;
     size_t                          bytes_to_rx;
 	struct rm_session               *s;
-
-    /* TODO complete, call reconstruct proc */
-    /* call this in there */
-    /* check delta type 
-    switch (delta_e->type)
-    {
-        case RM_DELTA_ELEMENT_REFERENCE:
-            break;
-        case RM_DELTA_ELEMENT_RAW_BYTES:
-            break;
-        default:
-            RM_LOG_CRIT("WTF WTF WTF! Unknown delta type?! Have you added"
-                " some neat code recently?");
-        assert(1 == 0);;
-        return -5;
-    }
-	return 0;
-    */
 
     s = (struct rm_session*) arg;
     if (s == NULL) {

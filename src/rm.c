@@ -275,6 +275,37 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
     return fwrite(buf, size, items_n, f);
 }
 
+int
+rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset)
+{
+    size_t read, read_exp;
+    size_t offset;
+    char buf[RM_L1_CACHE_RECOMMENDED];
+
+    read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    offset = 0;
+    while (((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp) && bytes_n > 0)
+    {
+        if (rm_fpwrite(buf, 1, read_exp, y_offset + offset, y) != read_exp)
+            return -1;
+        bytes_n -= read;
+        offset += read;
+        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    }
+
+    if (read == 0) {
+        /* read all bytes_n or EOF reached */
+        return 0;
+    }
+    if (ferror(x) != 0)
+        return -2;
+    if (ferror(y) != 0)
+        return -3;
+    return 0;
+}
+
 static int
 rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
                                     size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n)
