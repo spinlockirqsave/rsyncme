@@ -78,16 +78,10 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f_x, const char *fname,
 		struct twlist_head *l, uint32_t L,
         size_t limit, size_t *blocks_n);
 
-struct rm_rx_delta_e_reconstruct_arg
-{
-    FILE    *f_z;
-    struct  rm_delta_e e;
-    FILE    *f_y;
-};
-/*
-rm_delta_f
-rm_rx_delta_e_reconstruct_f_1;
-*/
+/* @brief       Reconstruction procedure. */
+int
+rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f,
+        struct rm_delta_reconstruct_ctx *delta_reconstruct_ctx);
 
 
 #endif	/* RSYNCME_RX_H */

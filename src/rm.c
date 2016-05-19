@@ -313,7 +313,6 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     const struct rm_ch_ch_ref_hlink   *e;
     struct rm_ch_ch ch;
     struct rm_roll_proc_cb_arg  cb_arg;         /* callback argument */
-    struct rm_delta_e           *delta_e;
     size_t                      raw_bytes_n;
     unsigned char               *raw_bytes;     /* buffer */
     size_t                      a_k_pos, a_kL_pos;
@@ -323,7 +322,6 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
     raw_bytes = NULL;
     raw_bytes_n = 0;
-    delta_e = NULL;
     e = NULL;
     a_k_pos = 0;
 
@@ -419,7 +417,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             } else if (read < L) {
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, e->data.ref, NULL, read);
             } else {
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, 0);
+                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, L);
             }
             if (err != 0) {
                 return -6;

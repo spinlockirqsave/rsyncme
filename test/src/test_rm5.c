@@ -653,7 +653,8 @@ test_rm_rolling_ch_proc_2(void **state)
                 switch (delta_e->type)
                 {
                     case RM_DELTA_ELEMENT_REFERENCE:
-                        rec_by_ref += L;
+                        rec_by_ref += delta_e->raw_bytes_n;
+                        assert_int_equal(delta_e->raw_bytes_n, L);  /* can't be different here */
                         ++delta_ref_n;
                         break;
                     case RM_DELTA_ELEMENT_RAW_BYTES:
