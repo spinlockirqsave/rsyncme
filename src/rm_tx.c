@@ -146,6 +146,8 @@ rm_tx_local_push(const char *x, const char *y,
         err = -10;
         goto err_exit;
     }
+    pthread_join(prvt->delta_tx_tid, NULL);
+    pthread_join(prvt->delta_rx_tid, NULL);
 
 done:  
 	if (f_x != NULL) {

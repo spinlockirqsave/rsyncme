@@ -80,15 +80,6 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e)
         return -1;
     return 0;
 }
-            /*if (file_sz < L)
-			{
-				RM_LOG_WARN("File [%s] size [%u] is smaller "
-				"than block size L [%u], skipping", fname,
-				file_sz, L);
-				continue;
-			}
-            */
-#include <fcntl.h>
 
 int
 rm_set_socket_blocking_mode(int fd, uint8_t on)

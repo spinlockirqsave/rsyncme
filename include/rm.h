@@ -286,7 +286,11 @@ struct rm_session;
  * @param   f_x - file on which rolling is performed, must be already opened,
  * @param   delta_f - tx/reconstruct callback,
  * @param   L - block size,
- * @param   from - starting point, 0 to start from beginning */
+ * @param   from - starting point, 0 to start from beginning
+ * @param   copy_all_threashold - single RM_DELTA_ELEMENT_RAW_BYTES element
+ *          will be passed to delta_f callback if file f_x size is below this threshold,
+ * @param   copy_tail_threashold - tail will be sent as single RM_DELTA_ELEMENT_RAW_BYTES
+ *          element if less than this bytes to roll has left */
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,

@@ -80,7 +80,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f_x, const char *fname,
 
 /* @brief       Reconstruction procedure. */
 int
-rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f,
+rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
         struct rm_delta_reconstruct_ctx *delta_reconstruct_ctx);
 
 

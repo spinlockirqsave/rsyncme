@@ -253,12 +253,8 @@ rm_session_delta_tx_f(void *arg)
     prvt_local->delta_tx_status = err;
     pthread_mutex_unlock(&s->session_mutex);
 
-    /* normal exit */
-	pthread_exit(&prvt_local->delta_tx_status);
-
 exit:
-    /* abnormal exit */
-    return NULL;
+	pthread_exit(NULL);
 }
 
 
@@ -347,12 +343,12 @@ err_exit:
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_rx_status = status;
     pthread_mutex_unlock(&s->session_mutex);
-    return NULL;
+	pthread_exit(NULL);
 done:
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
     pthread_mutex_unlock(&s->session_mutex);
-    return NULL;
+	pthread_exit(NULL);
 }
 
 void *
