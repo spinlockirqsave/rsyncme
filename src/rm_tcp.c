@@ -80,3 +80,32 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e)
         return -1;
     return 0;
 }
+            /*if (file_sz < L)
+			{
+				RM_LOG_WARN("File [%s] size [%u] is smaller "
+				"than block size L [%u], skipping", fname,
+				file_sz, L);
+				continue;
+			}
+            */
+#include <fcntl.h>
+
+int
+rm_set_socket_blocking_mode(int fd, uint8_t on)
+{
+       if (fd < 0 || on > 1) {
+           return -1;
+       }
+
+#ifdef WIN32
+       unsigned long mode = 1 - on;
+       return ioctlsocket(fd, FIONBIO, &mode);
+#else
+       int flags = fcntl(fd, F_GETFL, 0);
+       if (flags < 0) {
+           return -2;
+       }
+       flags = on ? (flags &~ O_NONBLOCK) : (flags | O_NONBLOCK);
+       return fcntl(fd, F_SETFL, flags);
+#endif
+}
