@@ -125,7 +125,7 @@ test_rm_delete_copies_of_files_prefixed(const char *postfix)
         strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
         strncpy(buf + strlen(buf), postfix, 49);
         buf[RM_FILE_LEN_MAX + 49] = '\0';
-        RM_LOG_ERR("Removing (unlink) [%s] copy of file [%s]", buf, rm_test_fnames[i]);
+        RM_LOG_INFO("Removing (unlink) [%s] copy of file [%s]", buf, rm_test_fnames[i]);
         err = unlink(buf);
         if (err != 0)
         {
