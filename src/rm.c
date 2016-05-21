@@ -211,6 +211,8 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
     size_t read, read_exp;
     char buf[RM_L1_CACHE_RECOMMENDED];
 
+    rewind(x);
+    rewind(y);
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     while (((read = fread(buf, 1, read_exp, x)) == read_exp) && bytes_n > 0)
@@ -222,15 +224,16 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) {
-        /* read all bytes_n or EOF reached */
-        return 0;
+    if (read == 0) { /* read all bytes_n or EOF reached */
+        if (feof(x)) {
+            return -2;
+        } else return 0;
     }
     if (ferror(x) != 0)
-        return -2;
-    if (ferror(y) != 0)
         return -3;
-    return 0;
+    if (ferror(y) != 0)
+        return -4;
+    return -13; /* too much requested */
 }
 
 int
@@ -250,13 +253,14 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n)
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) {
-        /* read all bytes_n or EOF reached */
-        return 0;
+    if (read == 0) { /* read all bytes_n or EOF reached */
+        if (feof(x)) {
+            return -2;
+        } else return 0;
     }
     if (ferror(x) != 0)
-        return -2;
-    return 0;
+        return -3;
+    return -13; /* too much requested */
 }
 
 size_t
@@ -295,15 +299,16 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) {
-        /* read all bytes_n or EOF reached */
-        return 0;
+    if (read == 0) { /* read all bytes_n or EOF reached */
+        if (feof(x)) {
+            return -2;
+        } else return 0;
     }
     if (ferror(x) != 0)
-        return -2;
-    if (ferror(y) != 0)
         return -3;
-    return 0;
+    if (ferror(y) != 0)
+        return -4;
+    return -13; /* too much requested */
 }
 
 static int
@@ -585,4 +590,39 @@ rm_roll_proc_cb_1(void *arg)
     pthread_mutex_unlock(&prvt->tx_delta_e_queue_mutex);
 
     return 0;
+}
+
+int
+rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n)
+{
+    size_t read = 0, read_exp;
+    unsigned char buf1[RM_L1_CACHE_RECOMMENDED], buf2[RM_L1_CACHE_RECOMMENDED];
+
+    if (fseek(x, x_offset, SEEK_SET) != 0)
+        return -1;
+    if (fseek(y, y_offset, SEEK_SET) != 0)
+        return -2;
+    read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    while (((read = fread(buf1, 1, read_exp, x)) == read_exp) && (bytes_n > 0))
+    {
+        if (fread(buf2, 1, read_exp, y) != read_exp) {
+            return -3;
+        }
+        if (memcmp(buf1, buf2, read) != 0) {
+            return -4;
+        }
+        bytes_n -= read;
+        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
+                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+    }
+
+    if (read == 0) { /* read all bytes_n or EOF reached */
+        if (feof(x)) return -5;
+        if (feof(y)) return -6;
+        return 0;
+    }
+    if (ferror(x) != 0) return -7;
+    if (ferror(y) != 0) return -8;
+    return -13;   /* unknown error */
 }

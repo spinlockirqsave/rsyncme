@@ -157,6 +157,7 @@ struct rm_delta_reconstruct_ctx
                                 delta_ref_n, delta_raw_n,
                                 rec_by_tail, rec_by_zero_diff,
                                 delta_tail_n, delta_zero_diff_n;
+    size_t                      L;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -321,6 +322,11 @@ rm_roll_proc_cb_1;
  *          element (may want to transmit already buffered bytes first). */
 rm_delta_f
 rm_roll_proc_cb_2;
+
+/* @brief   Compare @bytes_n bytes of @x with @y starting from @x_offset
+ *          in @x and @y_offset in @y.  */
+int
+rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
 
 
 #endif	/* RSYNCME_H */

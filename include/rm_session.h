@@ -11,6 +11,7 @@
 #ifndef RSYNCME_SESSION_H
 #define RSYNCME_SESSION_H
 
+
 #include "rm.h"
 #include "rm_rx.h"
 #include "twlist.h"
@@ -25,7 +26,7 @@ struct rm_session
 	pthread_mutex_t         session_mutex;
 
     enum rm_session_type    type;
-    struct rm_delta_reconstruct_ctx delta_reconstruct_ctx;
+    struct rm_delta_reconstruct_ctx rec_ctx;
     size_t                  L;
     void                    *prvt;
 };
