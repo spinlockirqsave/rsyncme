@@ -222,6 +222,9 @@ rm_session_delta_tx_f(void *arg)
             {
                 goto exit;
             }
+            fclose(prvt_local->f_y);    /* close @f_y in session tx thread for local push,
+                                         * it was opened in rm_tx_local_push for nonoverlapping
+                                         * checksums to be computed */
             h       = prvt_local->h;
             f_x     = prvt_local->f_x;
             delta_f = prvt_local->delta_f;
@@ -270,9 +273,9 @@ rm_session_delta_rx_f_local(void *arg)
     struct twlist_head              *lh;
     size_t                          bytes_to_rx;
 	struct rm_session               *s;
-    struct rm_delta_reconstruct_ctx delta_reconstruct_ctx = { 0 };  /* describes result of reconstruction,
-                                                                       we will copy this to session reconstruct context
-                                                                       after all is done to avoid locking on each delta element */
+    struct rm_delta_reconstruct_ctx rec_ctx = {0};  /* describes result of reconstruction,
+                                                       we will copy this to session reconstruct context
+                                                       after all is done to avoid locking on each delta element */
     int err;
     enum rm_delta_rx_status         status = RM_DELTA_RX_STATUS_OK;
 
@@ -283,22 +286,26 @@ rm_session_delta_rx_f_local(void *arg)
     }
     assert(s != NULL);
 
+    pthread_mutex_lock(&s->session_mutex);
     if (s->type != RM_PUSH_LOCAL) {
+        pthread_mutex_unlock(&s->session_mutex);
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     prvt_local = s->prvt;
     if (prvt_local == NULL)
     {
+        pthread_mutex_unlock(&s->session_mutex);
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     assert(prvt_local != NULL);
 
-    pthread_mutex_lock(&s->session_mutex);
     bytes_to_rx = prvt_local->f_x_sz;
     f_y         = prvt_local->f_y;
     f_z         = prvt_local->f_z;
+    /* init reconstruction context */
+    rec_ctx.L = s->L;
     pthread_mutex_unlock(&s->session_mutex);
 
     assert(f_y != NULL);
@@ -325,7 +332,7 @@ rm_session_delta_rx_f_local(void *arg)
         /* TODO process delta element */
         for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
             delta_e = tw_container_of(lh, struct rm_delta_e, link);
-            err = rm_rx_process_delta_element(delta_e, f_y, f_z, &delta_reconstruct_ctx);
+            err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
             if (err != 0) {
                 pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
                 status = RM_DELTA_RX_STATUS_DELTA_PROC_FAIL;
@@ -333,8 +340,8 @@ rm_session_delta_rx_f_local(void *arg)
             }
             bytes_to_rx -= delta_e->raw_bytes_n;
         }
-        assert(delta_reconstruct_ctx.rec_by_ref + delta_reconstruct_ctx.rec_by_raw == bytes_to_rx);
-        assert(delta_reconstruct_ctx.delta_tail_n == 0 || delta_reconstruct_ctx.delta_tail_n == 1);
+        assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == bytes_to_rx);
+        assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
     }
     pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
 
@@ -346,6 +353,7 @@ err_exit:
 	pthread_exit(NULL);
 done:
     pthread_mutex_lock(&s->session_mutex);
+    memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
     pthread_mutex_unlock(&s->session_mutex);
 	pthread_exit(NULL);

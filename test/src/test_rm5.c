@@ -29,7 +29,7 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
                     1200, 100000 };
 
 static int
-test_rm_copy_files_and_prefix(const char *postfix)
+test_rm_copy_files_and_postfix(const char *postfix)
 {
     int         err;
     FILE        *f, *f_copy;
@@ -112,7 +112,7 @@ test_rm_copy_files_and_prefix(const char *postfix)
 }
 
 static int
-test_rm_delete_copies_of_files_prefixed(const char *postfix)
+test_rm_delete_copies_of_files_postfixed(const char *postfix)
 {
     int         err;
     uint32_t    i;
@@ -337,8 +337,7 @@ test_rm_rolling_ch_proc_1(void **state)
              * and calculate checksums on these blocks,
              * expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(
-                f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, 0);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
@@ -512,7 +511,7 @@ test_rm_rolling_ch_proc_2(void **state)
                                 rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
-    err = test_rm_copy_files_and_prefix("_test_2");
+    err = test_rm_copy_files_and_postfix("_test_2");
     if (err != 0)
     {
         RM_LOG_ERR("Error copying files, skipping test");
@@ -766,7 +765,7 @@ test_rm_rolling_ch_proc_2(void **state)
 
     if (RM_TEST_5_DELETE_FILES == 1)
     {
-        err = test_rm_delete_copies_of_files_prefixed("_test_2");
+        err = test_rm_delete_copies_of_files_postfixed("_test_2");
         if (err != 0)
         {
             RM_LOG_ERR("Error removing files (unlink)");
