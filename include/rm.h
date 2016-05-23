@@ -157,6 +157,7 @@ struct rm_delta_reconstruct_ctx
                                 delta_ref_n, delta_raw_n,
                                 rec_by_tail, rec_by_zero_diff,
                                 delta_tail_n, delta_zero_diff_n;
+    size_t                      L;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -286,7 +287,11 @@ struct rm_session;
  * @param   f_x - file on which rolling is performed, must be already opened,
  * @param   delta_f - tx/reconstruct callback,
  * @param   L - block size,
- * @param   from - starting point, 0 to start from beginning */
+ * @param   from - starting point, 0 to start from beginning
+ * @param   copy_all_threashold - single RM_DELTA_ELEMENT_RAW_BYTES element
+ *          will be passed to delta_f callback if file f_x size is below this threshold,
+ * @param   copy_tail_threashold - tail will be sent as single RM_DELTA_ELEMENT_RAW_BYTES
+ *          element if less than this bytes to roll has left */
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
@@ -317,6 +322,11 @@ rm_roll_proc_cb_1;
  *          element (may want to transmit already buffered bytes first). */
 rm_delta_f
 rm_roll_proc_cb_2;
+
+/* @brief   Compare @bytes_n bytes of @x with @y starting from @x_offset
+ *          in @x and @y_offset in @y.  */
+int
+rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
 
 
 #endif	/* RSYNCME_H */

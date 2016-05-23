@@ -160,13 +160,6 @@ test_rm_fast_check_roll_tail(void **state)
 				"for this test (shoud be > 1), skipping", fname, file_sz);
 				continue;
 			}
-            /*if (file_sz < L)
-			{
-				RM_LOG_WARN("File [%s] size [%u] is smaller "
-				"than block size L [%u], skipping", fname,
-				file_sz, L);
-				continue;
-			}*/
 			if (RM_TEST_L_MAX < L + 1)
 			{
 				RM_LOG_WARN("Testing buffer [%u] is too "

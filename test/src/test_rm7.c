@@ -1,21 +1,21 @@
 /*
- * @file        test_rm5.c
- * @brief       Test suite #5.
- * @details     Test of rm_rolling_ch_proc.
+ * @file        test_rm7.c
+ * @brief       Test suite #7.
+ * @details     Test of rm_rx_process_delta_element.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
- * @date        06 May 2016 04:00 PM
+ * @date        20 May 2016 09:08 PM
  * @copyright   LGPLv2.1
  */
 
 
-#include "test_rm5.h"
+#include "test_rm7.h"
 
 
-const char* rm_test_fnames[RM_TEST_FNAMES_N] = { 
-    "rm_f_1_ts5", "rm_f_2_ts5","rm_f_4_ts5", "rm_f_8_ts5", "rm_f_65_ts5",
-    "rm_f_100_ts5", "rm_f_511_ts5", "rm_f_512_ts5", "rm_f_513_ts5", "rm_f_1023_ts5",
-    "rm_f_1024_ts5", "rm_f_1025_ts5", "rm_f_4096_ts5", "rm_f_7787_ts5", "rm_f_20100_ts5"};
+const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
+    "rm_f_1_ts7", "rm_f_2_ts7","rm_f_4_ts7", "rm_f_8_ts7", "rm_f_65_ts7",
+    "rm_f_100_ts7", "rm_f_511_ts7", "rm_f_512_ts7", "rm_f_513_ts7", "rm_f_1023_ts7",
+    "rm_f_1024_ts7", "rm_f_1025_ts7", "rm_f_4096_ts7", "rm_f_7787_ts7", "rm_f_20100_ts7"};
 
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
                                                 100, 511, 512, 513, 1023,
@@ -27,6 +27,20 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
                     130, 200, 400, 499, 500, 501, 511, 512,
                     513, 600, 800, 1000, 1100, 1123, 1124, 1125,
                     1200, 100000 };
+
+static FILE*
+test_rm_fopen_file_prefixed(const char *name, const char *prefix,
+        size_t L, const char *mode, struct test_rm_file *f_z)
+{
+    if (name == NULL || prefix == NULL || mode == NULL || f_z == NULL) {
+        return NULL;
+    }
+    strncpy(f_z->name, prefix, 49);
+    snprintf(f_z->name + strlen(f_z->name), 50, "%lu", L);
+    strncpy(f_z->name + strlen(f_z->name), name, RM_FILE_LEN_MAX);
+    f_z->name[RM_FILE_LEN_MAX + 99] = '\0';
+    return f_z->f = fopen(f_z->name, mode);
+}
 
 static int
 test_rm_copy_files_and_postfix(const char *postfix)
@@ -147,10 +161,10 @@ test_rm_setup(void **state)
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog(
-            "../build/debug", 1, "rsyncme_test_5");
+            "../build/debug", 1, "rsyncme_test_7");
 #else
     err = rm_util_chdir_umask_openlog(
-            "../build/release", 1, "rsyncme_test_5");
+            "../build/release", 1, "rsyncme_test_7");
 #endif
     if (err != 0)
         exit(EXIT_FAILURE);
@@ -224,7 +238,7 @@ test_rm_teardown(void **state)
 
     rm_state = *state;
     assert_true(rm_state != NULL);
-    if (RM_TEST_5_DELETE_FILES == 1)
+    if (RM_TEST_7_DELETE_FILES == 1)
     {
         /* delete all test files */
         i = 0;
@@ -248,12 +262,108 @@ test_rm_teardown(void **state)
     return 0;
 }
 
+/* @brief   Testing callback that calls rm_rx_process_delta_element */    
+static int
+test_rm_roll_proc_cb_delta_element_call(void *arg)
+{
+    int err;
+    struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
+    const struct rm_session         *s;
+    struct rm_session_push_local    *prvt;
+    struct rm_delta_e               *delta_e;
 
-/* @brief   Test if created delta elements cover all file. */
+    cb_arg = (struct rm_roll_proc_cb_arg*) arg;
+    if (cb_arg == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added"
+                " some neat code recently?");
+        assert(cb_arg != NULL);
+        return -1;
+    }
+    /* this is not the subject of this test suite but we will call
+     * standard delta processing callback for local push anyway,
+     * so we can verify queue content in this test suite as well */
+    if (rm_roll_proc_cb_1(arg) != 0) {
+        RM_LOG_CRIT("Enqueuing of delta elements failed");
+        assert_true(1 == 0);
+    }  
+
+    s = cb_arg->s;
+    delta_e = cb_arg->delta_e;
+    if (s == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL session?! Have you added"
+                " some neat code recently?");
+        assert(s != NULL);
+        return -2;
+    }
+    if (delta_e == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL delta element?! Have you added"
+                " some neat code recently?");
+        assert(delta_e != NULL);
+        return -3;
+    }
+    prvt = (struct rm_session_push_local*) s->prvt;
+    if (prvt == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL private session?! Have you added"
+                " some neat code recently?");
+        assert(prvt != NULL);
+        return -4;
+    }
+    if (prvt->f_y == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL f_y in private session?! Have you added"
+                " some neat code recently?");
+        assert(prvt != NULL);
+        return -5;
+    }
+    if (prvt->f_z == NULL)
+    {
+        RM_LOG_CRIT("WTF! NULL f_z in private session?! Have you added"
+                " some neat code recently?");
+        assert(prvt != NULL);
+        return -6;
+    }
+
+    /* test processing of delta element, NOTE: this test doesn't test
+     * rm_session_delta_rx_f_local nor remote but ONLY rm_rx_process_delta_element.
+     * We can write directly to session's reconstruction context in this test */
+    err = rm_rx_process_delta_element(delta_e, prvt->f_y, prvt->f_z, (struct rm_delta_reconstruct_ctx*)&s->rec_ctx);
+    switch (err) {
+        case 0: break;
+        case -1:
+            RM_LOG_CRIT("NULL arguments passed to rm_rx_process_delta_element");
+            break;
+        case -2:
+            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_REFERENCE in rm_rx_process_delta_element");
+            break;
+        case -3:
+            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_RAW_BYTES in rm_rx_process_delta_element");
+            break;
+        case -4:
+            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_ZERO_DIFF in rm_rx_process_delta_element");
+            break;
+        case -5:
+            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_TAIL in rm_rx_process_delta_element");
+            break;
+        case -6:
+            RM_LOG_CRIT("Unknown delta  element type passed to rm_rx_process_delta_element");
+            break;
+        default:
+            RM_LOG_CRIT("Unknown error in rm_rx_process_delta_element");
+            return -13;
+    }
+    assert_int_equal(err, 0);
+
+    return 0;
+}
 void
-test_rm_rolling_ch_proc_1(void **state)
+test_rm_rx_process_delta_element_1(void **state)
 {
     FILE                    *f, *f_x, *f_y;
+    struct test_rm_file     *f_z;
     int                     fd;
     int                     err;
     size_t                  i, j, L, file_sz, y_sz;
@@ -280,6 +390,9 @@ test_rm_rolling_ch_proc_1(void **state)
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     rm_state = *state;
     assert_true(rm_state != NULL);
+
+    /* a storage for our result file metainfo */
+    f_z = &rm_state->f_z;
 
     /* test on all files */
     i = 0;
@@ -313,8 +426,8 @@ test_rm_rolling_ch_proc_1(void **state)
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
         {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 of rolling checksum "
-                    "on tail, file [%s], size [%u],"
+            RM_LOG_INFO("Validating testing #1 of delta reconstruction "
+                    "correctness, file [%s], size [%u],"
                     " block size L [%u]", fname, file_sz, L);
             if (0 == L)
             {
@@ -323,7 +436,7 @@ test_rm_rolling_ch_proc_1(void **state)
                         " skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #1: "
+            RM_LOG_INFO("Testing delta reconstruction #1: "
                     "file [%s], size [%u], block size L [%u]",
                     fname, file_sz, L);
 
@@ -337,20 +450,33 @@ test_rm_rolling_ch_proc_1(void **state)
              * and calculate checksums on these blocks,
              * expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(
+                f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, 0);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
 
-            /* run rolling checksum procedure */
+            /* create result file */
+            memset(f_z, 0, sizeof(struct test_rm_file));
+            test_rm_fopen_file_prefixed(fname, "test_71_", L, "wb+", f_z);  /* and open @f_z for reading and writing */
+            if (f_z->f == NULL) {
+                RM_LOG_CRIT("Can't create result file [%s]", f_z->name);
+            }
+            assert_true(f_z->f != NULL);
+
             s = rm_state->s;
+            /* init reconstruction context */
+            memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));
+            s->rec_ctx.L = L;
             s->L = L;
             prvt = s->prvt;
             prvt->h = h;
             prvt->f_x = f_x;                        /* run on same file */
-            prvt->delta_f = rm_roll_proc_cb_1;
+            prvt->f_y = f_y;
+            prvt->f_z = f_z->f;
+            prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->L, 0, 0, 0);
+            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->rec_ctx.L, 0, 0, 0);
             assert_int_equal(err, 0);
 
             /* verify s->prvt delta queue content */
@@ -396,7 +522,7 @@ test_rm_rolling_ch_proc_1(void **state)
                 }
             }
             assert_int_equal(rec_by_raw, 0);
-            assert_int_equal(rec_by_ref, y_sz);
+            assert_int_equal(rec_by_ref, y_sz); /* in this test y_sz == file_sz is size of both @x and @y */
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
             assert_true(delta_zero_diff_n == 0 || (delta_zero_diff_n == 1 && rec_by_ref == y_sz && rec_by_zero_diff == y_sz && delta_tail_n == 0 && delta_raw_n == 0));
 
@@ -443,23 +569,36 @@ test_rm_rolling_ch_proc_1(void **state)
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0)
                 {
-                    RM_LOG_INFO("PASSED test #1: delta elements cover whole file, file [%s], size [%u], "
+                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #1: delta elements cover whole file, file [%s], size [%u], "
+                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #1: delta elements cover whole file, file [%s], size [%u], "
+                RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
             }
 
-            /* move file pointer back to the beginning */
-            rewind(f);
+            if ((err = rm_file_cmp(f_x, f_z->f, 0, 0, file_sz)) != 0) {
+                RM_LOG_ERR("Delta reconstruction failed [%d], file [%s]", err, fname);
+                assert_true(1 == 0);
+            }
+
+            /* and close */
+            fclose(f_z->f);
+
+            /* and unlink/remove */
+            if (RM_TEST_7_DELETE_FILES == 1) {
+                if (unlink(f_z->name) != 0) {
+                    RM_LOG_ERR("Can't unlink result file [%s]", f_z->name);
+                    assert_true(1 == 0);
+                }
+            }
 
             blocks_n = 0;
             bkt = 0;
@@ -475,21 +614,22 @@ test_rm_rolling_ch_proc_1(void **state)
 			rewind(f);
 		}
 		fclose(f);
-        RM_LOG_INFO("PASSED test #1 detail cases, file [%s], size [%u], detail case #1 [%u] #2 [%u] #3 [%u]",
-                fname, y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
+        RM_LOG_INFO("PASSED test #1: delta reconstruction OK (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+                detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
     return;
 }
 
 /* @brief   Test #2. */
 void
-test_rm_rolling_ch_proc_2(void **state)
+test_rm_rx_process_delta_element_2(void **state)
 {
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
     unsigned char           c;
     FILE                    *f_copy, *f_x, *f_y;
+    struct test_rm_file     *f_z;
     int                     fd_x, fd_y;
     size_t                  i, j, L, f_x_sz, f_y_sz;
     struct test_rm_state    *rm_state;
@@ -521,6 +661,9 @@ test_rm_rolling_ch_proc_2(void **state)
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     rm_state = *state;
     assert_true(rm_state != NULL);
+
+    /* a storage for our result file metainfo */
+    f_z = &rm_state->f_z;
 
     /* test on all files */
     i = 0;
@@ -579,7 +722,7 @@ test_rm_rolling_ch_proc_2(void **state)
         }
         /* change first byte, so ZERO_DIFF delta can't happen in this test,
          * this would be an error */
-        c = (c == 'x' ? 'y' : 'x');
+        c = (c + 1 ) % 256;
         if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
         {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
@@ -595,8 +738,8 @@ test_rm_rolling_ch_proc_2(void **state)
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
         {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of rolling checksum "
-                    "on tail, file [%s], size [%u],"
+            RM_LOG_INFO("Validating testing #2 of delta reconstruction, "
+                    "file [%s], size [%u],"
                     " block size L [%u]", f_y_name, f_y_sz, L);
             if (0 == L)
             {
@@ -611,7 +754,7 @@ test_rm_rolling_ch_proc_2(void **state)
                         "for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #2: "
+            RM_LOG_INFO("Testing delta reconstruction #2: "
                     "file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]",
                     buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
@@ -626,16 +769,29 @@ test_rm_rolling_ch_proc_2(void **state)
             rewind(f_x);
             rewind(f_y);
 
+            /* create result file */
+            memset(f_z, 0, sizeof(struct test_rm_file));
+            test_rm_fopen_file_prefixed(buf_x_name, "test_72_", L, "wb+", f_z);  /* and open @f_z for reading and writing */
+            if (f_z->f == NULL) {
+                RM_LOG_CRIT("Can't create result file [%s]", f_z->name);
+            }
+            assert_true(f_z->f != NULL);
+
             /* run rolling checksum procedure on @x */
             s = rm_state->s;
             s->L = L;
+            /* init reconstruction context */
+            memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));
+            s->rec_ctx.L = L;
             /* setup private session's arguments */
             prvt = s->prvt;
             prvt->h = h;
             prvt->f_x = f_x;                        /* run on @x */
+            prvt->f_y = f_y;
+            prvt->f_z = f_z->f;
             prvt->delta_f = rm_roll_proc_cb_1;
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->L, 0, 0, 0);
+            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->rec_ctx.L, 0, 0, 0);
             assert_int_equal(err, 0);
 
             /* verify s->prvt delta queue content */
@@ -653,7 +809,7 @@ test_rm_rolling_ch_proc_2(void **state)
                 {
                     case RM_DELTA_ELEMENT_REFERENCE:
                         rec_by_ref += delta_e->raw_bytes_n;
-                        assert_int_equal(delta_e->raw_bytes_n, L);  /* can't be different here */
+                        assert_int_equal(delta_e->raw_bytes_n, s->rec_ctx.L);  /* can't be different here */
                         ++delta_ref_n;
                         break;
                     case RM_DELTA_ELEMENT_RAW_BYTES:
@@ -681,7 +837,7 @@ test_rm_rolling_ch_proc_2(void **state)
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
             }
-            assert_int_equal(rec_by_ref + rec_by_raw, f_y_sz);
+            assert_int_equal(rec_by_ref + rec_by_raw, f_x_sz);
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
             assert_true(delta_zero_diff_n == 0);
             assert_true(rec_by_zero_diff == 0);
@@ -689,23 +845,23 @@ test_rm_rolling_ch_proc_2(void **state)
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0)
                 {
-                    RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%u], "
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%u], "
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%u], "
+                RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
             }
             /* detail cases */
             /* 1. if L is >= file size, delta must be single RAW element */
-            if (L >= f_y_sz) {
+            if (L >= f_x_sz) {
                 assert_true(delta_ref_n == 0);
                 assert_true(delta_tail_n == 0);
                 assert_true(delta_raw_n == 1);
@@ -747,6 +903,17 @@ test_rm_rolling_ch_proc_2(void **state)
             rewind(f_x);
             rewind(f_y);
 
+            /* close result file */
+            fclose(f_z->f);
+
+            /* and unlink/remove */
+            if (RM_TEST_7_DELETE_FILES == 1) {
+                if (unlink(f_z->name) != 0) {
+                    RM_LOG_ERR("Can't unlink result file [%s]", f_z->name);
+                    assert_true(1 == 0);
+                }
+            }
+
             blocks_n = 0;
             bkt = 0;
             twhash_for_each_safe(h, bkt, tmp, e, hlink)
@@ -759,11 +926,11 @@ test_rm_rolling_ch_proc_2(void **state)
 		}
 		fclose(f_x);
         fclose(f_y);
-        RM_LOG_INFO("PASSED test #2 detail cases, file [%s], size [%u], detail case #1 [%u] #2 [%u] #3 [%u]",
-                f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
+        RM_LOG_INFO("PASSED test #2: delta reconstruction OK (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+                detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
-    if (RM_TEST_5_DELETE_FILES == 1)
+    if (RM_TEST_7_DELETE_FILES == 1)
     {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
         if (err != 0)
