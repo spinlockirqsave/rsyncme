@@ -295,7 +295,7 @@ struct rm_session;
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
-        size_t copy_all_threshold, size_t copy_tail_threshold);
+        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold);
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 

@@ -14,7 +14,7 @@
 
 int
 rm_tx_local_push(const char *x, const char *y,
-        uint32_t L, rm_push_flags flags)
+        size_t L, size_t send_threshold, rm_push_flags flags)
 {
 	int         err;
 	FILE        *f_x;   /* original file, to be synced into @y */
@@ -128,6 +128,8 @@ rm_tx_local_push(const char *x, const char *y,
     prvt->f_y = f_y;
     prvt->f_z = f_z;
     prvt->delta_f = rm_roll_proc_cb_1;
+    prvt->send_threshold = send_threshold;
+    /* TODO init rest of thresholds */
  
 	/* start tx delta vec thread (enqueue delta elements
      * and signal to delta_rx_tid thread */

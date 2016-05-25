@@ -337,7 +337,7 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
-        size_t copy_all_threshold, size_t copy_tail_threshold)
+        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold)
 {
     int err;
     uint32_t        hash;
@@ -478,7 +478,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             raw_bytes[raw_bytes_n] = a_k;                               /* enqueue raw byte */
             send_left -= 1;
             ++raw_bytes_n;
-            if ((raw_bytes_n == L) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
+            if ((raw_bytes_n == send_threshold) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n);   /* tx */
                 if (err != 0) {
                     return -8;
