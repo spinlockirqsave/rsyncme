@@ -206,7 +206,7 @@ rm_session_delta_tx_f(void *arg)
     struct rm_session_push_local    *prvt_local;
     struct rm_session_push_tx       *prvt_tx;
     int err;
-    size_t                  copy_all_threshold, copy_tail_threshold;
+    size_t                  copy_all_threshold, copy_tail_threshold, send_threshold;
 
     s = (struct rm_session*) arg;
     assert(s != NULL);
@@ -230,6 +230,7 @@ rm_session_delta_tx_f(void *arg)
             delta_f = prvt_local->delta_f;
             copy_all_threshold = prvt_local->copy_all_threshold;
             copy_tail_threshold = prvt_local->copy_tail_threshold;
+            send_threshold = prvt_local->send_threshold;
             break;
 
         case RM_PUSH_TX:
@@ -243,6 +244,7 @@ rm_session_delta_tx_f(void *arg)
             delta_f = prvt_tx->delta_f;
             copy_all_threshold = prvt_tx->copy_all_threshold;
             copy_tail_threshold = prvt_tx->copy_tail_threshold;
+            send_threshold = prvt_tx->send_threshold;
             break;
 
         default:
@@ -250,7 +252,7 @@ rm_session_delta_tx_f(void *arg)
     }
 
     /* 1. run rolling checksum procedure */
-    err = rm_rolling_ch_proc(s, h, f_x, delta_f, s->L, 0, copy_all_threshold, copy_tail_threshold);
+    err = rm_rolling_ch_proc(s, h, f_x, delta_f, s->L, 0, copy_all_threshold, copy_tail_threshold, send_threshold);
 
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_tx_status = err;

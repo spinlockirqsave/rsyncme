@@ -25,7 +25,7 @@ void rsyncme_usage(const char *name)
 	if (!name)
 		return;
 
-	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]>]\n", name);
+	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]><-s raw_bytes_send_threshold>]\n", name);
 	fprintf(stderr, "\n      \t [--f(orce)]\n");
 	fprintf(stderr, "     \t -x			: local file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
@@ -33,6 +33,8 @@ void rsyncme_usage(const char *name)
 			"				: was not given, remote otherwise)\n");
 	fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
 			"				: default value 512 is used\n");
+	fprintf(stderr, "     \t -s			: raw bytes send threshold in bytes, if not given\n"
+			"				: default value used is equal size of the block\n");
 	fprintf(stderr, "\nExamples:\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
@@ -73,8 +75,9 @@ main( int argc, char *argv[])
                              * 4        force creation of @y if it doesn't exist */
 	char                *pCh;
 	unsigned long       helper;
+    size_t              send_threshold = 0;
 	struct sockaddr_in  remote_addr = {0};
-	uint32_t            L = RM_DEFAULT_L;
+	size_t              L = RM_DEFAULT_L;
     rm_push_flags       push_flags = 0;
 
 	if (argc < 4)
@@ -93,7 +96,7 @@ main( int argc, char *argv[])
 	};
 
 	// parse optional command line arguments
-	while ((c = getopt_long(argc, argv, "x:y:i:l", long_options, &option_index)) != -1)
+	while ((c = getopt_long(argc, argv, "x:y:i:l:s", long_options, &option_index)) != -1)
 	{
 		switch (c)
 		{
@@ -158,6 +161,22 @@ main( int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			L = helper;
+		case 's':
+			helper = strtoul(optarg, &pCh, 10);
+			if (helper > 0x10000 - 1)
+			{
+				rsyncme_range_error(c, helper);
+				exit(EXIT_FAILURE);
+			}
+			// check
+			if ((pCh == optarg) || (*pCh != '\0'))
+			{
+				fprintf(stderr, "Invalid argument\n");
+				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
+			send_threshold = helper;
 		case '?':
 			// check optopt
 			if (optopt == 'x' || optopt == 'y' || optopt == 'i')
@@ -219,6 +238,12 @@ main( int argc, char *argv[])
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
+
+    /* TODO set thresholds */
+    if (send_threshold == 0) {
+        send_threshold = L;
+    }
+
 	// if -i is set
 	if ((flags & RM_BIT_3) != 0u)
 	{
@@ -247,7 +272,7 @@ main( int argc, char *argv[])
 			fprintf(stderr, "\nLocal push.\n");
             /* setup push flags */
             push_flags |= ((flags & RM_BIT_4) >> 4);
-			res = rm_tx_local_push(x, y, L, push_flags);
+			res = rm_tx_local_push(x, y, L, send_threshold, push_flags);
 			if (res < 0)
 			{
                 switch (res)    /* report failure */

@@ -43,7 +43,7 @@
  *          -7 buffered copy failed */
 int
 rm_tx_local_push(const char *x, const char *y,
-			uint32_t L, rm_push_flags flags);
+			size_t L, size_t send_threshold, rm_push_flags flags);
 
 /* Initialize PUSH, ask for nonoverlapping checksums,
  * send delta vector. */
