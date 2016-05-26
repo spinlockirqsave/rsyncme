@@ -249,7 +249,8 @@ test_rm_teardown(void **state)
 }
 
 
-/* @brief   Test if created delta elements cover all file. */
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
+ *          when x file is same as y (file has no changes). */
 void
 test_rm_rolling_ch_proc_1(void **state)
 {
@@ -395,6 +396,8 @@ test_rm_rolling_ch_proc_1(void **state)
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
             }
+
+            /* general tests */
             assert_int_equal(rec_by_raw, 0);
             assert_int_equal(rec_by_ref, y_sz);
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
@@ -443,16 +446,16 @@ test_rm_rolling_ch_proc_1(void **state)
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0)
                 {
-                    RM_LOG_INFO("PASSED test #1: delta elements cover whole file, file [%s], size [%u], "
+                    RM_LOG_INFO("PASSED test #1: correct number of bytes sent in delta elements, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #1: delta elements cover whole file, file [%s], size [%u], "
+                    RM_LOG_INFO("PASSED test #1: correct number of bytes sent in delta elements, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #1: delta elements cover whole file, file [%s], size [%u], "
+                RM_LOG_INFO("PASSED test #1: correct number of bytes sent in delta elements, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
@@ -481,7 +484,8 @@ test_rm_rolling_ch_proc_1(void **state)
     return;
 }
 
-/* @brief   Test #2. */
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
+ *          when x is copy of y, but first byte in x is changed. */
 void
 test_rm_rolling_ch_proc_2(void **state)
 {
@@ -579,7 +583,7 @@ test_rm_rolling_ch_proc_2(void **state)
         }
         /* change first byte, so ZERO_DIFF delta can't happen in this test,
          * this would be an error */
-        c = (c == 'x' ? 'y' : 'x');
+        c = (c + 1) % 256;
         if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
         {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
@@ -629,13 +633,16 @@ test_rm_rolling_ch_proc_2(void **state)
             /* run rolling checksum procedure on @x */
             s = rm_state->s;
             s->L = L;
+            /* init reconstruction context */
+            memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));
+            s->rec_ctx.L = L;
             /* setup private session's arguments */
             prvt = s->prvt;
             prvt->h = h;
             prvt->f_x = f_x;                        /* run on @x */
             prvt->delta_f = rm_roll_proc_cb_1;
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->L, 0, 0, 0, s->L);
+            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->rec_ctx.L, 0, 0, 0, s->rec_ctx.L);
             assert_int_equal(err, 0);
 
             /* verify s->prvt delta queue content */
@@ -681,6 +688,8 @@ test_rm_rolling_ch_proc_2(void **state)
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
             }
+
+            /* general tests */
             assert_int_equal(rec_by_ref + rec_by_raw, f_y_sz);
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
             assert_true(delta_zero_diff_n == 0);

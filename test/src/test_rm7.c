@@ -262,6 +262,9 @@ test_rm_teardown(void **state)
     return 0;
 }
 
+/* @brief   Test if result file @f_z is reconstructed properly
+ *          when x file is same as y (file has no changes). */
+
 /* @brief   Testing callback that calls rm_rx_process_delta_element */    
 static int
 test_rm_roll_proc_cb_delta_element_call(void *arg)
@@ -521,10 +524,22 @@ test_rm_rx_process_delta_element_1(void **state)
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
             }
+
+            /* general tests */
             assert_int_equal(rec_by_raw, 0);
             assert_int_equal(rec_by_ref, y_sz); /* in this test y_sz == file_sz is size of both @x and @y */
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
             assert_true(delta_zero_diff_n == 0 || (delta_zero_diff_n == 1 && rec_by_ref == y_sz && rec_by_zero_diff == y_sz && delta_tail_n == 0 && delta_raw_n == 0));
+
+            assert_int_equal(delta_ref_n, s->rec_ctx.delta_ref_n);
+            assert_int_equal(delta_raw_n, s->rec_ctx.delta_raw_n);
+            assert_int_equal(delta_zero_diff_n, s->rec_ctx.delta_zero_diff_n);
+            assert_int_equal(delta_tail_n, s->rec_ctx.delta_tail_n);
+
+            assert_int_equal(rec_by_ref, s->rec_ctx.rec_by_ref);
+            assert_int_equal(rec_by_raw, s->rec_ctx.rec_by_raw);
+            assert_int_equal(rec_by_zero_diff, s->rec_ctx.rec_by_zero_diff);
+            assert_int_equal(rec_by_tail, s->rec_ctx.rec_by_tail);
 
             /* detail cases */
             /* 1. if L is >= file size, delta must be ZERO_DIFF */
@@ -621,6 +636,8 @@ test_rm_rx_process_delta_element_1(void **state)
 }
 
 /* @brief   Test #2. */
+/* @brief   Test if result file @f_z is reconstructed properly
+ *          when x is copy of y, but first byte in x is changed. */
 void
 test_rm_rx_process_delta_element_2(void **state)
 {
@@ -722,7 +739,7 @@ test_rm_rx_process_delta_element_2(void **state)
         }
         /* change first byte, so ZERO_DIFF delta can't happen in this test,
          * this would be an error */
-        c = (c + 1 ) % 256;
+        c = (c + 1) % 256;
         if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
         {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);

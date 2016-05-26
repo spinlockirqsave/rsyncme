@@ -60,12 +60,12 @@ int
 rm_random_file(char *name, uint32_t len);
 
 
-/* @brief   Test if created delta elements cover all file
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x file is same as y (file has no changes). */
 void
 test_rm_rolling_ch_proc_1(void **state);
 
-/* @brief   Test if created delta elements cover all file
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x is copy of y, but first byte in x is changed. */
 void
 test_rm_rolling_ch_proc_2(void **state);
