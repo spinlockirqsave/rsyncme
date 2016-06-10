@@ -1,6 +1,6 @@
 /*
  * @file        rm_tcp.c
- * @brief       Send data over TCP.
+ * @brief       TCP handling.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        18 Apr 2016 00:45 AM
