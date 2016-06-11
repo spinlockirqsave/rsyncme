@@ -32,6 +32,7 @@ test_rm_setup(void **state)
 	int 		err;
 	uint32_t	i, j;
 	FILE 		*f;
+    unsigned long const seed = time(NULL);
 
 #ifdef DEBUG
 	err = rm_util_chdir_umask_openlog(
@@ -60,7 +61,7 @@ test_rm_setup(void **state)
 			j = rm_test_fsizes[i];
 			RM_LOG_INFO("Writing [%u] random bytes"
 			" to file [%s]", j, rm_test_fnames[i]);
-			srand(time(NULL));
+			srand(seed);
 			while (j--)
 			{
 				fputc(rand(), f);

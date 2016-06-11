@@ -35,6 +35,7 @@ test_rm_copy_files_and_postfix(const char *postfix)
     FILE        *f, *f_copy;
     uint32_t    i, j;
     char        buf[RM_FILE_LEN_MAX + 50];
+    unsigned long const seed = time(NULL);
 
     i = 0;
     for (; i < RM_TEST_FNAMES_N; ++i)
@@ -51,7 +52,7 @@ test_rm_copy_files_and_postfix(const char *postfix)
             j = rm_test_fsizes[i];
             RM_LOG_INFO("Writing [%u] random bytes"
                     " to file [%s]", j, rm_test_fnames[i]);
-            srand(time(NULL));
+            srand(seed);
             while (j--)
                 fputc(rand(), f);
         } else {
@@ -144,6 +145,7 @@ test_rm_setup(void **state)
     FILE        *f;
     void        *buf;
     struct rm_session   *s;
+    unsigned long const seed = time(NULL);
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog(
@@ -172,7 +174,7 @@ test_rm_setup(void **state)
             j = rm_test_fsizes[i];
             RM_LOG_INFO("Writing [%u] random bytes"
                     " to file [%s]", j, rm_test_fnames[i]);
-            srand(time(NULL));
+            srand(seed);
             while (j--)
                 fputc(rand(), f);
         } else {
