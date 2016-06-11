@@ -171,8 +171,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
     buf = malloc(read_now);
     if (buf == NULL)
     {
-        RM_LOG_ERR("Malloc failed, L [%u], "
-                "read_now [%u]", L, read_now);
+        RM_LOG_ERR("Malloc failed, L [%u], read_now [%u]", L, read_now);
         return -2;
     }
 
@@ -190,8 +189,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
         e = malloc(sizeof (*e));
         if (e == NULL)	
         {
-            RM_LOG_PERR("Can't allocate table "
-                    "entry, malloc failed");
+            RM_LOG_PERR("Can't allocate table entry, malloc failed");
+            free(buf);
             return -4;
         }
 
@@ -217,8 +216,10 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
             arg.e = &e->data;
             arg.s = NULL;
             res = f_tx_ch_ch_ref(arg);
-            if (res < 0)
+            if (res < 0) {
+                free(buf);
                 return -5;
+            }
         }
         read_left -= read;
         read_now = rm_min(L, read_left);
@@ -226,6 +227,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 
     if (blocks_n != NULL)
         *blocks_n = entries_n;
+    free(buf);
+
     return	0;
 }
 
