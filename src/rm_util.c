@@ -102,6 +102,7 @@ rm_util_openlogs(const char *dir, const char *name)
 		err = -6;
 		goto fail;
 	}
+    free(full_path);
 	return 0;
 fail:
 	if (full_path != NULL)
