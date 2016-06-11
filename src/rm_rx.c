@@ -288,8 +288,10 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
         if (f_tx_ch_ch != NULL)
         {
             res = f_tx_ch_ch(e);
-            if (res < 0)
+            if (res < 0) {
+                free(buf);
                 return -5;
+            }
         }
         ++entries_n;
         ++e;
@@ -300,6 +302,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 
     if (blocks_n != NULL)
         *blocks_n = entries_n;
+    free(buf);
     return 0;
 }
 
