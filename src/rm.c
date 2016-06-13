@@ -311,6 +311,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
     return -13; /* too much requested */
 }
 
+/* If there are raw bytes to tx copy them here! */
 static int
 rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
                                     size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n)
@@ -320,14 +321,22 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     if ((cb_arg == NULL) || (delta_f == NULL)) {
         return -1;
     }
-    delta_e = malloc(sizeof *delta_e);
+    delta_e = malloc(sizeof(*delta_e));
     if (delta_e == NULL) {
         return -2;
     }
     delta_e->type = type;
     delta_e->ref = ref;
-    delta_e->raw_bytes = raw_bytes;
-    delta_e->raw_bytes_n = raw_bytes_n;         /* move ownership, TODO cleanup in callback! */
+    if (type == RM_DELTA_ELEMENT_RAW_BYTES) {
+        delta_e->raw_bytes = malloc(raw_bytes_n * sizeof(unsigned char));   /* TODO cleanup in callback! */
+        if (delta_e->raw_bytes == NULL) {   /* TODO Add tests for this execution path! */
+            return -3;
+        }
+        memcpy(delta_e->raw_bytes, raw_bytes, raw_bytes_n);
+    } else {
+        delta_e->raw_bytes = NULL;
+    }
+    delta_e->raw_bytes_n = raw_bytes_n;
     TWINIT_LIST_HEAD(&delta_e->link);
     cb_arg->delta_e = delta_e;                  /* tx, signal delta_rx_tid, etc */
     delta_f(cb_arg);                            /* TX, enqueue delta */
@@ -337,8 +346,7 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
-        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold)
-{
+        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold) {
     int err;
     uint32_t        hash;
     unsigned char   buf[L];
@@ -445,7 +453,6 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 if (err != 0) {
                     return -5;
                 }
-                raw_bytes = NULL;
                 raw_bytes_n = 0;
             }
             if (read == file_sz) {
@@ -483,23 +490,18 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 if (err != 0) {
                     return -8;
                 }
-                raw_bytes = NULL;
                 raw_bytes_n = 0;
             }
         } /* match */
     } while (send_left > 0);
 
 end:
+    if (raw_bytes != NULL) {
+        free(raw_bytes);
+    }
     return 0;
 
 copy_tail:
-    if (raw_bytes == NULL) {
-        raw_bytes = malloc(L * sizeof(*raw_bytes));
-        if (raw_bytes == NULL) {
-            return -12;
-        }
-        memset(raw_bytes, 0, L * sizeof(*raw_bytes));
-    }
     err = rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left);
     if (err < 0) {
         return -13;
@@ -508,7 +510,9 @@ copy_tail:
     if (err != 0) {
         return -14;
     }
-
+    if (raw_bytes != NULL) {
+        free(raw_bytes);
+    }
     return 0;
 }
 
@@ -540,43 +544,34 @@ fail:
 }
 
 int
-rm_roll_proc_cb_1(void *arg)
-{
+rm_roll_proc_cb_1(void *arg) {
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
     const struct rm_session         *s;
     struct rm_session_push_local    *prvt;
     struct rm_delta_e               *delta_e;
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
-    if (cb_arg == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added"
-                " some neat code recently?");
+    if (cb_arg == NULL) {
+        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added some neat code recently?");
         assert(cb_arg != NULL);
         return -1;
     }
 
     s = cb_arg->s;
     delta_e = cb_arg->delta_e;
-    if (s == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL session?! Have you added"
-                " some neat code recently?");
+    if (s == NULL) {
+        RM_LOG_CRIT("WTF! NULL session?! Have you added  some neat code recently?");
         assert(s != NULL);
         return -2;
     }
-    if (delta_e == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL delta element?! Have you added"
-                " some neat code recently?");
+    if (delta_e == NULL) {
+        RM_LOG_CRIT("WTF! NULL delta element?! Have you added some neat code recently?");
         assert(delta_e != NULL);
         return -3;
     }
     prvt = (struct rm_session_push_local*) s->prvt;
-    if (prvt == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL private session?! Have you added"
-                " some neat code recently?");
+    if (prvt == NULL) {
+        RM_LOG_CRIT("WTF! NULL private session?! Have you added  some neat code recently?");
         assert(prvt != NULL);
         return -4;
     }

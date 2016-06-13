@@ -44,20 +44,19 @@ test_rm_copy_files_and_postfix(const char *postfix)
         if (f == NULL)
         {
             /* file doesn't exist, create */
-            RM_LOG_INFO("Creating file [%s]",
-                    rm_test_fnames[i]);
+            RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb+");
-            if (f == NULL)
+            if (f == NULL) {
                 exit(EXIT_FAILURE);
+            }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes"
-                    " to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
-            while (j--)
+            while (j--) {
                 fputc(rand(), f);
+            }
         } else {
-            RM_LOG_INFO("Using previously created "
-                    "file [%s]", rm_test_fnames[i]);
+            RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
         }
         /* create copy */
         strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
@@ -316,19 +315,13 @@ test_rm_rolling_ch_proc_1(void **state)
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
         {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 of rolling checksum "
-                    "on tail, file [%s], size [%u],"
-                    " block size L [%u]", fname, file_sz, L);
+            RM_LOG_INFO("Validating testing #1 of rolling checksum on tail, file [%s], size [%u], block size L [%u]", fname, file_sz, L);
             if (0 == L)
             {
-                RM_LOG_INFO("Block size [%u] is too "
-                        "small for this test (should be > [%u]), "
-                        " skipping file [%s]", L, 0, fname);
+                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #1: "
-                    "file [%s], size [%u], block size L [%u]",
-                    fname, file_sz, L);
+            RM_LOG_INFO("Testing rolling checksum procedure #1: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
 
             /* reference file exists, split it and calc checksums */
             f_y = f;
@@ -364,8 +357,7 @@ test_rm_rolling_ch_proc_1(void **state)
             delta_ref_n = delta_raw_n = 0;
             rec_by_tail = delta_tail_n = 0;
             rec_by_zero_diff = delta_zero_diff_n = 0;
-            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh))
-            {
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {    /* dequeue, so can free later */
                 delta_e = tw_container_of(lh, struct rm_delta_e, link);
                 switch (delta_e->type)
                 {
@@ -397,6 +389,7 @@ test_rm_rolling_ch_proc_1(void **state)
                         RM_LOG_ERR("Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
+                free((void*) delta_e);  /* free delta element */
             }
 
             /* general tests */
@@ -468,8 +461,7 @@ test_rm_rolling_ch_proc_1(void **state)
 
             blocks_n = 0;
             bkt = 0;
-            twhash_for_each_safe(h, bkt, tmp, e, hlink)
-            {
+            twhash_for_each_safe(h, bkt, tmp, e, hlink) {
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
@@ -518,8 +510,7 @@ test_rm_rolling_ch_proc_2(void **state)
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
     err = test_rm_copy_files_and_postfix("_test_2");
-    if (err != 0)
-    {
+    if (err != 0) {
         RM_LOG_ERR("Error copying files, skipping test");
         return;
     }
@@ -530,8 +521,7 @@ test_rm_rolling_ch_proc_2(void **state)
 
     /* test on all files */
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         f_y_name = rm_test_fnames[i];
         f_y = fopen(f_y_name, "rb");
         if (f_y == NULL)
@@ -542,15 +532,13 @@ test_rm_rolling_ch_proc_2(void **state)
         /* get file size */
         fd_y = fileno(f_y);
         memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_y, &fs) != 0)
-        {
+        if (fstat(fd_y, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
             fclose(f_y);
             assert_true(1 == 0);
         }
         f_y_sz = fs.st_size;
-        if (f_y_sz < 2)
-        {
+        if (f_y_sz < 2) {
             RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
@@ -568,16 +556,14 @@ test_rm_rolling_ch_proc_2(void **state)
         /* get @x size */
         fd_x = fileno(f_x);
         memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_x, &fs) != 0)
-        {
+        if (fstat(fd_x, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
             fclose(f_x);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
         /* read first byte */
-        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
-        {
+        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -586,8 +572,7 @@ test_rm_rolling_ch_proc_2(void **state)
         /* change first byte, so ZERO_DIFF delta can't happen in this test,
          * this would be an error */
         c = (c + 1) % 256;
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
-        {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -598,35 +583,22 @@ test_rm_rolling_ch_proc_2(void **state)
         detail_case_3_n = 0;
 
         j = 0;
-        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
-        {
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of rolling checksum "
-                    "on tail, file [%s], size [%u],"
-                    " block size L [%u]", f_y_name, f_y_sz, L);
-            if (0 == L)
-            {
-                RM_LOG_INFO("Block size [%u] is too "
-                        "small for this test (should be > [%u]), "
-                        " skipping file [%s]", L, 0, f_y_name);
+            RM_LOG_INFO("Validating testing #2 of rolling checksum on tail, file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            if (f_y_sz < 2)
-            {
-                RM_LOG_INFO("File [%s] size [%u] is too small "
-                        "for this test, skipping", f_y_name, f_y_sz);
+            if (f_y_sz < 2) {
+                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #2: "
-                    "file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]",
-                    buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing rolling checksum procedure #2: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
-            /* split @y file into non-overlapping blocks
-             * and calculate checksums on these blocks,
-             * expected number of blocks is */
+            /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(
-                f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, 0);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -655,11 +627,9 @@ test_rm_rolling_ch_proc_2(void **state)
             delta_ref_n = delta_raw_n = 0;
             rec_by_tail = delta_tail_n = 0;
             rec_by_zero_diff = delta_zero_diff_n = 0;
-            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh))
-            {
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
                 delta_e = tw_container_of(lh, struct rm_delta_e, link);
-                switch (delta_e->type)
-                {
+                switch (delta_e->type) {
                     case RM_DELTA_ELEMENT_REFERENCE:
                         rec_by_ref += delta_e->raw_bytes_n;
                         assert_int_equal(delta_e->raw_bytes_n, L);  /* can't be different here */
@@ -689,6 +659,10 @@ test_rm_rolling_ch_proc_2(void **state)
                         RM_LOG_ERR("Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
+                if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
+                    free(delta_e->raw_bytes);
+                }
+                free((void*)delta_e);
             }
 
             /* general tests */
@@ -698,8 +672,7 @@ test_rm_rolling_ch_proc_2(void **state)
             assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
-                if (delta_zero_diff_n > 0)
-                {
+                if (delta_zero_diff_n > 0) {
                     RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%u], "
                         "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
@@ -760,8 +733,7 @@ test_rm_rolling_ch_proc_2(void **state)
 
             blocks_n = 0;
             bkt = 0;
-            twhash_for_each_safe(h, bkt, tmp, e, hlink)
-            {
+            twhash_for_each_safe(h, bkt, tmp, e, hlink) {
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
@@ -774,11 +746,9 @@ test_rm_rolling_ch_proc_2(void **state)
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
-    if (RM_TEST_5_DELETE_FILES == 1)
-    {
+    if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
-        if (err != 0)
-        {
+        if (err != 0) {
             RM_LOG_ERR("Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
