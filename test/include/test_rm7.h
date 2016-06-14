@@ -25,7 +25,7 @@
 #include <cmocka.h>
 
 
-#define RM_TEST_7_DELETE_FILES      0	/* 0 no, 1 yes */
+#define RM_TEST_7_DELETE_FILES      1	/* 0 no, 1 yes */
 #define RM_TEST_L_BLOCKS_SIZE       34
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            15

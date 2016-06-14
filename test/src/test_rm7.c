@@ -30,8 +30,7 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
 
 static FILE*
 test_rm_fopen_file_prefixed(const char *name, const char *prefix,
-        size_t L, const char *mode, struct test_rm_file *f_z)
-{
+        size_t L, const char *mode, struct test_rm_file *f_z) {
     if (name == NULL || prefix == NULL || mode == NULL || f_z == NULL) {
         return NULL;
     }
@@ -43,8 +42,7 @@ test_rm_fopen_file_prefixed(const char *name, const char *prefix,
 }
 
 static int
-test_rm_copy_files_and_postfix(const char *postfix)
-{
+test_rm_copy_files_and_postfix(const char *postfix) {
     int         err;
     FILE        *f, *f_copy;
     uint32_t    i, j;
@@ -52,45 +50,40 @@ test_rm_copy_files_and_postfix(const char *postfix)
     unsigned long const seed = time(NULL);
 
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb");
         if (f == NULL)
         {
             /* file doesn't exist, create */
-            RM_LOG_INFO("Creating file [%s]",
-                    rm_test_fnames[i]);
+            RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb+");
-            if (f == NULL)
+            if (f == NULL) {
                 exit(EXIT_FAILURE);
+            }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes"
-                    " to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
-            while (j--)
+            while (j--) {
                 fputc(rand(), f);
+            }
         } else {
-            RM_LOG_INFO("Using previously created "
-                    "file [%s]", rm_test_fnames[i]);
+            RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
         }
         /* create copy */
         strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
         strncpy(buf + strlen(buf), postfix, 49);
         buf[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf, "rb+");
-        if (f_copy == NULL)
-        {
+        if (f_copy == NULL) {
             /* doesn't exist, create */
             RM_LOG_INFO("Creating copy [%s] of file [%s]", buf, rm_test_fnames[i]);
             f_copy = fopen(buf, "wb");
-            if (f_copy == NULL)
-            {
+            if (f_copy == NULL) {
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
                 return -1;
             }
             err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
-            switch (err)
-            {
+            switch (err) {
                 case 0:
                     break;
                 case -2:
@@ -127,15 +120,13 @@ test_rm_copy_files_and_postfix(const char *postfix)
 }
 
 static int
-test_rm_delete_copies_of_files_postfixed(const char *postfix)
-{
+test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     int         err;
     uint32_t    i;
     char        buf[RM_FILE_LEN_MAX + 50];
 
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         /* open copy */
         strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
         strncpy(buf + strlen(buf), postfix, 49);
@@ -152,8 +143,7 @@ test_rm_delete_copies_of_files_postfixed(const char *postfix)
 }
 
 int
-test_rm_setup(void **state)
-{
+test_rm_setup(void **state) {
     int         err;
     uint32_t    i,j;
     FILE        *f;
@@ -162,39 +152,35 @@ test_rm_setup(void **state)
     unsigned long seed;
 
 #ifdef DEBUG
-    err = rm_util_chdir_umask_openlog(
-            "../build/debug", 1, "rsyncme_test_7");
+    err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_7");
 #else
-    err = rm_util_chdir_umask_openlog(
-            "../build/release", 1, "rsyncme_test_7");
+    err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_7");
 #endif
-    if (err != 0)
+    if (err != 0) {
         exit(EXIT_FAILURE);
+    }
     rm_state.l = rm_test_L_blocks;
     *state = &rm_state;
 
     i = 0;
     seed = time(NULL);
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb+");
-        if (f == NULL)
-        {
+        if (f == NULL) {
             /* file doesn't exist, create */
-            RM_LOG_INFO("Creating file [%s]",
-                    rm_test_fnames[i]);
+            RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb");
-            if (f == NULL)
+            if (f == NULL) {
                 exit(EXIT_FAILURE);
+            }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes"
-                    " to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
-            while (j--)
+            while (j--) {
                 fputc(rand(), f);
+            }
         } else {
-            RM_LOG_INFO("Using previously created "
-                    "file [%s]", rm_test_fnames[i]);
+            RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
         }
         fclose(f);
     }
@@ -202,29 +188,25 @@ test_rm_setup(void **state)
     /* find biggest L */
     i = 0;
     j = 0;
-    for (; i < RM_TEST_L_BLOCKS_SIZE; ++i)
+    for (; i < RM_TEST_L_BLOCKS_SIZE; ++i) {
         if (rm_test_L_blocks[i] > j) j = rm_test_L_blocks[i];
+    }
     buf = malloc(j);
-    if (buf == NULL)	
-    {
-        RM_LOG_ERR("Can't allocate 1st memory buffer"
-                " of [%u] bytes, malloc failed", j);
+    if (buf == NULL) {
+        RM_LOG_ERR("Can't allocate 1st memory buffer of [%u] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
-    if (buf == NULL)	
-    {
-        RM_LOG_ERR("Can't allocate 2nd memory buffer"
-                " of [%u] bytes, malloc failed", j);
+    if (buf == NULL) {
+        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%u] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
     /* session for loccal push */
     s = rm_session_create(RM_PUSH_LOCAL);
-    if (s == NULL)
-    {
+    if (s == NULL) {
         RM_LOG_ERR("Can't allocate session local push");
 	}
     assert_true(s != NULL);
@@ -233,28 +215,22 @@ test_rm_setup(void **state)
 }
 
 int
-test_rm_teardown(void **state)
-{
+test_rm_teardown(void **state) {
     int     i;
     FILE    *f;
     struct  test_rm_state *rm_state;
 
     rm_state = *state;
     assert_true(rm_state != NULL);
-    if (RM_TEST_7_DELETE_FILES == 1)
-    {
+    if (RM_TEST_7_DELETE_FILES == 1) {
         /* delete all test files */
         i = 0;
-        for (; i < RM_TEST_FNAMES_N; ++i)
-        {
+        for (; i < RM_TEST_FNAMES_N; ++i) {
             f = fopen(rm_test_fnames[i], "wb+");
-            if (f == NULL)
-            {
-                RM_LOG_ERR("Can't open file [%s]",
-                        rm_test_fnames[i]);	
+            if (f == NULL) {
+                RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
-                RM_LOG_INFO("Removing file [%s]",
-                        rm_test_fnames[i]);
+                RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
                 remove(rm_test_fnames[i]);
             }
         }
@@ -270,8 +246,7 @@ test_rm_teardown(void **state)
 
 /* @brief   Testing callback that calls rm_rx_process_delta_element */    
 static int
-test_rm_roll_proc_cb_delta_element_call(void *arg)
-{
+test_rm_roll_proc_cb_delta_element_call(void *arg) {
     int err;
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
     const struct rm_session         *s;
@@ -279,15 +254,12 @@ test_rm_roll_proc_cb_delta_element_call(void *arg)
     struct rm_delta_e               *delta_e;
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
-    if (cb_arg == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added"
-                " some neat code recently?");
+    if (cb_arg == NULL) {
+        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added some neat code recently?");
         assert(cb_arg != NULL);
         return -1;
     }
-    /* this is not the subject of this test suite but we will call
-     * standard delta processing callback for local push anyway,
+    /* this is not the subject of this test suite but we will call standard delta processing callback for local push anyway,
      * so we can verify queue content in this test suite as well */
     if (rm_roll_proc_cb_1(arg) != 0) {
         RM_LOG_CRIT("Enqueuing of delta elements failed");
@@ -296,39 +268,29 @@ test_rm_roll_proc_cb_delta_element_call(void *arg)
 
     s = cb_arg->s;
     delta_e = cb_arg->delta_e;
-    if (s == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL session?! Have you added"
-                " some neat code recently?");
+    if (s == NULL) {
+        RM_LOG_CRIT("WTF! NULL session?! Have you added some neat code recently?");
         assert(s != NULL);
         return -2;
     }
-    if (delta_e == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL delta element?! Have you added"
-                " some neat code recently?");
+    if (delta_e == NULL) {
+        RM_LOG_CRIT("WTF! NULL delta element?! Have you added some neat code recently?");
         assert(delta_e != NULL);
         return -3;
     }
     prvt = (struct rm_session_push_local*) s->prvt;
-    if (prvt == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL private session?! Have you added"
-                " some neat code recently?");
+    if (prvt == NULL) {
+        RM_LOG_CRIT("WTF! NULL private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -4;
     }
-    if (prvt->f_y == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL f_y in private session?! Have you added"
-                " some neat code recently?");
+    if (prvt->f_y == NULL) {
+        RM_LOG_CRIT("WTF! NULL f_y in private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -5;
     }
-    if (prvt->f_z == NULL)
-    {
-        RM_LOG_CRIT("WTF! NULL f_z in private session?! Have you added"
-                " some neat code recently?");
+    if (prvt->f_z == NULL) {
+        RM_LOG_CRIT("WTF! NULL f_z in private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -6;
     }
@@ -366,8 +328,7 @@ test_rm_roll_proc_cb_delta_element_call(void *arg)
     return 0;
 }
 void
-test_rm_rx_process_delta_element_1(void **state)
-{
+test_rm_rx_process_delta_element_1(void **state) {
     FILE                    *f, *f_x, *f_y;
     struct test_rm_file     *f_z;
     int                     fd;
@@ -402,25 +363,21 @@ test_rm_rx_process_delta_element_1(void **state)
 
     /* test on all files */
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         fname = rm_test_fnames[i];
         f = fopen(fname, "rb");
-        if (f == NULL)
-        {
+        if (f == NULL) {
             RM_LOG_PERR("Can't open file [%s]", fname);
         }
         assert_true(f != NULL);
         fd = fileno(f);
-        if (fstat(fd, &fs) != 0)
-        {
+        if (fstat(fd, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", fname);
             fclose(f);
             assert_true(1 == 0);
         }
         file_sz = fs.st_size; 
-        if (file_sz < 2)
-        {
+        if (file_sz < 2) {
             RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", fname, file_sz);
             fclose(f);
             continue;
@@ -429,22 +386,15 @@ test_rm_rx_process_delta_element_1(void **state)
         detail_case_2_n = 0;
         detail_case_3_n = 0;
         j = 0;
-        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
-        {
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 of delta reconstruction "
-                    "correctness, file [%s], size [%u],"
+            RM_LOG_INFO("Validating testing #1 of delta reconstruction correctness, file [%s], size [%u],"
                     " block size L [%u]", fname, file_sz, L);
-            if (0 == L)
-            {
-                RM_LOG_INFO("Block size [%u] is too "
-                        "small for this test (should be > [%u]), "
-                        " skipping file [%s]", L, 0, fname);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing delta reconstruction #1: "
-                    "file [%s], size [%u], block size L [%u]",
-                    fname, file_sz, L);
+            RM_LOG_INFO("Testing delta reconstruction #1: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
 
             /* reference file exists, split it and calc checksums */
             f_y = f;
@@ -456,8 +406,7 @@ test_rm_rx_process_delta_element_1(void **state)
              * and calculate checksums on these blocks,
              * expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(
-                f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, 0);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
@@ -493,11 +442,9 @@ test_rm_rx_process_delta_element_1(void **state)
             delta_ref_n = delta_raw_n = 0;
             rec_by_tail = delta_tail_n = 0;
             rec_by_zero_diff = delta_zero_diff_n = 0;
-            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh))
-            {
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
                 delta_e = tw_container_of(lh, struct rm_delta_e, link);
-                switch (delta_e->type)
-                {
+                switch (delta_e->type) {
                     case RM_DELTA_ELEMENT_REFERENCE:
                         rec_by_ref += L;
                         ++delta_ref_n;
@@ -526,6 +473,10 @@ test_rm_rx_process_delta_element_1(void **state)
                         RM_LOG_ERR("Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
+                if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
+                    free(delta_e->raw_bytes);
+                }
+                free((void*)delta_e);
             }
 
             /* general tests */
@@ -585,21 +536,16 @@ test_rm_rx_process_delta_element_1(void **state)
             }
 
             if (delta_tail_n == 0) {
-                if (delta_zero_diff_n > 0)
-                {
-                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], "
-                        "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
+                if (delta_zero_diff_n > 0) {
+                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], "
-                        "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], "
-                        "L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
-                        fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
-                        delta_raw_n, rec_by_raw);
+                RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
+                        fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
             }
 
             if ((err = rm_file_cmp(f_x, f_z->f, 0, 0, file_sz)) != 0) {
@@ -620,8 +566,7 @@ test_rm_rx_process_delta_element_1(void **state)
 
             blocks_n = 0;
             bkt = 0;
-            twhash_for_each_safe(h, bkt, tmp, e, hlink)
-            {
+            twhash_for_each_safe(h, bkt, tmp, e, hlink) {
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
@@ -642,8 +587,7 @@ test_rm_rx_process_delta_element_1(void **state)
 /* @brief   Test if result file @f_z is reconstructed properly
  *          when x is copy of y, but first byte in x is changed. */
 void
-test_rm_rx_process_delta_element_2(void **state)
-{
+test_rm_rx_process_delta_element_2(void **state) {
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
@@ -672,8 +616,7 @@ test_rm_rx_process_delta_element_2(void **state)
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
     err = test_rm_copy_files_and_postfix("_test_2");
-    if (err != 0)
-    {
+    if (err != 0) {
         RM_LOG_ERR("Error copying files, skipping test");
         return;
     }
@@ -687,27 +630,23 @@ test_rm_rx_process_delta_element_2(void **state)
 
     /* test on all files */
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         f_y_name = rm_test_fnames[i];
         f_y = fopen(f_y_name, "rb");
-        if (f_y == NULL)
-        {
+        if (f_y == NULL) {
             RM_LOG_PERR("Can't open file [%s]", f_y_name);
         }
         assert_true(f_y != NULL);
         /* get file size */
         fd_y = fileno(f_y);
         memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_y, &fs) != 0)
-        {
+        if (fstat(fd_y, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
             fclose(f_y);
             assert_true(1 == 0);
         }
         f_y_sz = fs.st_size;
-        if (f_y_sz < 2)
-        {
+        if (f_y_sz < 2) {
             RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
@@ -725,16 +664,14 @@ test_rm_rx_process_delta_element_2(void **state)
         /* get @x size */
         fd_x = fileno(f_x);
         memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_x, &fs) != 0)
-        {
+        if (fstat(fd_x, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
             fclose(f_x);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
         /* read first byte */
-        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
-        {
+        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -743,8 +680,7 @@ test_rm_rx_process_delta_element_2(void **state)
         /* change first byte, so ZERO_DIFF delta can't happen in this test,
          * this would be an error */
         c = (c + 1) % 256;
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1)
-        {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -755,35 +691,22 @@ test_rm_rx_process_delta_element_2(void **state)
         detail_case_3_n = 0;
 
         j = 0;
-        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
-        {
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of delta reconstruction, "
-                    "file [%s], size [%u],"
-                    " block size L [%u]", f_y_name, f_y_sz, L);
-            if (0 == L)
-            {
-                RM_LOG_INFO("Block size [%u] is too "
-                        "small for this test (should be > [%u]), "
-                        " skipping file [%s]", L, 0, f_y_name);
+            RM_LOG_INFO("Validating testing #2 of delta reconstruction, file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            if (f_y_sz < 2)
-            {
-                RM_LOG_INFO("File [%s] size [%u] is too small "
-                        "for this test, skipping", f_y_name, f_y_sz);
+            if (f_y_sz < 2) {
+                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing delta reconstruction #2: "
-                    "file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]",
-                    buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing delta reconstruction #2: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
-            /* split @y file into non-overlapping blocks
-             * and calculate checksums on these blocks,
-             * expected number of blocks is */
+            /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(
-                f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, 0);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -822,11 +745,9 @@ test_rm_rx_process_delta_element_2(void **state)
             delta_ref_n = delta_raw_n = 0;
             rec_by_tail = delta_tail_n = 0;
             rec_by_zero_diff = delta_zero_diff_n = 0;
-            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh))
-            {
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
                 delta_e = tw_container_of(lh, struct rm_delta_e, link);
-                switch (delta_e->type)
-                {
+                switch (delta_e->type) {
                     case RM_DELTA_ELEMENT_REFERENCE:
                         rec_by_ref += delta_e->raw_bytes_n;
                         assert_int_equal(delta_e->raw_bytes_n, s->rec_ctx.L);  /* can't be different here */
@@ -856,6 +777,10 @@ test_rm_rx_process_delta_element_2(void **state)
                         RM_LOG_ERR("Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
+                if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
+                    free(delta_e->raw_bytes);
+                }
+                free((void*)delta_e);
             }
             assert_int_equal(rec_by_ref + rec_by_raw, f_x_sz);
             assert_true(delta_tail_n == 0 || delta_tail_n == 1);
@@ -863,21 +788,16 @@ test_rm_rx_process_delta_element_2(void **state)
             assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
-                if (delta_zero_diff_n > 0)
-                {
-                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], "
-                        "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
+                if (delta_zero_diff_n > 0) {
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], "
-                        "L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], "
-                        "L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
-                        f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
-                        delta_raw_n, rec_by_raw);
+                RM_LOG_INFO("PASSED test #2: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
+                        f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
             }
             /* detail cases */
             /* 1. if L is >= file size, delta must be single RAW element */
@@ -936,8 +856,7 @@ test_rm_rx_process_delta_element_2(void **state)
 
             blocks_n = 0;
             bkt = 0;
-            twhash_for_each_safe(h, bkt, tmp, e, hlink)
-            {
+            twhash_for_each_safe(h, bkt, tmp, e, hlink) {
                 twhash_del((struct twhlist_node*)&e->hlink);
                 free((struct rm_ch_ch_ref_hlink*)e);
                 ++blocks_n;
@@ -950,11 +869,9 @@ test_rm_rx_process_delta_element_2(void **state)
                 detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
-    if (RM_TEST_7_DELETE_FILES == 1)
-    {
+    if (RM_TEST_7_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
-        if (err != 0)
-        {
+        if (err != 0) {
             RM_LOG_ERR("Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
