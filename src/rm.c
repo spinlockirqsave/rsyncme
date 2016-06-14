@@ -17,8 +17,7 @@
 
 
 uint32_t
-rm_fast_check_block(const unsigned char *data, uint32_t len)
-{
+rm_fast_check_block(const unsigned char *data, uint32_t len) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
@@ -28,8 +27,7 @@ rm_fast_check_block(const unsigned char *data, uint32_t len)
 	r1 = 0;
 	r2 = 0;
 	i = 0;
-	for (; i < len; ++i)
-	{
+	for (; i < len; ++i) {
 		r1 = (r1 + data[i]) % RM_FASTCHECK_MODULUS;
 		r2 = (r2 + r1) % RM_FASTCHECK_MODULUS;
 	}
@@ -41,8 +39,7 @@ rm_fast_check_block(const unsigned char *data, uint32_t len)
 }
 
 uint32_t
-rm_adler32_1(const unsigned char *data, uint32_t len)
-{
+rm_adler32_1(const unsigned char *data, uint32_t len) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
@@ -52,8 +49,7 @@ rm_adler32_1(const unsigned char *data, uint32_t len)
 	r1 = 1;
 	r2 = 0;
 	i = 0;
-	for (; i < len; ++i)
-	{
+	for (; i < len; ++i) {
 		r1 = (r1 + data[i]) % RM_ADLER32_MODULUS;
 		r2 = (r2 + r1) % RM_ADLER32_MODULUS;
 	}
@@ -71,8 +67,7 @@ rm_adler32_1(const unsigned char *data, uint32_t len)
 #define RM_DO16(buf)	RM_DO8(buf,0); RM_DO8(buf,8)
 
 uint32_t
-rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L)
-{
+rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
@@ -86,15 +81,13 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L)
 		k = L < RM_ADLER32_NMAX ? L : RM_ADLER32_NMAX;
 		L -= k;
 		// process 16bits blocks
-		while (k >= 16)
-		{
+		while (k >= 16) {
 			RM_DO16(data);
 			data += 16;
 			k-=16;
 		}
 		// remainder
-		if (k > 0)
-		{
+		if (k > 0) {
 			do
 			{
 				r1 += *data++;
@@ -115,8 +108,7 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L)
 // rolling adler with prime modulus won't work
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, uint32_t L)
-{
+		unsigned char a_kL, uint32_t L) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
@@ -137,8 +129,7 @@ rm_adler32_roll(uint32_t adler, unsigned char a_k,
 // modulus MUST be even
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, uint32_t L)
-{
+		unsigned char a_kL, uint32_t L) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
@@ -158,8 +149,7 @@ rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 
 
 uint32_t
-rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L)
-{
+rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L) {
     uint32_t r1, r2;
 
     r1 = adler & 0xFFFF;
@@ -172,8 +162,7 @@ rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L)
 
 uint32_t
 rm_rolling_ch(const unsigned char *data, uint32_t len,
-				uint32_t M)
-{
+				uint32_t M) {
 	uint32_t	r1, r2, i;
 
 #ifdef DEBUG
@@ -182,8 +171,7 @@ rm_rolling_ch(const unsigned char *data, uint32_t len,
 	assert(data != NULL);
 	r1 = r2 = 0;
 	i = 0;
-	for (; i < len; ++i)
-	{
+	for (; i < len; ++i) {
 		r1 = (r1 + data[i]) % M;
 		r2 = (r2 + r1) % M;
 	}
@@ -197,8 +185,7 @@ rm_rolling_ch(const unsigned char *data, uint32_t len,
 
 void
 rm_md5(const unsigned char *data, uint32_t len,
-		unsigned char res[16])
-{
+		unsigned char res[16]) {
 	MD5_CTX ctx;
 	md5_init(&ctx);
 	md5_update(&ctx, data, len);
@@ -206,8 +193,7 @@ rm_md5(const unsigned char *data, uint32_t len,
 }
 
 int
-rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
-{
+rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     size_t read, read_exp;
     char buf[RM_L1_CACHE_RECOMMENDED];
 
@@ -215,8 +201,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
     rewind(y);
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while (((read = fread(buf, 1, read_exp, x)) == read_exp) && bytes_n > 0)
-    {
+    while (((read = fread(buf, 1, read_exp, x)) == read_exp) && bytes_n > 0) {
         if (fwrite(buf, 1, read_exp, y) != read_exp)
             return -1;
         bytes_n -= read;
@@ -237,16 +222,15 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n)
 }
 
 int
-rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n)
-{
+rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     size_t read = 0, read_exp;
 
-    if (fseek(x, offset, SEEK_SET) != 0)
+    if (fseek(x, offset, SEEK_SET) != 0) {
         return -1;
+    }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while (((read = fread(dst, 1, read_exp, x)) == read_exp) && (bytes_n > 0))
-    {
+    while (((read = fread(dst, 1, read_exp, x)) == read_exp) && (bytes_n > 0)) {
         bytes_n -= read;
         dst += read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
@@ -264,24 +248,23 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n)
 }
 
 size_t
-rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
-{
-    if (fseek(f, offset, SEEK_SET) != 0)
+rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f) {
+    if (fseek(f, offset, SEEK_SET) != 0) {
         return 0;
+    }
     return fread(buf, size, items_n, f);
 }
 
 size_t
-rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
-{
-    if (fseek(f, offset, SEEK_SET) != 0)
+rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f) {
+    if (fseek(f, offset, SEEK_SET) != 0) {
         return 0;
+    }
     return fwrite(buf, size, items_n, f);
 }
 
 int
-rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset)
-{
+rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset) {
     size_t read, read_exp;
     size_t offset;
     char buf[RM_L1_CACHE_RECOMMENDED];
@@ -289,8 +272,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     offset = 0;
-    while (((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp) && bytes_n > 0)
-    {
+    while (((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp) && bytes_n > 0) {
         if (rm_fpwrite(buf, 1, read_exp, y_offset + offset, y) != read_exp)
             return -1;
         bytes_n -= read;
@@ -304,18 +286,19 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
             return -2;
         } else return 0;
     }
-    if (ferror(x) != 0)
+    if (ferror(x) != 0) {
         return -3;
-    if (ferror(y) != 0)
+    }
+    if (ferror(y) != 0) {
         return -4;
+    }
     return -13; /* too much requested */
 }
 
 /* If there are raw bytes to tx copy them here! */
 static int
 rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
-                                    size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n)
-{
+                                    size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n) {
     struct rm_delta_e           *delta_e;
 
     if ((cb_arg == NULL) || (delta_f == NULL)) {
@@ -517,8 +500,7 @@ copy_tail:
 }
 
 int
-rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate)
-{
+rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
 	int                 err;
 	pthread_attr_t      attr;
 
@@ -588,19 +570,19 @@ rm_roll_proc_cb_1(void *arg) {
 }
 
 int
-rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n)
-{
+rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) {
     size_t read = 0, read_exp;
     unsigned char buf1[RM_L1_CACHE_RECOMMENDED], buf2[RM_L1_CACHE_RECOMMENDED];
 
-    if (fseek(x, x_offset, SEEK_SET) != 0)
+    if (fseek(x, x_offset, SEEK_SET) != 0) {
         return -1;
-    if (fseek(y, y_offset, SEEK_SET) != 0)
+    }
+    if (fseek(y, y_offset, SEEK_SET) != 0) {
         return -2;
+    }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while (((read = fread(buf1, 1, read_exp, x)) == read_exp) && (bytes_n > 0))
-    {
+    while (((read = fread(buf1, 1, read_exp, x)) == read_exp) && (bytes_n > 0)) {
         if (fread(buf2, 1, read_exp, y) != read_exp) {
             return -3;
         }

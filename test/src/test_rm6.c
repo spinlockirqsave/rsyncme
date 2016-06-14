@@ -27,19 +27,16 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 2, 10, 13, 50, 64, 100, 127, 1
 					1200, 100000 };
 
 int
-test_rm_setup(void **state)
-{
+test_rm_setup(void **state) {
 	int 		err;
 	uint32_t	i, j;
 	FILE 		*f;
     unsigned long const seed = time(NULL);
 
 #ifdef DEBUG
-	err = rm_util_chdir_umask_openlog(
-		"../build/debug", 1, "rsyncme_test_6");
+	err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_6");
 #else
-	err = rm_util_chdir_umask_openlog(
-		"../build/release", 1, "rsyncme_test_6");
+	err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_6");
 #endif
 	if (err != 0)
 		exit(EXIT_FAILURE);
@@ -47,23 +44,20 @@ test_rm_setup(void **state)
 	*state = &rm_state;
 
 	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i)
-	{
+	for (; i < RM_TEST_FNAMES_N; ++i) {
 		f = fopen(rm_test_fnames[i], "rb+");
-		if (f == NULL)
-		{
+		if (f == NULL) {
 			/* file doesn't exist, create */
-			RM_LOG_INFO("Creating file [%s]",
-					rm_test_fnames[i]);
+			RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
 			f = fopen(rm_test_fnames[i], "wb");
-			if (f == NULL)
+			if (f == NULL) {
 				exit(EXIT_FAILURE);
+            }
 			j = rm_test_fsizes[i];
 			RM_LOG_INFO("Writing [%u] random bytes"
 			" to file [%s]", j, rm_test_fnames[i]);
 			srand(seed);
-			while (j--)
-			{
+			while (j--) {
 				fputc(rand(), f);
 			}		
 		} else {
@@ -76,35 +70,32 @@ test_rm_setup(void **state)
 	/* find biggest L */
 	i = 0;
 	j = 0;
-	for (; i < RM_TEST_L_BLOCKS_SIZE; ++i)
-		if (rm_test_L_blocks[i] > j) j = rm_test_L_blocks[i];
+	for (; i < RM_TEST_L_BLOCKS_SIZE; ++i) {
+		if (rm_test_L_blocks[i] > j) {
+            j = rm_test_L_blocks[i];
+        }
+    }
 
 	return 0;
 }
 
 int
-test_rm_teardown(void **state)
-{
+test_rm_teardown(void **state) {
 	int	i;
 	FILE	*f;
 	struct test_rm_state *rm_state;
 
 	rm_state = *state;
 	assert_true(rm_state != NULL);
-	if (RM_TEST_DELETE_FILES == 1)
-	{
+	if (RM_TEST_DELETE_FILES == 1) {
 		/* delete all test files */
 		i = 0;
-		for (; i < RM_TEST_FNAMES_N; ++i)
-		{
+		for (; i < RM_TEST_FNAMES_N; ++i) {
 			f = fopen(rm_test_fnames[i], "wb+");
-			if (f == NULL)
-			{
-				RM_LOG_ERR("Can't open file [%s]",
-					rm_test_fnames[i]);	
+			if (f == NULL) {
+				RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
 			} else {
-				RM_LOG_INFO("Removing file [%s]",
-					rm_test_fnames[i]);
+				RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
 				remove(rm_test_fnames[i]);
 			}
 		}
@@ -113,8 +104,7 @@ test_rm_teardown(void **state)
 }
 
 void
-test_rm_fast_check_roll_tail(void **state)
-{
+test_rm_fast_check_roll_tail(void **state) {
 	FILE                    *f;
 	int                     fd;
 	unsigned char	        buf[RM_TEST_L_MAX], a_k;
@@ -129,72 +119,52 @@ test_rm_fast_check_roll_tail(void **state)
 
 	/* test on all files */
 	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i)
-	{
+	for (; i < RM_TEST_FNAMES_N; ++i) {
 		fname = rm_test_fnames[i];
 		f = fopen(fname, "rb");
-		if (f == NULL)
-		{
+		if (f == NULL) {
 			RM_LOG_PERR("Can't open file [%s]", fname);
 		}
 		assert_true(f != NULL);
 		/* get file size */
 		fd = fileno(f);
-		if (fstat(fd, &fs) != 0)
-		{
+		if (fstat(fd, &fs) != 0) {
 			RM_LOG_PERR("Can't fstat file [%s]", fname);
 			fclose(f);
 			assert_true(1 == 0);
 		}
 		file_sz = fs.st_size; 
 		j = 0;
-		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j)
-		{
+		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of fast rolling "
-				"checksum: file [%s], size [%u], block "
-				"size L [%u], buffer [%u]", fname, file_sz,
-				L, RM_TEST_L_MAX);
-			if (file_sz < 2)
-			{
-				RM_LOG_WARN("File [%s] size [%u] is to small "
-				"for this test (shoud be > 1), skipping", fname, file_sz);
+			RM_LOG_INFO("Validating testing of fast rolling checksum: file [%s], size [%u], block "
+				"size L [%u], buffer [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			if (file_sz < 2) {
+				RM_LOG_WARN("File [%s] size [%u] is to small for this test (shoud be > 1), skipping", fname, file_sz);
 				continue;
 			}
-			if (RM_TEST_L_MAX < L + 1)
-			{
-				RM_LOG_WARN("Testing buffer [%u] is too "
-				"small for this test (should be > [%u]), "
-				" skipping file [%s]", RM_TEST_L_MAX, L,
-				fname);
+			if (RM_TEST_L_MAX < L + 1) {
+				RM_LOG_WARN("Testing buffer [%u] is too small for this test (should be > [%u]), skipping file [%s]", RM_TEST_L_MAX, L, fname);
 				continue;
 			}
-			if (L < 2)
-			{
-				RM_LOG_WARN("Block size L [%u] is too "
-				"small for this test (should be > 1), "
-				" skipping file [%s]", L, fname);
+			if (L < 2) {
+				RM_LOG_WARN("Block size L [%u] is too small for this test (should be > 1), skipping file [%s]", L, fname);
 				continue;
 			}
 
-            RM_LOG_INFO("Testing fast rolling checksum on tail: file "
-                    "[%s], size [%u], block size L [%u]", fname, file_sz, L);
+            RM_LOG_INFO("Testing fast rolling checksum on tail: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
 
             /* read last bytes from file, up to L or file_sz */
             read_now = rm_min(L, file_sz);
             a_k_pos = file_sz - read_now;
             read = rm_fpread(buf, sizeof(unsigned char), read_now, file_sz - read_now, f);
-            if (read != read_now)
-            {
-                if (feof(f))
-                {
+            if (read != read_now) {
+                if (feof(f)) {
                     RM_LOG_PERR("Error reading file [%s], EOF", fname);
                     assert_true(1 == 0);
                 }
-                if (ferror(f))
-                {
-                    RM_LOG_PERR("Error reading file [%s], "
-                            "error other than EOF", fname);
+                if (ferror(f)) {
+                    RM_LOG_PERR("Error reading file [%s], error other than EOF", fname);
                     assert_true(1 == 0);
                 }
                 RM_LOG_PERR("Error reading file [%s], skipping", fname);
@@ -211,16 +181,14 @@ test_rm_fast_check_roll_tail(void **state)
             tests_n = 0;
 
             read_left = read - 1;
-            while (read_left > 0)
-            {
+            while (read_left > 0) {
                 /* count tests */
                 ++tests_n;
 
                 /* read last bytes from file, up to L or file_sz */
                 read_now = read_left;
                 read = rm_fpread(buf, sizeof(unsigned char), read_now, file_sz - read_now, f);
-                if (read != read_now)
-                {
+                if (read != read_now) {
                     RM_LOG_PERR("Error reading file [%s], skipping", fname);
                     continue;
                 }
