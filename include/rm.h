@@ -158,6 +158,7 @@ struct rm_delta_reconstruct_ctx
                                 rec_by_tail, rec_by_zero_diff,
                                 delta_tail_n, delta_zero_diff_n;
     size_t                      L;
+    size_t                      copy_all_threshold, copy_tail_threshold, send_threshold;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -294,8 +295,7 @@ struct rm_session;
  *          element if less than this bytes to roll has left */
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
-        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold);
+        FILE *f_x, rm_delta_f *delta_f, size_t from);
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 

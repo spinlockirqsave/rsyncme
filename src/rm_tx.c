@@ -14,8 +14,7 @@
 
 int
 rm_tx_local_push(const char *x, const char *y,
-        size_t L, size_t send_threshold, rm_push_flags flags)
-{
+        size_t L, size_t send_threshold, rm_push_flags flags) {
 	int         err;
 	FILE        *f_x;   /* original file, to be synced into @y */
     FILE        *f_y;   /* file for taking non-overlapping blocks */
@@ -35,17 +34,14 @@ rm_tx_local_push(const char *x, const char *y,
     /*struct twlist_head      l = TWLIST_HEAD_INIT(l);*/
 
     f_x = fopen(x, "rb");
-	if (f_x == NULL)
+	if (f_x == NULL) {
         return -1;
-
+    }
 	f_y = fopen(y, "rb");
-	if (f_y == NULL)
-	{
-        if (flags & RM_BIT_0) /* force creation if @y doesn't exist? */
-        {
+	if (f_y == NULL) {
+        if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
             f_z = fopen(y, "wb+");
-            if (f_z == NULL)
-            {
+            if (f_z == NULL) {
                 err = -2;
                 goto err_exit;
             }
@@ -54,13 +50,11 @@ rm_tx_local_push(const char *x, const char *y,
             goto err_exit;
 	    }
     }
-    /* @y doesn't exist but --forced specified (f_y == NULL)
-     * or @y exists and is opened for reading  (f_y != NULL) */
+    /* @y doesn't exist but --forced specified (f_y == NULL) or @y exists and is opened for reading  (f_y != NULL) */
 
 	/* get input file size */
 	fd_x = fileno(f_x);
-	if (fstat(fd_x, &fs) != 0)
-	{
+	if (fstat(fd_x, &fs) != 0) {
 		err = -4;
 		goto err_exit;
 	}
@@ -68,25 +62,18 @@ rm_tx_local_push(const char *x, const char *y,
 
     /* get nonoverlapping checksums if we have @y */
     /*TWINIT_LIST_HEAD(&l);*/
-	if (f_y != NULL)
-    {
-        /* reference file exists, split it and calc checksums */
+	if (f_y != NULL) {  /* if reference file exists, split it and calc checksums */
         fd_y = fileno(f_y);
-	    if (fstat(fd_y, &fs) != 0)
-	    {
+	    if (fstat(fd_y, &fs) != 0) {
 		    err = -5;
 		    goto err_exit;
 	    }
 	    y_sz = fs.st_size;
 
-	    /* split @y file into non-overlapping blocks
-        * and calculate checksums on these blocks,
-        * expected number of blocks is */
+	    /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
 	    blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-		err = rm_rx_insert_nonoverlapping_ch_ch_ref(
-                f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
-        if (err != 0)
-        {
+		err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        if (err != 0) {
             err = -6;
             goto  err_exit;
         }
@@ -96,8 +83,7 @@ rm_tx_local_push(const char *x, const char *y,
     } else {
         /* @y doesn't exist and --forced flag is specified */
         err = rm_copy_buffered(f_x, f_z, x_sz);
-        if (err < 0)
-        {
+        if (err < 0) {
            err = -7;
            goto err_exit;
         }
@@ -113,14 +99,15 @@ rm_tx_local_push(const char *x, const char *y,
         goto err_exit;
     }
 
-    /* calc rolling checksums, produce delta vector
-     * and do file reconstruction in local session */
-    s = rm_session_create(RM_PUSH_LOCAL);
-    if (s == NULL)
-    {
+    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+    s = rm_session_create(RM_PUSH_LOCAL, L);
+    if (s == NULL) {
         err = -8;
         goto err_exit;
     }
+    /* init reconstruction context */
+    memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));
+    s->rec_ctx.L = L;
     /* setup private session's arguments */
     prvt = s->prvt;
     prvt->h = h;
@@ -133,18 +120,14 @@ rm_tx_local_push(const char *x, const char *y,
  
 	/* start tx delta vec thread (enqueue delta elements
      * and signal to delta_rx_tid thread */
-	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f,
-                                    s, PTHREAD_CREATE_JOINABLE);
-	if (err != 0)
-    {
+	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE);
+	if (err != 0) {
         err = -9;
         goto err_exit;
     }
     /* reconstruct */
-	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local,
-                                    s, PTHREAD_CREATE_JOINABLE);
-	if (err != 0)
-    {
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local, s, PTHREAD_CREATE_JOINABLE);
+	if (err != 0) {
         err = -10;
         goto err_exit;
     }

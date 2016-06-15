@@ -27,7 +27,6 @@ struct rm_session
 
     enum rm_session_type    type;
     struct rm_delta_reconstruct_ctx rec_ctx;
-    size_t                  L;
     void                    *prvt;
 };
 
@@ -115,7 +114,7 @@ rm_session_push_local_free(struct rm_session_push_local *prvt);
 
 /* @brief   Creates new session. */
 struct rm_session *
-rm_session_create(enum rm_session_type t);
+rm_session_create(enum rm_session_type t, size_t L);
 
 /* @brief   Frees session with it's private object, DON'T TOUCH
  *          session after this returns */ 

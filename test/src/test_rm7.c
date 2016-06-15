@@ -196,8 +196,8 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
-    /* session for loccal push */
-    s = rm_session_create(RM_PUSH_LOCAL);
+    /* session for local push */
+    s = rm_session_create(RM_PUSH_LOCAL, 0);
     if (s == NULL) {
         RM_LOG_ERR("Can't allocate session local push");
 	}
@@ -215,8 +215,7 @@ test_rm_teardown(void **state) {
     rm_state = *state;
     assert_true(rm_state != NULL);
     if (RM_TEST_7_DELETE_FILES == 1) {
-        /* delete all test files */
-        i = 0;
+        i = 0; /* delete all test files */
         for (; i < RM_TEST_FNAMES_N; ++i) {
             f = fopen(rm_test_fnames[i], "wb+");
             if (f == NULL) {
@@ -395,9 +394,7 @@ test_rm_rx_process_delta_element_1(void **state) {
             y_sz = fs.st_size;
             y = fname;
 
-            /* split @y file into non-overlapping blocks
-             * and calculate checksums on these blocks,
-             * expected number of blocks is */
+            /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, 0);
@@ -416,7 +413,9 @@ test_rm_rx_process_delta_element_1(void **state) {
             /* init reconstruction context */
             memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));
             s->rec_ctx.L = L;
-            s->L = L;
+            s->rec_ctx.copy_all_threshold = 0;
+            s->rec_ctx.copy_tail_threshold = 0;
+            s->rec_ctx.send_threshold = L;
             prvt = s->prvt;
             prvt->h = h;
             prvt->f_x = f_x;                        /* run on same file */
@@ -424,7 +423,7 @@ test_rm_rx_process_delta_element_1(void **state) {
             prvt->f_z = f_z->f;
             prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->rec_ctx.L, 0, 0, 0, s->rec_ctx.L);
+            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
             assert_int_equal(err, 0);
 
             /* verify s->prvt delta queue content */
@@ -765,20 +764,21 @@ test_rm_rx_process_delta_element_2(void **state) {
 
             /* run rolling checksum procedure on @x */
             s = rm_state->s;
-            s->L = L;
             /* init reconstruction context */
             memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));
             s->rec_ctx.L = L;
+            s->rec_ctx.copy_all_threshold = 0;
+            s->rec_ctx.copy_tail_threshold = 0;
+            s->rec_ctx.send_threshold = L;
             /* setup private session's arguments */
             prvt = s->prvt;
             prvt->h = h;
             prvt->f_x = f_x;                        /* run on @x */
             prvt->f_y = f_y;
             prvt->f_z = f_z->f;
-            //prvt->delta_f = rm_roll_proc_cb_1;
             prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, s->rec_ctx.L, 0, 0, 0, s->rec_ctx.L);
+            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
             assert_int_equal(err, 0);
 
             /* verify s->prvt delta queue content */
