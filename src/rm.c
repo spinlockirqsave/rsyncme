@@ -272,7 +272,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     offset = 0;
-    while (((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp) && bytes_n > 0) {
+    while (bytes_n > 0 && ((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp)) {
         if (rm_fpwrite(buf, 1, read_exp, y_offset + offset, y) != read_exp)
             return -1;
         bytes_n -= read;
@@ -281,7 +281,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) { /* read all bytes_n or EOF reached */
+    if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) {
             return -2;
         } else return 0;
