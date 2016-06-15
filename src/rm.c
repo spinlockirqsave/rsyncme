@@ -201,7 +201,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     rewind(y);
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while (((read = fread(buf, 1, read_exp, x)) == read_exp) && bytes_n > 0) {
+    while (bytes_n > 0 && ((read = fread(buf, 1, read_exp, x)) == read_exp)) {
         if (fwrite(buf, 1, read_exp, y) != read_exp)
             return -1;
         bytes_n -= read;
@@ -209,15 +209,18 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) { /* read all bytes_n or EOF reached */
+    if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) {
             return -2;
-        } else return 0;
+        }
+        return 0;
     }
-    if (ferror(x) != 0)
+    if (ferror(x) != 0) {
         return -3;
-    if (ferror(y) != 0)
+    }
+    if (ferror(y) != 0) {
         return -4;
+    }
     return -13; /* too much requested */
 }
 
@@ -230,20 +233,22 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while (((read = fread(dst, 1, read_exp, x)) == read_exp) && (bytes_n > 0)) {
+    while (bytes_n > 0 && ((read = fread(dst, 1, read_exp, x)) == read_exp)) {
         bytes_n -= read;
         dst += read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) { /* read all bytes_n or EOF reached */
+    if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) {
             return -2;
-        } else return 0;
+        }
+        return 0;
     }
-    if (ferror(x) != 0)
+    if (ferror(x) != 0) {
         return -3;
+    }
     return -13; /* too much requested */
 }
 
@@ -284,7 +289,8 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) {
             return -2;
-        } else return 0;
+        }
+        return 0;
     }
     if (ferror(x) != 0) {
         return -3;
