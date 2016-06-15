@@ -898,7 +898,7 @@ test_rm_rx_process_delta_element_2(void **state) {
                     RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, FILES are the same, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
