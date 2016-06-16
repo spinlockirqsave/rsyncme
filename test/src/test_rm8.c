@@ -13,9 +13,9 @@
 
 
 const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
-    "rm_f_1_ts7", "rm_f_2_ts7","rm_f_4_ts7", "rm_f_8_ts7", "rm_f_65_ts7",
-    "rm_f_100_ts7", "rm_f_511_ts7", "rm_f_512_ts7", "rm_f_513_ts7", "rm_f_1023_ts7",
-    "rm_f_1024_ts7", "rm_f_1025_ts7", "rm_f_4096_ts7", "rm_f_7787_ts7", "rm_f_20100_ts7"};
+    "rm_f_1_ts8", "rm_f_2_ts8","rm_f_4_ts8", "rm_f_8_ts8", "rm_f_65_ts8",
+    "rm_f_100_ts8", "rm_f_511_ts8", "rm_f_512_ts8", "rm_f_513_ts8", "rm_f_1023_ts8",
+    "rm_f_1024_ts8", "rm_f_1025_ts8", "rm_f_4096_ts8", "rm_f_7787_ts8", "rm_f_20100_ts8"};
 
 uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
                                                 100, 511, 512, 513, 1023,
@@ -39,8 +39,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
     i = 0;
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb");
-        if (f == NULL) {
-            /* file doesn't exist, create */
+        if (f == NULL) {    /* if file doesn't exist, create */
             RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb+");
             if (f == NULL) {
@@ -145,8 +144,7 @@ test_rm_setup(void **state) {
     seed = time(NULL);
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb+");
-        if (f == NULL) {
-            /* file doesn't exist, create */
+        if (f == NULL) {    /* if file doesn't exist, create */
             RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb");
             if (f == NULL) {
@@ -164,10 +162,9 @@ test_rm_setup(void **state) {
         fclose(f);
     }
 
-    /* find biggest L */
     i = 0;
     j = 0;
-    for (; i < RM_TEST_L_BLOCKS_SIZE; ++i) {
+    for (; i < RM_TEST_L_BLOCKS_SIZE; ++i) {    /* find biggest L */
         if (rm_test_L_blocks[i] > j) j = rm_test_L_blocks[i];
     }
     buf = malloc(j);
@@ -183,7 +180,6 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
-    /* session for local push */
     s = rm_session_create(RM_PUSH_LOCAL, 0);
     if (s == NULL) {
         RM_LOG_ERR("Can't allocate session local push");
@@ -261,10 +257,9 @@ test_rm_tx_local_push_2(void **state) {
             RM_LOG_PERR("Can't open file [%s]", f_y_name);
         }
         assert_true(f_y != NULL);
-        /* get file size */
         fd_y = fileno(f_y);
         memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_y, &fs) != 0) {
+        if (fstat(fd_y, &fs) != 0) {    /* get file size */
             RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
             fclose(f_y);
             assert_true(1 == 0);
@@ -285,25 +280,22 @@ test_rm_tx_local_push_2(void **state) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
         }
         f_x = f_copy;
-        /* get @x size */
         fd_x = fileno(f_x);
         memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_x, &fs) != 0) {
+        if (fstat(fd_x, &fs) != 0) {    /* get @x size */
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
             fclose(f_x);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        /* read first byte */
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         cx_copy = cx;   /* remember first byte for recreation */
-        /* change first byte, so ZERO_DIFF delta can't happen in this test, therefore this would be an error in this test */
-        cx = (cx + 1) % 256;
+        cx = (cx + 1) % 256; /* change first byte, so ZERO_DIFF delta can't happen in this test, therefore this would be an error in this test */
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
@@ -387,8 +379,7 @@ test_rm_tx_local_push_2(void **state) {
                 ++k;
             }
 
-            /* and unlink/remove result file */
-            if (RM_TEST_8_DELETE_FILES == 1) {
+            if (RM_TEST_8_DELETE_FILES == 1) { /* and unlink/remove result file */
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     assert_true(1 == 0);
