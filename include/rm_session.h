@@ -60,9 +60,9 @@ struct rm_session_push_tx
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
-    size_t                  copy_all_threshold;
+/*    size_t                  copy_all_threshold;
     size_t                  copy_tail_threshold;
-    size_t                  send_threshold;
+    size_t                  send_threshold; */
 };
 
 /* Receiver of file (delta vector) */
@@ -92,9 +92,9 @@ struct rm_session_push_local
     int                     delta_rx_status;
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
     rm_delta_f              *delta_rx_f;        /* delta rx callback (dequeues delta elements and does data reconstruction) */
-    size_t                  copy_all_threshold;
+/*    size_t                  copy_all_threshold;
     size_t                  copy_tail_threshold;
-    size_t                  send_threshold;
+    size_t                  send_threshold; */
 };
 
 void

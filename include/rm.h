@@ -289,10 +289,14 @@ struct rm_session;
  * @param   delta_f - tx/reconstruct callback,
  * @param   L - block size,
  * @param   from - starting point, 0 to start from beginning
- * @param   copy_all_threashold - single RM_DELTA_ELEMENT_RAW_BYTES element
+ * PARAMETERS TAKEN FROM session's RECONSTRUCTION CONTEXT
+ * @param   copy_all_threshold - single RM_DELTA_ELEMENT_RAW_BYTES element
  *          will be passed to delta_f callback if file f_x size is below this threshold,
- * @param   copy_tail_threashold - tail will be sent as single RM_DELTA_ELEMENT_RAW_BYTES
- *          element if less than this bytes to roll has left */
+ * @param   copy_tail_threshold - tail will be sent as single RM_DELTA_ELEMENT_RAW_BYTES
+ *          element if less than this bytes to roll has left
+ * @param   send_threshold - raw bytes will not be sent if there is less than this number of them
+ *          in the buffer unless delta reference elements is being produced, that means
+ *          raw bytes will be sent if delta element comes or @send_threshold has been reached */
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from);

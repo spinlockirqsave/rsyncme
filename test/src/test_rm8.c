@@ -21,7 +21,7 @@ uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
                                                 100, 511, 512, 513, 1023,
                                                 1024, 1025, 4096, 7787, 20100 };
 
-uint32_t
+size_t
 rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
                     24, 32, 50, 64, 100, 127, 128, 129,
                     130, 200, 400, 499, 500, 501, 511, 512,
@@ -223,6 +223,7 @@ test_rm_teardown(void **state) {
  *          when x file is same as y (file has no changes). */
 void
 test_rm_tx_local_push_1(void **state) {
+    (void)state;
     return;
 }
 
@@ -234,16 +235,14 @@ test_rm_tx_local_push_2(void **state) {
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
-    unsigned char           cx, cz;
+    unsigned char           cx, cz, cx_copy;
     FILE                    *f_copy, *f_x, *f_y;
-    struct test_rm_file     *f_z;
-    int                     fd_x, fd_y, fd_z;
-    size_t                  i, j, k, L, f_x_sz, f_y_sz, f_z_sz;
+    int                     fd_x, fd_y;
+    size_t                  i, j, k, L, f_x_sz, f_y_sz;
     struct test_rm_state    *rm_state;
     struct stat             fs;
-    struct rm_session_push_local    *prvt;
     rm_push_flags                   flags;
-    size_t                          send_threshold;
+    size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
 
     err = test_rm_copy_files_and_postfix("_test_1");
     if (err != 0) {
@@ -254,11 +253,7 @@ test_rm_tx_local_push_2(void **state) {
     rm_state = *state;
     assert_true(rm_state != NULL);
 
-    /* a storage for our result file metainfo */
-    f_z = &rm_state->f_z;
-
-    /* test on all files */
-    i = 0;
+    i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f_y_name = rm_test_fnames[i];
         f_y = fopen(f_y_name, "rb");
@@ -283,7 +278,7 @@ test_rm_tx_local_push_2(void **state) {
 
         /* change byte in copy */
         strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX);
-        strncpy(buf_x_name + strlen(buf_x_name), "_test_2", 49);
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_1", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
@@ -306,6 +301,7 @@ test_rm_tx_local_push_2(void **state) {
             fclose(f_y);
             continue;
         }
+        cx_copy = cx;   /* remember first byte for recreation */
         /* change first byte, so ZERO_DIFF delta can't happen in this test, therefore this would be an error in this test */
         cx = (cx + 1) % 256;
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
@@ -328,81 +324,99 @@ test_rm_tx_local_push_2(void **state) {
                 continue;
             }
             RM_LOG_INFO("Testing local push #1: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            copy_all_threshold = 0;
+            copy_tail_threshold = 0;
+            send_threshold = L;
+            flags = 0;
 
-  err = rm_tx_local_push(buf_x_name, f_y_name, L, send_threshold, flags);
+            fclose(f_x);
+            fclose(f_y);
+            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags);
             assert_int_equal(err, 0);
 
+            f_x = fopen(buf_x_name, "rb+");
+            if (f_x == NULL) {
+                RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            }
+            assert_true(f_x != NULL && "Can't open file @x");
+            fd_x = fileno(f_x);
+            f_y = fopen(f_y_name, "rb");
+            if (f_y == NULL) {
+                RM_LOG_PERR("Can't open file [%s]", f_y_name);
+            }
+            assert_true(f_y != NULL && "Can't open file @y");
+            fd_y = fileno(f_y);
 
             /* verify files size */
-            if (fflush(f_z->f) !=0) {
-                RM_LOG_PERR("Can't fflush file [%s]", f_z->name);
-                fclose(f_x);
-                fclose(f_y);
-                fclose(f_z->f);
-                assert_true(1 == 0);
-            }
             memset(&fs, 0, sizeof(fs)); /* get @x size */
             if (fstat(fd_x, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
                 fclose(f_x);
                 fclose(f_y);
-                fclose(f_z->f);
                 assert_true(1 == 0);
             }
             f_x_sz = fs.st_size;
-            fd_z = fileno(f_z->f);  /* get @z size */
             memset(&fs, 0, sizeof(fs));
-            if (fstat(fd_z, &fs) != 0) {
-                RM_LOG_PERR("Can't fstat file [%s]", f_z->name);
+            if (fstat(fd_y, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
                 fclose(f_x);
                 fclose(f_y);
-                fclose(f_z->f);
                 assert_true(1 == 0);
             }
-            f_z_sz = fs.st_size;
-            assert_true(f_x_sz == f_z_sz && "File sizes differ!");
+            f_y_sz = fs.st_size;
+            assert_true(f_x_sz == f_y_sz && "File sizes differ!");
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, prvt->f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
-                    fclose(f_z->f);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, prvt->f_z) != 1) {
-                    RM_LOG_CRIT("Error reading file [%s]!", f_z->name);
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
-                    fclose(f_z->f);
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n");
+                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
 
-            /* move file pointer back to the beginning */
-            rewind(f_x);
-            rewind(f_y);
-
-            /* close result file */
-            fclose(f_z->f);
-
-            /* and unlink/remove */
+            /* and unlink/remove result file */
             if (RM_TEST_8_DELETE_FILES == 1) {
-                if (unlink(f_z->name) != 0) {
-                    RM_LOG_ERR("Can't unlink result file [%s]", f_z->name);
+                if (unlink(f_y_name) != 0) {
+                    RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     assert_true(1 == 0);
                 }
+            }
+            RM_LOG_INFO("PASSED test #1: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+
+            f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
+            f_y = fopen(f_y_name, "wb+");
+            if (f_y == NULL) {
+                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+            }
+            assert_true(f_y != NULL);
+            err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
+            if (err != 0) {
+                RM_LOG_ERR("Error copying file @x to @y for next test");
+                assert_true(1 == 0 && "Error copying file @x to @y for next test");
+            }
+            if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, 0, f_y) != 1) {
+                RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
+                fclose(f_x);
+                fclose(f_y);
+                continue;
             }
 		}
 		fclose(f_x);
         fclose(f_y);
-        RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all blocks sizes, files are the same", f_y_name, f_z->name);
+        RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same", buf_x_name, f_y_name);
 	}
 
     if (RM_TEST_8_DELETE_FILES == 1) {

@@ -550,7 +550,7 @@ int
 rm_roll_proc_cb_1(void *arg) {
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
     const struct rm_session         *s;
-    struct rm_session_push_local    *prvt;
+    struct rm_session_push_local    *prvt_local;
     struct rm_delta_e               *delta_e;
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
@@ -572,20 +572,17 @@ rm_roll_proc_cb_1(void *arg) {
         assert(delta_e != NULL);
         return -3;
     }
-    prvt = (struct rm_session_push_local*) s->prvt;
-    if (prvt == NULL) {
+    prvt_local = (struct rm_session_push_local*) s->prvt;
+    if (prvt_local == NULL) {
         RM_LOG_CRIT("WTF! NULL private session?! Have you added  some neat code recently?");
-        assert(prvt != NULL);
+        assert(prvt_local != NULL);
         return -4;
     }
 
-    /* enqueue delta (and move ownership to delta_rx_tid!) */
-    pthread_mutex_lock(&prvt->tx_delta_e_queue_mutex);
-
-    twfifo_enqueue(&delta_e->link, &prvt->tx_delta_e_queue);
-    pthread_cond_signal(&prvt->tx_delta_e_queue_signal);
-
-    pthread_mutex_unlock(&prvt->tx_delta_e_queue_mutex);
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);    /* enqueue delta (and move ownership to delta_rx_tid!) */
+    twfifo_enqueue(&delta_e->link, &prvt_local->tx_delta_e_queue);
+    pthread_cond_signal(&prvt_local->tx_delta_e_queue_signal);
+    pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
 
     return 0;
 }
