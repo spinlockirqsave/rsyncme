@@ -334,11 +334,12 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
 
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
-        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold) {
-    int err;
+        FILE *f_x, rm_delta_f *delta_f, size_t from) {
+    size_t          L;
+    size_t          copy_all_threshold, copy_tail_threshold, send_threshold;
+    int             err;
     uint32_t        hash;
-    unsigned char   buf[L];
+    unsigned char   *buf;
     int             fd;
 	struct stat     fs;
     size_t          file_sz, send_left, read_now, read, read_begin = 0;
@@ -358,10 +359,14 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     e = NULL;
     a_k_pos = 0;
 
-    if (L == 0 || s == NULL) {
+    if (s == NULL) {
         return -1;
     }
     cb_arg.s = s;                           /* setup callback argument */
+    L = s->rec_ctx.L;
+    copy_all_threshold  = s->rec_ctx.copy_all_threshold;
+    copy_tail_threshold = s->rec_ctx.copy_tail_threshold;
+    send_threshold      = s->rec_ctx.send_threshold;
 
     fd = fileno(f_x);
     if (fstat(fd, &fs) != 0) {
@@ -375,6 +380,10 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     if (send_left < copy_all_threshold) {   /* copy all bytes */
         a_kL_pos = 0;
         goto copy_tail;
+    }
+    buf = malloc(L * sizeof(unsigned char));
+    if (buf == NULL) {
+        return -4;
     }
     a_k_pos = a_kL_pos = 0;
     match = 1;
@@ -488,6 +497,9 @@ end:
     if (raw_bytes != NULL) {
         free(raw_bytes);
     }
+    if (buf != NULL) {
+        free(buf);
+    }
     return 0;
 
 copy_tail:
@@ -501,6 +513,9 @@ copy_tail:
     }
     if (raw_bytes != NULL) {
         free(raw_bytes);
+    }
+    if (buf != NULL) {
+        free(buf);
     }
     return 0;
 }
@@ -535,7 +550,7 @@ int
 rm_roll_proc_cb_1(void *arg) {
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
     const struct rm_session         *s;
-    struct rm_session_push_local    *prvt;
+    struct rm_session_push_local    *prvt_local;
     struct rm_delta_e               *delta_e;
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
@@ -557,20 +572,17 @@ rm_roll_proc_cb_1(void *arg) {
         assert(delta_e != NULL);
         return -3;
     }
-    prvt = (struct rm_session_push_local*) s->prvt;
-    if (prvt == NULL) {
+    prvt_local = (struct rm_session_push_local*) s->prvt;
+    if (prvt_local == NULL) {
         RM_LOG_CRIT("WTF! NULL private session?! Have you added  some neat code recently?");
-        assert(prvt != NULL);
+        assert(prvt_local != NULL);
         return -4;
     }
 
-    /* enqueue delta (and move ownership to delta_rx_tid!) */
-    pthread_mutex_lock(&prvt->tx_delta_e_queue_mutex);
-
-    twfifo_enqueue(&delta_e->link, &prvt->tx_delta_e_queue);
-    pthread_cond_signal(&prvt->tx_delta_e_queue_signal);
-
-    pthread_mutex_unlock(&prvt->tx_delta_e_queue_mutex);
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);    /* enqueue delta (and move ownership to delta_rx_tid!) */
+    twfifo_enqueue(&delta_e->link, &prvt_local->tx_delta_e_queue);
+    pthread_cond_signal(&prvt_local->tx_delta_e_queue_signal);
+    pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
 
     return 0;
 }

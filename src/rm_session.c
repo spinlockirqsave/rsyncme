@@ -12,10 +12,8 @@
 
 
 void
-rm_session_push_rx_init(struct rm_session_push_rx *prvt)
-{
-    if (prvt == NULL)
-    {
+rm_session_push_rx_init(struct rm_session_push_rx *prvt) {
+    if (prvt == NULL) {
         return;
     }
     TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
@@ -25,10 +23,8 @@ rm_session_push_rx_init(struct rm_session_push_rx *prvt)
 }
 
 void
-rm_session_push_tx_init(struct rm_session_push_tx *prvt)
-{
-    if (prvt == NULL)
-    {
+rm_session_push_tx_init(struct rm_session_push_tx *prvt) {
+    if (prvt == NULL) {
         return;
     }
     memset(prvt, 0, sizeof(*prvt));
@@ -39,10 +35,8 @@ rm_session_push_tx_init(struct rm_session_push_tx *prvt)
 }
 /* frees private session, DON'T TOUCH private session after this returns */ 
 void
-rm_session_push_tx_free(struct rm_session_push_tx *prvt)
-{
-    if (prvt == NULL)
-    {
+rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
+    if (prvt == NULL) {
         return;
     }
     /* queue of delta elements MUST be empty now */
@@ -55,10 +49,8 @@ rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 }
 
 void
-rm_session_push_local_init(struct rm_session_push_local *prvt)
-{
-    if (prvt == NULL)
-    {
+rm_session_push_local_init(struct rm_session_push_local *prvt) {
+    if (prvt == NULL) {
         return;
     }
     memset(prvt, 0, sizeof(*prvt));
@@ -69,10 +61,8 @@ rm_session_push_local_init(struct rm_session_push_local *prvt)
 }
 /* frees private session, DON'T TOUCH private session after this returns */ 
 void
-rm_session_push_local_free(struct rm_session_push_local *prvt)
-{
-    if (prvt == NULL)
-    {
+rm_session_push_local_free(struct rm_session_push_local *prvt) {
+    if (prvt == NULL) {
         return;
     }
     /* queue of delta elements MUST be empty now */
@@ -86,39 +76,43 @@ rm_session_push_local_free(struct rm_session_push_local *prvt)
 
 /* TODO: generate GUID here */
 struct rm_session *
-rm_session_create(enum rm_session_type t)
-{
-	struct rm_session   *s;
+rm_session_create(enum rm_session_type t, size_t L) {
+    struct rm_session   *s;
 
 	s = malloc(sizeof *s);
-	if (s == NULL)
+	if (s == NULL) {
 		return NULL;
+    }
 	memset(s, 0, sizeof(*s));
     s->type = t;
+    s->rec_ctx.L = L;
 	pthread_mutex_init(&s->session_mutex, NULL);
 
-    switch (t)
-    {
+    switch (t) {
         case RM_PUSH_RX:
             s->prvt = malloc(sizeof(struct rm_session_push_rx));
-            if (s->prvt == NULL)
+            if (s->prvt == NULL) {
                 goto fail;
+            }
             break;
         case RM_PULL_RX:
             s->prvt = malloc(sizeof(struct rm_session_pull_rx));
-            if (s->prvt == NULL)
+            if (s->prvt == NULL) {
                 goto fail;
+            }
             break;
         case RM_PUSH_TX:
             s->prvt = malloc(sizeof(struct rm_session_push_tx));
-            if (s->prvt == NULL)
+            if (s->prvt == NULL) {
                 goto fail;
+            }
             rm_session_push_tx_init(s->prvt);
             break;
         case RM_PUSH_LOCAL:
             s->prvt = malloc(sizeof(struct rm_session_push_local));
-            if (s->prvt == NULL)
+            if (s->prvt == NULL) {
                 goto fail;
+            }
             rm_session_push_local_init(s->prvt);
             break;
         default:
@@ -127,8 +121,7 @@ rm_session_create(enum rm_session_type t)
     return s;
 
 fail:
-    if (s->prvt)
-    {
+    if (s->prvt) {
         free(s->prvt);
     }
     pthread_mutex_destroy(&s->session_mutex);
@@ -137,18 +130,17 @@ fail:
 }
 
 void
-rm_session_free(struct rm_session *s)
-{
+rm_session_free(struct rm_session *s) {
     enum rm_session_type    t;
 
 	assert(s != NULL);
 	pthread_mutex_destroy(&s->session_mutex);
     t = s->type;
-    if (s->prvt == NULL)
+    if (s->prvt == NULL) {
         goto end;
+    }
 
-    switch (t)
-    {
+    switch (t) {
         case RM_PUSH_RX:
             break;
         case RM_PULL_RX:
@@ -170,8 +162,7 @@ end:
 }
 
 void *
-rm_session_ch_ch_tx_f(void *arg)
-{
+rm_session_ch_ch_tx_f(void *arg) {
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
@@ -183,8 +174,7 @@ exit:
 }
 
 void *
-rm_session_ch_ch_rx_f(void *arg)
-{
+rm_session_ch_ch_rx_f(void *arg) {
 	struct rm_session *s =
 			(struct rm_session *)arg;
 	assert(s != NULL);
@@ -196,8 +186,7 @@ exit:
 }
 
 void *
-rm_session_delta_tx_f(void *arg)
-{
+rm_session_delta_tx_f(void *arg) {
     struct twhlist_head     *h;             /* nonoverlapping checkums */
     FILE                    *f_x;           /* file on which rolling is performed */
     rm_delta_f              *delta_f;       /* tx/reconstruct callback */
@@ -206,45 +195,32 @@ rm_session_delta_tx_f(void *arg)
     struct rm_session_push_local    *prvt_local;
     struct rm_session_push_tx       *prvt_tx;
     int err;
-    size_t                  copy_all_threshold, copy_tail_threshold, send_threshold;
 
     s = (struct rm_session*) arg;
     assert(s != NULL);
 
     t = s->type;
 
-    switch (t)
-    {
+    switch (t) {
         case RM_PUSH_LOCAL:
 
             prvt_local = s->prvt;
-            if (prvt_local == NULL)
-            {
+            if (prvt_local == NULL) {
                 goto exit;
             }
-            fclose(prvt_local->f_y);    /* close @f_y in session tx thread for local push,
-                                         * it was opened in rm_tx_local_push for nonoverlapping
-                                         * checksums to be computed */
             h       = prvt_local->h;
             f_x     = prvt_local->f_x;
             delta_f = prvt_local->delta_f;
-            copy_all_threshold = prvt_local->copy_all_threshold;
-            copy_tail_threshold = prvt_local->copy_tail_threshold;
-            send_threshold = prvt_local->send_threshold;
             break;
 
         case RM_PUSH_TX:
             prvt_tx = s->prvt;
-            if (prvt_tx == NULL)
-            {
+            if (prvt_tx == NULL) {
                 goto exit;
             }
             h       = prvt_tx->h;
             f_x     = prvt_tx->f_x;
             delta_f = prvt_tx->delta_f;
-            copy_all_threshold = prvt_tx->copy_all_threshold;
-            copy_tail_threshold = prvt_tx->copy_tail_threshold;
-            send_threshold = prvt_tx->send_threshold;
             break;
 
         default:
@@ -252,7 +228,7 @@ rm_session_delta_tx_f(void *arg)
     }
 
     /* 1. run rolling checksum procedure */
-    err = rm_rolling_ch_proc(s, h, f_x, delta_f, s->L, 0, copy_all_threshold, copy_tail_threshold, send_threshold);
+    err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0);
 
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_tx_status = err;
@@ -264,9 +240,7 @@ exit:
 
 
 void *
-rm_session_delta_rx_f_local(void *arg)
-{
-    FILE                            *f_x;           /* file on which rolling is performed */              
+rm_session_delta_rx_f_local(void *arg) {
     FILE                            *f_y;           /* reference file, on which reconstruction is performed */
     FILE                            *f_z;           /* result file */
     struct rm_session_push_local    *prvt_local;
@@ -295,8 +269,7 @@ rm_session_delta_rx_f_local(void *arg)
         goto err_exit;
     }
     prvt_local = s->prvt;
-    if (prvt_local == NULL)
-    {
+    if (prvt_local == NULL) {
         pthread_mutex_unlock(&s->session_mutex);
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
@@ -307,7 +280,7 @@ rm_session_delta_rx_f_local(void *arg)
     f_y         = prvt_local->f_y;
     f_z         = prvt_local->f_z;
     /* init reconstruction context */
-    rec_ctx.L = s->L;
+    rec_ctx.L = s->rec_ctx.L;
     pthread_mutex_unlock(&s->session_mutex);
 
     assert(f_y != NULL);
@@ -325,8 +298,7 @@ rm_session_delta_rx_f_local(void *arg)
     pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);
     q = &prvt_local->tx_delta_e_queue;
 
-    while (bytes_to_rx > 0) { /* our predicate */
-        pthread_cond_wait(&prvt_local->tx_delta_e_queue_signal, &prvt_local->tx_delta_e_queue_mutex);
+    while (bytes_to_rx > 0) {
         if (bytes_to_rx == 0) { /* checking for missing signal is not needed here as bytes_to_rx is local variable */
             pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
             goto done;
@@ -342,10 +314,20 @@ rm_session_delta_rx_f_local(void *arg)
             }
             bytes_to_rx -= delta_e->raw_bytes_n;
         }
-        assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == bytes_to_rx);
-        assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
+        if (bytes_to_rx > 0) {
+            pthread_cond_wait(&prvt_local->tx_delta_e_queue_signal, &prvt_local->tx_delta_e_queue_mutex);
+        }
     }
     pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+
+done:
+    pthread_mutex_lock(&s->session_mutex);
+    assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == prvt_local->f_x_sz);
+    assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
+    memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
+    prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
+    pthread_mutex_unlock(&s->session_mutex);
+	pthread_exit(NULL);
 
 err_exit:
 
@@ -353,17 +335,10 @@ err_exit:
     prvt_local->delta_rx_status = status;
     pthread_mutex_unlock(&s->session_mutex);
 	pthread_exit(NULL);
-done:
-    pthread_mutex_lock(&s->session_mutex);
-    memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
-    prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
-    pthread_mutex_unlock(&s->session_mutex);
-	pthread_exit(NULL);
 }
 
 void *
-rm_session_delta_rx_f_remote(void *arg)
-{
+rm_session_delta_rx_f_remote(void *arg) {
     FILE                            *f_y;           /* file on which reconstruction is performed */
     //twfifo_queue                    *q;
     //const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
@@ -382,8 +357,7 @@ rm_session_delta_rx_f_remote(void *arg)
         goto exit;
     }
     prvt_rx = s->prvt;
-    if (prvt_rx == NULL)
-    {
+    if (prvt_rx == NULL) {
         goto exit;
     }
     assert(prvt_rx != NULL);

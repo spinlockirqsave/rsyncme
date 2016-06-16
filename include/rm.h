@@ -158,6 +158,7 @@ struct rm_delta_reconstruct_ctx
                                 rec_by_tail, rec_by_zero_diff,
                                 delta_tail_n, delta_zero_diff_n;
     size_t                      L;
+    size_t                      copy_all_threshold, copy_tail_threshold, send_threshold;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -288,14 +289,17 @@ struct rm_session;
  * @param   delta_f - tx/reconstruct callback,
  * @param   L - block size,
  * @param   from - starting point, 0 to start from beginning
- * @param   copy_all_threashold - single RM_DELTA_ELEMENT_RAW_BYTES element
+ * PARAMETERS TAKEN FROM session's RECONSTRUCTION CONTEXT
+ * @param   copy_all_threshold - single RM_DELTA_ELEMENT_RAW_BYTES element
  *          will be passed to delta_f callback if file f_x size is below this threshold,
- * @param   copy_tail_threashold - tail will be sent as single RM_DELTA_ELEMENT_RAW_BYTES
- *          element if less than this bytes to roll has left */
+ * @param   copy_tail_threshold - tail will be sent as single RM_DELTA_ELEMENT_RAW_BYTES
+ *          element if less than this bytes to roll has left
+ * @param   send_threshold - raw bytes will not be sent if there is less than this number of them
+ *          in the buffer unless delta reference elements is being produced, that means
+ *          raw bytes will be sent if delta element comes or @send_threshold has been reached */
 int
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, uint32_t L, size_t from,
-        size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold);
+        FILE *f_x, rm_delta_f *delta_f, size_t from);
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 

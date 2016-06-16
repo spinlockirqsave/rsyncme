@@ -27,7 +27,6 @@ struct rm_session
 
     enum rm_session_type    type;
     struct rm_delta_reconstruct_ctx rec_ctx;
-    size_t                  L;
     void                    *prvt;
 };
 
@@ -61,9 +60,9 @@ struct rm_session_push_tx
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
-    size_t                  copy_all_threshold;
+/*    size_t                  copy_all_threshold;
     size_t                  copy_tail_threshold;
-    size_t                  send_threshold;
+    size_t                  send_threshold; */
 };
 
 /* Receiver of file (delta vector) */
@@ -93,9 +92,9 @@ struct rm_session_push_local
     int                     delta_rx_status;
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
     rm_delta_f              *delta_rx_f;        /* delta rx callback (dequeues delta elements and does data reconstruction) */
-    size_t                  copy_all_threshold;
+/*    size_t                  copy_all_threshold;
     size_t                  copy_tail_threshold;
-    size_t                  send_threshold;
+    size_t                  send_threshold; */
 };
 
 void
@@ -115,7 +114,7 @@ rm_session_push_local_free(struct rm_session_push_local *prvt);
 
 /* @brief   Creates new session. */
 struct rm_session *
-rm_session_create(enum rm_session_type t);
+rm_session_create(enum rm_session_type t, size_t L);
 
 /* @brief   Frees session with it's private object, DON'T TOUCH
  *          session after this returns */ 

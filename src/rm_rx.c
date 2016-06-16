@@ -311,16 +311,14 @@ rm_rx_delta_e_reconstruct_f_1(void *arg)
 
 int
 rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
-        struct rm_delta_reconstruct_ctx *ctx)
-{
+        struct rm_delta_reconstruct_ctx *ctx) {
     size_t  z_offset;   /* current offset in @f_z */
     assert(delta_e != NULL && f_y != NULL && f_z != NULL && ctx != NULL);
     if (delta_e == NULL || f_y == NULL || f_z == NULL || ctx == NULL) {
         return -1;
     }
     z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
-    switch (delta_e->type)
-    {
+    switch (delta_e->type) {
         case RM_DELTA_ELEMENT_REFERENCE:
             /* copy referenced bytes from @f_y to @f_z */
             if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) {

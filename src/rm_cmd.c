@@ -20,8 +20,7 @@
 
 #define RM_CMD_F_LEN_MAX 100
 
-void rsyncme_usage(const char *name)
-{
+void rsyncme_usage(const char *name) {
 	if (!name)
 		return;
 
@@ -55,14 +54,12 @@ void rsyncme_usage(const char *name)
 }
 
 static void
-rsyncme_range_error(char argument, unsigned long value)
-{
+rsyncme_range_error(char argument, unsigned long value) {
 	fprintf(stderr, "argument [%c] too big [%lu]\n", argument, value);
 }
 
 int
-main( int argc, char *argv[])
-{
+main( int argc, char *argv[]) {
 	int     c, idx, res;
 	char	x[RM_CMD_F_LEN_MAX] = {0};
 	char	y[RM_CMD_F_LEN_MAX] = {0};
@@ -80,8 +77,7 @@ main( int argc, char *argv[])
 	size_t              L = RM_DEFAULT_L;
     rm_push_flags       push_flags = 0;
 
-	if (argc < 4)
-	{
+	if (argc < 4) {
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -96,10 +92,8 @@ main( int argc, char *argv[])
 	};
 
 	// parse optional command line arguments
-	while ((c = getopt_long(argc, argv, "x:y:i:l:s", long_options, &option_index)) != -1)
-	{
-		switch (c)
-		{
+	while ((c = getopt_long(argc, argv, "x:y:i:l:s", long_options, &option_index)) != -1) {
+		switch (c) {
 
 		case 0:
 			// If this option set a flag, turn flag on in ioctl struct
@@ -136,8 +130,7 @@ main( int argc, char *argv[])
 			flags |= RM_BIT_2;
 			break;
 		case 'i':
-			if (inet_aton(optarg, &remote_addr.sin_addr) == 0)
-			{
+			if (inet_aton(optarg, &remote_addr.sin_addr) == 0) {
 				fprintf(stderr, "Invalid IPv4 address\n");
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -147,14 +140,12 @@ main( int argc, char *argv[])
 
 		case 'l':
 			helper = strtoul(optarg, &pCh, 10);
-			if (helper > 0x10000 - 1)
-			{
+			if (helper > 0x10000 - 1) {
 				rsyncme_range_error(c, helper);
 				exit(EXIT_FAILURE);
 			}
 			// check
-			if ((pCh == optarg) || (*pCh != '\0'))
-			{
+			if ((pCh == optarg) || (*pCh != '\0')) {
 				fprintf(stderr, "Invalid argument\n");
 				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
 				rsyncme_usage(argv[0]);
@@ -163,14 +154,12 @@ main( int argc, char *argv[])
 			L = helper;
 		case 's':
 			helper = strtoul(optarg, &pCh, 10);
-			if (helper > 0x10000 - 1)
-			{
+			if (helper > 0x10000 - 1) {
 				rsyncme_range_error(c, helper);
 				exit(EXIT_FAILURE);
 			}
 			// check
-			if ((pCh == optarg) || (*pCh != '\0'))
-			{
+			if ((pCh == optarg) || (*pCh != '\0')) {
 				fprintf(stderr, "Invalid argument\n");
 				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
 				rsyncme_usage(argv[0]);
@@ -200,26 +189,22 @@ main( int argc, char *argv[])
 	}
 
 	// parse non-optional arguments
-	for (idx = optind; idx < argc; idx++)
+	for (idx = optind; idx < argc; idx++) {
 		fprintf(stderr, "Non-option argument[ %s]\n", argv[idx]);
+    }
 
 	// validation
-	if ((argc - optind) != 1)
-	{
-		fprintf(stderr, "\nInvalid number of non-option arguments."
-				"\nThere should be 1 non-option arguments: "
-						"<push|pull>\n");
+	if ((argc - optind) != 1) {
+		fprintf(stderr, "\nInvalid number of non-option arguments.\nThere should be 1 non-option arguments: <push|pull>\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-	if (strcmp(argv[optind], "push") == 0)
-	{
+	if (strcmp(argv[optind], "push") == 0) {
 		// RM_MSG_PUSH
 		flags &= ~RM_BIT_0;
 	}
-	else if (strcmp(argv[optind], "pull") == 0)
-	{
+	else if (strcmp(argv[optind], "pull") == 0) {
 		// RM_MSG_PULL
 		flags |= RM_BIT_0;
 	}
@@ -231,10 +216,8 @@ main( int argc, char *argv[])
 	}
 
 	// if -x not set report error
-	if ((flags & RM_BIT_1) == 0u)
-	{
-		fprintf(stderr, "\n-x option not set.\n"
-			"What is the file you want to sync?\n");
+	if ((flags & RM_BIT_1) == 0u) {
+		fprintf(stderr, "\n-x option not set.\nWhat is the file you want to sync?\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -245,50 +228,35 @@ main( int argc, char *argv[])
     }
 
 	// if -i is set
-	if ((flags & RM_BIT_3) != 0u)
-	{
-		/* remote request */
-        /* push? */
-		if ((flags & RM_BIT_0) == 0u)
-		{
-			/* remote push request */
+	if ((flags & RM_BIT_3) != 0u) { /* remote request */
+		if ((flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
 			res = rm_tx_remote_push(x, y, &remote_addr, L);
-			if (res < 0)
-			{
-				// report failure
+			if (res < 0) {
+                /* TODO */
 			}
-		} else {
-			/* local pull request */
+		} else { /* local pull request */
 			fprintf(stderr, "\nRemote pull.\n");
 		}
 	
-	} else {
-		/* local sync */
-        /* push? */
-		if ((flags & RM_BIT_0) == 0u)
-		{
+	} else { /* local sync */
+		if ((flags & RM_BIT_0) == 0u) { /* push? */
 			/* local push request */
 			fprintf(stderr, "\nLocal push.\n");
             /* setup push flags */
             push_flags |= ((flags & RM_BIT_4) >> 4);
-			res = rm_tx_local_push(x, y, L, send_threshold, push_flags);
-			if (res < 0)
-			{
-                switch (res)    /* report failure */
-                {
+			res = rm_tx_local_push(x, y, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags);
+			if (res < 0) {
+                switch (res) {
                     case -1:
                         fprintf(stderr, "Error. Couldn't open @x file [%s]\n", x);
                         goto fail;
                     case -2:
-                        fprintf(stderr, "Error. @y [%s] doesn't exist "
-                                "and couldn't create @y\n", y);
+                        fprintf(stderr, "Error. @y [%s] doesn't exist and couldn't create @y\n", y);
                         goto fail;
                     case -3:
-                       fprintf(stderr, "Error. Couldn't open @y [%s] and --force "
-                               "flag not set, which file should I use?\nPlease "
-                               "check that file exists or add --force flag to force "
-                               "creation of @y file if it doesn't exist.\n", y);
+                       fprintf(stderr, "Error. Couldn't open @y [%s] and --force flag not set, which file should I use?\nPlease "
+                               "check that file exists or add --force flag to force creation of @y file if it doesn't exist.\n", y);
                        goto fail;
                     case -4:
                       fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
