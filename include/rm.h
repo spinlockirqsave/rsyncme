@@ -128,9 +128,9 @@ enum RM_DELTA_ELEMENT_TYPE
 {
     RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
     RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes */
-    RM_DELTA_ELEMENT_ZERO_DIFF, /* send always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
+    RM_DELTA_ELEMENT_ZERO_DIFF, /* sent always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
                                    when L => f_x.sz and checksums computed on the whole file match,
-                                   means files are the same. raw_bytes_n set to file size*/
+                                   means files are the same. raw_bytes_n set to file size */
     RM_DELTA_ELEMENT_TAIL       /* match is found on the tail, bytes matched(raw_bytes_n set) < L < file_sz,
                                  * raw_bytes_n set to number of bytes that matched */
 };
