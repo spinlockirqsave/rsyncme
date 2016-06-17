@@ -151,8 +151,14 @@ enum rm_delta_rx_status
     RM_DELTA_RX_STATUS_INTERNAL_ERR     = 1,    /* bad call, NULL session, prvt session or file pointers */
     RM_DELTA_RX_STATUS_DELTA_PROC_FAIL  = 2     /* error processing delta element */
 };
+enum rm_reconstruct_method
+{
+    RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION  = 0,    /* usual */
+    RM_RECONSTRUCT_METHOD_COPY_BUFFERED         = 1     /* @y doesn't exist and --forced flag is specified, rolling proc is not used, file is simply copied */
+};
 struct rm_delta_reconstruct_ctx
 {
+    enum rm_reconstruct_method  method;
     size_t                      rec_by_ref, rec_by_raw,
                                 delta_ref_n, delta_raw_n,
                                 rec_by_tail, rec_by_zero_diff,

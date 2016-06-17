@@ -14,7 +14,7 @@
 
 int
 rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_threshold,
-        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags) {
+        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) {
     int         err;
     FILE        *f_x;   /* original file, to be synced into @y */
     FILE        *f_y;   /* file for taking non-overlapping blocks */
@@ -79,6 +79,11 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
             err = -7;
             goto err_exit;
         }
+        if (rec_ctx != NULL) {  /* fill in reconstruction context if given */
+            rec_ctx->method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
+            rec_ctx->delta_raw_n = 1;
+            rec_ctx->rec_by_raw = x_sz;
+        }
         goto done;
     }
 
@@ -97,6 +102,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         goto err_exit;
     }
     memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));    /* init reconstruction context */
+    s->rec_ctx.method = RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION;
     s->rec_ctx.L = L;
     s->rec_ctx.copy_all_threshold = copy_all_threshold;
     s->rec_ctx.copy_tail_threshold = copy_tail_threshold;
@@ -151,6 +157,7 @@ done:
         }
     }
     if (s != NULL) {
+        memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
         rm_session_free(s);
         s = NULL;
     }
@@ -167,7 +174,9 @@ err_exit:
         fclose(f_z);
     }
     if (s != NULL) {
+        memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
         rm_session_free(s);
+        s = NULL;
     }
     return err;
 }

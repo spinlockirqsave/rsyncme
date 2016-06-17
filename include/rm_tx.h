@@ -43,7 +43,7 @@
  *          -7 buffered copy failed */
 int
 rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_threshold,
-        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags);
+        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx);
 
 /* Initialize PUSH, ask for nonoverlapping checksums,
  * send delta vector. */

@@ -286,8 +286,7 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
         return -6;
     }
 
-    /* test processing of delta element, NOTE: this test doesn't test
-     * rm_session_delta_rx_f_local nor remote but ONLY rm_rx_process_delta_element.
+    /* test processing of delta element, NOTE: this test doesn't test rm_session_delta_rx_f_local nor remote but ONLY rm_rx_process_delta_element.
      * We can write directly to session's reconstruction context in this test */
     err = rm_rx_process_delta_element(delta_e, prvt->f_y, prvt->f_z, (struct rm_delta_reconstruct_ctx*)&s->rec_ctx);
     switch (err) {
