@@ -1,31 +1,31 @@
-CC				= gcc
-CFLAGS			= -c -Wall -o3 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
-CFLAGS_D		= -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
-LDFLAGS			= -lpthread -lcmocka -L../../include -L../include  #-lpcap
-LDFLAGS2		= -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
-LDFLAGS_D		= -g -lpthread -lcmocka -L../../include -L../include  #-lpcap
-LDFLAGS2_D		= -g -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
-TESTSRCDIR		:= .
-AUXOBJDIR_D		:= ../../build/debug
-AUXOBJDIR		:= ../../build/release
-AUXSRCS			:= $(filter-out ../../src/main.c, $(wildcard ../../src/*.c))
-AUXSRCS			:= $(filter-out ../../src/rm_cmd.c, $(AUXSRCS))
-AUXOBJS			:= $(patsubst %/%.c, %/$(AUXOBJDIR)/%.o, $(AUXSRCS))
-AUXOBJS_D		:= $(patsubst %/%.c, %/$(AUXOBJDIR_D)/%.o, $(AUXSRCS))
-SRCDIR			:= .
+CC = gcc
+CFLAGS = -c -Wall -o3 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
+CFLAGS_D = -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
+LDFLAGS = -lpthread -lcmocka -L../../include -L../include  #-lpcap
+LDFLAGS2 = -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
+LDFLAGS_D = -g -lpthread -lcmocka -L../../include -L../include  #-lpcap
+LDFLAGS2_D = -g -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
+TESTSRCDIR := .
+AUXOBJDIR_D := ../../build/debug
+AUXOBJDIR := ../../build/release
+AUXSRCS := $(filter-out ../../src/main.c, $(wildcard ../../src/*.c))
+AUXSRCS := $(filter-out ../../src/rm_cmd.c, $(AUXSRCS))
+AUXOBJS := $(patsubst %/%.c, %/$(AUXOBJDIR)/%.o, $(AUXSRCS))
+AUXOBJS_D := $(patsubst %/%.c, %/$(AUXOBJDIR_D)/%.o, $(AUXSRCS))
+SRCDIR := .
 
-SRCS			:= $(wildcard *.c)
-_SRCS			:= $(filter-out md5_test.c, $(SRCS))
-_TESTOBJECTS	:= $(patsubst %.c,%.o,$(_SRCS))
-INCLUDES		+= -I. -I../../include -I../../include/twlist/include -I../include
+SRCS := $(wildcard *.c)
+_SRCS := $(filter-out md5_test.c, $(SRCS))
+_TESTOBJECTS := $(patsubst %.c,%.o,$(_SRCS))
+INCLUDES += -I. -I../../include -I../../include/twlist/include -I../include
 
-TESTOUTPUTDIR_D	:= ../build/debug
-TESTOBJECTS_D	:= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
-TESTOUTPUTDIR	:= ../build/release
-TESTOBJECTS		:= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
+TESTOUTPUTDIR_D := ../build/debug
+TESTOBJECTS_D := $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
+TESTOUTPUTDIR := ../build/release
+TESTOBJECTS := $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 
 
-all : test test-debug
+all :	test test-debug
 
 
 test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2 $(TESTOUTPUTDIR)/test_rm_main3 $(TESTOUTPUTDIR)/test_rm_main4 $(TESTOUTPUTDIR)/test_rm_main5 $(TESTOUTPUTDIR)/test_rm_main6 $(TESTOUTPUTDIR)/test_rm_main7 $(TESTOUTPUTDIR)/test_rm_main8

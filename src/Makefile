@@ -1,35 +1,35 @@
-CC						= gcc
-CFLAGS					=
-CFLAGS_RELEASE			= -c -Wall -o3 -DNDEBUG -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
-CFLAGS_DEBUG			= -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
-CPPFLAGS				+= #compiler flags
-LDFLAGS					= -lpthread 	#-lpcap
-LDFLAGS_D				= -g -lpthread 	#-lpcap
-SRCDIR					= .
-TESTSRCDIR				= ../test/src
-DEBUGOUTPUTDIR			= ../build/debug
-RELEASEOUTPUTDIR		= ../build/release
-#TESTOUTPUTDIR			= ../test/build/release
-#TESTOUTPUTDIR_D		= ../test/build/debug
-SOURCES					= main.c rm.c rm_tcp.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c rm_session.c rm_signal.c rm_serialize.c rm_util.c md5.c
-#TESTSOURCES			= ../test/src/test_rsyncme.c
-INCLUDES				= -I. -I../include -I../include/twlist/include
-_OBJECTS				= $(SOURCES:.c=.o)
-_TESTOBJECTS			= $(TESTSOURCES:.c=.o)
-DEBUGOBJECTS			= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
-RELEASEOBJECTS			= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
-DEBUGOBJECTS_NO_MAIN	= $(filter-out $(DEBUGOUTPUTDIR)/main.o, $(DEBUGOBJECTS))
-RELEASEOBJECTS_NO_MAIN	= $(filter-out $(RELEASEOUTPUTDIR)/main.o, $(RELEASEOBJECTS))
-#TESTOBJECTS			= $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
-#TESTOBJECTS_D			= $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
-DEBUGTARGET				= ../build/debug/rsyncme_d
-RELEASETARGET			= ../build/release/rsyncme_d
-CMDDEBUGTARGET			= ../build/debug/rsyncme
-CMDRELEASETARGET		= ../build/release/rsyncme
+CC = gcc
+CFLAGS	=
+CFLAGS_RELEASE = -c -Wall -o3 -DNDEBUG -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
+CFLAGS_DEBUG = -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
+CPPFLAGS += #compiler flags
+LDFLAGS = -lpthread 	#-lpcap
+LDFLAGS_D = -g -lpthread 	#-lpcap
+SRCDIR = .
+TESTSRCDIR = ../test/src
+DEBUGOUTPUTDIR = ../build/debug
+RELEASEOUTPUTDIR = ../build/release
+#TESTOUTPUTDIR = ../test/build/release
+#TESTOUTPUTDIR_D = ../test/build/debug
+SOURCES = main.c rm.c rm_tcp.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c rm_session.c rm_signal.c rm_serialize.c rm_util.c md5.c
+#TESTSOURCES = ../test/src/test_rsyncme.c
+INCLUDES = -I. -I../include -I../include/twlist/include
+_OBJECTS = $(SOURCES:.c=.o)
+_TESTOBJECTS = $(TESTSOURCES:.c=.o)
+DEBUGOBJECTS = $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
+RELEASEOBJECTS = $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
+DEBUGOBJECTS_NO_MAIN = $(filter-out $(DEBUGOUTPUTDIR)/main.o, $(DEBUGOBJECTS))
+RELEASEOBJECTS_NO_MAIN = $(filter-out $(RELEASEOUTPUTDIR)/main.o, $(RELEASEOBJECTS))
+#TESTOBJECTS = $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
+#TESTOBJECTS_D = $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
+DEBUGTARGET = ../build/debug/rsyncme_d
+RELEASETARGET = ../build/release/rsyncme_d
+CMDDEBUGTARGET = ../build/debug/rsyncme
+CMDRELEASETARGET = ../build/release/rsyncme
 
-all:			all-release
+all:	all-release
 all-release:	rsyncme-release release
-all-debug:		rsyncme-debug debugall
+all-debug:	rsyncme-debug debugall
 
 debugall:	$(SOURCES) $(DEBUGTARGET)
 releaseall:	$(SOURCES) $(RELEASETARGET)
