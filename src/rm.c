@@ -341,7 +341,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     uint32_t        hash;
     unsigned char   *buf;
     int             fd;
-	struct stat     fs;
+    struct stat     fs;
     size_t          file_sz, send_left, read_now, read, read_begin = 0;
     uint8_t         match, beginning_bytes_in_buf;
     const struct rm_ch_ch_ref_hlink   *e;
@@ -522,28 +522,25 @@ copy_tail:
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
-	int                 err;
-	pthread_attr_t      attr;
+    int                 err;
+    pthread_attr_t      attr;
 
-	err = pthread_attr_init(&attr);
-	if (err != 0)
-    {
-		return -1;
+    err = pthread_attr_init(&attr);
+    if (err != 0) {
+        return -1;
     }
-	err = pthread_attr_setdetachstate(&attr, detachstate);
-	if (err != 0)
-    {
-		goto fail;
+    err = pthread_attr_setdetachstate(&attr, detachstate);
+    if (err != 0) {
+        goto fail;
     }
-	err = pthread_create(t, &attr, f, arg);
-	if (err != 0)
-    {
+    err = pthread_create(t, &attr, f, arg);
+    if (err != 0) {
         goto fail;
     }
     return 0;
 fail:
-	pthread_attr_destroy(&attr);
-	return -1;
+    pthread_attr_destroy(&attr);
+    return -1;
 }
 
 int
@@ -600,7 +597,7 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) 
     }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
-    while (((read = fread(buf1, 1, read_exp, x)) == read_exp) && (bytes_n > 0)) {
+    while ((bytes_n > 0) && ((read = fread(buf1, 1, read_exp, x)) == read_exp)) {
         if (fread(buf2, 1, read_exp, y) != read_exp) {
             return -3;
         }
@@ -612,7 +609,7 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) 
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
-    if (read == 0) { /* read all bytes_n or EOF reached */
+    if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) return -5;
         if (feof(y)) return -6;
         return 0;
