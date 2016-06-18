@@ -21,7 +21,10 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     FILE        *f_z;   /* result (with same name as @y) */
     int         fd_x, fd_y, fd_z;
     struct      stat	fs;
-    size_t    x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
+    size_t      x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
+    size_t                          bkt;    /* hashtable deletion */
+    const struct rm_ch_ch_ref_hlink *e;
+    struct twhlist_node             *tmp;
     struct rm_session               *s;
     struct rm_session_push_local    *prvt;
     const char *f_z_name = "f_z_tmp";
@@ -129,6 +132,13 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     pthread_join(prvt->delta_rx_tid, NULL);
 
 done:
+
+    bkt = 0;
+    twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+        twhash_del((struct twhlist_node*)&e->hlink);
+        free((struct rm_ch_ch_ref_hlink*)e);
+    }
+
     if (f_x != NULL) {
         fclose(f_x);
         f_x = NULL;
@@ -172,6 +182,11 @@ err_exit:
     }
     if (f_z != NULL) {
         fclose(f_z);
+    }
+    bkt = 0;
+    twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+        twhash_del((struct twhlist_node*)&e->hlink);
+        free((struct rm_ch_ch_ref_hlink*)e);
     }
     if (s != NULL) {
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
