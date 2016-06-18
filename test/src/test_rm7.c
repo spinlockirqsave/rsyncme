@@ -334,7 +334,7 @@ test_rm_rx_process_delta_element_1(void **state) {
     unsigned char           cx, cz;
 
     /* hashtable deletion */
-    unsigned int            bkt;
+    size_t                  bkt;
     const struct rm_ch_ch_ref_hlink *e;
 
     /* delta queue's content verification */

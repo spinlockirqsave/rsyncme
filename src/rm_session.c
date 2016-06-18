@@ -313,6 +313,10 @@ rm_session_delta_rx_f_local(void *arg) {
                 goto err_exit;
             }
             bytes_to_rx -= delta_e->raw_bytes_n;
+            if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
+                free(delta_e->raw_bytes);
+            }
+            free((void*)delta_e);
         }
         if (bytes_to_rx > 0) {
             pthread_cond_wait(&prvt_local->tx_delta_e_queue_signal, &prvt_local->tx_delta_e_queue_mutex);
