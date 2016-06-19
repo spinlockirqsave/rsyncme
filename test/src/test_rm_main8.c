@@ -18,7 +18,8 @@ int main(void)
     const struct CMUnitTest tests[] = {
 	    cmocka_unit_test(test_rm_tx_local_push_1),
 	    cmocka_unit_test(test_rm_tx_local_push_2),
-	    cmocka_unit_test(test_rm_tx_local_push_3)
+	    cmocka_unit_test(test_rm_tx_local_push_3),
+	    cmocka_unit_test(test_rm_tx_local_push_4)
     };
     return cmocka_run_group_tests(tests,
 		test_rm_setup, test_rm_teardown);
