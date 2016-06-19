@@ -516,7 +516,7 @@ test_rm_tx_local_push_2(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of local push, file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #2 of local push [first byte changed], file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
                 continue;
@@ -525,7 +525,7 @@ test_rm_tx_local_push_2(void **state) {
                 RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #2: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing local push #2 [first byte changed]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -670,6 +670,259 @@ test_rm_tx_local_push_2(void **state) {
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
+        if (err != 0) {
+            RM_LOG_ERR("Error removing files (unlink)");
+            assert_true(1 == 0 && "Error removing files (unlink)");
+            return;
+        }
+    }
+    return;
+}
+
+/* @brief   Test #3. */
+/* @brief   Test if result file @f_z is reconstructed properly
+ *          when x is copy of y, but last byte in x is changed. */
+void
+test_rm_tx_local_push_3(void **state) {
+    int                     err;
+    char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
+    const char              *f_y_name;  /* @y name */
+    unsigned char           cx, cz, cx_copy;
+    FILE                    *f_copy, *f_x, *f_y;
+    int                     fd_x, fd_y;
+    size_t                  i, j, k, L, f_x_sz, f_y_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    rm_push_flags                   flags;
+    size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+    size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
+
+    err = test_rm_copy_files_and_postfix("_test_3");
+    if (err != 0) {
+        RM_LOG_ERR("Error copying files, skipping test");
+        return;
+    }
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    i = 0;  /* test on all files */
+    for (; i < RM_TEST_FNAMES_N; ++i) {
+        f_y_name = rm_test_fnames[i];
+        f_y = fopen(f_y_name, "rb");
+        if (f_y == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", f_y_name);
+        }
+        assert_true(f_y != NULL);
+        fd_y = fileno(f_y);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_y, &fs) != 0) {    /* get file size */
+            RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
+            fclose(f_y);
+            assert_true(1 == 0);
+        }
+        f_y_sz = fs.st_size;
+        if (f_y_sz < 2) {
+            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            fclose(f_y);
+            continue;
+        }
+
+        /* change last byte in copy */
+        strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX);
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_3", 49);
+        buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
+        f_copy = fopen(buf_x_name, "rb+");
+        if (f_copy == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+        }
+        f_x = f_copy;
+        fd_x = fileno(f_x);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_x, &fs) != 0) {    /* get @x size */
+            RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
+            fclose(f_x);
+            assert_true(1 == 0);
+        }
+        f_x_sz = fs.st_size;
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+            RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
+            fclose(f_x);
+            fclose(f_y);
+            continue;
+        }
+        cx_copy = cx;           /* remember the last byte for recreation */
+        cx = (cx + 1) % 256;    /* change last byte, so ZERO_DIFF and TAIL delta can't happen in this test, therefore this would be an error in this test */
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+            RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
+            fclose(f_x);
+            fclose(f_y);
+            continue;
+        }
+
+        detail_case_1_n = 0;
+        detail_case_2_n = 0;
+        detail_case_3_n = 0;
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing #3 of local push [last byte changed], file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                continue;
+            }
+            if (f_y_sz < 2) {
+                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+                continue;
+            }
+            RM_LOG_INFO("Testing local push #3 [last byte changed]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            copy_all_threshold = 0;
+            copy_tail_threshold = 0;
+            send_threshold = L;
+            flags = 0;
+
+            fclose(f_x);
+            fclose(f_y);
+            memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(err, 0);
+
+            assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
+            assert_true(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
+            assert_true(rec_ctx.delta_zero_diff_n == 0);
+            assert_true(rec_ctx.rec_by_zero_diff == 0);
+
+            f_x = fopen(buf_x_name, "rb+");
+            if (f_x == NULL) {
+                RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            }
+            assert_true(f_x != NULL && "Can't open file @x");
+            fd_x = fileno(f_x);
+            f_y = fopen(f_y_name, "rb");
+            if (f_y == NULL) {
+                RM_LOG_PERR("Can't open file [%s]", f_y_name);
+            }
+            assert_true(f_y != NULL && "Can't open file @y");
+            fd_y = fileno(f_y);
+
+            /* verify files size */
+            memset(&fs, 0, sizeof(fs)); /* get @x size */
+            if (fstat(fd_x, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
+                fclose(f_x);
+                fclose(f_y);
+                assert_true(1 == 0);
+            }
+            f_x_sz = fs.st_size;
+            memset(&fs, 0, sizeof(fs));
+            if (fstat(fd_y, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
+                fclose(f_x);
+                fclose(f_y);
+                assert_true(1 == 0);
+            }
+            f_y_sz = fs.st_size;
+            assert_true(f_x_sz == f_y_sz && "File sizes differ!");
+
+            k = 0;
+            while (k < f_x_sz) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
+                    fclose(f_x);
+                    fclose(f_y);
+                    assert_true(1 == 0 && "ERROR reading byte in file @x!");
+                }
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
+                    fclose(f_x);
+                    fclose(f_y);
+                    assert_true(1 == 0 && "ERROR reading byte in file @z!");
+                }
+                if (cx != cz) {
+                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                }
+                assert_true(cx == cz && "Bytes differ!");
+                ++k;
+            }
+
+            if (RM_TEST_8_DELETE_FILES == 1) { /* and unlink/remove result file */
+                if (unlink(f_y_name) != 0) {
+                    RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
+                    assert_true(1 == 0);
+                }
+            }
+            /* detail cases */
+            /* 1. if L is >= file size, delta must be single RAW element */
+            if (L >= f_x_sz) {
+                assert_true(rec_ctx.delta_ref_n == 0);
+                assert_true(rec_ctx.delta_tail_n == 0);
+                assert_true(rec_ctx.delta_raw_n == 1);
+                assert_true(rec_ctx.rec_by_ref == 0);
+                assert_true(rec_ctx.rec_by_tail == 0);
+                assert_true(rec_ctx.rec_by_raw == f_y_sz);
+                ++detail_case_1_n;
+            }
+            /* 2. if L is less than file size and does divide evenly file size, there will usually be f_y_sz/L - 1 delta reference blocks present
+             * and 1 raw byte block because the first block in @x doesn't match the first block in @y (all other blocks in @x always match corresponding blocks in @y in this test #2),
+             * and none of the checksums computed by rolling checksum procedure starting from second byte in @x up to Lth byte, i.e. on blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
+             * will match some of the nonoverlapping checksums from @y.
+             * But there is a chance one of nonoverlapping blocks in @y will match first block in @x (which has first byte changed), e.g if L is 1, size is 100 and @y file is 0x1 0x2 0x3 0x78 0x5 ...
+             * the @x file is then 0x78 0x2 0x3 0x78 0x5 ... and first block will match 4th block in @y. There is also a chance this won't match BUT some of blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
+             * will find a match and rolling proc will move on offsets different that nonoverlapping blocks. All next f_y_sz/L - 2 blocks may match or not and up to L bytes will be transferred as raw elements in any
+             * possible way: L blocks each 1 byte size, or L/2 each 2 bytes or 1 block 1 byte long and one L-1, etc. The same applies to last block, THEREFORE:
+             *  -> if last block is sent by delta ref - all file must be sent by delta ref,
+             *  -> if last block doesn't match - there maust be f_y_sz/L - 1 DELTA REFERENCE blocks and f_y_sz % L raw bytes sent by up to f_y_sz % L DELTA RAW elements (depends on send threshold) */
+            if ((L < f_y_sz) && (f_y_sz % L == 0)) {
+                assert_true(rec_ctx.rec_by_raw <= L);
+                assert_true(rec_ctx.delta_raw_n <= L);
+                assert_true((rec_ctx.delta_ref_n == f_y_sz/L - 1 && rec_ctx.delta_raw_n > 0 && rec_ctx.rec_by_raw == L) || (rec_ctx.delta_ref_n == f_y_sz/L && rec_ctx.delta_raw_n == 0 && rec_ctx.rec_by_raw == 0)); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y */
+                assert_true(rec_ctx.delta_ref_n * L == f_y_sz - rec_ctx.rec_by_raw);
+                assert_true(rec_ctx.delta_tail_n == 0); /* impossible as L divides @y evenly */
+                assert_true(rec_ctx.rec_by_tail == 0);
+                assert_true((rec_ctx.rec_by_ref == f_y_sz - L && rec_ctx.rec_by_raw == L) || (rec_ctx.delta_ref_n == f_y_sz/L && rec_ctx.rec_by_ref == f_y_sz && rec_ctx.rec_by_raw == 0));
+                ++detail_case_2_n;
+            }
+            /* 3. if L is less than file size and doesn't divide evenly file size, there can be delta TAIL reference block present (this cannot happen in this test),
+             * regarding delta reference blocks it is the same situation as in test #2 (plus remember that TAIL is also counted as reference). */
+            if ((L < f_y_sz) && (f_y_sz % L != 0)) {
+                assert_true(rec_ctx.rec_by_raw <= L);
+                assert_true(rec_ctx.delta_raw_n <= L);
+                assert_true(rec_ctx.delta_ref_n == f_y_sz/L && rec_ctx.delta_raw_n > 0 && rec_ctx.rec_by_raw == f_y_sz % L); /* the last (tail) block in @x will not match the last block in @y and it cannot match any other block in @y (they are of different size) */
+                assert_true((rec_ctx.delta_tail_n == 1 && (rec_ctx.rec_by_tail == f_y_sz % L) && ((rec_ctx.delta_ref_n - 1) * L + rec_ctx.rec_by_tail == f_y_sz - rec_ctx.rec_by_raw)) || (rec_ctx.delta_tail_n == 0 && rec_ctx.delta_ref_n * L == f_y_sz - rec_ctx.rec_by_raw));
+                assert_true(rec_ctx.rec_by_raw == f_y_sz % L && rec_ctx.rec_by_ref == f_y_sz - rec_ctx.rec_by_raw);
+                ++detail_case_3_n;
+            }
+            /* 4. There can't be DELTA TAIL elements in this test as tail of @x will never match potential tail element in @y as last bytes in files differ */
+            assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
+            RM_LOG_INFO("PASSED test #3: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+
+            f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
+            f_y = fopen(f_y_name, "wb+");
+            if (f_y == NULL) {
+                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+            }
+            assert_true(f_y != NULL);
+            err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
+            if (err != 0) {
+                RM_LOG_ERR("Error copying file @x to @y for next test");
+                assert_true(1 == 0 && "Error copying file @x to @y for next test");
+            }
+            if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
+                RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
+                fclose(f_x);
+                fclose(f_y);
+                continue;
+            }
+		}
+		fclose(f_x);
+        fclose(f_y);
+        RM_LOG_INFO("PASSED test #3: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+                buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
+	}
+
+    if (RM_TEST_8_DELETE_FILES == 1) {
+        err = test_rm_delete_copies_of_files_postfixed("_test_3");
         if (err != 0) {
             RM_LOG_ERR("Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
