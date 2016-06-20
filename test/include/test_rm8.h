@@ -87,5 +87,10 @@ test_rm_tx_local_push_3(void **state);
 void
 test_rm_tx_local_push_4(void **state);
 
+/* @brief   Test if result file @f_z is reconstructed properly
+ *          when x is copy of y, but the first, last and byte in the middle of x are changed. */
+void
+test_rm_tx_local_push_5(void **state);
+
 
 #endif	/* RSYNCME_TEST_RM7_H */
