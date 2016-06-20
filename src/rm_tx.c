@@ -30,22 +30,26 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     const char *f_z_name = "f_z_tmp";
 
     f_x = f_y = f_z = NULL;
+    s = NULL;
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 
+    if (x == NULL || y == NULL) {
+        return -1;
+    }
     f_x = fopen(x, "rb");
     if (f_x == NULL) {
-        return -1;
+        return -2;
     }
     f_y = fopen(y, "rb");
     if (f_y == NULL) {
         if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
             f_z = fopen(y, "wb+");
             if (f_z == NULL) {
-                err = -2;
+                err = -3;
                 goto err_exit;
             }
         } else {
-            err = -3;
+            err = -4;
             goto err_exit;
         }
     }

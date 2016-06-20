@@ -29,8 +29,7 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
                     1200, 100000 };
 
 static int
-test_rm_copy_files_and_postfix(const char *postfix)
-{
+test_rm_copy_files_and_postfix(const char *postfix) {
     int         err;
     FILE        *f, *f_copy;
     uint32_t    i, j;
@@ -38,11 +37,9 @@ test_rm_copy_files_and_postfix(const char *postfix)
     unsigned long const seed = time(NULL);
 
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
+    for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb");
-        if (f == NULL)
-        {
+        if (f == NULL) {
             /* file doesn't exist, create */
             RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb+");
@@ -63,19 +60,15 @@ test_rm_copy_files_and_postfix(const char *postfix)
         strncpy(buf + strlen(buf), postfix, 49);
         buf[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf, "rb+");
-        if (f_copy == NULL)
-        {
-            /* doesn't exist, create */
+        if (f_copy == NULL) { /* if doesn't exist, create */
             RM_LOG_INFO("Creating copy [%s] of file [%s]", buf, rm_test_fnames[i]);
             f_copy = fopen(buf, "wb");
-            if (f_copy == NULL)
-            {
+            if (f_copy == NULL) {
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
                 return -1;
             }
             err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
-            switch (err)
-            {
+            switch (err) {
                 case 0:
                     break;
                 case -2:
@@ -112,23 +105,19 @@ test_rm_copy_files_and_postfix(const char *postfix)
 }
 
 static int
-test_rm_delete_copies_of_files_postfixed(const char *postfix)
-{
+test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     int         err;
     uint32_t    i;
     char        buf[RM_FILE_LEN_MAX + 50];
 
     i = 0;
-    for (; i < RM_TEST_FNAMES_N; ++i)
-    {
-        /* open copy */
-        strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
+    for (; i < RM_TEST_FNAMES_N; ++i) {
+        strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX); /* open copy */
         strncpy(buf + strlen(buf), postfix, 49);
         buf[RM_FILE_LEN_MAX + 49] = '\0';
         RM_LOG_INFO("Removing (unlink) [%s] copy of file [%s]", buf, rm_test_fnames[i]);
         err = unlink(buf);
-        if (err != 0)
-        {
+        if (err != 0) {
             RM_LOG_ERR("Can't unlink [%s] copy of file [%s]", buf, rm_test_fnames[i]);
             return -1;
         }
@@ -200,8 +189,7 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
-    /* session for loccal push */
-    s = rm_session_create(RM_PUSH_LOCAL, 0);
+    s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for loccal push */
     if (s == NULL) {
         RM_LOG_ERR("Can't allocate session local push");
 	}
