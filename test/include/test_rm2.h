@@ -30,8 +30,8 @@
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            13
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
-uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
-uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
+size_t      rm_test_fsizes[RM_TEST_FNAMES_N];
+size_t      rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 int RM_TEST_MOCK_FSTAT;	
 int RM_TEST_MOCK_FSTAT64;	
@@ -40,8 +40,8 @@ int RM_TEST_MOCK_FREAD;
 
 struct test_rm_state
 {
-	uint32_t    *l;
-	void        *buf;
+    size_t  *l;
+    void    *buf;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -58,6 +58,15 @@ test_rm_setup(void **state);
  *          tests have finished. */
 int
 test_rm_teardown(void **state);
+
+int
+__real_fstat(int fd, struct stat *buf);
+int
+__real_fstat64(int fd, struct stat *buf);
+void *
+__real_malloc(size_t size);
+size_t
+__real_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 
 /* @brief   Mocked fstat function. */
 int
