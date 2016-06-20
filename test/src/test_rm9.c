@@ -329,12 +329,21 @@ test_rm_local_push_err_1(void **state) {
             assert_int_equal(err, -1);
 
             flags = 0;
-            err = rm_tx_local_push("doesntexistherehopefully", f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+			RM_TEST_MOCK_FOPEN64 = 1;
+			will_return(__wrap_fopen64, NULL);
+            err = rm_tx_local_push("NOT_NULL", f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+			RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(err, -2);
 
             /* RM_BIT_0 (force creation) bit not set, expected -4 */
             flags = 0;
-            err = rm_tx_local_push(buf_x_name, "doesntexistherehopefully", L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
+            assert_true(f_x != NULL);
+			RM_TEST_MOCK_FOPEN64 = 1;
+			will_return(__wrap_fopen64, f_x);
+			will_return(__wrap_fopen64, NULL);
+            err = rm_tx_local_push(buf_x_name, "NOT_NULL_EITHER", L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+			RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(err, -4);
 
             /* RM_BIT_0 (force creation) bit set but call to fopen fails, expected -3 (need to mock three calls to fopen) */
