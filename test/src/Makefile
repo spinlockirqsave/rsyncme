@@ -3,8 +3,11 @@ CFLAGS = -c -Wall -o3 -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
 CFLAGS_D = -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
 LDFLAGS = -lpthread -lcmocka -L../../include -L../include  #-lpcap
 LDFLAGS2 = -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
+LDFLAGS9 := -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fopen -Wl,--wrap=fopen64
+
 LDFLAGS_D = -g -lpthread -lcmocka -L../../include -L../include  #-lpcap
 LDFLAGS2_D = -g -lpthread -lcmocka -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
+LDFLAGS9_D :=  -g -lpthread -lcmocka -L../../include -L../include -Wl,--wrap=fopen -Wl,--wrap=fopen64
 TESTSRCDIR := .
 AUXOBJDIR_D := ../../build/debug
 AUXOBJDIR := ../../build/release
@@ -28,7 +31,7 @@ TESTOBJECTS := $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 all :	test test-debug
 
 
-test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2 $(TESTOUTPUTDIR)/test_rm_main3 $(TESTOUTPUTDIR)/test_rm_main4 $(TESTOUTPUTDIR)/test_rm_main5 $(TESTOUTPUTDIR)/test_rm_main6 $(TESTOUTPUTDIR)/test_rm_main7 $(TESTOUTPUTDIR)/test_rm_main8
+test:	$(TESTOUTPUTDIR)/test_rm_main1 $(TESTOUTPUTDIR)/test_rm_main2 $(TESTOUTPUTDIR)/test_rm_main3 $(TESTOUTPUTDIR)/test_rm_main4 $(TESTOUTPUTDIR)/test_rm_main5 $(TESTOUTPUTDIR)/test_rm_main6 $(TESTOUTPUTDIR)/test_rm_main7 $(TESTOUTPUTDIR)/test_rm_main8 $(TESTOUTPUTDIR)/test_rm_main9
 
 
 $(TESTOUTPUTDIR)/test_rm_main1:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm1.o $(TESTOUTPUTDIR)/test_rm_main1.o
@@ -55,8 +58,11 @@ $(TESTOUTPUTDIR)/test_rm_main7:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm7.o $(TESTOUT
 $(TESTOUTPUTDIR)/test_rm_main8:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm8.o $(TESTOUTPUTDIR)/test_rm_main8.o
 	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm8.o $(TESTOUTPUTDIR)/test_rm_main8.o -o $@
 
+$(TESTOUTPUTDIR)/test_rm_main9:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm9.o $(TESTOUTPUTDIR)/test_rm_main9.o
+	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS9) $ $(TESTOUTPUTDIR)/test_rm9.o $(TESTOUTPUTDIR)/test_rm_main9.o -o $@
 
-test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2 $(TESTOUTPUTDIR_D)/test_rm_main3 $(TESTOUTPUTDIR_D)/test_rm_main4 $(TESTOUTPUTDIR_D)/test_rm_main5 $(TESTOUTPUTDIR_D)/test_rm_main6 $(TESTOUTPUTDIR_D)/test_rm_main7 $(TESTOUTPUTDIR_D)/test_rm_main8
+
+test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2 $(TESTOUTPUTDIR_D)/test_rm_main3 $(TESTOUTPUTDIR_D)/test_rm_main4 $(TESTOUTPUTDIR_D)/test_rm_main5 $(TESTOUTPUTDIR_D)/test_rm_main6 $(TESTOUTPUTDIR_D)/test_rm_main7 $(TESTOUTPUTDIR_D)/test_rm_main8 $(TESTOUTPUTDIR_D)/test_rm_main9
 
 
 $(TESTOUTPUTDIR_D)/test_rm_main1:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm1.o $(TESTOUTPUTDIR_D)/test_rm_main1.o
@@ -83,6 +89,9 @@ $(TESTOUTPUTDIR_D)/test_rm_main7:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm7.o $(T
 $(TESTOUTPUTDIR_D)/test_rm_main8:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm8.o $(TESTOUTPUTDIR_D)/test_rm_main8.o
 	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS_D) $(TESTOUTPUTDIR_D)/test_rm8.o $(TESTOUTPUTDIR_D)/test_rm_main8.o -o $@
 
+$(TESTOUTPUTDIR_D)/test_rm_main9:	$(AUXOBJS_D) $(TESTOUTPUTDIR_D)/test_rm9.o $(TESTOUTPUTDIR_D)/test_rm_main9.o
+	$(CC) $(INCLUDES) $(AUXOBJS_D) $(LDFLAGS9_D) $(TESTOUTPUTDIR_D)/test_rm9.o $(TESTOUTPUTDIR_D)/test_rm_main9.o -o $@
+
 
 test-check:	test
 	$(TESTOUTPUTDIR)/test_rm_main1
@@ -93,6 +102,7 @@ test-check:	test
 	$(TESTOUTPUTDIR)/test_rm_main6
 	$(TESTOUTPUTDIR)/test_rm_main7
 	$(TESTOUTPUTDIR)/test_rm_main8
+	$(TESTOUTPUTDIR)/test_rm_main9
 
 
 test-check-debug:	test-debug
@@ -104,6 +114,7 @@ test-check-debug:	test-debug
 	$(TESTOUTPUTDIR_D)/test_rm_main6
 	$(TESTOUTPUTDIR_D)/test_rm_main7
 	$(TESTOUTPUTDIR_D)/test_rm_main8
+	$(TESTOUTPUTDIR_D)/test_rm_main9
 
 
 $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c

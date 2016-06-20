@@ -30,22 +30,26 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     const char *f_z_name = "f_z_tmp";
 
     f_x = f_y = f_z = NULL;
+    s = NULL;
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 
+    if (x == NULL || y == NULL) {
+        return -1;
+    }
     f_x = fopen(x, "rb");
     if (f_x == NULL) {
-        return -1;
+        return -2;
     }
     f_y = fopen(y, "rb");
     if (f_y == NULL) {
         if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
             f_z = fopen(y, "wb+");
             if (f_z == NULL) {
-                err = -2;
+                err = -3;
                 goto err_exit;
             }
         } else {
-            err = -3;
+            err = -4;
             goto err_exit;
         }
     }
@@ -55,7 +59,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     fd_x = fileno(f_x);
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_x, &fs) != 0) {
-        err = -4;
+        err = -5;
         goto err_exit;
     }
     x_sz = fs.st_size;
@@ -64,7 +68,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         fd_y = fileno(f_y);
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_y, &fs) != 0) {
-            err = -5;
+            err = -6;
             goto err_exit;
         }
         y_sz = fs.st_size;
@@ -72,14 +76,14 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
         err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
         if (err != 0) {
-            err = -6;
+            err = -7;
             goto  err_exit;
         }
         assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
     } else { /* @y doesn't exist and --forced flag is specified */
         err = rm_copy_buffered(f_x, f_z, x_sz);
         if (err < 0) {
-            err = -7;
+            err = -8;
             goto err_exit;
         }
         if (rec_ctx != NULL) {  /* fill in reconstruction context if given */
@@ -94,14 +98,14 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     /* TODO generate unique temporary name based on session uuid for result file, after reconstruction is finished remove @f_y and rename @f_z to @y */
     f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing */
     if (f_z == NULL) {
-        err = -13;
+        err = -9;
         goto err_exit;
     }
     fd_z = fileno(f_z);
 
     s = rm_session_create(RM_PUSH_LOCAL, L);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
     if (s == NULL) {
-        err = -8;
+        err = -10;
         goto err_exit;
     }
     memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));    /* init reconstruction context */
@@ -120,12 +124,12 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
  
     err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx delta vec thread (enqueue delta elements and signal to delta_rx_tid thread */
     if (err != 0) {
-        err = -9;
+        err = -11;
         goto err_exit;
     }
     err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local, s, PTHREAD_CREATE_JOINABLE);   /* reconstruct */
     if (err != 0) {
-        err = -10;
+        err = -12;
         goto err_exit;
     }
     pthread_join(prvt->delta_tx_tid, NULL);
@@ -150,7 +154,7 @@ done:
     fflush(f_z);
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_z, &fs) != 0) {
-        err = -11;
+        err = -13;
         goto err_exit;
     }
     fclose(f_z);
@@ -158,11 +162,11 @@ done:
     z_sz = fs.st_size;
     if ((z_sz == x_sz) && (z_sz == s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw)) {
         if (unlink(y) != 0) {
-            err = -12;
+            err = -14;
             goto err_exit;
         }
         if (rename(f_z_name, y) == -1) {
-            err = -13;
+            err = -15;
             goto err_exit;
         }
     }
