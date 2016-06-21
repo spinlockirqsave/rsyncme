@@ -58,7 +58,20 @@ To build rsyncme_d (daemon's executable):
 To build rsyncme (commandline executable):
 	cd src
 	make rsyncme-debug (or make rsyncme-release)
+
+TESTS
+Our tests depend on cmocka, which depends on cmake, so be sure to have them installed first
+(you can do it manually following below instructions or run our install_cmocka.sh script).
+To install cmocka using script:
+	bash install_cmocka.sh cmocka (give name of folder when to install cmocka, e.g. "cmocka")
+To install manually:
+	First, install cmake:
+	sudo apt-get install cmake
+	1. Download https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
+	2. Follow instructions from INSTALL file
+
 To build tests:
+	bash install_cmocka.sh cmocka (if you don't have cmocka installed and haven't installed manually)
 	cd src
 	make test
 To run tests:
@@ -71,6 +84,7 @@ To run tests:
 		files created during test <#> run, please change RM_TEST_DELETE_FILES
 		definition in file test/include/test_rm<#>.h to 0.
 To build tests in debug mode:
+	bash install_cmocka.sh cmocka (if you don't have cmocka installed and haven't installed manually)
 	cd src
 	make test-debug
 		Output is written to ./test/build/debug.
