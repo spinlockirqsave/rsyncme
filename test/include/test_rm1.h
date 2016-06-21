@@ -27,17 +27,17 @@
 
 
 #define RM_TEST_DELETE_FILES        1	/* 0 no, 1 yes */
-#define RM_TEST_L_BLOCKS_SIZE       26
+#define RM_TEST_L_BLOCKS_SIZE       26U
 #define RM_TEST_L_MAX               1024UL
-#define RM_TEST_FNAMES_N            13
+#define RM_TEST_FNAMES_N            13U
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
-uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
-uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
+size_t      rm_test_fsizes[RM_TEST_FNAMES_N];
+size_t      rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_state
 {
-	uint32_t	*l;
-    size_t      array_entries;
+	size_t  *l;
+    size_t  array_entries;
     struct rm_ch_ch *array; /* will be big enough to serve as storage
                                for checksums for each test file */
 };
