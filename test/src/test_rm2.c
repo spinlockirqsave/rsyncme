@@ -33,7 +33,7 @@ int RM_TEST_MOCK_FREAD		= 0;
 int
 test_rm_setup(void **state) {
 	int 		err;
-	uint32_t	i, j;
+	size_t      i, j;
 	FILE 		*f;
 	void		*buf;
     unsigned long const seed = time(NULL);
@@ -59,7 +59,7 @@ test_rm_setup(void **state) {
 				exit(EXIT_FAILURE);
             }
 			j = rm_test_fsizes[i];
-			RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+			RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
 			srand(seed);
 			while (j--) {
 				fputc(rand(), f);
@@ -78,7 +78,7 @@ test_rm_setup(void **state) {
     }
 	buf = malloc(j);
 	if (buf == NULL) {
-		RM_LOG_ERR("Can't allocate memory buffer of [%u] bytes, malloc failed", j);
+		RM_LOG_ERR("Can't allocate memory buffer of [%zu] bytes, malloc failed", j);
 	}
 	assert_true(buf != NULL);
 	rm_state.buf = buf;
@@ -153,7 +153,7 @@ void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 	FILE                    *f;
 	int                     fd;
-	uint32_t                i, j, L, file_sz;
+	size_t                  i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
 	const char              *fname;
@@ -185,17 +185,17 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 		j = 0;
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
+			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 			if (0 == L) {
-				RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
+				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
 				continue;
 			}
 			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%u] is to small for this test, skipping", fname, file_sz);
+				RM_LOG_INFO("File [%s] size [%zu] is to small for this test, skipping", fname, file_sz);
 				continue;
 			}
 	
-			RM_LOG_INFO("Testing error reporting: file [%s], size [%u], block size L [%u], buffer [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			RM_LOG_INFO("Testing error reporting: file [%s], size [%zu], block size L [%zu], buffer [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			RM_LOG_INFO("Mocking fstat64, expectation [%d]", res_expected);
 			RM_TEST_MOCK_FSTAT64 = 1;
 			will_return(__wrap_fstat64, -1);
@@ -210,7 +210,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
             }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness of hashing of non-overlapping blocks against expectation of [%d]", res_expected);
-			/* move file pointer back to the beginning */
 			rewind(f);
 		}
 		fclose(f);
@@ -221,7 +220,7 @@ void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state) {
 	FILE                    *f;
 	int                     fd;
-	uint32_t                i, j, L, file_sz;
+	size_t                  i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
 	const char              *fname;
@@ -253,17 +252,17 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state) {
 		j = 0;
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
+			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 			if (0 == L) {
-				RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
+				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
 				continue;
 			}
 			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%u] is to small for this test, skipping", fname, file_sz);
+				RM_LOG_INFO("File [%s] size [%zu] is to small for this test, skipping", fname, file_sz);
 				continue;
 			}
 	
-			RM_LOG_INFO("Testing error reporting: file [%s], size [%u], block size L [%u], buffer [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			RM_LOG_INFO("Testing error reporting: file [%s], size [%zu], block size L [%zu], buffer [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			RM_LOG_INFO("Mocking first call to malloc, expectation [%d]", res_expected);
 			RM_TEST_MOCK_MALLOC = 1;
 			will_return(__wrap_malloc, NULL);
@@ -278,7 +277,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state) {
             }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness of hashing of non-overlapping blocks against expectation of [%d]", res_expected);
-			/* move file pointer back to the beginning */
 			rewind(f);
 		}
 		fclose(f);
@@ -286,11 +284,10 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state) {
 }
 
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
-{
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state) {
 	FILE                    *f;
 	int                     fd;
-	uint32_t                i, j, L, file_sz;
+	size_t                  i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
 	const char              *fname;
@@ -322,17 +319,17 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
 		j = 0;
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
+			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 			if (0 == L) {
-				RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]),  skipping file [%s]", L, 0, fname);
+				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]),  skipping file [%s]", L, 0, fname);
 				continue;
 			}
 			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%u] is to small for this test, skipping", fname, file_sz);
+				RM_LOG_INFO("File [%s] size [%zu] is to small for this test, skipping", fname, file_sz);
 				continue;
 			}
 	
-			RM_LOG_INFO("Testing error reporting: file [%s], size [%u], block size L [%u], buffer [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			RM_LOG_INFO("Testing error reporting: file [%s], size [%zu], block size L [%zu], buffer [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			RM_LOG_INFO("Mocking fread, expectation [%d]", res_expected);
 			RM_TEST_MOCK_FREAD = 1;
 			will_return(__wrap_fread, file_sz);
@@ -347,7 +344,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state)
             }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness of hashing of non-overlapping blocks against expectation of [%d]", res_expected);
-			/* move file pointer back to the beginning */
 			rewind(f);
 		}
 		fclose(f);
@@ -358,7 +354,7 @@ void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
 	FILE                    *f;
 	int                     fd;
-	uint32_t                i, j, L, file_sz;
+	size_t                  i, j, L, file_sz;
 	struct test_rm_state    *rm_state;
 	struct stat             fs;
 	const char              *fname;
@@ -391,22 +387,22 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
 		j = 0;
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
+			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 			if (0 == L) {
-				RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
+				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
 				continue;
 			}
 			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%u] is to small for this test, skipping", fname, file_sz);
+				RM_LOG_INFO("File [%s] size [%zu] is to small for this test, skipping", fname, file_sz);
 				continue;
 			}
 	
-			RM_LOG_INFO("Testing error reporting: file [%s], size [%u], block size L [%u], buffer [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			RM_LOG_INFO("Testing error reporting: file [%s], size [%zu], block size L [%zu], buffer [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			RM_LOG_INFO("Mocking second call to malloc, expectation [%d]", res_expected);
             buf_mocked = malloc(L);
             if (buf_mocked == NULL) {
-                RM_LOG_CRIT("Couldn't malloc test buffer of size [%u], THIS IS SYSTEM ERROR, NOT OURS");
-                assert_true(1 == 0 && "Couldn't malloc test buffer of size [%u], THIS IS SYSTEM ERROR, NOT OURS");
+                RM_LOG_CRIT("Couldn't malloc test buffer of size [%zu], THIS IS SYSTEM ERROR, NOT OURS");
+                assert_true(1 == 0 && "Couldn't malloc test buffer of size [%zu], THIS IS SYSTEM ERROR, NOT OURS");
             }
 			RM_TEST_MOCK_MALLOC = 1;
 			will_return(__wrap_malloc, buf_mocked);
@@ -423,7 +419,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
             }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness of hashing of non-overlapping blocks against expectation of [%d]", res_expected);
-			/* move file pointer back to the beginning */
 			rewind(f);
 		}
 		fclose(f);
@@ -442,7 +437,7 @@ void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state) {
 	FILE                    *f;
 	int                     fd;
-	uint32_t                i, j, L, file_sz;
+	size_t                  i, j, L, file_sz;
 	struct test_rm_state	*rm_state;
 	struct stat             fs;
 	const char              *fname;
@@ -474,17 +469,17 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state) {
 		j = 0;
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
+			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 			if (0 == L) {
-				RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
+				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
 				continue;
 			}
 			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%u] is to small for this test, skipping", fname, file_sz);
+				RM_LOG_INFO("File [%s] size [%zu] is to small for this test, skipping", fname, file_sz);
 				continue;
 			}
 	
-			RM_LOG_INFO("Testing error reporting: file [%s], size [%u], block size L [%u], buffer [%u]", fname, file_sz, L, RM_TEST_L_MAX);
+			RM_LOG_INFO("Testing error reporting: file [%s], size [%zu], block size L [%zu], buffer [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			RM_LOG_INFO("Mocking fread, expectation [%d]", res_expected);
 			res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, f_tx_ch_ch_ref, 0, NULL);
 			assert_int_equal(res, res_expected);
@@ -496,7 +491,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state) {
             }
 			
 			RM_LOG_INFO("PASSED test of error reporting correctness of hashing of non-overlapping blocks against expectation of [%d]", res_expected);
-			/* move file pointer back to the beginning */
 			rewind(f);
 		}
 		fclose(f);
