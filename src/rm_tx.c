@@ -33,7 +33,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     s = NULL;
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 
-    if (x == NULL || y == NULL) {
+    if (x == NULL || y == NULL || rec_ctx == NULL) {
         return -1;
     }
     f_x = fopen(x, "rb");
@@ -101,7 +101,6 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         err = -9;
         goto err_exit;
     }
-    fd_z = fileno(f_z);
 
     s = rm_session_create(RM_PUSH_LOCAL, L);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
     if (s == NULL) {
@@ -152,6 +151,7 @@ done:
         f_y = NULL;
     }
     fflush(f_z);
+    fd_z = fileno(f_z);
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_z, &fs) != 0) {
         err = -13;
@@ -160,7 +160,7 @@ done:
     fclose(f_z);
     f_z = NULL;
     z_sz = fs.st_size;
-    if ((z_sz == x_sz) && (z_sz == s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw)) {
+    if ((z_sz == x_sz) && ((s != NULL && z_sz == s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw) || (s == NULL && z_sz == rec_ctx->rec_by_raw))) {
         if (unlink(y) != 0) {
             err = -14;
             goto err_exit;
