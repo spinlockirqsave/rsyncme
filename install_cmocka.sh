@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # @file     install_cmocka.sh
-# @author   Piotr Gregor < piotrek.gregor@gmail.com >
-# @date     21 june 2016 08:48 PM
+# @author   Piotr Gregor <piotrek.gregor@gmail.com>
+# @date     21 June 2016 08:48 PM
 # @brief    cmocka (and cmake) installation
 
 

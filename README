@@ -63,7 +63,7 @@ TESTS
 Our tests depend on cmocka, which depends on cmake, so be sure to have them installed first
 (you can do it manually following below instructions or run our install_cmocka.sh script).
 To install cmocka using script:
-	bash install_cmocka.sh cmocka (give name of folder when to install cmocka, e.g. "cmocka")
+	bash install_cmocka.sh cmocka (give name of folder where to install cmocka, e.g. "cmocka")
 To install manually:
 	First, install cmake:
 	sudo apt-get install cmake

@@ -3,8 +3,9 @@ CFLAGS	=
 CFLAGS_RELEASE = -c -Wall -o3 -DNDEBUG -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
 CFLAGS_DEBUG = -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
 CPPFLAGS += #compiler flags
-LDFLAGS = -lpthread 	#-lpcap
-LDFLAGS_D = -g -lpthread 	#-lpcap
+LDFLAGS = -pthread 	#-lpcap
+LDFLAGS_D = -g -pthread 	#-lpcap
+LDLIBS := -pthread
 SRCDIR = .
 TESTSRCDIR = ../test/src
 DEBUGOUTPUTDIR = ../build/debug
@@ -62,35 +63,35 @@ rsyncme-release:	../build/release/rsyncme
 rsyncme-release:	CFLAGS += $(CFLAGS_RELEASE)
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
-	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@
+	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@ $(LDLIBS)
 
 $(RELEASETARGET): $(RELEASEOBJECTS) 
-	$(CC) $(LDFLAGS) $(RELEASEOBJECTS) -o $@
+	$(CC) $(LDFLAGS) $(RELEASEOBJECTS) -o $@ $(LDLIBS)
 
 $(CMDDEBUGTARGET):	$(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o
-	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o -o $@
+	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS_NO_MAIN) $(CMDDEBUGTARGET).o -o $@ $(LDLIBS)
 
 $(CMDDEBUGTARGET).o: rm_cmd.c
-	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 
 $(CMDRELEASETARGET):	$(RELEASEOBJECTS_NO_MAIN) $(CMDRELEASETARGET).o
-	$(CC) $(LDFLAGS) $(RELEASEOBJECTS_NO_MAIN) $(CMDRELEASETARGET).o -o $@
+	$(CC) $(LDFLAGS) $(RELEASEOBJECTS_NO_MAIN) $(CMDRELEASETARGET).o -o $@ $(LDLIBS)
 
 $(CMDRELEASETARGET).o: rm_cmd.c
-	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 
 $(DEBUGOUTPUTDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 
 $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 
 #$(DEBUGOBJECTS_NO_MAIN)/%.o: $(SRCDIR)/%.c	the rule is already included in rule for $(DEBUGOUTPUTDIR)/%.o
-#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 #$(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
-#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+#	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 .c.o:
-	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@ $(LDLIBS)
 
 .PHONY: clean
 clean:
