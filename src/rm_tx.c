@@ -20,6 +20,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     FILE        *f_y;   /* file for taking non-overlapping blocks */
     FILE        *f_z;   /* result (with same name as @y) */
     int         fd_x, fd_y, fd_z;
+    uint8_t     f_y_used;
     struct      stat	fs;
     size_t      x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
     size_t                          bkt;    /* hashtable deletion */
@@ -30,10 +31,11 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     const char *f_z_name = "f_z_tmp";
 
     f_x = f_y = f_z = NULL;
+    f_y_used = 0;
     s = NULL;
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 
-    if (x == NULL || y == NULL) {
+    if (x == NULL || y == NULL || rec_ctx == NULL) {
         return -1;
     }
     f_x = fopen(x, "rb");
@@ -41,7 +43,9 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         return -2;
     }
     f_y = fopen(y, "rb");
-    if (f_y == NULL) {
+    if (f_y != NULL) {
+        f_y_used = 1;
+    } else {
         if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
             f_z = fopen(y, "wb+");
             if (f_z == NULL) {
@@ -101,7 +105,6 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         err = -9;
         goto err_exit;
     }
-    fd_z = fileno(f_z);
 
     s = rm_session_create(RM_PUSH_LOCAL, L);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
     if (s == NULL) {
@@ -137,21 +140,23 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
 
 done:
 
-    bkt = 0;
-    twhash_for_each_safe(h, bkt, tmp, e, hlink) {
-        twhash_del((struct twhlist_node*)&e->hlink);
-        free((struct rm_ch_ch_ref_hlink*)e);
+    if (f_y_used == 1) {
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
+        bkt = 0;
+        twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+            twhash_del((struct twhlist_node*)&e->hlink);
+            free((struct rm_ch_ch_ref_hlink*)e);
+        }
     }
-
     if (f_x != NULL) {
         fclose(f_x);
         f_x = NULL;
     }
-    if (f_y != NULL) {
-        fclose(f_y);
-        f_y = NULL;
-    }
     fflush(f_z);
+    fd_z = fileno(f_z);
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_z, &fs) != 0) {
         err = -13;
@@ -160,20 +165,33 @@ done:
     fclose(f_z);
     f_z = NULL;
     z_sz = fs.st_size;
-    if ((z_sz == x_sz) && (z_sz == s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw)) {
-        if (unlink(y) != 0) {
-            err = -14;
-            goto err_exit;
-        }
-        if (rename(f_z_name, y) == -1) {
+    if (z_sz != x_sz) {
+        err =  -14;
+        goto err_exit;
+    }
+    if (s != NULL) {
+        if (z_sz != s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw) {
             err = -15;
             goto err_exit;
         }
-    }
-    if (s != NULL) {
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
         rm_session_free(s);
         s = NULL;
+    } else {
+        if (z_sz != rec_ctx->rec_by_raw) {
+            err = -16;
+            goto err_exit;
+        }
+    }
+    if (f_y_used == 1) {
+        if (unlink(y) != 0) {
+            err = -17;
+            goto err_exit;
+        }
+        if (rename(f_z_name, y) == -1) {
+            err = -18;
+            goto err_exit;
+        }
     }
     return 0;
 
@@ -187,10 +205,12 @@ err_exit:
     if (f_z != NULL) {
         fclose(f_z);
     }
-    bkt = 0;
-    twhash_for_each_safe(h, bkt, tmp, e, hlink) {
-        twhash_del((struct twhlist_node*)&e->hlink);
-        free((struct rm_ch_ch_ref_hlink*)e);
+    if (f_y_used == 1) {
+        bkt = 0;
+        twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+            twhash_del((struct twhlist_node*)&e->hlink);
+            free((struct rm_ch_ch_ref_hlink*)e);
+        }
     }
     if (s != NULL) {
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));

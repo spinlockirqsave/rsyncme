@@ -92,5 +92,10 @@ test_rm_tx_local_push_4(void **state);
 void
 test_rm_tx_local_push_5(void **state);
 
+/* @brief   Test if result file @f_z is reconstructed properly
+ *          when @y doesn't exist and copy buffered is used. */
+void
+test_rm_tx_local_push_6(void **state);
+
 
 #endif	/* RSYNCME_TEST_RM7_H */
