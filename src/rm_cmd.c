@@ -60,21 +60,24 @@ rsyncme_range_error(char argument, unsigned long value) {
 
 int
 main( int argc, char *argv[]) {
-	int     c, idx, res;
-	char	x[RM_CMD_F_LEN_MAX] = {0};
-	char	y[RM_CMD_F_LEN_MAX] = {0};
-	uint8_t	flags = 0;		/* bits		meaning
+    int     c, idx, res;
+    char	x[RM_CMD_F_LEN_MAX] = {0};
+    char	y[RM_CMD_F_LEN_MAX] = {0};
+    uint8_t	flags = 0;      /* bits		meaning
                              * 0		cmd (0 RM_MSG_PUSH,
-                             *              1 RM_MSG_PULLi)
+                             *              1 RM_MSG_PULL)
                              * 1		x
                              * 2		y
                              * 3		ip
                              * 4        force creation of @y if it doesn't exist */
-	char                *pCh;
-	unsigned long       helper;
+    char                *pCh;
+    unsigned long       helper;
+    struct rm_delta_reconstruct_ctx rec_ctx = {0};
+    size_t              copy_all_threshold = 0;
+    size_t              copy_tail_threshold = 0;
     size_t              send_threshold = 0;
-	struct sockaddr_in  remote_addr = {0};
-	size_t              L = RM_DEFAULT_L;
+    struct sockaddr_in  remote_addr = {0};
+    size_t              L = RM_DEFAULT_L;
     rm_push_flags       push_flags = 0;
 
 	if (argc < 4) {
@@ -245,7 +248,7 @@ main( int argc, char *argv[]) {
 			fprintf(stderr, "\nLocal push.\n");
             /* setup push flags */
             push_flags |= ((flags & RM_BIT_4) >> 4);
-			res = rm_tx_local_push(x, y, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags);
+			res = rm_tx_local_push(x, y, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
 			if (res < 0) {
                 switch (res) {
                     case -1:
