@@ -13,8 +13,7 @@
 #include "test_rm8.h"
 
 
-int main(void)
-{
+int main(void) {
     const struct CMUnitTest tests[] = {
 	    cmocka_unit_test(test_rm_tx_local_push_1),
 	    cmocka_unit_test(test_rm_tx_local_push_2),
