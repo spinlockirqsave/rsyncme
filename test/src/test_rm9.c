@@ -35,6 +35,8 @@ test_rm_copy_files_and_postfix(const char *postfix) {
     char        buf[RM_FILE_LEN_MAX + 50];
     unsigned long const seed = time(NULL);
 
+    f = NULL;
+    f_copy = NULL;
     i = 0;
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb");
@@ -61,7 +63,10 @@ test_rm_copy_files_and_postfix(const char *postfix) {
             RM_LOG_INFO("Creating copy [%s] of file [%s]", buf, rm_test_fnames[i]);
             f_copy = fopen(buf, "wb");
             if (f_copy == NULL) {
-                fclose(f);
+                if (f != NULL) {
+                    fclose(f);
+                    f = NULL;
+                }
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
                 return -1;
             }
@@ -71,30 +76,60 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                     break;
                 case -2:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s]", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -2;
                 case -3:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s],"
                             " error set on original file", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -3;
                 case -4:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s],"
                             " error set on copy", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -4;
                 default:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], unknown error", 
                             buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -13;
             }
-            fclose(f);
-            fclose(f_copy);
+            if (f != NULL) {
+                fclose(f);
+                f = NULL;
+            }
+            if (f_copy != NULL) {
+                fclose(f_copy);
+                f_copy = NULL;
+            }
         } else {
             RM_LOG_INFO("Using previously created copy of file [%s]", rm_test_fnames[i]);
         }
@@ -146,6 +181,7 @@ test_rm_setup(void **state) {
     }
     rm_state.l = rm_test_L_blocks;
     *state = &rm_state;
+    f = NULL;
 
     i = 0;
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -165,7 +201,10 @@ test_rm_setup(void **state) {
         } else {
             RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
         }
-        fclose(f);
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
     }
 
     i = 0; /* find biggest L */
@@ -184,17 +223,24 @@ test_rm_setup(void **state) {
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 2nd memory buffer"
-                " of [%u] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%u] bytes, malloc failed", j);
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
 	}
-    assert_true(buf != NULL);
+    assert_true(buf != NULL && "Can't malloc buffer");
     rm_state.buf2 = buf;
 
     s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for loccal push */
     if (s == NULL) {
         RM_LOG_ERR("Can't allocate session local push");
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
 	}
-    assert_true(s != NULL);
+    assert_true(s != NULL && "Can't create session");
     rm_state.s = s;
     return 0;
 }
@@ -207,6 +253,7 @@ test_rm_teardown(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f = NULL;
     if (RM_TEST_9_DELETE_FILES == 1) { /* delete all test files */
         i = 0;
         for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -215,7 +262,10 @@ test_rm_teardown(void **state) {
                 RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
-                fclose(f);
+                if (f != NULL) {
+                    fclose(f);
+                    f = NULL;
+                }
                 remove(rm_test_fnames[i]);
             }
         }
@@ -269,6 +319,9 @@ test_rm_local_push_err_1(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
 
     i = 0; /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -277,20 +330,29 @@ test_rm_local_push_err_1(void **state) {
         if (f_y == NULL) {
             RM_LOG_PERR("Can't open file [%s]", f_y_name);
         }
-        assert_true(f_y != NULL);
+        assert_true(f_y != NULL && "Can't open file @y");
         fd_y = fileno(f_y);
         if (fstat(fd_y, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
-            fclose(f_y);
-            assert_true(1 == 0);
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
+            assert_true(1 == 0 && "Can't fstat @y file");
         }
         f_y_sz = fs.st_size; 
         if (f_y_sz < 1) {
             RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
-            fclose(f_y);
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
-        fclose(f_y);
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
         strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX);
         strncpy(buf_x_name + strlen(buf_x_name), "_test_9", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
@@ -298,8 +360,10 @@ test_rm_local_push_err_1(void **state) {
         if (f_copy == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
         }
-        f_x = f_copy;
-        fclose(f_x);
+        if (f_copy != NULL) {
+            fclose(f_copy);
+            f_copy = NULL;
+        }
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
@@ -337,13 +401,14 @@ test_rm_local_push_err_1(void **state) {
             /* RM_BIT_0 (force creation) bit not set, expected -4 */
             flags = 0;
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
-            assert_true(f_x != NULL);
+            assert_true(f_x != NULL && "Can't open file @x");
 			RM_TEST_MOCK_FOPEN64 = 1;
 			will_return(__wrap_fopen64, f_x);
 			will_return(__wrap_fopen64, NULL);
             err = rm_tx_local_push(buf_x_name, "NOT_NULL_EITHER", L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
 			RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(err, -4);
+            f_x = NULL;
 
             /* RM_BIT_0 (force creation) bit set but call to fopen fails, expected -3 (need to mock three calls to fopen) */
             flags |= RM_BIT_0;
@@ -356,6 +421,7 @@ test_rm_local_push_err_1(void **state) {
             err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
 			RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(err, -3);
+            f_x = NULL;
 		}
         RM_LOG_INFO("PASSED test #1 (NULL file pointers), file [%s], size [%u]", f_y_name, f_y_sz);
 	}
