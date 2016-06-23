@@ -86,27 +86,57 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                     break;
                 case -2:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s]", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -2;
                 case -3:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], error set on original file", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -3;
                 case -4:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], error set on copy", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -4;
                 default:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], unknown error", buf, rm_test_fnames[i]);
-                    fclose(f);
-                    fclose(f_copy);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_copy != NULL) {
+                        fclose(f_copy);
+                        f_copy = NULL;
+                    }
                     return -13;
             }
-            fclose(f);
-            fclose(f_copy);
+            if (f != NULL) {
+                fclose(f);
+                f = NULL;
+            }
+            if (f_copy != NULL) {
+                fclose(f_copy);
+                f_copy = NULL;
+            }
         } else {
             RM_LOG_INFO("Using previously created copy of file [%s]", rm_test_fnames[i]);
         }
@@ -154,6 +184,7 @@ test_rm_setup(void **state) {
     }
     rm_state.l = rm_test_L_blocks;
     *state = &rm_state;
+    f = NULL;
 
     i = 0;
     seed = time(NULL);
@@ -175,7 +206,10 @@ test_rm_setup(void **state) {
         } else {
             RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
         }
-        fclose(f);
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
     }
 
     /* find biggest L */
@@ -350,6 +384,9 @@ test_rm_rx_process_delta_element_1(void **state) {
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f = NULL;
 
     /* a storage for our result file metainfo */
     f_z = &rm_state->f_z;
@@ -366,13 +403,19 @@ test_rm_rx_process_delta_element_1(void **state) {
         fd = fileno(f);
         if (fstat(fd, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", fname);
-            fclose(f);
-            assert_true(1 == 0);
+            if (f != NULL) {
+                fclose(f);
+                f = NULL;
+            }
+            assert_true(1 == 0 && "Can't open file @x == @y");
         }
         file_sz = fs.st_size; 
         if (file_sz < 2) {
             RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", fname, file_sz);
-            fclose(f);
+            if (f != NULL) {
+                fclose(f);
+                f = NULL;
+            }
             continue;
         }
         detail_case_1_n = 0;
@@ -464,6 +507,10 @@ test_rm_rx_process_delta_element_1(void **state) {
                         break;
                     default:
                         RM_LOG_ERR("Unknown delta element type!");
+                        if (f != NULL) {
+                            fclose(f);
+                            f = NULL;
+                        }
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
                 if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
@@ -491,28 +538,43 @@ test_rm_rx_process_delta_element_1(void **state) {
             /* verify files size */
             if (fflush(f_z->f) !=0) {
                 RM_LOG_PERR("Can't fflush file [%s]", f_z->name);
-                fclose(f_x);
-                fclose(f_y);
-                fclose(f_z->f);
-                assert_true(1 == 0);
+                if (f != NULL) {
+                    fclose(f);
+                    f = NULL;
+                }
+                if (f_z->f != NULL) {
+                    fclose(f_z->f);
+                    f_z->f = NULL;
+                }
+                assert_true(1 == 0 && "Can't fflush file @x == @y");
             }
             memset(&fs, 0, sizeof(fs)); /* get @x size */
             if (fstat(fd, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", fname);
-                fclose(f_x);
-                fclose(f_y);
-                fclose(f_z->f);
-                assert_true(1 == 0);
+                if (f != NULL) {
+                    fclose(f);
+                    f = NULL;
+                }
+                if (f_z->f != NULL) {
+                    fclose(f_z->f);
+                    f_z->f = NULL;
+                }
+                assert_true(1 == 0 && "Can't fstat file @x == @y");
             }
             file_sz = fs.st_size;
             fd_z = fileno(f_z->f);  /* get @z size */
             memset(&fs, 0, sizeof(fs));
             if (fstat(fd_z, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", f_z->name);
-                fclose(f_x);
-                fclose(f_y);
-                fclose(f_z->f);
-                assert_true(1 == 0);
+                if (f != NULL) {
+                    fclose(f);
+                    f = NULL;
+                }
+                if (f_z->f != NULL) {
+                    fclose(f_z->f);
+                    f_z->f = NULL;
+                }
+                assert_true(1 == 0 && "Can'fstat @f_z file");
             }
             f_z_sz = fs.st_size;
             assert_true(file_sz == f_z_sz && "File sizes differ!");
@@ -521,20 +583,38 @@ test_rm_rx_process_delta_element_1(void **state) {
             while (k < (rec_by_ref + rec_by_raw)) {
                 if (rm_fpread(&cx, sizeof(unsigned char), 1, k, prvt->f_x) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", fname);
-                    fclose(f_x);
-                    fclose(f_y);
-                    fclose(f_z->f);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_z->f != NULL) {
+                        fclose(f_z->f);
+                        f_z->f = NULL;
+                    }
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
                 if (rm_fpread(&cz, sizeof(unsigned char), 1, k, prvt->f_z) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_z->name);
-                    fclose(f_x);
-                    fclose(f_y);
-                    fclose(f_z->f);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_z->f != NULL) {
+                        fclose(f_z->f);
+                        f_z->f = NULL;
+                    }
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
                     RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n");
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_z->f != NULL) {
+                        fclose(f_z->f);
+                        f_z->f = NULL;
+                    }
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -598,13 +678,22 @@ test_rm_rx_process_delta_element_1(void **state) {
                 assert_true(1 == 0);
             }
 
-            /* and close */
-            fclose(f_z->f);
+            if (f_z->f != NULL) { /* and close */
+                fclose(f_z->f);
+                f_z->f = NULL;
+            }
 
-            /* and unlink/remove */
-            if (RM_TEST_7_DELETE_FILES == 1) {
+            if (RM_TEST_7_DELETE_FILES == 1) { /* and unlink/remove */
                 if (unlink(f_z->name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_z->name);
+                    if (f != NULL) {
+                        fclose(f);
+                        f = NULL;
+                    }
+                    if (f_z->f != NULL) {
+                        fclose(f_z->f);
+                        f_z->f = NULL;
+                    }
                     assert_true(1 == 0);
                 }
             }
@@ -619,9 +708,14 @@ test_rm_rx_process_delta_element_1(void **state) {
             assert_int_equal(blocks_n_exp, blocks_n);
 			
 			/* move file pointer back to the beginning */
-			rewind(f);
+			if (f != NULL) {
+                rewind(f);
+            }
 		}
-		fclose(f);
+		if (f!= NULL) {
+            fclose(f);
+            f = NULL;
+        }
         RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all blocks sizes, (detail cases: #1 [%u] #2 [%u] #3 [%u])",
                 fname, f_z->name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
