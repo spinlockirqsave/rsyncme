@@ -38,8 +38,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
     i = 0;
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb");
-        if (f == NULL) {
-            /* file doesn't exist, create */
+        if (f == NULL) { /* if file doesn't exist, create */
             RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
             f = fopen(rm_test_fnames[i], "wb+");
             if (f == NULL) {
@@ -54,16 +53,15 @@ test_rm_copy_files_and_postfix(const char *postfix) {
         } else {
             RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
         }
-        /* create copy */
-        strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX);
+        strncpy(buf, rm_test_fnames[i], RM_FILE_LEN_MAX); /* create copy */
         strncpy(buf + strlen(buf), postfix, 49);
         buf[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf, "rb+");
-        if (f_copy == NULL) {
-            /* doesn't exist, create */
+        if (f_copy == NULL) { /* if doesn't exist, create */
             RM_LOG_INFO("Creating copy [%s] of file [%s]", buf, rm_test_fnames[i]);
             f_copy = fopen(buf, "wb");
             if (f_copy == NULL) {
+                fclose(f);
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
                 return -1;
             }
@@ -217,6 +215,7 @@ test_rm_teardown(void **state) {
                 RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
+                fclose(f);
                 remove(rm_test_fnames[i]);
             }
         }

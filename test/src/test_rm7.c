@@ -77,6 +77,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
             f_copy = fopen(buf, "wb");
             if (f_copy == NULL) {
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
+                fclose(f);
                 return -1;
             }
             err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
@@ -222,6 +223,7 @@ test_rm_teardown(void **state) {
                 RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
+                fclose(f);
                 remove(rm_test_fnames[i]);
             }
         }

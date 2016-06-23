@@ -63,6 +63,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
             f_copy = fopen(buf, "wb");
             if (f_copy == NULL) {
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
+                fclose(f);
                 return -1;
             }
             err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
@@ -225,6 +226,7 @@ test_rm_teardown(void **state) {
                 RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
+                fclose(f);
                 remove(rm_test_fnames[i]);
             }
         }
@@ -269,6 +271,9 @@ test_rm_tx_local_push_1(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -299,6 +304,7 @@ test_rm_tx_local_push_1(void **state) {
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            if (f_y != NULL) fclose(f_y);
         }
         assert_true(f_copy != NULL && "Can't open copy");
         f_x = f_copy;
@@ -306,7 +312,8 @@ test_rm_tx_local_push_1(void **state) {
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_x, &fs) != 0) {    /* get @x size */
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
-            fclose(f_x);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
@@ -332,8 +339,8 @@ test_rm_tx_local_push_1(void **state) {
             send_threshold = L;
             flags = 0;
 
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
@@ -353,6 +360,7 @@ test_rm_tx_local_push_1(void **state) {
             f_y = fopen(f_y_name, "rb");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't open file [%s]", f_y_name);
+                if (f_x != NULL) fclose(f_x);
             }
             assert_true(f_y != NULL && "Can't open file @y");
             fd_y = fileno(f_y);
@@ -439,9 +447,11 @@ test_rm_tx_local_push_1(void **state) {
             }
             RM_LOG_INFO("PASSED test #1: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
             /* no need to recreate @y file as input to local push in this test, as @y stays the same all the time */
-	}
-	fclose(f_x);
-        fclose(f_y);
+        }
+        if (f_x != NULL) fclose(f_x);
+        f_x = NULL;
+        if (f_y != NULL) fclose(f_y);
+        f_y = NULL;
         RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
@@ -484,6 +494,9 @@ test_rm_tx_local_push_2(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -514,6 +527,7 @@ test_rm_tx_local_push_2(void **state) {
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            if (f_y != NULL) fclose(f_y);
         }
         assert_true(f_copy != NULL && "Can't open copy");
         f_x = f_copy;
@@ -561,8 +575,12 @@ test_rm_tx_local_push_2(void **state) {
             send_threshold = L;
             flags = 0;
 
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+            }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
@@ -581,6 +599,9 @@ test_rm_tx_local_push_2(void **state) {
             f_y = fopen(f_y_name, "rb");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't open file [%s]", f_y_name);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                }
             }
             assert_true(f_y != NULL && "Can't open file @y");
             fd_y = fileno(f_y);
@@ -686,6 +707,12 @@ test_rm_tx_local_push_2(void **state) {
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
                 RM_LOG_ERR("Error copying file @x to @y for next test");
+                if (f_x != NULL) {
+                    fclose(f_x);
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                }
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
             if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, 0, f_y) != 1) {
@@ -697,9 +724,11 @@ test_rm_tx_local_push_2(void **state) {
 		}
 		if (f_x) {
 			fclose(f_x);
+            f_x = NULL;
 		}
 		if (f_y) {
 			fclose(f_y);
+            f_y = NULL;
 		}
         RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
@@ -743,6 +772,9 @@ test_rm_tx_local_push_3(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -773,13 +805,16 @@ test_rm_tx_local_push_3(void **state) {
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            if (f_y != NULL) fclose(f_y);
         }
+        assert_true(f_copy != NULL && "Can't open copy file");
         f_x = f_copy;
         fd_x = fileno(f_x);
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_x, &fs) != 0) {    /* get @x size */
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
             fclose(f_x);
+            fclose(f_y);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
@@ -819,8 +854,8 @@ test_rm_tx_local_push_3(void **state) {
             send_threshold = L;
             flags = 0;
 
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
@@ -839,6 +874,7 @@ test_rm_tx_local_push_3(void **state) {
             f_y = fopen(f_y_name, "rb");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't open file [%s]", f_y_name);
+                fclose(f_y);
             }
             assert_true(f_y != NULL && "Can't open file @y");
             fd_y = fileno(f_y);
@@ -941,22 +977,27 @@ test_rm_tx_local_push_3(void **state) {
             f_y = fopen(f_y_name, "wb+");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                if (f_x != NULL) fclose(f_x);
             }
             assert_true(f_y != NULL);
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
                 RM_LOG_ERR("Error copying file @x to @y for next test");
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
             if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 continue;
             }
         }
-        fclose(f_x);
-        fclose(f_y);
+        if (f_x != NULL) fclose(f_x);
+        f_x = NULL;
+        if (f_y != NULL) fclose(f_y);
+        f_y = NULL;
         RM_LOG_INFO("PASSED test #3: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
@@ -999,6 +1040,9 @@ test_rm_tx_local_push_4(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -1029,42 +1073,45 @@ test_rm_tx_local_push_4(void **state) {
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            if (f_y != NULL) fclose(f_y);
         }
+        assert_true(f_copy != NULL && "Can't open copy file");
         f_x = f_copy;
         fd_x = fileno(f_x);
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_x, &fs) != 0) {    /* get @x size */
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
-            fclose(f_x);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
         if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             continue;
         }
         cx_copy_first = cx;     /* remember the first byte for recreation */
         cx = (cx + 1) % 256;    /* change first byte, so ZERO_DIFF can't happen in this test */
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             continue;
         }
         if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             continue;
         }
         cx_copy_last = cx;      /* remember the last byte for recreation */
         cx = (cx + 1) % 256;    /* change last byte, so ZERO_DIFF and TAIL delta can't happen in this test */
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             continue;
         }
 
@@ -1085,8 +1132,8 @@ test_rm_tx_local_push_4(void **state) {
             send_threshold = L;
             flags = 0;
 
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
@@ -1105,6 +1152,7 @@ test_rm_tx_local_push_4(void **state) {
             f_y = fopen(f_y_name, "rb");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't open file [%s]", f_y_name);
+                if (f_x != NULL) fclose(f_x);
             }
             assert_true(f_y != NULL && "Can't open file @y");
             fd_y = fileno(f_y);
@@ -1113,16 +1161,16 @@ test_rm_tx_local_push_4(void **state) {
             memset(&fs, 0, sizeof(fs)); /* get @x size */
             if (fstat(fd_x, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0);
             }
             f_x_sz = fs.st_size;
             memset(&fs, 0, sizeof(fs));
             if (fstat(fd_y, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0);
             }
             f_y_sz = fs.st_size;
@@ -1132,18 +1180,20 @@ test_rm_tx_local_push_4(void **state) {
             while (k < f_x_sz) {
                 if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
-                    fclose(f_x);
-                    fclose(f_y);
+                    if (f_x != NULL) fclose(f_x);
+                    if (f_y != NULL) fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
                 if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
-                    fclose(f_x);
-                    fclose(f_y);
+                    if (f_x != NULL) fclose(f_x);
+                    if (f_y != NULL) fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
                     RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    if (f_x != NULL) fclose(f_x);
+                    if (f_y != NULL) fclose(f_y);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -1152,9 +1202,12 @@ test_rm_tx_local_push_4(void **state) {
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
 				if (f_y) {
 					fclose(f_y);
+                    f_y = NULL;
 				}
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
+                    if (f_x != NULL) fclose(f_x);
+                    if (f_y != NULL) fclose(f_y);
                     assert_true(1 == 0);
                 }
             }
@@ -1247,28 +1300,33 @@ test_rm_tx_local_push_4(void **state) {
             f_y = fopen(f_y_name, "wb+");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                if (f_x != NULL) fclose(f_x);
             }
             assert_true(f_y != NULL);
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
                 RM_LOG_ERR("Error copying file @x to @y for next test");
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
             if (rm_fpwrite(&cx_copy_first, sizeof(unsigned char), 1, 0, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 continue;
             }
             if (rm_fpwrite(&cx_copy_last, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) fclose(f_x);
+                if (f_y != NULL) fclose(f_y);
                 continue;
             }
-		}
-		fclose(f_x);
-        fclose(f_y);
+        }
+        if (f_x != NULL) fclose(f_x);
+        f_x = NULL;
+        if (f_y != NULL) fclose(f_y);
+        f_y = NULL;
         RM_LOG_INFO("PASSED test #4: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
@@ -1277,6 +1335,8 @@ test_rm_tx_local_push_4(void **state) {
         err = test_rm_delete_copies_of_files_postfixed("_test_4");
         if (err != 0) {
             RM_LOG_ERR("Error removing files (unlink)");
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }
@@ -1311,6 +1371,9 @@ test_rm_tx_local_push_5(void **state) {
 
     rm_state = *state;
     assert_true(rm_state != NULL);
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -1324,13 +1387,13 @@ test_rm_tx_local_push_5(void **state) {
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_y, &fs) != 0) {    /* get file size */
             RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
-            fclose(f_y);
-            assert_true(1 == 0);
+            if (f_y != NULL) fclose(f_y);
+            assert_true(1 == 0 && "Can't open @y file");
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 3) {
             RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
-            fclose(f_y);
+            if (f_y != NULL) fclose(f_y);
             continue;
         }
 
@@ -1341,6 +1404,7 @@ test_rm_tx_local_push_5(void **state) {
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            if (f_y != NULL) fclose(f_y);
         }
         assert_true(f_copy != NULL && "Can't open copy of file");
         f_x = f_copy;
@@ -1348,51 +1412,88 @@ test_rm_tx_local_push_5(void **state) {
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_x, &fs) != 0) {    /* get @x size */
             RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
-            fclose(f_x);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
         if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
         cx_copy_first = cx;     /* remember the first byte for recreation */
         cx = (cx + 1) % 256;    /* change first byte, so ZERO_DIFF can't happen in this test */
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
         half_sz = f_x_sz / 2 + f_x_sz % 2;
         if (rm_fpread(&cx, sizeof(unsigned char), 1, half_sz, f_x) != 1) { /* read middle byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
         cx_copy_middle = cx;    /* remember the middle byte for recreation */
         cx = (cx + 1) % 256;    /* change middle byte */
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, half_sz, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
         if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
         cx_copy_last = cx;      /* remember the last byte for recreation */
         cx = (cx + 1) % 256;    /* change last byte */
         if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             continue;
         }
 
@@ -1413,8 +1514,14 @@ test_rm_tx_local_push_5(void **state) {
             send_threshold = L;
             flags = 0;
 
-            fclose(f_x);
-            fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
@@ -1433,6 +1540,10 @@ test_rm_tx_local_push_5(void **state) {
             f_y = fopen(f_y_name, "rb");
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't open file [%s]", f_y_name);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
             }
             assert_true(f_y != NULL && "Can't open file @y");
             fd_y = fileno(f_y);
@@ -1441,16 +1552,28 @@ test_rm_tx_local_push_5(void **state) {
             memset(&fs, 0, sizeof(fs)); /* get @x size */
             if (fstat(fd_x, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 assert_true(1 == 0);
             }
             f_x_sz = fs.st_size;
             memset(&fs, 0, sizeof(fs));
             if (fstat(fd_y, &fs) != 0) {
                 RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 assert_true(1 == 0);
             }
             f_y_sz = fs.st_size;
@@ -1460,14 +1583,26 @@ test_rm_tx_local_push_5(void **state) {
             while (k < f_x_sz) {
                 if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
-                    fclose(f_x);
-                    fclose(f_y);
+                    if (f_x != NULL) {
+                        fclose(f_x);
+                        f_x = NULL;
+                    }
+                    if (f_y != NULL) {
+                        fclose(f_y);
+                        f_y = NULL;
+                    }
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
                 if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
-                    fclose(f_x);
-                    fclose(f_y);
+                    if (f_x != NULL) {
+                        fclose(f_x);
+                        f_x = NULL;
+                    }
+                    if (f_y != NULL) {
+                        fclose(f_y);
+                        f_y = NULL;
+                    }
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
@@ -1483,7 +1618,15 @@ test_rm_tx_local_push_5(void **state) {
 				}
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
-                    assert_true(1 == 0);
+                    if (f_x != NULL) {
+                        fclose(f_x);
+                        f_x = NULL;
+                    }
+                    if (f_y != NULL) {
+                        fclose(f_y);
+                        f_y = NULL;
+                    }
+                    assert_true(1 == 0 && "Can't unlink");
                 }
             }
             /* detail cases */
@@ -1582,33 +1725,65 @@ test_rm_tx_local_push_5(void **state) {
             if (f_y == NULL) {
                 RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
             }
-            assert_true(f_y != NULL);
+            assert_true(f_y != NULL && "Can't recreate @y file");
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
                 RM_LOG_ERR("Error copying file @x to @y for next test");
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
             if (rm_fpwrite(&cx_copy_first, sizeof(unsigned char), 1, 0, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 continue;
             }
             if (rm_fpwrite(&cx_copy_middle, sizeof(unsigned char), 1, half_sz, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 continue;
             }
             if (rm_fpwrite(&cx_copy_last, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
-                fclose(f_x);
-                fclose(f_y);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 continue;
             }
-		}
-		fclose(f_x);
-        fclose(f_y);
+        }
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
         RM_LOG_INFO("PASSED test #5: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
@@ -1617,6 +1792,14 @@ test_rm_tx_local_push_5(void **state) {
         err = test_rm_delete_copies_of_files_postfixed("_test_5");
         if (err != 0) {
             RM_LOG_ERR("Error removing files (unlink)");
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }
@@ -1647,6 +1830,9 @@ test_rm_tx_local_push_6(void **state) {
         RM_LOG_ERR("Error copying files, skipping test");
         return;
     }
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
     i = 0; /* delete all test files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "wb+");
