@@ -37,6 +37,8 @@ install_cmocka ()
     sudo make
     echo "--> installing..."
     sudo make install
+    user=$(whoami)
+    sudo chown -R "$user": .
 }
 
 
