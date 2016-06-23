@@ -31,7 +31,7 @@ static int
 test_rm_copy_files_and_postfix(const char *postfix) {
     int         err;
     FILE        *f, *f_copy;
-    uint32_t    i, j;
+    size_t      i, j;
     char        buf[RM_FILE_LEN_MAX + 50];
     unsigned long const seed = time(NULL);
 
@@ -47,7 +47,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                 exit(EXIT_FAILURE);
             }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
             while (j--) {
                 fputc(rand(), f);
@@ -140,7 +140,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
 static int
 test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     int         err;
-    uint32_t    i;
+    size_t      i;
     char        buf[RM_FILE_LEN_MAX + 50];
 
     i = 0;
@@ -165,7 +165,7 @@ int RM_TEST_MOCK_FOPEN64    = 0;
 int
 test_rm_setup(void **state) {
     int         err;
-    uint32_t    i,j;
+    size_t      i,j;
     FILE        *f;
     void        *buf;
     struct rm_session   *s;
@@ -193,7 +193,7 @@ test_rm_setup(void **state) {
                 exit(EXIT_FAILURE);
             }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
             while (j--) {
                 fputc(rand(), f);
@@ -217,13 +217,13 @@ test_rm_setup(void **state) {
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 1st memory buffer"
-                " of [%u] bytes, malloc failed", j);
+                " of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%u] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
         if (f != NULL) {
             fclose(f);
             f = NULL;
@@ -247,7 +247,7 @@ test_rm_setup(void **state) {
 
 int
 test_rm_teardown(void **state) {
-    int     i;
+    size_t  i;
     FILE    *f;
     struct  test_rm_state *rm_state;
 
@@ -342,7 +342,7 @@ test_rm_local_push_err_1(void **state) {
         }
         f_y_sz = fs.st_size; 
         if (f_y_sz < 1) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             if (f_y != NULL) {
                 fclose(f_y);
                 f_y = NULL;
@@ -367,12 +367,12 @@ test_rm_local_push_err_1(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 (NULL file pointers), file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #1 (NULL file pointers), file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            RM_LOG_INFO("Testing #1 (NULL file pointers): file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing #1 (NULL file pointers): file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
 
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
@@ -423,7 +423,7 @@ test_rm_local_push_err_1(void **state) {
             assert_int_equal(err, -3);
             f_x = NULL;
 		}
-        RM_LOG_INFO("PASSED test #1 (NULL file pointers), file [%s], size [%u]", f_y_name, f_y_sz);
+        RM_LOG_INFO("PASSED test #1 (NULL file pointers), file [%s], size [%zu]", f_y_name, f_y_sz);
 	}
     if (RM_TEST_9_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_9");
