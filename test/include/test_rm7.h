@@ -30,7 +30,7 @@
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            15
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
-uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
+size_t      rm_test_fsizes[RM_TEST_FNAMES_N];
 size_t      rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_file {

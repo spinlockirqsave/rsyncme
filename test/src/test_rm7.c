@@ -17,7 +17,7 @@ const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
     "rm_f_100_ts7", "rm_f_511_ts7", "rm_f_512_ts7", "rm_f_513_ts7", "rm_f_1023_ts7",
     "rm_f_1024_ts7", "rm_f_1025_ts7", "rm_f_4096_ts7", "rm_f_7787_ts7", "rm_f_20100_ts7"};
 
-uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
+size_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
                                                 100, 511, 512, 513, 1023,
                                                 1024, 1025, 4096, 7787, 20100 };
 
@@ -45,7 +45,7 @@ static int
 test_rm_copy_files_and_postfix(const char *postfix) {
     int         err;
     FILE        *f, *f_copy;
-    uint32_t    i, j;
+    size_t      i, j;
     char        buf[RM_FILE_LEN_MAX + 50];
     unsigned long const seed = time(NULL);
 
@@ -60,7 +60,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                 exit(EXIT_FAILURE);
             }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
             while (j--) {
                 fputc(rand(), f);
@@ -147,7 +147,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
 static int
 test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     int         err;
-    uint32_t    i;
+    size_t      i;
     char        buf[RM_FILE_LEN_MAX + 50];
 
     i = 0;
@@ -168,7 +168,7 @@ test_rm_delete_copies_of_files_postfixed(const char *postfix) {
 int
 test_rm_setup(void **state) {
     int         err;
-    uint32_t    i,j;
+    size_t      i,j;
     FILE        *f;
     void        *buf;
     struct rm_session   *s;
@@ -198,7 +198,7 @@ test_rm_setup(void **state) {
                 exit(EXIT_FAILURE);
             }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
             while (j--) {
                 fputc(rand(), f);
@@ -220,13 +220,13 @@ test_rm_setup(void **state) {
     }
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 1st memory buffer of [%u] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 1st memory buffer of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%u] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
@@ -243,7 +243,7 @@ test_rm_setup(void **state) {
 
 int
 test_rm_teardown(void **state) {
-    int     i;
+    size_t  i;
     FILE    *f;
     struct  test_rm_state *rm_state;
 
@@ -411,7 +411,7 @@ test_rm_rx_process_delta_element_1(void **state) {
         }
         file_sz = fs.st_size; 
         if (file_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", fname, file_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", fname, file_sz);
             if (f != NULL) {
                 fclose(f);
                 f = NULL;
@@ -424,13 +424,13 @@ test_rm_rx_process_delta_element_1(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 of delta reconstruction correctness, file [%s], size [%u],"
-                    " block size L [%u]", fname, file_sz, L);
+            RM_LOG_INFO("Validating testing #1 of delta reconstruction correctness, file [%s], size [%zu],"
+                    " block size L [%zu]", fname, file_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, fname);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing delta reconstruction #1: file [%s], size [%u], block size L [%u]", fname, file_sz, L);
+            RM_LOG_INFO("Testing delta reconstruction #1: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 
             /* reference file exists, split it and calc checksums */
             f_y = f;
@@ -606,7 +606,7 @@ test_rm_rx_process_delta_element_1(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n");
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n");
                     if (f != NULL) {
                         fclose(f);
                         f = NULL;
@@ -662,14 +662,14 @@ test_rm_rx_process_delta_element_1(void **state) {
 
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0) {
-                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
+                RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
             }
 
@@ -716,7 +716,7 @@ test_rm_rx_process_delta_element_1(void **state) {
             fclose(f);
             f = NULL;
         }
-        RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all blocks sizes, (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all blocks sizes, (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 fname, f_z->name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
     return;
@@ -786,7 +786,7 @@ test_rm_rx_process_delta_element_2(void **state) {
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
         }
@@ -831,16 +831,16 @@ test_rm_rx_process_delta_element_2(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of delta reconstruction, file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #2 of delta reconstruction, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
             if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing delta reconstruction #2: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing delta reconstruction #2: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0);
@@ -982,7 +982,7 @@ test_rm_rx_process_delta_element_2(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n");
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n");
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -990,14 +990,14 @@ test_rm_rx_process_delta_element_2(void **state) {
 
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0) {
-                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA ZERO DIFF [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u], DELTA RAW [%u] bytes [%u]",
+                    RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                     }
             } else {
-                RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%u], L [%u], blocks [%u], DELTA REF [%u] bytes [%u] (DELTA_TAIL [%u] bytes [%u]), DELTA RAW [%u] bytes [%u]",
+                RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
             }
             /* detail cases */
@@ -1066,7 +1066,7 @@ test_rm_rx_process_delta_element_2(void **state) {
 		}
 		fclose(f_x);
         fclose(f_y);
-        RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all blocks sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all blocks sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 f_y_name, f_z->name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
