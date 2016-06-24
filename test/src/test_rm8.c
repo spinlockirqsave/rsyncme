@@ -17,7 +17,7 @@ const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
     "rm_f_100_ts8", "rm_f_511_ts8", "rm_f_512_ts8", "rm_f_513_ts8", "rm_f_1023_ts8",
     "rm_f_1024_ts8", "rm_f_1025_ts8", "rm_f_4096_ts8", "rm_f_7787_ts8", "rm_f_20100_ts8"};
 
-uint32_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
+size_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
                                                 100, 511, 512, 513, 1023,
                                                 1024, 1025, 4096, 7787, 20100 };
 
@@ -32,7 +32,7 @@ static int
 test_rm_copy_files_and_postfix(const char *postfix) {
     int         err;
     FILE        *f, *f_copy;
-    uint32_t    i, j;
+    size_t      i, j;
     char        buf[RM_FILE_LEN_MAX + 50];
     unsigned long const seed = time(NULL);
 
@@ -46,7 +46,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                 exit(EXIT_FAILURE);
             }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
             while (j--) {
                 fputc(rand(), f);
@@ -123,7 +123,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
 static int
 test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     int         err;
-    uint32_t    i;
+    size_t      i;
     char        buf[RM_FILE_LEN_MAX + 50];
 
     i = 0;
@@ -144,7 +144,7 @@ test_rm_delete_copies_of_files_postfixed(const char *postfix) {
 int
 test_rm_setup(void **state) {
     int         err;
-    uint32_t    i,j;
+    size_t      i,j;
     FILE        *f;
     void        *buf;
     struct rm_session   *s;
@@ -172,7 +172,7 @@ test_rm_setup(void **state) {
                 exit(EXIT_FAILURE);
             }
             j = rm_test_fsizes[i];
-            RM_LOG_INFO("Writing [%u] random bytes to file [%s]", j, rm_test_fnames[i]);
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
             srand(seed);
             while (j--) {
                 fputc(rand(), f);
@@ -190,13 +190,13 @@ test_rm_setup(void **state) {
     }
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 1st memory buffer of [%u] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 1st memory buffer of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%u] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
@@ -212,7 +212,7 @@ test_rm_setup(void **state) {
 
 int
 test_rm_teardown(void **state) {
-    int     i;
+    size_t  i;
     FILE    *f;
     struct  test_rm_state *rm_state;
 
@@ -239,7 +239,7 @@ test_rm_teardown(void **state) {
 
 static void
 test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
-    RM_LOG_CRIT("rec_ctx dump:\nmethod [%u], rec_by_ref [%zu], rec_by_raw [%zu], delta_ref_n [%zu], delta_raw_n [%zu], "
+    RM_LOG_CRIT("rec_ctx dump:\nmethod [%zu], rec_by_ref [%zu], rec_by_raw [%zu], delta_ref_n [%zu], delta_raw_n [%zu], "
             "rec_by_tail [%zu], rec_by_zero_diff [%zu], delta_tail_n [%zu], delta_zero_diff_n [%zu], L [%zu], "
             "copy_all_threshold [%zu], copy_tail_threshold [%zu], send_threshold [%zu]", rec_ctx.method, rec_ctx.rec_by_ref, rec_ctx.rec_by_raw,
             rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.rec_by_tail, rec_ctx.rec_by_zero_diff, rec_ctx.delta_tail_n,
@@ -292,7 +292,7 @@ test_rm_tx_local_push_1(void **state) {
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
         }
@@ -324,16 +324,16 @@ test_rm_tx_local_push_1(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 of local push, file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #1 of local push, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
             if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #1: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing local push #1: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -399,7 +399,7 @@ test_rm_tx_local_push_1(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -445,14 +445,14 @@ test_rm_tx_local_push_1(void **state) {
                 assert_true(rec_ctx.rec_by_raw == 0);
                 ++detail_case_3_n;
             }
-            RM_LOG_INFO("PASSED test #1: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+            RM_LOG_INFO("PASSED test #1: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
             /* no need to recreate @y file as input to local push in this test, as @y stays the same all the time */
         }
         if (f_x != NULL) fclose(f_x);
         f_x = NULL;
         if (f_y != NULL) fclose(f_y);
         f_y = NULL;
-        RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
@@ -515,7 +515,7 @@ test_rm_tx_local_push_2(void **state) {
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
         }
@@ -560,16 +560,16 @@ test_rm_tx_local_push_2(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of local push [first byte changed], file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #2 of local push [first byte changed], file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
             if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #2 [first byte changed]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing local push #2 [first byte changed]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -640,7 +640,7 @@ test_rm_tx_local_push_2(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -696,7 +696,7 @@ test_rm_tx_local_push_2(void **state) {
                 assert_true((rec_ctx.rec_by_ref == f_y_sz - L && rec_ctx.rec_by_raw == L) || (rec_ctx.rec_by_ref == f_y_sz && rec_ctx.rec_by_raw == 0));
                 ++detail_case_3_n;
             }
-            RM_LOG_INFO("PASSED test #2: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+            RM_LOG_INFO("PASSED test #2: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
             f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
             f_y = fopen(f_y_name, "wb+");
@@ -730,7 +730,7 @@ test_rm_tx_local_push_2(void **state) {
 			fclose(f_y);
             f_y = NULL;
 		}
-        RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
@@ -793,7 +793,7 @@ test_rm_tx_local_push_3(void **state) {
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
         }
@@ -839,16 +839,16 @@ test_rm_tx_local_push_3(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #3 of local push [last byte changed], file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #3 of local push [last byte changed], file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
             if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #3 [last byte changed]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing local push #3 [last byte changed]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -913,7 +913,7 @@ test_rm_tx_local_push_3(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -971,7 +971,7 @@ test_rm_tx_local_push_3(void **state) {
             }
             /* 4. There can't be DELTA TAIL elements in this test as tail of @x will never match potential tail element in @y as last bytes in files differ */
             assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
-            RM_LOG_INFO("PASSED test #3: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+            RM_LOG_INFO("PASSED test #3: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
             f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
             f_y = fopen(f_y_name, "wb+");
@@ -998,7 +998,7 @@ test_rm_tx_local_push_3(void **state) {
         f_x = NULL;
         if (f_y != NULL) fclose(f_y);
         f_y = NULL;
-        RM_LOG_INFO("PASSED test #3: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #3: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
@@ -1061,7 +1061,7 @@ test_rm_tx_local_push_4(void **state) {
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             fclose(f_y);
             continue;
         }
@@ -1121,12 +1121,12 @@ test_rm_tx_local_push_4(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #4 of local push [first and last bytes changed], file [%s], size [%u], block size L [%u]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #4 of local push [first and last bytes changed], file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #4 [first and last byte changed]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing local push #4 [first and last byte changed]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -1191,7 +1191,7 @@ test_rm_tx_local_push_4(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                     if (f_x != NULL) fclose(f_x);
                     if (f_y != NULL) fclose(f_y);
                 }
@@ -1294,7 +1294,7 @@ test_rm_tx_local_push_4(void **state) {
             }
             /* 4. There can't be DELTA TAIL elements in this test as tail of @x will never match potential tail element in @y as last bytes in files differ */
             assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
-            RM_LOG_INFO("PASSED test #4: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+            RM_LOG_INFO("PASSED test #4: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
             f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
             f_y = fopen(f_y_name, "wb+");
@@ -1327,7 +1327,7 @@ test_rm_tx_local_push_4(void **state) {
         f_x = NULL;
         if (f_y != NULL) fclose(f_y);
         f_y = NULL;
-        RM_LOG_INFO("PASSED test #4: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #4: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
@@ -1392,7 +1392,7 @@ test_rm_tx_local_push_5(void **state) {
         }
         f_y_sz = fs.st_size;
         if (f_y_sz < 3) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", f_y_name, f_y_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
             if (f_y != NULL) fclose(f_y);
             continue;
         }
@@ -1503,12 +1503,12 @@ test_rm_tx_local_push_5(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #5 of local push [first, last, middle bytes changed], file [%s], size [%u], block size L [%u], half_sz [%zu]", f_y_name, f_y_sz, L, half_sz);
+            RM_LOG_INFO("Validating testing #5 of local push [first, last, middle bytes changed], file [%s], size [%zu], block size L [%zu], half_sz [%zu]", f_y_name, f_y_sz, L, half_sz);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, f_y_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #5 [first, last, middle bytes changed]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u], half_sz [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L, half_sz);
+            RM_LOG_INFO("Testing local push #5 [first, last, middle bytes changed]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu], half_sz [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L, half_sz);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -1606,7 +1606,7 @@ test_rm_tx_local_push_5(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -1718,7 +1718,7 @@ test_rm_tx_local_push_5(void **state) {
             }
             /* 4. There can't be DELTA TAIL elements in this test as tail of @x will never match potential tail element in @y as last bytes in files differ */
             assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
-            RM_LOG_INFO("PASSED test #5: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+            RM_LOG_INFO("PASSED test #5: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
             f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
             f_y = fopen(f_y_name, "wb+");
@@ -1784,7 +1784,7 @@ test_rm_tx_local_push_5(void **state) {
             fclose(f_y);
             f_y = NULL;
         }
-        RM_LOG_INFO("PASSED test #5: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%u] #2 [%u] #3 [%u])",
+        RM_LOG_INFO("PASSED test #5: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
 	}
 
@@ -1870,7 +1870,7 @@ test_rm_tx_local_push_6(void **state) {
         }
         f_x_sz = fs.st_size;
         if (f_x_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", buf_x_name, f_x_sz);
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", buf_x_name, f_x_sz);
             fclose(f_x);
             continue;
         }
@@ -1879,16 +1879,16 @@ test_rm_tx_local_push_6(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #6 of local push [copy buffered], file [%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, L);
+            RM_LOG_INFO("Validating testing #6 of local push [copy buffered], file [%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, L);
             if (0 == L) {
-                RM_LOG_INFO("Block size [%u] is too small for this test (should be > [%u]), skipping file [%s]", L, 0, buf_x_name);
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, buf_x_name);
                 continue;
             }
             if (f_x_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%u] is too small for this test, skipping", buf_x_name, f_x_sz);
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", buf_x_name, f_x_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing local push #6 [copy buffered]: file @x[%s] size [%u] file @y[%s], size [%u], block size L [%u]", buf_x_name, f_x_sz, f_y_name, f_x_sz, L);
+            RM_LOG_INFO("Testing local push #6 [copy buffered]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_x_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
@@ -1947,7 +1947,7 @@ test_rm_tx_local_push_6(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%u] differ: cx [%u], cz [%u]\n", k, cx, cz);
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -1967,7 +1967,7 @@ test_rm_tx_local_push_6(void **state) {
 				fclose(f_x);
 				f_x = NULL;
 			}
-            RM_LOG_INFO("PASSED test #6: files [%s] [%s], block [%u], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
+            RM_LOG_INFO("PASSED test #6: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
 		}
 		if (f_x != NULL) {
