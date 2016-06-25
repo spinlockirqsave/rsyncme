@@ -176,7 +176,7 @@ struct rm_delta_reconstruct_ctx
  *          then rolling is not possible. To enable rolling feature
  *          RM_FASTCHECK_MODULUS is used (2^16). */
 uint32_t
-rm_fast_check_block(const unsigned char *data, uint32_t len);
+rm_fast_check_block(const unsigned char *data, size_t len);
 
 /* @brief   Calculate adler32 checkum on a given file block
  *          of size @len starting from @data.
@@ -191,7 +191,7 @@ rm_fast_check_block(const unsigned char *data, uint32_t len);
  *          This is 1-bit less than the Fletcher32 checksum. The
  *          The reason being that Adler32 uses prime modulus. */
 uint32_t
-rm_adler32_1(const unsigned char *data, uint32_t len);
+rm_adler32_1(const unsigned char *data, size_t len);
 
 /* @brief   Efficient version of Adler32. Postpones modulo reduction
  *          up to the point when this is absolutely necessary
@@ -208,7 +208,7 @@ rm_adler32_1(const unsigned char *data, uint32_t len);
  *          and s2MAX MUST fit in 32bits.
  *          @param	adler: initial value, should be 1 if this is beginning */
 uint32_t
-rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
+rm_adler32_2(uint32_t adler, const unsigned char *data, size_t len);
 
 /* @brief   Rolls fast checksum @adler computed on block [k,k+L-1]
  *          to [k+1,k+L].
@@ -216,30 +216,30 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t len);
  *          of byte k+L using RM_ADLER32_MODULUS. */
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, uint32_t L);
+		unsigned char a_kL, size_t L);
 /* @brief   Rolls fast checksum @adler computed on bytes [k,k+L-1]
  *          to [k+1,k+L].
  * @details	Updates @adler by removal of byte k and addition
  *          of byte k+L using RM_FASTCHECK_MODULUS. */
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, uint32_t L);
+		unsigned char a_kL, size_t L);
 
 uint32_t
-rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L);
+rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, size_t L);
 
 /* @brief   Calculate rolling checkum on a given file block
  *          of size @len starting from @data, modulo @M.
  * @details @M MUST be less than 2^16, 0x10000 */
 uint32_t
-rm_rolling_ch(const unsigned char *data, uint32_t len, uint32_t M); 
+rm_rolling_ch(const unsigned char *data, size_t len, uint32_t M); 
 
 /* @brief   Calculate strong checkum on a given file block
  *          of size @len starting from @data.
  * @details Implemented reusing Brad Conte's MD5 code from his
  *          crypto-algorithms repo (see include/md5.h). */
 void
-rm_md5(const unsigned char *data, uint32_t len, unsigned char res[16]);
+rm_md5(const unsigned char *data, size_t len, unsigned char res[16]);
 
 /* @brief   Copy @bytes_n bytes from @x into @y.
  * @details Calls fread/fwrite buffered API functions.
@@ -267,11 +267,10 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
  *          read by fread. This number equals the number of bytes only when @size
  *          is sizeof(char).*/
 size_t
-rm_fpread(void *buf, size_t size, size_t items_n,
-                            size_t offset, FILE *f);
+rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
+
 size_t
-rm_fpwrite(const void *buf, size_t size, size_t items_n,
-                            size_t offset, FILE *f);
+rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
 
 /* @brief   Copy @bytes_n bytes from @x at offset @x_offset into @y at @y_offset.
  * @details Calls rm_fpread/rm_fpwrite buffered API functions.
