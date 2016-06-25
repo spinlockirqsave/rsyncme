@@ -351,6 +351,7 @@ rm_session_delta_rx_f_remote(void *arg) {
     size_t                          bytes_to_rx;
 	struct rm_session               *s;
 
+    (void) f_y;
     s = (struct rm_session*) arg;
     if (s == NULL) {
         goto exit;
@@ -368,7 +369,7 @@ rm_session_delta_rx_f_remote(void *arg) {
 
     pthread_mutex_lock(&s->session_mutex);
     bytes_to_rx = prvt_rx->f_x_sz;
-    f_y         = prvt_rx->f_y;
+    /* f_y         = prvt_rx->f_y; */
     pthread_mutex_unlock(&s->session_mutex);
 
     if (bytes_to_rx == 0) {
