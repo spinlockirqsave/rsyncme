@@ -30,12 +30,12 @@
 #define RM_TEST_L_MAX               2048UL
 #define RM_TEST_FNAMES_N            13
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
-uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
-uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
+size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
+size_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_state
 {
-	uint32_t	*l;
+	size_t	*l;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */

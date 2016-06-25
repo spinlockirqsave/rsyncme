@@ -17,11 +17,12 @@
 
 
 uint32_t
-rm_fast_check_block(const unsigned char *data, uint32_t len) {
+rm_fast_check_block(const unsigned char *data, size_t len) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
-	uint32_t	r1, r2, i;
+	uint32_t	r1, r2;
+    size_t      i;
 
 	assert(data != NULL);
 	r1 = 0;
@@ -39,11 +40,12 @@ rm_fast_check_block(const unsigned char *data, uint32_t len) {
 }
 
 uint32_t
-rm_adler32_1(const unsigned char *data, uint32_t len) {
+rm_adler32_1(const unsigned char *data, size_t len) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
-	uint32_t	r1, r2, i;
+	uint32_t	r1, r2;
+    size_t      i;
 
 	assert(data != NULL);
 	r1 = 1;
@@ -67,7 +69,7 @@ rm_adler32_1(const unsigned char *data, uint32_t len) {
 #define RM_DO16(buf)	RM_DO8(buf,0); RM_DO8(buf,8)
 
 uint32_t
-rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L) {
+rm_adler32_2(uint32_t adler, const unsigned char *data, size_t L) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
@@ -76,18 +78,15 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L) {
 	uint32_t	r2 = (adler >> 16) & 0xffff;
 
 	assert(data != NULL);
-	while(L)
-	{
+	while(L) {
 		k = L < RM_ADLER32_NMAX ? L : RM_ADLER32_NMAX;
 		L -= k;
-		// process 16bits blocks
-		while (k >= 16) {
+		while (k >= 16) { /* process 16bits blocks */
 			RM_DO16(data);
 			data += 16;
 			k-=16;
 		}
-		// remainder
-		if (k > 0) {
+		if (k > 0) { /* remainder */
 			do
 			{
 				r1 += *data++;
@@ -105,19 +104,17 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, uint32_t L) {
 	return (r2 << 16) | r1;
 }
 
-// rolling adler with prime modulus won't work
+/* rolling adler with prime modulus won't work */
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, uint32_t L) {
+		unsigned char a_kL, size_t L) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
 	uint32_t	r1, r2;
-	// r1 and r2 from adler on block [k,k+L]]
-	r1 = adler & 0xFFFF;
+	r1 = adler & 0xFFFF; /* r1 and r2 from adler on block [k,k+L]] */
 	r2 = (adler >> 16) & 0xFFFF;
-	// update
-	r1 = (r1 - a_k + a_kL) % RM_ADLER32_MODULUS;
+	r1 = (r1 - a_k + a_kL) % RM_ADLER32_MODULUS; /* update */
 	r2 = (r2 + r1 - L*a_k - 1) % RM_ADLER32_MODULUS;
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
@@ -126,19 +123,17 @@ rm_adler32_roll(uint32_t adler, unsigned char a_k,
 	return (r2 << 16) | r1;
 }
 
-// modulus MUST be even
+/* modulus MUST be even */
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, uint32_t L) {
+		unsigned char a_kL, size_t L) {
 #ifdef DEBUG
 	uint32_t res;
 #endif
 	uint32_t	r1, r2;
-	// r1 and r2 from adler on block [k,k+L]]
-	r1 = adler & 0xFFFF;
+	r1 = adler & 0xFFFF; /* r1 and r2 from adler on block [k,k+L]] */
 	r2 = (adler >> 16) & 0xFFFF;
-	// update
-	r1 = (r1 - a_k + a_kL) % RM_FASTCHECK_MODULUS;
+	r1 = (r1 - a_k + a_kL) % RM_FASTCHECK_MODULUS; /* update */
 	r2 = (r2 + r1 - L*a_k) % RM_FASTCHECK_MODULUS;
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
@@ -149,7 +144,7 @@ rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 
 
 uint32_t
-rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L) {
+rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, size_t L) {
     uint32_t r1, r2;
 
     r1 = adler & 0xFFFF;
@@ -161,9 +156,10 @@ rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, uint32_t L) {
 }
 
 uint32_t
-rm_rolling_ch(const unsigned char *data, uint32_t len,
+rm_rolling_ch(const unsigned char *data, size_t len,
 				uint32_t M) {
-	uint32_t	r1, r2, i;
+	uint32_t	r1, r2;
+    size_t      i;
 
 #ifdef DEBUG
 	uint32_t res;
@@ -184,7 +180,7 @@ rm_rolling_ch(const unsigned char *data, uint32_t len,
  
 
 void
-rm_md5(const unsigned char *data, uint32_t len,
+rm_md5(const unsigned char *data, size_t len,
 		unsigned char res[16]) {
 	MD5_CTX ctx;
 	md5_init(&ctx);
