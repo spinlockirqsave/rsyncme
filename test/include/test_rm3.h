@@ -30,12 +30,12 @@
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            13
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
-uint32_t    rm_test_fsizes[RM_TEST_FNAMES_N];
-uint32_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
+size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
+size_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_state
 {
-	uint32_t	*l;
+	size_t      *l;
 	void        *buf;
 };
 
@@ -55,7 +55,7 @@ int
 test_rm_teardown(void **state);
 
 int
-rm_random_file(char *name, uint32_t len);
+rm_random_file(char *name, size_t len);
 
 /* @brief   Test of checksums calculation on nonoverlapping
  *          blocks.
