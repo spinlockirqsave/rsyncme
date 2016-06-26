@@ -20,7 +20,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     FILE        *f_y;   /* file for taking non-overlapping blocks */
     FILE        *f_z;   /* result (with same name as @y) */
     int         fd_x, fd_y, fd_z;
-    uint8_t     f_y_used;
+    uint8_t     reference_file_exist;
     struct      stat	fs;
     size_t      x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
     size_t                          bkt;    /* hashtable deletion */
@@ -31,7 +31,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     const char *f_z_name = "f_z_tmp";
 
     f_x = f_y = f_z = NULL;
-    f_y_used = 0;
+    reference_file_exist = 0;
     s = NULL;
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 
@@ -44,7 +44,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     }
     f_y = fopen(y, "rb");
     if (f_y != NULL) {
-        f_y_used = 1;
+        reference_file_exist = 1;
     } else {
         if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
             f_z = fopen(y, "wb+");
@@ -68,7 +68,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     }
     x_sz = fs.st_size;
 
-    if (f_y != NULL) {  /* if reference file exists, split it and calc checksums */
+    if (reference_file_exist == 1) {  /* if reference file exists, split it and calc checksums */
         fd_y = fileno(f_y);
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_y, &fs) != 0) {
@@ -140,7 +140,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
 
 done:
 
-    if (f_y_used == 1) {
+    if (reference_file_exist == 1) {
         if (f_y != NULL) {
             fclose(f_y);
             f_y = NULL;
@@ -183,7 +183,7 @@ done:
             goto err_exit;
         }
     }
-    if (f_y_used == 1) {
+    if (reference_file_exist == 1) {
         if (unlink(y) != 0) {
             err = -17;
             goto err_exit;
@@ -205,7 +205,7 @@ err_exit:
     if (f_z != NULL) {
         fclose(f_z);
     }
-    if (f_y_used == 1) {
+    if (reference_file_exist == 1) {
         bkt = 0;
         twhash_for_each_safe(h, bkt, tmp, e, hlink) {
             twhash_del((struct twhlist_node*)&e->hlink);
