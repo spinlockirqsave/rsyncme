@@ -1,12 +1,10 @@
-/*
- * @file        test_rm2.c
+/* @file        test_rm2.c
  * @brief       Test suite #2.
  * @details     Test of nonoverlapping checksums error reporting.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        10 Jan 2016 04:13 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm2.h"
@@ -163,6 +161,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
     struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
@@ -230,6 +229,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state) {
     struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
@@ -297,6 +297,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state) {
     struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
@@ -365,6 +366,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
     unsigned char           *buf_mocked;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
@@ -401,7 +403,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
 			RM_LOG_INFO("Mocking second call to malloc, expectation [%d]", res_expected);
             buf_mocked = malloc(L);
             if (buf_mocked == NULL) {
-                RM_LOG_CRIT("Couldn't malloc test buffer of size [%zu], THIS IS SYSTEM ERROR, NOT OURS");
+                RM_LOG_CRIT("%s", "Couldn't malloc test buffer of size [%zu], THIS IS SYSTEM ERROR, NOT OURS");
                 assert_true(1 == 0 && "Couldn't malloc test buffer of size [%zu], THIS IS SYSTEM ERROR, NOT OURS");
             }
 			RM_TEST_MOCK_MALLOC = 1;
@@ -447,6 +449,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state) {
     struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 

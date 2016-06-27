@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -c -o3 -DNDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
-CFLAGS_D = -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99
+CFLAGS = -c -o3 -DNDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-function -Wfatal-errors
+CFLAGS_D = -c -g3 -O0 -DDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-function -Wfatal-errors
 LDFLAGS = -L../../include -L../include  #-lpcap
 LDFLAGS2 = -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
 LDFLAGS9 := -L../../include -L../include  -Wl,--wrap=fopen -Wl,--wrap=fopen64

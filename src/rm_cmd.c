@@ -1,12 +1,9 @@
-/*
- * @file        rm_cmd.c
- * @brief       Commandline tool for sending requests
- *              to rsyncme daemon.
+/* @file        rm_cmd.c
+ * @brief       Commandline tool for sending requests to rsyncme daemon.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        05 Jan 2016 11:15 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "rm_defs.h"
@@ -21,9 +18,9 @@
 #define RM_CMD_F_LEN_MAX 100
 
 void rsyncme_usage(const char *name) {
-	if (!name)
+	if (!name) {
 		return;
-
+    }
 	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]><-s raw_bytes_send_threshold>]\n", name);
 	fprintf(stderr, "\n      \t [--f(orce)]\n");
 	fprintf(stderr, "     \t -x			: local file to synchronize\n");
@@ -94,33 +91,30 @@ main( int argc, char *argv[]) {
 		{ 0 }
 	};
 
-	// parse optional command line arguments
-	while ((c = getopt_long(argc, argv, "x:y:i:l:s", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "x:y:i:l:s", long_options, &option_index)) != -1) { /* parse optional command line arguments */
 		switch (c) {
 
 		case 0:
-			// If this option set a flag, turn flag on in ioctl struct
-			if (long_options[option_index].flag != 0)
+			if (long_options[option_index].flag != 0) { /* If this option set a flag, turn flag on in ioctl struct */
 				break;
+            }
 			fprintf(stderr, "Long option [%s]", long_options[option_index].name);
-			if (optarg)
+			if (optarg) {
 				fprintf(stderr, " with arg [%s]", optarg);
+            }
 			fprintf(stderr, "\n");
-			break; 
+			break;
 
 		case 1:
-			// push request
-			flags &= ~RM_BIT_0;
+			flags &= ~RM_BIT_0; /* push request */
 			break;
 
 		case 2:
-			// pull request
-			flags |= RM_BIT_0;
+			flags |= RM_BIT_0; /* pull request */
 			break;
 
 		case 3:
-			// --force
-			flags |= RM_BIT_4;
+			flags |= RM_BIT_4; /* --force */
 			break;
 
 		case 'x':
@@ -132,8 +126,9 @@ main( int argc, char *argv[]) {
 			strncpy(y, optarg, RM_CMD_F_LEN_MAX);
 			flags |= RM_BIT_2;
 			break;
+
 		case 'i':
-			if (inet_aton(optarg, &remote_addr.sin_addr) == 0) {
+			if (inet_pton(AF_INET, optarg, &remote_addr.sin_addr) == 0) {
 				fprintf(stderr, "Invalid IPv4 address\n");
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -147,30 +142,29 @@ main( int argc, char *argv[]) {
 				rsyncme_range_error(c, helper);
 				exit(EXIT_FAILURE);
 			}
-			// check
-			if ((pCh == optarg) || (*pCh != '\0')) {
+			if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
 				fprintf(stderr, "Invalid argument\n");
 				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
 			L = helper;
+
 		case 's':
 			helper = strtoul(optarg, &pCh, 10);
 			if (helper > 0x10000 - 1) {
 				rsyncme_range_error(c, helper);
 				exit(EXIT_FAILURE);
 			}
-			// check
-			if ((pCh == optarg) || (*pCh != '\0')) {
+			if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
 				fprintf(stderr, "Invalid argument\n");
 				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
 			send_threshold = helper;
+
 		case '?':
-			// check optopt
 			if (optopt == 'x' || optopt == 'y' || optopt == 'i')
 				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
 			else if (isprint(optopt))
@@ -180,58 +174,44 @@ main( int argc, char *argv[]) {
 				fprintf(stderr, "Are there any long options? "
 					"Please check that you have typed them correctly.\n");
 			}
-
 			rsyncme_usage(argv[0]);
 			exit(EXIT_FAILURE);
 
 		default:
-
 			rsyncme_usage(argv[0]);
 			exit(EXIT_FAILURE);
 		}
 	}
 
-	// parse non-optional arguments
-	for (idx = optind; idx < argc; idx++) {
+	for (idx = optind; idx < argc; idx++) { /* parse non-optional arguments */
 		fprintf(stderr, "Non-option argument[ %s]\n", argv[idx]);
     }
-
-	// validation
 	if ((argc - optind) != 1) {
 		fprintf(stderr, "\nInvalid number of non-option arguments.\nThere should be 1 non-option arguments: <push|pull>\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
-
 	if (strcmp(argv[optind], "push") == 0) {
-		// RM_MSG_PUSH
-		flags &= ~RM_BIT_0;
+		flags &= ~RM_BIT_0; /* RM_MSG_PUSH */
 	}
 	else if (strcmp(argv[optind], "pull") == 0) {
-		// RM_MSG_PULL
-		flags |= RM_BIT_0;
+		flags |= RM_BIT_0; /* RM_MSG_PULL */
 	}
 	else {
-		fprintf(stderr, "\nUnknown command.\nCommand should be one of: "
-						"<push|pull>\n");
+		fprintf(stderr, "\nUnknown command.\nCommand should be one of: <push|pull>\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
-
-	// if -x not set report error
-	if ((flags & RM_BIT_1) == 0u) {
+	if ((flags & RM_BIT_1) == 0u) { /* if -x not set report error */
 		fprintf(stderr, "\n-x option not set.\nWhat is the file you want to sync?\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
-
-    /* TODO set thresholds */
-    if (send_threshold == 0) {
+    if (send_threshold == 0) { /* TODO set thresholds */
         send_threshold = L;
     }
 
-	// if -i is set
-	if ((flags & RM_BIT_3) != 0u) { /* remote request */
+	if ((flags & RM_BIT_3) != 0u) { /* remote request if -i is set */
 		if ((flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
 			res = rm_tx_remote_push(x, y, &remote_addr, L);
@@ -277,7 +257,6 @@ main( int argc, char *argv[]) {
 		}
 	}
 
-	// OK
 	fprintf(stderr, "\nOK.\n");
 	return 0;
 

@@ -1,9 +1,9 @@
-///  @file      rm_error.c
-///  @brief     Errors print/log.
-///  @author    peterg
-///  @version   0.1.2
-///  @date      02 Jan 2016 02:30 PM
-///  @copyright LGPLv2.1
+/* @file        rm_error.c
+ * @brief       Errors print/log.
+ * @author      Piotr Gregor <piotrek.gregor@gmail.com>
+ * @version     0.1.2
+ * @date        02 Jan 2016 02:30 PM
+ * @copyright   LGPLv2.1 */
 
 
 #include "rm_error.h"

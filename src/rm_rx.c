@@ -1,19 +1,16 @@
-/*
- * @file        rm_rx.c
+/* @file        rm_rx.c
  * @brief       Definitions used by rsync receiver (B).
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        2 Jan 2016 11:18 AM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "rm_rx.h"
 
 
 int
-rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
-{
+rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg) {
     const struct rm_ch_ch_ref       *e;
     const struct rm_session         *s;
     enum rm_session_type            s_type;
@@ -22,28 +19,34 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
 
     e = arg.e;
     s = arg.s;
-    if (e == NULL || s == NULL)
+    if (e == NULL || s == NULL) {
         return -1;
+    }
     s_type = s->type;
     if (s_type != RM_PUSH_RX && s_type != RM_PULL_RX)
         return -2;
-    switch (s_type)
-    {
+    switch (s_type) {
+
         case RM_PUSH_RX:
             rm_push_rx = (struct rm_session_push_rx*) s->prvt;
-            if (rm_push_rx == NULL)
+            if (rm_push_rx == NULL) {
                 return -3;
-            if (rm_tcp_tx_ch_ch_ref(rm_push_rx->fd, e) < 0)
+            }
+            if (rm_tcp_tx_ch_ch_ref(rm_push_rx->fd, e) < 0) {
                 return -4;
-
+            }
             break;
+
         case RM_PULL_RX:
             rm_pull_rx = (struct rm_session_pull_rx*) s->prvt;
-            if (rm_pull_rx == NULL)
+            if (rm_pull_rx == NULL) {
                 return -5;
-            if (rm_tcp_tx_ch_ch_ref(rm_pull_rx->fd, e) < 0)
+            }
+            if (rm_tcp_tx_ch_ch_ref(rm_pull_rx->fd, e) < 0) {
                 return -6;
+            }
             break;
+
         default:
             return -7;
     }
@@ -51,11 +54,8 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
     return 0;
 }
 int
-rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
-		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1),
-        size_t limit, size_t *blocks_n)
-{
+rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist_head *h, uint32_t L,
+		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) {
     int                 fd, res;
     struct stat         fs;
     uint32_t	        file_sz, read_left, read_now, read;
@@ -68,64 +68,50 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
     assert(fname != NULL);
     assert(L > 0);
 
-    /* get file size */
-    fd = fileno(f);
+    fd = fileno(f); /* get file size */
     res = fstat(fd, &fs);
-    if (res != 0)
-    {
+    if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
         return -1;
     }
     file_sz = fs.st_size;
 
-    /* read L bytes chunks */
-    read_left = file_sz;
+    read_left = file_sz; /* read L bytes chunks */
     read_now = rm_min(L, read_left);
     buf = malloc(read_now);
-    if (buf == NULL)
-    {
+    if (buf == NULL) {
         RM_LOG_ERR("Malloc failed, L [%u], read_now [%u]", L, read_now);
         return -2;
     }
 
     entries_n = 0;
-    do
-    {
+    do {
         read = fread(buf, 1, read_now, f);
-        if (read != read_now)
-        {
+        if (read != read_now) {
             RM_LOG_PERR("Error reading file [%s]", fname);
             free(buf);
             return -3;
         }
-        /* alloc new table entry */
-        e = malloc(sizeof (*e));
-        if (e == NULL)	
-        {
-            RM_LOG_PERR("Can't allocate table entry, malloc failed");
+        e = malloc(sizeof (*e)); /* alloc new table entry */
+        if (e == NULL)	 {
+            RM_LOG_PERR("%s", "Can't allocate table entry, malloc failed");
             free(buf);
             return -4;
         }
 
-        /* compute checksums */
-        e->data.ch_ch.f_ch = rm_fast_check_block(buf, read);
+        e->data.ch_ch.f_ch = rm_fast_check_block(buf, read); /* compute checksums */
         rm_md5(buf, read, e->data.ch_ch.s_ch.data);
 
-        /* assign offset */
-        e->data.ref = entries_n;
+        e->data.ref = entries_n; /* assign offset */
 
-        if (h != NULL)
-        {
-            /* insert into hashtable, hashing fast checksum */
+        if (h != NULL) { /* insert into hashtable, hashing fast checksum */
             TWINIT_HLIST_NODE(&e->hlink);
             twhash_add_bits(h, &e->hlink, e->data.ch_ch.f_ch,
                                 RM_NONOVERLAPPING_HASH_BITS);
         }
         entries_n++;
 
-        /* tx checksums to remote A ? */
-        if (f_tx_ch_ch_ref != NULL)
-        {
+        if (f_tx_ch_ch_ref != NULL) { /* tx checksums to remote A ? */
             arg.e = &e->data;
             arg.s = NULL;
             res = f_tx_ch_ch_ref(arg);
@@ -146,11 +132,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname,
 }
 
 int
-rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
-		struct rm_ch_ch *checksums, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
-        size_t limit, size_t *blocks_n)
-{
+rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch_ch *checksums, uint32_t L,
+		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n) {
     int         fd, res;
     struct stat fs;
     uint32_t	file_sz, read_left, read_now, read;
@@ -163,45 +146,36 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
     assert(L > 0);
     assert(checksums != NULL);
 
-    /* get file size */
     fd = fileno(f);
     res = fstat(fd, &fs);
-    if (res != 0)
-    {
+    if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
         return -1;
     }
     file_sz = fs.st_size;
 
-    /* read L bytes chunks */
-    read_left = file_sz;
+    read_left = file_sz; /* read L bytes chunks */
     read_now = rm_min(L, read_left);
     buf = malloc(read_now);
-    if (buf == NULL)
-    {
+    if (buf == NULL) {
         RM_LOG_ERR("Malloc failed, L [%u], read_now [%u]", L, read_now);
         return -2;
     }
 
     entries_n = 0;
     e = &checksums[0];
-    do
-    {
+    do {
         read = fread(buf, 1, read_now, f);
-        if (read != read_now)
-        {
+        if (read != read_now) {
             RM_LOG_PERR("Error reading file [%s]", fname);
             free(buf);
             return -3;
         }
 
-        /* compute checksums */
-        e->f_ch = rm_fast_check_block(buf, read);
+        e->f_ch = rm_fast_check_block(buf, read); /* compute checksums */
         rm_md5(buf, read, e->s_ch.data);
 
-        /* tx checksums to remote A ? */
-        if (f_tx_ch_ch != NULL)
-        {
+        if (f_tx_ch_ch != NULL) { /* tx checksums to remote A ? */
             res = f_tx_ch_ch(e);
             if (res < 0) {
                 free(buf);
@@ -223,9 +197,7 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname,
 
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname,
-		struct twlist_head *l, uint32_t L,
-        size_t limit, size_t *blocks_n)
-{
+		struct twlist_head *l, uint32_t L, size_t limit, size_t *blocks_n) {
     int                     fd, res;
     struct stat             fs;
     uint32_t	            file_sz, read_left, read_now, read;
@@ -238,51 +210,41 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname,
     assert(l != NULL);
     assert(L > 0);
 
-    /* get file size */
-    fd = fileno(f);
+    fd = fileno(f); /* get file size */
     res = fstat(fd, &fs);
-    if (res != 0)
-    {
+    if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
         return -1;
     }
     file_sz = fs.st_size;
 
-    /* read L bytes chunks */
-    read_left = file_sz;
+    read_left = file_sz; /* read L bytes chunks */
     read_now = rm_min(L, read_left);
     buf = malloc(read_now);
-    if (buf == NULL)
-    {
+    if (buf == NULL) {
         RM_LOG_ERR("Malloc failed, L [%u], read_now [%u]", L, read_now);
         return -2;
     }
 
     entries_n = 0;
-    do
-    {
+    do {
         read = fread(buf, 1, read_now, f);
-        if (read != read_now)
-        {
+        if (read != read_now) {
             RM_LOG_PERR("Error reading file [%s]", fname);
             free(buf);
             return -3;
         }
-        /* alloc new table entry */
-        e = malloc(sizeof (*e));
-        if (e == NULL)	
-        {
+        e = malloc(sizeof (*e)); /* alloc new table entry */
+        if (e == NULL) {
             free(buf);
-            RM_LOG_PERR("Can't allocate list entry, malloc failed");
+            RM_LOG_PERR("%s", "Can't allocate list entry, malloc failed");
             return -4;
         }
 
-        /* compute checksums */
-        e->data.ch_ch.f_ch = rm_fast_check_block(buf, read);
+        e->data.ch_ch.f_ch = rm_fast_check_block(buf, read); /* compute checksums */
         rm_md5(buf, read, e->data.ch_ch.s_ch.data);
 
-        /* insert into list */
-        TWINIT_LIST_HEAD(&e->link);
+        TWINIT_LIST_HEAD(&e->link); /* insert into list */
         e->data.ref = entries_n;
         twlist_add_tail(&e->link, l);
 
@@ -319,46 +281,40 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
     }
     z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
     switch (delta_e->type) {
+
         case RM_DELTA_ELEMENT_REFERENCE:
-            /* copy referenced bytes from @f_y to @f_z */
-            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) {
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) { /* copy referenced bytes from @f_y to @f_z */
                 return -2;
             }
-
             ctx->rec_by_ref += delta_e->raw_bytes_n;    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
             ++ctx->delta_ref_n;
             break;
+
         case RM_DELTA_ELEMENT_RAW_BYTES:
-            /* copy raw bytes to @f_z directly */
-            if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z) != 1) {
+            if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z) != 1) { /* copy raw bytes to @f_z directly */
                 return -3;
             }
-
             ctx->rec_by_raw += delta_e->raw_bytes_n;
             ++ctx->delta_raw_n;
             break;
+
         case RM_DELTA_ELEMENT_ZERO_DIFF:
-            /* copy all bytes from @f_y to @f_z */
-            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != 0) {
+            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != 0) { /* copy all bytes from @f_y to @f_z */
                 return -4;
             }
-
-            ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched
-                                                        (whole file) so we can nevertheless check here at receiver that is correct */
+            ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check here at receiver that is correct */
             ++ctx->delta_ref_n;
-
             ctx->rec_by_zero_diff += delta_e->raw_bytes_n;
             ++ctx->delta_zero_diff_n;
             break;
+
         case RM_DELTA_ELEMENT_TAIL:
-            /* copy referenced bytes from @f_y to @f_z */
-            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) {
+
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) { /* copy referenced bytes from @f_y to @f_z */
                 return -5;
             }
-            ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched
-                                                        (that tail) so we can nevertheless check here at receiver there is no error */
+            ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check here at receiver there is no error */
             ++ctx->delta_ref_n;
-
             ctx->rec_by_tail += delta_e->raw_bytes_n;
             ++ctx->delta_tail_n;
             break;

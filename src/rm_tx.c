@@ -34,6 +34,7 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
     reference_file_exist = 0;
     s = NULL;
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 
     if (x == NULL || y == NULL || rec_ctx == NULL) {
         return -1;

@@ -11,6 +11,9 @@
 #define RSYNCME_DEFS_H
 
 
+#define _POSIX_C_SOURCE 200112L
+#define _LARGEFILE64_SOURCE 1
+
 /* To make off_t (used in calls to fseeko) 64 bits type
  * on 32-bit architectures.
  * This will make the names of the (otherwise 32 bit) functions
@@ -85,16 +88,12 @@
 #define RM_L1_CACHE_RECOMMENDED     8192        /* buffer size, so that it should fit into
                                                  * L1 cache on most architectures */
 
-#define rm_container_of(ptr, type, member) ({			\
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
+#define rm_container_of(ptr, type, member) __extension__({  \
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 
-#define rm_max(a,b)	({ __typeof__ (a) _a = (a);	\
-			__typeof__ (b) _b = (b);	\
-			_a > _b ? _a : _b; })
-#define rm_min(a,b)	({ __typeof__ (a) _a = (a);	\
-			__typeof__ (b) _b = (b);	\
-			_a > _b ? _b : _a; })
+#define rm_max(a,b) __extension__	({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+#define rm_min(a,b)	__extension__ ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _b : _a; })
 
 typedef uint8_t rm_push_flags;  /* Bit  meaning
                                  * 0    force creation of @y if it doesn't exist
@@ -111,7 +110,7 @@ enum rm_session_type
     RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
     RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
     RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
-    RM_PULL_TX,     /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
+    RM_PULL_TX     /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
 };
 
-#endif  // RSYNCME_DEFS_H
+#endif  /* RSYNCME_DEFS_H */

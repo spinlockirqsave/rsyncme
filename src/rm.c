@@ -1,14 +1,12 @@
-/*
- * @file        rm.c
+/* @file        rm.c
  * @brief       Simple rsync algorithm implementation
  *              as described in Tridgell A., "Efficient Algorithms
  *              for Sorting and Synchronization", 1999.
  * @details     Common definitions used by sender and receiver.
- * @author      Piotr Gregor piotrek.gregor at gmail.com
+ * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        1 Jan 2016 07:50 PM
- * @copyright   LGPLv2.1v2.1
- */
+ * @copyright   LGPLv2.1v2.1 */
 
 
 #include "rm.h"
@@ -231,7 +229,7 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     while (bytes_n > 0 && ((read = fread(dst, 1, read_exp, x)) == read_exp)) {
         bytes_n -= read;
-        dst += read;
+        dst = (unsigned char*)dst + read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
@@ -548,7 +546,7 @@ rm_roll_proc_cb_1(void *arg) {
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
     if (cb_arg == NULL) {
-        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL callback argument?! Have you added some neat code recently?");
         assert(cb_arg != NULL);
         return -1;
     }
@@ -556,18 +554,18 @@ rm_roll_proc_cb_1(void *arg) {
     s = cb_arg->s;
     delta_e = cb_arg->delta_e;
     if (s == NULL) {
-        RM_LOG_CRIT("WTF! NULL session?! Have you added  some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL session?! Have you added  some neat code recently?");
         assert(s != NULL);
         return -2;
     }
     if (delta_e == NULL) {
-        RM_LOG_CRIT("WTF! NULL delta element?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL delta element?! Have you added some neat code recently?");
         assert(delta_e != NULL);
         return -3;
     }
     prvt_local = (struct rm_session_push_local*) s->prvt;
     if (prvt_local == NULL) {
-        RM_LOG_CRIT("WTF! NULL private session?! Have you added  some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL private session?! Have you added  some neat code recently?");
         assert(prvt_local != NULL);
         return -4;
     }

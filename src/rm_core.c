@@ -1,9 +1,9 @@
-/// @file	rm_core.c
-/// @brief	Daemon's start up.
-/// @author	Piotr Gregor piotrek.gregor at gmail.com
-/// @version	0.1.2
-/// @date	02 Jan 2016 02:50 PM
-/// @copyright	LGPLv2.1
+/* @file	rm_core.c
+ * @brief	Daemon's start up.
+ * @author	Piotr Gregor <piotrek.gregor at gmail.com>
+ * @version	0.1.2
+ * @date	02 Jan 2016 02:50 PM
+ * @copyright	LGPLv2.1 */
 
 
 #include "rm_core.h"
@@ -50,8 +50,7 @@ rm_core_session_add(struct rsyncme *rm, enum rm_session_type type, size_t L) {
         return NULL;
     }
 	pthread_mutex_lock(&rm->mutex);
-	// create SID
-	s->session_id = rm->sessions_n + 1;
+	s->session_id = rm->sessions_n + 1; /* create SID */
 	twlist_add(&rm->sessions_list, &s->link);
 	twhash_add(rm->sessions, &s->hlink, s->session_id);
 	rm->sessions_n++;
@@ -70,10 +69,10 @@ rm_core_session_stop(struct rm_session *s) {
 int
 rm_core_authenticate(struct sockaddr_in *cli_addr) {
     char a[INET_ADDRSTRLEN];
-	// IPv4
-	//cli_ip = cli_addr.sin_addr.s_addr;
-	//inet_ntop(AF_INET, &cli_ip, cli_ip_str, INET_ADDRSTRLEN);
-	//cli_port = ntohs(cli_addr.sin_port);
+	/* IPv4
+     * cli_ip = cli_addr.sin_addr.s_addr;
+     * inet_ntop(AF_INET, &cli_ip, cli_ip_str, INET_ADDRSTRLEN);
+     * cli_port = ntohs(cli_addr.sin_port); */
     inet_ntop(AF_INET, &cli_addr->sin_addr, a, INET_ADDRSTRLEN);
     if (strcmp(a, RM_IP_AUTH) != 0) {
         return -1;
@@ -96,10 +95,9 @@ rm_core_tcp_msg_validate(unsigned char *buf, int read_n) {
     if (read_n == 0) {
         rm_perr_abort("TCP message size is 0");
     }
-	// validate hash
-	hash = RM_MSG_HDR_HASH(buf);
+	hash = RM_MSG_HDR_HASH(buf); /* validate hash */
 	if (hash != RM_CORE_HASH_OK) {
-		RM_LOG_ERR("incorrect hash");
+		RM_LOG_ERR("%s", "incorrect hash");
 		return -1;
 	}
 	pt = rm_msg_hdr_pt(buf);
