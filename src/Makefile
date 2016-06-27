@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS	=
-CFLAGS_RELEASE = -c -o3 -DNDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
-CFLAGS_DEBUG = -c -g3 -O0 -DDEBUG -Wall -Wextra -D_GNU_SOURCE -Wfatal-errors -std=gnu99 $(INCLUDES)
+CFLAGS_RELEASE = -c -o3 -DNDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-function -Wfatal-errors -Werror $(INCLUDES)
+CFLAGS_DEBUG = -c -g3 -O0 -DDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-function -Wfatal-errors -Werror $(INCLUDES)
 CPPFLAGS += #compiler flags
 LDFLAGS = -pthread 	#-lpcap
 LDFLAGS_D = -g -pthread 	#-lpcap

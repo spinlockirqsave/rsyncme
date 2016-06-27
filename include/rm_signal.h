@@ -1,9 +1,9 @@
-///  @file      rm_signal.h
-///  @brief     Signal handlers.
-///  @author    peterg
-///  @version   0.1.2
-///  @date      02 Nov 2016 02:42 PM
-///  @copyright LGPLv2.1
+/* @file      rm_signal.h
+ * @brief     Signal handlers.
+ * @author    Piotr Gregor <piotrek.gregor@gmail.com>
+ * @version   0.1.2
+ * @date      02 Nov 2016 02:42 PM
+ * @copyright LGPLv2.1 */
 
 
 #ifndef RSYNCME_SIGNAL_H
@@ -16,10 +16,9 @@
 #include <signal.h>
 
 
-/// @brief      Abnormal termination.
-void
-rm_sigint_h(int signum);
+/* @brief      Abnormal termination. */
+void rm_sigint_h(int signum);
 
 
-#endif  // RSYNCME_SIGNAL_H
+#endif  /* RSYNCME_SIGNAL_H */
 

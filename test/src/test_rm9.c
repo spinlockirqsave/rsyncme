@@ -1,12 +1,10 @@
-/*
- * @file        test_rm9.c
+/* @file        test_rm9.c
  * @brief       Test suite #9.
  * @details     Test of local push error reporting.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        20 June 2016 04:48 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm9.h"
@@ -234,7 +232,7 @@ test_rm_setup(void **state) {
 
     s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for loccal push */
     if (s == NULL) {
-        RM_LOG_ERR("Can't allocate session local push");
+        RM_LOG_ERR("%s", "Can't allocate session local push");
         if (f != NULL) {
             fclose(f);
             f = NULL;
@@ -313,7 +311,7 @@ test_rm_local_push_err_1(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_9");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
@@ -428,7 +426,7 @@ test_rm_local_push_err_1(void **state) {
     if (RM_TEST_9_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_9");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }

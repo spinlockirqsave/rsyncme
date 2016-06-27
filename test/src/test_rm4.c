@@ -131,6 +131,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
     struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
@@ -193,16 +194,14 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
  *          it was called. */
 size_t  f_tx_ch_ch_ref_2_callback_count;
 int
-f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg_1 arg)
-{
+f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg_1 arg) {
 	(void) arg;
     f_tx_ch_ch_ref_2_callback_count++;
 	return 0;
 }
 /* @brief   Tests number of callback calls made. */
 void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
-{
+test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 	FILE                    *f;
 	int                     fd;
 	size_t                  i, j, L, file_sz;
@@ -215,6 +214,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
     struct twhlist_node     *tmp;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
@@ -293,6 +293,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
     const struct rm_ch_ch_ref_hlink *e, *e_prev;
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
     rm_state = *state;
     assert_true(rm_state != NULL);
 

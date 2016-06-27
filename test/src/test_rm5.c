@@ -1,12 +1,10 @@
-/*
- * @file        test_rm5.c
+/* @file        test_rm5.c
  * @brief       Test suite #5.
  * @details     Test of rm_rolling_ch_proc.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        06 May 2016 04:00 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm5.h"
@@ -175,22 +173,20 @@ test_rm_setup(void **state) {
     }
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 1st memory buffer"
-                " of [%zu] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 1st memory buffer of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
-        RM_LOG_ERR("Can't allocate 2nd memory buffer"
-                " of [%zu] bytes, malloc failed", j);
+        RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
 	}
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
     s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for loccal push */
     if (s == NULL) {
-        RM_LOG_ERR("Can't allocate session local push");
+        RM_LOG_ERR("%s", "Can't allocate session local push");
 	}
     assert_true(s != NULL);
     rm_state.s = s;
@@ -255,6 +251,7 @@ test_rm_rolling_ch_proc_1(void **state) {
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
     rm_state = *state;
     assert_true(rm_state != NULL);
 
@@ -351,7 +348,7 @@ test_rm_rolling_ch_proc_1(void **state) {
                         ++delta_tail_n;
                         break;
                     default:
-                        RM_LOG_ERR("Unknown delta element type!");
+                        RM_LOG_ERR("%s", "Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
                 free((void*) delta_e);  /* free delta element */
@@ -464,11 +461,12 @@ test_rm_rolling_ch_proc_2(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_2");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
     rm_state = *state;
     assert_true(rm_state != NULL);
 
@@ -595,7 +593,7 @@ test_rm_rolling_ch_proc_2(void **state) {
                         ++delta_tail_n;
                         break;
                     default:
-                        RM_LOG_ERR("Unknown delta element type!");
+                        RM_LOG_ERR("%s", "Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
                 if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
@@ -687,7 +685,7 @@ test_rm_rolling_ch_proc_2(void **state) {
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }

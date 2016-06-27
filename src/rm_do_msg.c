@@ -61,22 +61,16 @@ rm_do_msg_push_tx(struct rsyncme *rm, unsigned char *buf) {
     assert(rm != NULL && buf != NULL);
 
     L = 0;  /* TODO get L from message */
-
-	/* create session, assign SID, insert into hashtable */
-    s = rm_core_session_add(rm, RM_PUSH_TX, L);
+    s = rm_core_session_add(rm, RM_PUSH_TX, L); /* create session, assign SID, insert into hashtable */
     if (s == NULL) {
         return -1;
     }
     prvt = (struct rm_session_push_tx*) s->prvt;
-
-	/* start rx_ch_ch thread and tx delta threads, save pids in session object */
-	err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f, s, PTHREAD_CREATE_JOINABLE);
+	err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f, s, PTHREAD_CREATE_JOINABLE); /* start rx_ch_ch thread and tx delta threads, save pids in session object */
 	if (err != 0) {
         goto fail;
     }
-
-	/* start tx delta vec thread */
-	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE);
+	err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx delta vec thread */
 	if (err != 0) {
         goto fail;
     }
@@ -96,12 +90,8 @@ rm_do_msg_pull_tx(struct rsyncme *rm, unsigned char *buf) {
 
     (void) buf;
     assert(rm != NULL && buf != NULL);
-
     L = 0;  /* TODO get L from message */
-
-	// create session, assign SID, insert
-	// session into table
-    s = rm_core_session_add(rm, RM_PULL_TX, L);
+    s = rm_core_session_add(rm, RM_PULL_TX, L); /* create session, assign SID, insert session into table */
     if (s == NULL) {
         return -1;
     }
@@ -118,11 +108,7 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 
     (void) buf;
     assert(rm != NULL && buf != NULL);
-
     L = 0;  /* TODO get L from message */
-
-	// create session, assign SID, insert
-	// session into table
     s = rm_core_session_add(rm, RM_PULL_RX, L);
     if (s == NULL) {
         return -1;

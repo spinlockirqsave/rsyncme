@@ -40,8 +40,7 @@ rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
         return;
     }
     /* queue of delta elements MUST be empty now */
-    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 
-            && "Delta elements queue NOT EMPTY!\n");
+    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
     pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
     pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
     free(prvt);
@@ -66,8 +65,7 @@ rm_session_push_local_free(struct rm_session_push_local *prvt) {
         return;
     }
     /* queue of delta elements MUST be empty now */
-    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 
-            && "Delta elements queue NOT EMPTY!\n");
+    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
     pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
     pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
     free(prvt);
@@ -139,7 +137,6 @@ rm_session_free(struct rm_session *s) {
     if (s->prvt == NULL) {
         goto end;
     }
-
     switch (t) {
         case RM_PUSH_RX:
             break;
@@ -154,7 +151,6 @@ rm_session_free(struct rm_session *s) {
         default:
             assert(0 == 1 && "WTF Unknown prvt type!\n");
     }
-
 end:
     pthread_mutex_destroy(&s->session_mutex);
     free(s);
@@ -200,7 +196,6 @@ rm_session_delta_tx_f(void *arg) {
     assert(s != NULL);
 
     t = s->type;
-
     switch (t) {
         case RM_PUSH_LOCAL:
 
@@ -226,10 +221,7 @@ rm_session_delta_tx_f(void *arg) {
         default:
             goto exit;
     }
-
-    /* 1. run rolling checksum procedure */
-    err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0);
-
+    err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0); /* 1. run rolling checksum procedure */
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_tx_status = err;
     pthread_mutex_unlock(&s->session_mutex);
@@ -279,8 +271,7 @@ rm_session_delta_rx_f_local(void *arg) {
     bytes_to_rx = prvt_local->f_x_sz;
     f_y         = prvt_local->f_y;
     f_z         = prvt_local->f_z;
-    /* init reconstruction context */
-    rec_ctx.L = s->rec_ctx.L;
+    rec_ctx.L = s->rec_ctx.L; /* init reconstruction context */
     pthread_mutex_unlock(&s->session_mutex);
 
     assert(f_y != NULL);
@@ -289,13 +280,11 @@ rm_session_delta_rx_f_local(void *arg) {
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
-
     if (bytes_to_rx == 0) {
         goto done;
     }
 
-    /* TODO sleep on delta queue and reconstruct element once awoken */
-    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex); /* TODO sleep on delta queue and reconstruct element once awoken */
     q = &prvt_local->tx_delta_e_queue;
 
     while (bytes_to_rx > 0) {
@@ -334,7 +323,6 @@ done:
 	pthread_exit(NULL);
 
 err_exit:
-
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_rx_status = status;
     pthread_mutex_unlock(&s->session_mutex);
@@ -344,9 +332,9 @@ err_exit:
 void *
 rm_session_delta_rx_f_remote(void *arg) {
     FILE                            *f_y;           /* file on which reconstruction is performed */
-    //twfifo_queue                    *q;
-    //const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
-    //struct twlist_head              *lh;
+    /*twfifo_queue                    *q; */
+    /*const struct rm_delta_e         *delta_e;        iterator over delta elements */
+    /*struct twlist_head              *lh;*/
     struct rm_session_push_rx       *prvt_rx;
     size_t                          bytes_to_rx;
 	struct rm_session               *s;

@@ -1,12 +1,10 @@
-/*
- * @file        test_rm8.c
+/* @file        test_rm8.c
  * @brief       Test suite #8.
  * @details     Test of rm_tx_local_push.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        15 June 2016 10:44 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm8.h"
@@ -203,7 +201,7 @@ test_rm_setup(void **state) {
 
     s = rm_session_create(RM_PUSH_LOCAL, 0);
     if (s == NULL) {
-        RM_LOG_ERR("Can't allocate session local push");
+        RM_LOG_ERR("%s", "Can't allocate session local push");
 	}
     assert_true(s != NULL);
     rm_state.s = s;
@@ -265,7 +263,7 @@ test_rm_tx_local_push_1(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_1");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
@@ -459,7 +457,7 @@ test_rm_tx_local_push_1(void **state) {
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_1");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }
@@ -488,7 +486,7 @@ test_rm_tx_local_push_2(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_2");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
@@ -706,7 +704,7 @@ test_rm_tx_local_push_2(void **state) {
             assert_true(f_y != NULL);
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
-                RM_LOG_ERR("Error copying file @x to @y for next test");
+                RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
                 }
@@ -737,7 +735,7 @@ test_rm_tx_local_push_2(void **state) {
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }
@@ -766,7 +764,7 @@ test_rm_tx_local_push_3(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_3");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
@@ -982,7 +980,7 @@ test_rm_tx_local_push_3(void **state) {
             assert_true(f_y != NULL);
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
-                RM_LOG_ERR("Error copying file @x to @y for next test");
+                RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
@@ -1005,7 +1003,7 @@ test_rm_tx_local_push_3(void **state) {
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_3");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }
@@ -1034,7 +1032,7 @@ test_rm_tx_local_push_4(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_4");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
@@ -1305,7 +1303,7 @@ test_rm_tx_local_push_4(void **state) {
             assert_true(f_y != NULL);
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
-                RM_LOG_ERR("Error copying file @x to @y for next test");
+                RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
@@ -1334,7 +1332,7 @@ test_rm_tx_local_push_4(void **state) {
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_4");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             assert_true(1 == 0 && "Error removing files (unlink)");
@@ -1365,7 +1363,7 @@ test_rm_tx_local_push_5(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_5");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
@@ -1728,7 +1726,7 @@ test_rm_tx_local_push_5(void **state) {
             assert_true(f_y != NULL && "Can't recreate @y file");
             err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
             if (err != 0) {
-                RM_LOG_ERR("Error copying file @x to @y for next test");
+                RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
                     f_x = NULL;
@@ -1791,7 +1789,7 @@ test_rm_tx_local_push_5(void **state) {
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_5");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             if (f_x != NULL) {
                 fclose(f_x);
                 f_x = NULL;
@@ -1827,7 +1825,7 @@ test_rm_tx_local_push_6(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_6");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
     f_x = NULL;
@@ -1984,7 +1982,7 @@ test_rm_tx_local_push_6(void **state) {
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_6");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }

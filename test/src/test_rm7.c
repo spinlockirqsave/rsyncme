@@ -234,7 +234,7 @@ test_rm_setup(void **state) {
     /* session for local push */
     s = rm_session_create(RM_PUSH_LOCAL, 0);
     if (s == NULL) {
-        RM_LOG_ERR("Can't allocate session local push");
+        RM_LOG_ERR("%s", "Can't allocate session local push");
 	}
     assert_true(s != NULL);
     rm_state.s = s;
@@ -282,42 +282,42 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
     if (cb_arg == NULL) {
-        RM_LOG_CRIT("WTF! NULL callback argument?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL callback argument?! Have you added some neat code recently?");
         assert(cb_arg != NULL);
         return -1;
     }
     /* this is not the subject of this test suite but we will call standard delta processing callback for local push anyway,
      * so we can verify queue content in this test suite as well */
     if (rm_roll_proc_cb_1(arg) != 0) {
-        RM_LOG_CRIT("Enqueuing of delta elements failed");
+        RM_LOG_CRIT("%s", "Enqueuing of delta elements failed");
         assert_true(1 == 0);
     }  
 
     s = cb_arg->s;
     delta_e = cb_arg->delta_e;
     if (s == NULL) {
-        RM_LOG_CRIT("WTF! NULL session?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL session?! Have you added some neat code recently?");
         assert(s != NULL);
         return -2;
     }
     if (delta_e == NULL) {
-        RM_LOG_CRIT("WTF! NULL delta element?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL delta element?! Have you added some neat code recently?");
         assert(delta_e != NULL);
         return -3;
     }
     prvt = (struct rm_session_push_local*) s->prvt;
     if (prvt == NULL) {
-        RM_LOG_CRIT("WTF! NULL private session?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -4;
     }
     if (prvt->f_y == NULL) {
-        RM_LOG_CRIT("WTF! NULL f_y in private session?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL f_y in private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -5;
     }
     if (prvt->f_z == NULL) {
-        RM_LOG_CRIT("WTF! NULL f_z in private session?! Have you added some neat code recently?");
+        RM_LOG_CRIT("%s", "WTF! NULL f_z in private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -6;
     }
@@ -328,25 +328,25 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
     switch (err) {
         case 0: break;
         case -1:
-            RM_LOG_CRIT("NULL arguments passed to rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "NULL arguments passed to rm_rx_process_delta_element");
             break;
         case -2:
-            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_REFERENCE in rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_REFERENCE in rm_rx_process_delta_element");
             break;
         case -3:
-            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_RAW_BYTES in rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_RAW_BYTES in rm_rx_process_delta_element");
             break;
         case -4:
-            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_ZERO_DIFF in rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_ZERO_DIFF in rm_rx_process_delta_element");
             break;
         case -5:
-            RM_LOG_CRIT("Error reconstructing RM_DELTA_ELEMENT_TAIL in rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_TAIL in rm_rx_process_delta_element");
             break;
         case -6:
-            RM_LOG_CRIT("Unknown delta  element type passed to rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "Unknown delta  element type passed to rm_rx_process_delta_element");
             break;
         default:
-            RM_LOG_CRIT("Unknown error in rm_rx_process_delta_element");
+            RM_LOG_CRIT("%s", "Unknown error in rm_rx_process_delta_element");
             return -13;
     }
     assert_int_equal(err, 0);
@@ -382,6 +382,7 @@ test_rm_rx_process_delta_element_1(void **state) {
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
     rm_state = *state;
     assert_true(rm_state != NULL);
     f_x = NULL;
@@ -506,7 +507,7 @@ test_rm_rx_process_delta_element_1(void **state) {
                         ++delta_tail_n;
                         break;
                     default:
-                        RM_LOG_ERR("Unknown delta element type!");
+                        RM_LOG_ERR("%s", "Unknown delta element type!");
                         if (f != NULL) {
                             fclose(f);
                             f = NULL;
@@ -606,7 +607,7 @@ test_rm_rx_process_delta_element_1(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n");
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                     if (f != NULL) {
                         fclose(f);
                         f = NULL;
@@ -756,11 +757,12 @@ test_rm_rx_process_delta_element_2(void **state) {
 
     err = test_rm_copy_files_and_postfix("_test_2");
     if (err != 0) {
-        RM_LOG_ERR("Error copying files, skipping test");
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
     }
 
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
     rm_state = *state;
     assert_true(rm_state != NULL);
 
@@ -913,7 +915,7 @@ test_rm_rx_process_delta_element_2(void **state) {
                         ++delta_tail_n;
                         break;
                     default:
-                        RM_LOG_ERR("Unknown delta element type!");
+                        RM_LOG_ERR("%s", "Unknown delta element type!");
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
                 if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
@@ -982,7 +984,7 @@ test_rm_rx_process_delta_element_2(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
-                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n");
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
@@ -1073,7 +1075,7 @@ test_rm_rx_process_delta_element_2(void **state) {
     if (RM_TEST_7_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
         if (err != 0) {
-            RM_LOG_ERR("Error removing files (unlink)");
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
             return;
         }
