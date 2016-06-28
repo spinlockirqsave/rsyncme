@@ -1,13 +1,11 @@
-/*
- * @file        test_rm1.c
+/* @file        test_rm1.c
  * @brief       Test suite #1.
- * @details     Test of rolling checksums and of nonoverlapping
+ * @details     Test of basic routines and rolling checksums and nonoverlapping
  *              checksums calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        10 Jan 2016 04:13 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm1.h"
@@ -114,6 +112,286 @@ test_rm_teardown(void **state) {
 }
 
 void
+test_rm_copy_buffered(void **state) {
+    FILE        *f_x, *f_y;
+    int         fd, err;
+	struct stat fs;
+	const char  *fname, *f_y_name = "rm_test_1_1_tmp";
+    size_t      i, file_sz, k;
+    unsigned char cx, cy;
+
+    (void) state;
+
+	i = 0; /* test on all files */
+	for (; i < RM_TEST_FNAMES_N; ++i) {
+		fname = rm_test_fnames[i];
+		f_x = fopen(fname, "rb");
+		if (f_x == NULL) {
+			RM_LOG_PERR("Can't open file [%s]", fname);
+		}
+		assert_true(f_x != NULL && "Can't open @x file");
+		fd = fileno(f_x);
+		if (fstat(fd, &fs) != 0) {
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
+			if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+			assert_true(1 == 0 && "Can't fstat @x");
+		}
+		file_sz = fs.st_size;
+		f_y = fopen(f_y_name, "w+b");
+		if (f_y == NULL) {
+			RM_LOG_PERR("%s", "Can't open @y file");
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+		}
+		assert_true(f_y != NULL && "Can't open @y file");
+        err = rm_copy_buffered(f_x, f_y, file_sz);
+        if (err != 0) {
+            RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
+        }
+        assert(err == 0 && "Copy buffered failed");
+        k = 0; /* verify files are the same */
+        while (k < file_sz) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", fname);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
+                assert_true(1 == 0 && "ERROR reading byte in file @x!");
+            }
+            if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
+                assert_true(1 == 0 && "ERROR reading byte in file @y!");
+            }
+            if (cx != cy) {
+                RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cy [%u]\n", k, cx, cy);
+            }
+            assert_true(cx == cy && "Bytes differ!");
+            ++k;
+        }
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
+        RM_LOG_INFO("PASSED test #1 (copy buffered), file [%s]", fname);
+    }
+    RM_LOG_INFO("%s", "PASSED test #1 (copy buffered)");
+}
+
+#define RM_TEST_1_2_BUF_SZ 10u
+void
+test_rm_copy_buffered_2(void **state) {
+    FILE        *f_x, *f_y;
+    int         fd, err;
+	struct stat fs;
+	const char  *fname, *f_y_name = "rm_test_1_2_tmp";
+    size_t      i, file_sz, bytes_requested, k;
+    unsigned char cx, buf[RM_TEST_1_2_BUF_SZ];
+
+    (void) state;
+
+	i = 0; /* test on all files */
+	for (; i < RM_TEST_FNAMES_N; ++i) {
+		fname = rm_test_fnames[i];
+		f_x = fopen(fname, "rb");
+		if (f_x == NULL) {
+			RM_LOG_PERR("Can't open file [%s]", fname);
+		}
+		assert_true(f_x != NULL && "Can't open @x file");
+		fd = fileno(f_x);
+		if (fstat(fd, &fs) != 0) {
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
+			if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+			assert_true(1 == 0 && "Can't fstat @x");
+		}
+		file_sz = fs.st_size;
+		f_y = fopen(f_y_name, "w+b");
+		if (f_y == NULL) {
+			RM_LOG_PERR("%s", "Can't open @y file");
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+		}
+		assert_true(f_y != NULL && "Can't open @y file");
+        bytes_requested = rm_min(RM_TEST_1_2_BUF_SZ, file_sz);
+        err = rm_copy_buffered_2(f_x, 0, buf, bytes_requested);
+        if (err != 0) {
+            RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
+        }
+        assert(err == 0 && "Copy buffered failed");
+        k = 0; /* verify files are the same */
+        while (k < bytes_requested) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", fname);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
+                assert_true(1 == 0 && "ERROR reading byte in file @x!");
+            }
+            if (cx != buf[k]) {
+                RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], buf [%u]\n", k, cx, buf[k]);
+            }
+            assert_true(cx == buf[k] && "Bytes differ!");
+            ++k;
+        }
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
+        RM_LOG_INFO("PASSED test #2 (copy buffered2), file [%s]", fname);
+    }
+    RM_LOG_INFO("%s", "PASSED test #2 (copy buffered2)");
+}
+
+void
+test_rm_copy_buffered_offset(void **state) {
+    FILE        *f_x, *f_y;
+    int         fd, err;
+	struct stat fs;
+	const char  *fname, *f_y_name = "rm_test_1_3_tmp";
+    size_t      i, file_sz, k, offset_x, offset_y;
+    unsigned char cx, cy;
+
+    (void) state;
+
+	i = 0; /* test on all files */
+	for (; i < RM_TEST_FNAMES_N; ++i) {
+		fname = rm_test_fnames[i];
+		f_x = fopen(fname, "rb");
+		if (f_x == NULL) {
+			RM_LOG_PERR("Can't open file [%s]", fname);
+		}
+		assert_true(f_x != NULL && "Can't open @x file");
+		fd = fileno(f_x);
+		if (fstat(fd, &fs) != 0) {
+			RM_LOG_PERR("Can't fstat file [%s]", fname);
+			if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+			assert_true(1 == 0 && "Can't fstat @x");
+		}
+		file_sz = fs.st_size;
+		f_y = fopen(f_y_name, "w+b");
+		if (f_y == NULL) {
+			RM_LOG_PERR("%s", "Can't open @y file");
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+		}
+		assert_true(f_y != NULL && "Can't open @y file");
+        offset_x = 0;
+        offset_y = 0;
+        err = rm_copy_buffered_offset(f_x, f_y, file_sz, offset_x, offset_y);
+        if (err != 0) {
+            RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
+        }
+        assert(err == 0 && "Copy buffered failed");
+        k = 0; /* verify files are the same */
+        while (k < file_sz) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", fname);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
+                assert_true(1 == 0 && "ERROR reading byte in file @x!");
+            }
+            if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
+                assert_true(1 == 0 && "ERROR reading byte in file @y!");
+            }
+            if (cx != cy) {
+                RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cy [%u]\n", k, cx, cy);
+            }
+            assert_true(cx == cy && "Bytes differ!");
+            ++k;
+        }
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
+        RM_LOG_INFO("PASSED test #3 (copy buffered offset), file [%s]", fname);
+    }
+    RM_LOG_INFO("%s", "PASSED test #3 (copy buffered offset)");
+}
+
+void
 test_rm_adler32_1(void **state) {
 	FILE            *f;
 	int             fd;
@@ -168,6 +446,7 @@ test_rm_adler32_1(void **state) {
 		assert_true(adler == sf);
 		RM_LOG_INFO("PASS Adler32 (1) checksum [%zu] OK, file [%s], size [%zu]", adler, fname, file_sz);
 	}
+    RM_LOG_INFO("%s", "PASSED test #4 (Adler32 (1))");
 }
 
 void
@@ -222,6 +501,7 @@ test_rm_adler32_2(void **state) {
 		assert_true(((adler2 >> 16) & 0xffff) == r2_1);
 		RM_LOG_INFO("PASS Adler32 (2) checksum [%zu] OK, file [%s], size [%zu]", adler2, fname, file_sz);
 	}
+    RM_LOG_INFO("%s", "PASSED test #5 (Adler32 (2))");
 }
 
 void
@@ -318,6 +598,7 @@ test_rm_fast_check_roll(void **state) {
 		}
 		fclose(f);
 	}
+    RM_LOG_INFO("%s", "PASSED test #6 (fast rolling checksum)");
 }
 
 /* @brief   Tests number of calculated entries. */
@@ -384,5 +665,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state) {
 		}
 		fclose(f);
 	}
+    RM_LOG_INFO("%s", "PASSED test #7 (non-overlapping blocks)");
 }
 

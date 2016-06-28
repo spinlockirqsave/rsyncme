@@ -378,12 +378,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
 		if (f == NULL) {
 			RM_LOG_PERR("Can't open file [%s]", fname);
 		}
-		assert_true(f != NULL);
+		assert_true(f != NULL && "Can't open file");
 		fd = fileno(f);
 		if (fstat(fd, &fs) != 0) {
 			RM_LOG_PERR("Can't fstat file [%s]", fname);
 			fclose(f);
-			assert_true(1 == 0);
+			assert_true(1 == 0 && "Can't fstat");
 		}
 		file_sz = fs.st_size; 
 		j = 0;

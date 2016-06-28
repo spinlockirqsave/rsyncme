@@ -15,6 +15,9 @@
 int main(void)
 {
     const struct CMUnitTest tests[] = {
+            cmocka_unit_test(test_rm_copy_buffered),
+            cmocka_unit_test(test_rm_copy_buffered_2),
+            cmocka_unit_test(test_rm_copy_buffered_offset),
             cmocka_unit_test(test_rm_adler32_1),
 	        cmocka_unit_test(test_rm_adler32_2),
 	        cmocka_unit_test(test_rm_fast_check_roll),

@@ -57,8 +57,14 @@ test_rm_setup(void **state);
 int
 test_rm_teardown(void **state);
 
-int
-rm_random_file(char *name, uint32_t len);
+void
+test_rm_copy_buffered(void **state);
+
+void
+test_rm_copy_buffered_2(void **state);
+
+void
+test_rm_copy_buffered_offset(void **state);
 
 void
 test_rm_adler32_1(void **state);
