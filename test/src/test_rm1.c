@@ -346,6 +346,27 @@ test_rm_copy_buffered_2_2(void **state) {
             RM_LOG_ERR("%s", "Wrong bytes returned!");
             assert_true(1 == 0 && "Wrong bytes returned!");
     }
+    /* 3 request all possible segments */
+    offset = 0;
+    for (; offset < RM_TEST_1_2_BUF_SZ; ++offset) {
+        bytes_requested = 0;
+        do {
+            err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+            if (err != 0) {
+                RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
+                if (f != NULL) {
+                    fclose(f);
+                    f = NULL;
+                }
+            }
+            assert(err == 0 && "Copy buffered failed");
+            if (0 != test_rm_copy_buffered_bytes_cmp(buf, bytes_requested, offset)) { /* verify bytes returned */
+                RM_LOG_ERR("%s", "Wrong bytes returned!");
+                assert_true(1 == 0 && "Wrong bytes returned!");
+            }
+            ++bytes_requested;
+        } while (bytes_requested + offset < RM_TEST_1_2_BUF_SZ + 1);
+    }
     RM_LOG_INFO("%s", "PASSED test #3 (copy buffered2 test #2)");
 }
 
