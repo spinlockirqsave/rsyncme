@@ -27,60 +27,74 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 128, 129
 
 int
 test_rm_setup(void **state) {
-	int             err;
-	size_t          i, j;
-	FILE            *f;
+    int             err;
+    size_t          i, j;
+    FILE            *f;
     struct rm_ch_ch *array;
     unsigned long const seed = time(NULL);
 
 #ifdef DEBUG
-	err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_1");
+    err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_1");
 #else
-	err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_1");
+    err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_1");
 #endif
-	if (err != 0) {
-		exit(EXIT_FAILURE);
+    if (err != 0) {
+        exit(EXIT_FAILURE);
     }
-	rm_state.l = rm_test_L_blocks;
-	*state = &rm_state;
+    rm_state.l = rm_test_L_blocks;
+    *state = &rm_state;
 
-	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i) {
-		f = fopen(rm_test_fnames[i], "rb+");
-		if (f == NULL) { /* file doesn't exist, create */
-			RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
-			f = fopen(rm_test_fnames[i], "wb");
-			if (f == NULL) {
-				exit(EXIT_FAILURE);
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i) {
+        f = fopen(rm_test_fnames[i], "rb+");
+        if (f == NULL) { /* file doesn't exist, create */
+            RM_LOG_INFO("Creating file [%s]", rm_test_fnames[i]);
+            f = fopen(rm_test_fnames[i], "wb");
+            if (f == NULL) {
+                exit(EXIT_FAILURE);
             }
-			j = rm_test_fsizes[i];
-			RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
-			srand(seed);
-			while (j--) {
-				fputc(rand(), f);
-			}		
-		} else {
-			RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
-		}
-		fclose(f);
-	}
+            j = rm_test_fsizes[i];
+            RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_test_fnames[i]);
+            srand(seed);
+            while (j--) {
+                fputc(rand(), f);
+            }		
+        } else {
+            RM_LOG_INFO("Using previously created file [%s]", rm_test_fnames[i]);
+        }
+        fclose(f);
+    }
 
-	i = 0; /* find biggest L */
-	j = 0;
-	for (; i < RM_TEST_L_BLOCKS_SIZE; ++i) {
-		if (rm_test_L_blocks[i] > j) {
+    i = 0; /* find biggest L */
+    j = 0;
+    for (; i < RM_TEST_L_BLOCKS_SIZE; ++i) {
+        if (rm_test_L_blocks[i] > j) {
             j = rm_test_L_blocks[i];
         }
     }
 
-	array = malloc(j * sizeof (*array)); /* allocate array */
-	if (array == NULL) {
-		RM_LOG_ERR("Can't allocate memory for array buffer of [%zu] bytes, malloc failed", j * sizeof(*array));
-	}
-	assert_true(array != NULL);
+    array = malloc(j * sizeof (*array)); /* allocate array */
+    if (array == NULL) {
+        RM_LOG_ERR("Can't allocate memory for array buffer of [%zu] bytes, malloc failed", j * sizeof(*array));
+    }
+    assert_true(array != NULL);
     rm_state.array_entries = j;
-	rm_state.array = array;
-	return 0;
+    rm_state.array = array;
+
+    memcpy(file_content_payload, "abcdefghij", RM_TEST_1_2_BUF_SZ);
+    strcpy(rm_state.f_2.name, "f_2");
+    rm_state.f_2.f = fopen(rm_state.f_2.name, "w+b");
+    if (rm_state.f_2.f == NULL) {
+        RM_LOG_ERR("Can't create test file [%s]", rm_state.f_2.name);
+    }
+    if (1 != rm_fpwrite(file_content_payload, RM_TEST_1_2_BUF_SZ, 1, 0, rm_state.f_2.f)) {
+        RM_LOG_ERR("Error writing to the test file [%s]", rm_state.f_2.name);
+        assert_true(1 == 0 && "Error writing to the test file");
+    }
+    fclose(rm_state.f_2.f);
+    rm_state.f_2.f = NULL;
+
+    return 0;
 }
 
 int
@@ -207,13 +221,12 @@ test_rm_copy_buffered(void **state) {
     RM_LOG_INFO("%s", "PASSED test #1 (copy buffered)");
 }
 
-#define RM_TEST_1_2_BUF_SZ 10u
 void
-test_rm_copy_buffered_2(void **state) {
-    FILE        *f_x, *f_y;
+test_rm_copy_buffered_2_1(void **state) {
+    FILE        *f_x;
     int         fd, err;
 	struct stat fs;
-	const char  *fname, *f_y_name = "rm_test_1_2_tmp";
+	const char  *fname;
     size_t      i, file_sz, bytes_requested, k;
     unsigned char cx, buf[RM_TEST_1_2_BUF_SZ];
 
@@ -237,15 +250,6 @@ test_rm_copy_buffered_2(void **state) {
 			assert_true(1 == 0 && "Can't fstat @x");
 		}
 		file_sz = fs.st_size;
-		f_y = fopen(f_y_name, "w+b");
-		if (f_y == NULL) {
-			RM_LOG_PERR("%s", "Can't open @y file");
-            if (f_x != NULL) {
-                fclose(f_x);
-                f_x = NULL;
-            }
-		}
-		assert_true(f_y != NULL && "Can't open @y file");
         bytes_requested = rm_min(RM_TEST_1_2_BUF_SZ, file_sz);
         err = rm_copy_buffered_2(f_x, 0, buf, bytes_requested);
         if (err != 0) {
@@ -253,10 +257,6 @@ test_rm_copy_buffered_2(void **state) {
             if (f_x != NULL) {
                 fclose(f_x);
                 f_x = NULL;
-            }
-            if (f_y != NULL) {
-                fclose(f_y);
-                f_y = NULL;
             }
         }
         assert(err == 0 && "Copy buffered failed");
@@ -267,10 +267,6 @@ test_rm_copy_buffered_2(void **state) {
                 if (f_x != NULL) {
                     fclose(f_x);
                     f_x = NULL;
-                }
-                if (f_y != NULL) {
-                    fclose(f_y);
-                    f_y = NULL;
                 }
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
@@ -284,13 +280,73 @@ test_rm_copy_buffered_2(void **state) {
             fclose(f_x);
             f_x = NULL;
         }
-        if (f_y != NULL) {
-            fclose(f_y);
-            f_y = NULL;
-        }
-        RM_LOG_INFO("PASSED test #2 (copy buffered2), file [%s]", fname);
+        RM_LOG_INFO("PASSED test #2 (copy buffered2 test #1), file [%s]", fname);
     }
-    RM_LOG_INFO("%s", "PASSED test #2 (copy buffered2)");
+    RM_LOG_INFO("%s", "PASSED test #2 (copy buffered2 test #1)");
+}
+
+static int
+test_rm_copy_buffered_bytes_cmp(unsigned char buf[], size_t n, size_t offset) {
+    size_t i;
+
+    i = 0; /* verify bytes returned */
+    while (i < n) {
+        if (buf[i] != file_content_payload[i + offset]) {
+            RM_LOG_ERR("Wrong bytes returned at index [%zu] offset [%zu]!", i, offset);
+            return -1;
+        }
+        ++i;
+    }
+    return 0;
+}
+
+void
+test_rm_copy_buffered_2_2(void **state) {
+    FILE                    *f;
+    struct test_rm_state    *rm_state;
+    int                     err;
+	const char              *fname;
+    size_t                  bytes_requested, offset;
+    unsigned char           buf[RM_TEST_1_2_BUF_SZ];
+
+    rm_state = *state;
+    assert_true(rm_state != NULL && "Omg, cmocka failed?");
+
+    fname = rm_state->f_2.name;
+    f = fopen(fname, "rb");
+    if (f == NULL) {
+        RM_LOG_PERR("Can't open test file [%s]", fname);
+    }
+    assert_true(f != NULL && "Can't open test file");
+    /* 1 request zero bytes */
+    bytes_requested = 0;
+    offset = 0;
+    err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+    if (err != 0) {
+        RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
+    }
+    assert(err == 0 && "Copy buffered failed");
+    /* 2 request 1 byte, first byte */
+    bytes_requested = 1;
+    offset = 0;
+    err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+    if (err != 0) {
+        RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
+    }
+    assert(err == 0 && "Copy buffered failed");
+    if (0 != test_rm_copy_buffered_bytes_cmp(buf, bytes_requested, offset)) { /* verify bytes returned */
+            RM_LOG_ERR("%s", "Wrong bytes returned!");
+            assert_true(1 == 0 && "Wrong bytes returned!");
+    }
+    RM_LOG_INFO("%s", "PASSED test #3 (copy buffered2 test #2)");
 }
 
 void
@@ -298,7 +354,7 @@ test_rm_copy_buffered_offset(void **state) {
     FILE        *f_x, *f_y;
     int         fd, err;
 	struct stat fs;
-	const char  *fname, *f_y_name = "rm_test_1_3_tmp";
+	const char  *fname, *f_y_name = "rm_test_1_4_tmp";
     size_t      i, file_sz, k, offset_x, offset_y;
     unsigned char cx, cy;
 
@@ -386,9 +442,9 @@ test_rm_copy_buffered_offset(void **state) {
             fclose(f_y);
             f_y = NULL;
         }
-        RM_LOG_INFO("PASSED test #3 (copy buffered offset), file [%s]", fname);
+        RM_LOG_INFO("PASSED test #4 (copy buffered offset), file [%s]", fname);
     }
-    RM_LOG_INFO("%s", "PASSED test #3 (copy buffered offset)");
+    RM_LOG_INFO("%s", "PASSED test #4 (copy buffered offset)");
 }
 
 void
@@ -446,7 +502,7 @@ test_rm_adler32_1(void **state) {
 		assert_true(adler == sf);
 		RM_LOG_INFO("PASS Adler32 (1) checksum [%zu] OK, file [%s], size [%zu]", adler, fname, file_sz);
 	}
-    RM_LOG_INFO("%s", "PASSED test #4 (Adler32 (1))");
+    RM_LOG_INFO("%s", "PASSED test #5 (Adler32 (1))");
 }
 
 void
@@ -501,7 +557,7 @@ test_rm_adler32_2(void **state) {
 		assert_true(((adler2 >> 16) & 0xffff) == r2_1);
 		RM_LOG_INFO("PASS Adler32 (2) checksum [%zu] OK, file [%s], size [%zu]", adler2, fname, file_sz);
 	}
-    RM_LOG_INFO("%s", "PASSED test #5 (Adler32 (2))");
+    RM_LOG_INFO("%s", "PASSED test #6 (Adler32 (2))");
 }
 
 void
@@ -598,7 +654,7 @@ test_rm_fast_check_roll(void **state) {
 		}
 		fclose(f);
 	}
-    RM_LOG_INFO("%s", "PASSED test #6 (fast rolling checksum)");
+    RM_LOG_INFO("%s", "PASSED test #7 (fast rolling checksum)");
 }
 
 /* @brief   Tests number of calculated entries. */
@@ -665,6 +721,6 @@ test_rm_rx_insert_nonoverlapping_ch_ch_array_1(void **state) {
 		}
 		fclose(f);
 	}
-    RM_LOG_INFO("%s", "PASSED test #7 (non-overlapping blocks)");
+    RM_LOG_INFO("%s", "PASSED test #8 (non-overlapping blocks)");
 }
 

@@ -30,9 +30,16 @@
 #define RM_TEST_L_BLOCKS_SIZE       26U
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            13U
+#define RM_TEST_1_2_BUF_SZ          10u
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t      rm_test_fsizes[RM_TEST_FNAMES_N];
 size_t      rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
+unsigned char file_content_payload[RM_TEST_1_2_BUF_SZ];
+
+struct test_rm_file {
+    FILE    *f;
+    char    name[RM_FILE_LEN_MAX + 100];
+};
 
 struct test_rm_state
 {
@@ -40,6 +47,7 @@ struct test_rm_state
     size_t  array_entries;
     struct rm_ch_ch *array; /* will be big enough to serve as storage
                                for checksums for each test file */
+    struct test_rm_file f_2;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -61,7 +69,10 @@ void
 test_rm_copy_buffered(void **state);
 
 void
-test_rm_copy_buffered_2(void **state);
+test_rm_copy_buffered_2_1(void **state);
+
+void
+test_rm_copy_buffered_2_2(void **state);
 
 void
 test_rm_copy_buffered_offset(void **state);
