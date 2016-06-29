@@ -235,15 +235,12 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     }
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
-        if (feof(x)) {
-            return -2;
-        }
         return 0;
     }
     if (ferror(x) != 0) {
-        return -3;
+        return -1;
     }
-    return -13; /* too much requested */
+    return -2; /* EOF, too much requested */
 }
 
 size_t

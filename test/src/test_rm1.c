@@ -113,8 +113,8 @@ test_rm_teardown(void **state) {
 				RM_LOG_ERR("Can't open file [%s]",
 					rm_test_fnames[i]);	
 			} else {
-				RM_LOG_INFO("Removing file [%s]",
-					rm_test_fnames[i]);
+                fclose(f);
+				RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
 				remove(rm_test_fnames[i]);
 			}
 		}
@@ -367,6 +367,23 @@ test_rm_copy_buffered_2_2(void **state) {
             ++bytes_requested;
         } while (bytes_requested + offset < RM_TEST_1_2_BUF_SZ + 1);
     }
+    /* 4 request too much */
+    bytes_requested = RM_TEST_1_2_BUF_SZ + 1;
+    offset = 0;
+    err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+    if (err != -2) {
+        RM_LOG_ERR("Copy buffered failed with WRONG error [%d], file [%s]", err, fname);
+        if (f != NULL) {
+            fclose(f);
+            f = NULL;
+        }
+    }
+    assert(err == -2 && "Copy buffered failed with WRONG error");
+    if (f != NULL) {
+        fclose(f);
+        f = NULL;
+    }
+
     RM_LOG_INFO("%s", "PASSED test #3 (copy buffered2 test #2)");
 }
 
