@@ -85,26 +85,27 @@ test_rm_setup(void **state) {
 
 int
 test_rm_teardown(void **state) {
-	int	i;
-	FILE	*f;
-	struct test_rm_state *rm_state;
+    int	i;
+    FILE	*f;
+    struct test_rm_state *rm_state;
 
-	rm_state = *state;
-	assert_true(rm_state != NULL);
-	if (RM_TEST_DELETE_FILES == 1) {
-		i = 0; /* delete all test files */
-		for (; i < RM_TEST_FNAMES_N; ++i) {
-			f = fopen(rm_test_fnames[i], "wb+");
-			if (f == NULL) {
-				RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
-			} else {
-				RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
-				remove(rm_test_fnames[i]);
-			}
-		}
-	}
-	free(rm_state->buf);
-	return 0;
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+    if (RM_TEST_DELETE_FILES == 1) {
+        i = 0; /* delete all test files */
+        for (; i < RM_TEST_FNAMES_N; ++i) {
+            f = fopen(rm_test_fnames[i], "wb+");
+            if (f == NULL) {
+                RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);
+            } else {
+                RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
+                fclose(f);
+                remove(rm_test_fnames[i]);
+            }
+        }
+    }
+    free(rm_state->buf);
+    return 0;
 }
 
 int
