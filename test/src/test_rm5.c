@@ -206,11 +206,10 @@ test_rm_teardown(void **state) {
         for (; i < RM_TEST_FNAMES_N; ++i) {
             f = fopen(rm_test_fnames[i], "wb+");
             if (f == NULL) {
-                RM_LOG_ERR("Can't open file [%s]",
-                        rm_test_fnames[i]);	
+                RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
-                RM_LOG_INFO("Removing file [%s]",
-                        rm_test_fnames[i]);
+                RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
+                fclose(f);
                 remove(rm_test_fnames[i]);
             }
         }
