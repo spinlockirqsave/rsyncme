@@ -1,12 +1,10 @@
-/*
- * @file        test_rm8.h
+/* @file        test_rm8.h
  * @brief       Test suite #8.
  * @details     Test of rm_tx_local_push.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        15 June 2016 10:46 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_TEST_RM8_H
