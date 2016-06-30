@@ -1,12 +1,10 @@
-/*
- * @file        test_rm9.h
+/* @file        test_rm9.h
  * @brief       Test suite #9.
  * @details     Test of local push error reporting.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        20 June 2016 04:48 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_TEST_RM9_H
