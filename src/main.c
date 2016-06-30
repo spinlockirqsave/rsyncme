@@ -108,21 +108,28 @@ main() {
 			switch (read_n) {
 				case EAGAIN:
 					RM_LOG_ERR("%s", "Nonblocking I/O requested on TCP control socket");
+                    break;
 				case EINTR:
 					RM_LOG_ERR("%s", "TCP control socket: interrupted");
 					continue;
 				case EBADF:
 					RM_LOG_ERR("%s", "TCP control socket passed is not a valid descriptor or nor open for reading");
+                    break;
 				case EFAULT:
 					RM_LOG_ERR("%s", "TCP control socket: buffer is outside accessible address space");
+                    break;
 				case EINVAL:
 					RM_LOG_ERR("%s", "TCP control socket: unsuitable for reading or wrong buffer len");
+                    break;
 				case EIO:
 					RM_LOG_ERR("%s", "TCP control socket: I/O error");
+                    break;
 				case EISDIR:
 					RM_LOG_ERR("%s", "TCP control socket: socket descriptor refers to directory");
+                    break;
 				default:
 					RM_LOG_ERR("%s", "Unknown error on TCP control socket");
+                    break;
 			}
 			exit(EXIT_FAILURE);
 		}
