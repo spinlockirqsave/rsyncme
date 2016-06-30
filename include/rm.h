@@ -1,5 +1,4 @@
-/*
- * @file        rm.h
+/* @file        rm.h
  * @brief       Simple rsync algorithm implementation
  *              as described in Tridgell A., "Efficient Algorithms
  *              for Sorting and Synchronization", 1999.
@@ -7,8 +6,7 @@
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        1 Jan 2016 07:50 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_H

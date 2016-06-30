@@ -1,13 +1,11 @@
-/*
- * @file        test_rm1.h
+/* @file        test_rm1.h
  * @brief       Test suite #1.
  * @details     Test of rolling checksums and of nonoverlapping
  *              checksums calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        10 Jan 2016 04:07 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_TEST_RM1_H
