@@ -1,12 +1,10 @@
-/*
- * @file        test_rm4.c
+/* @file        test_rm4.c
  * @brief       Test suite #4.
  * @details     Test of [ref_hlink] rm_rx_insert_nonoverlapping_ch_ch_ref.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        24 Apr 2016 10:40 AM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm4.h"
@@ -103,6 +101,7 @@ test_rm_teardown(void **state)
                 RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
+                fclose(f);
                 remove(rm_test_fnames[i]);
             }
         }

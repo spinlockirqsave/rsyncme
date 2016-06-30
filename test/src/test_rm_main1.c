@@ -1,11 +1,9 @@
-/*
- * @file	    test_rm_main1.c
+/* @file	    test_rm_main1.c
  * @brief	    Execution of test suite #1.
  * @author	    Piotr Gregor <piotrek.gregor at gmail.com>
  * @version	    0.1.2
  * @date	    10 Jan 2016 04:02 PM
- * @copyright	LGPLv2.1
- */
+ * @copyright	LGPLv2.1 */
 
 
 #include "rm_defs.h"
