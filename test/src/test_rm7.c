@@ -1,12 +1,10 @@
-/*
- * @file        test_rm7.c
+/* @file        test_rm7.c
  * @brief       Test suite #7.
  * @details     Test of rm_rx_process_delta_element.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        20 May 2016 09:08 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #include "test_rm7.h"
