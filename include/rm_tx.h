@@ -1,11 +1,9 @@
-/*
- * @file       rm_tx.h
+/* @file       rm_tx.h
  * @brief      Definitions used by rsync transmitter (A).
  * @author     Piotr Gregor <piotrek.gregor at gmail.com>
  * @version    0.1.2
  * @date       2 Jan 2016 11:18 AM
- * @copyright  LGPLv2.1
- */
+ * @copyright  LGPLv2.1 */
 
 
 #ifndef RSYNCME_TX_H
@@ -21,9 +19,9 @@
  * @details 1. Calc nonoverlapping checksums (insert into hashtable)
  *          2. Run rolling checksums procedure (calc delta vector)
  *          3. Reconstruct the file
- *          If flags 0 bit is set @y will be created
- *          if it doesn't exist and sync will be simple
+ *          If flags 0 bit is set @y will be created if it doesn't exist and sync will be simple
  *          copying of @x into new file with name @y.
+ * @param   @z - optional name of result file, used if not NULL
  * @param   flags: bits
  *          0: if set, create file @y if it doesn't exist
  *          1:
@@ -42,7 +40,7 @@
  *          -6 internal error: in rm_rx_insert_nonoverlapping_ch_ch_local
  *          -7 buffered copy failed */
 int
-rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_threshold,
+rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx);
 
 /* Initialize PUSH, ask for nonoverlapping checksums,

@@ -340,7 +340,7 @@ test_rm_tx_local_push_1(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
 
             /* general tests */
@@ -580,7 +580,7 @@ test_rm_tx_local_push_2(void **state) {
                 fclose(f_y);
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -855,7 +855,7 @@ test_rm_tx_local_push_3(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -1133,7 +1133,7 @@ test_rm_tx_local_push_4(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -1521,7 +1521,7 @@ test_rm_tx_local_push_5(void **state) {
                 f_y = NULL;
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -1893,7 +1893,7 @@ test_rm_tx_local_push_6(void **state) {
             flags = RM_BIT_0; /* set force creation flag */
 
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(err, 0);
 
             assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_COPY_BUFFERED);
