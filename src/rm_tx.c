@@ -11,7 +11,7 @@
 
 
 int
-rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_threshold,
+rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) {
     int         err;
     FILE        *f_x;   /* original file, to be synced into @y */
@@ -46,7 +46,11 @@ rm_tx_local_push(const char *x, const char *y, size_t L, size_t copy_all_thresho
         reference_file_exist = 1;
     } else {
         if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
-            f_z = fopen(y, "wb+");
+            if (z != NULL) { /* use different name? */
+                f_z = fopen(z, "w+b");
+            } else {
+                f_z = fopen(y, "w+b");
+            }
             if (f_z == NULL) {
                 err = -3;
                 goto err_exit;
@@ -187,9 +191,16 @@ done:
             err = -17;
             goto err_exit;
         }
-        if (rename(f_z_name, y) == -1) {
-            err = -18;
-            goto err_exit;
+        if (z != NULL) { /* use different name? */
+            if (rename(f_z_name, z) == -1) {
+                err = -18;
+                goto err_exit;
+            }
+        } else {
+            if (rename(f_z_name, y) == -1) {
+                err = -19;
+                goto err_exit;
+            }
         }
     }
     return 0;

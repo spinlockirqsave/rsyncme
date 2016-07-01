@@ -21,16 +21,17 @@ void rsyncme_usage(const char *name) {
 	if (!name) {
 		return;
     }
-	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i ip]|[-y sync_file]><-s raw_bytes_send_threshold>]\n", name);
+	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i IPv4]|[-y file]> <-z file> <-s threshold>]\n", name);
 	fprintf(stderr, "\n      \t [--f(orce)]\n");
 	fprintf(stderr, "     \t -x			: local file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
 	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
+	fprintf(stderr, "     \t -z			: result file name [optional]\n");
 	fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
 			"				: default value 512 is used\n");
 	fprintf(stderr, "     \t -s			: raw bytes send threshold in bytes, if not given\n"
-			"				: default value used is equal size of the block\n");
+			"				: default value used is equal to size of the block\n");
 	fprintf(stderr, "\nExamples:\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
@@ -60,6 +61,7 @@ main( int argc, char *argv[]) {
     int     c, idx, res;
     char	x[RM_CMD_F_LEN_MAX] = {0};
     char	y[RM_CMD_F_LEN_MAX] = {0};
+    char	z[RM_CMD_F_LEN_MAX] = {0};
     uint8_t	flags = 0;      /* bits		meaning
                              * 0		cmd (0 RM_MSG_PUSH,
                              *              1 RM_MSG_PULL)
@@ -91,7 +93,7 @@ main( int argc, char *argv[]) {
 		{ 0 }
 	};
 
-	while ((c = getopt_long(argc, argv, "x:y:i:l:s", long_options, &option_index)) != -1) { /* parse optional command line arguments */
+	while ((c = getopt_long(argc, argv, "x:y:z:i:l:s", long_options, &option_index)) != -1) { /* parse optional command line arguments */
 		switch (c) {
 
 		case 0:
@@ -127,13 +129,18 @@ main( int argc, char *argv[]) {
 			flags |= RM_BIT_2;
 			break;
 
+		case 'z':
+			strncpy(z, optarg, RM_CMD_F_LEN_MAX);
+			flags |= RM_BIT_3;
+			break;
+
 		case 'i':
 			if (inet_pton(AF_INET, optarg, &remote_addr.sin_addr) == 0) {
 				fprintf(stderr, "Invalid IPv4 address\n");
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
-			flags |= RM_BIT_3;
+			flags |= RM_BIT_5;
 			break;
 
 		case 'l':
@@ -211,7 +218,7 @@ main( int argc, char *argv[]) {
         send_threshold = L;
     }
 
-	if ((flags & RM_BIT_3) != 0u) { /* remote request if -i is set */
+	if ((flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
 		if ((flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
 			res = rm_tx_remote_push(x, y, &remote_addr, L);
@@ -227,8 +234,8 @@ main( int argc, char *argv[]) {
 			/* local push request */
 			fprintf(stderr, "\nLocal push.\n");
             /* setup push flags */
-            push_flags |= ((flags & RM_BIT_4) >> 4);
-			res = rm_tx_local_push(x, y, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+            push_flags |= ((flags & RM_BIT_5) >> 5);
+			res = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
 			if (res < 0) {
                 switch (res) {
                     case -1:

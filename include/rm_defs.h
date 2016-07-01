@@ -94,12 +94,12 @@
 #define rm_min(a,b)	__extension__ ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _b : _a; })
 
 typedef uint8_t rm_push_flags;  /* Bit  meaning
-                                 * 0    force creation of @y if it doesn't exist
-                                 * 1
-                                 * 2
-                                 * 3
-                                 * 4
-                                 * 5
+                                 * 0    push/pull request,
+                                 * 1    @x name given,
+                                 * 2    @y name given,
+                                 * 3    @z name given,
+                                 * 4    force creation of @y if it doesn't exist
+                                 * 5    IPv4 given,
                                  * 6
                                  * 7 */
 enum rm_session_type
