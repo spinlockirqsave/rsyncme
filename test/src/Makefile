@@ -59,7 +59,7 @@ $(TESTOUTPUTDIR)/test_rm_main8:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm8.o $(TESTOUT
 	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS) $ $(TESTOUTPUTDIR)/test_rm8.o $(TESTOUTPUTDIR)/test_rm_main8.o -o $@ $(LDLIBS)
 
 $(TESTOUTPUTDIR)/test_rm_main9:	$(AUXOBJS) $(TESTOUTPUTDIR)/test_rm9.o $(TESTOUTPUTDIR)/test_rm_main9.o
-	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS9) $ $(TESTOUTPUTDIR)/test_rm9.o $(TESTOUTPUTDIR)/test_rm_main9.o -o $@ $(LDLIBS)
+	$(CC) $(INCLUDES) $(AUXOBJS) $(LDFLAGS9) -Wno-nonnull $ $(TESTOUTPUTDIR)/test_rm9.o $(TESTOUTPUTDIR)/test_rm_main9.o -o $@ $(LDLIBS)
 
 
 test-debug:	$(TESTOUTPUTDIR_D)/test_rm_main1 $(TESTOUTPUTDIR_D)/test_rm_main2 $(TESTOUTPUTDIR_D)/test_rm_main3 $(TESTOUTPUTDIR_D)/test_rm_main4 $(TESTOUTPUTDIR_D)/test_rm_main5 $(TESTOUTPUTDIR_D)/test_rm_main6 $(TESTOUTPUTDIR_D)/test_rm_main7 $(TESTOUTPUTDIR_D)/test_rm_main8 $(TESTOUTPUTDIR_D)/test_rm_main9
@@ -123,6 +123,8 @@ $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 $(TESTOUTPUTDIR_D)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS_D) $(INCLUDES) $< -o $@
 
+$(TESTOUTPUTDIR)/test_rm9.o: $(TESTSRCDIR)/test_rm9.c
+	$(CC) $(CFLAGS) -Wno-nonnull $(INCLUDES) $< -o $@
 
 clean:
 	find $(TESTOUTPUTDIR) -maxdepth 1 -type f -exec rm -f {} \;
