@@ -11,13 +11,19 @@
 
 #define _POSIX_C_SOURCE 200112L
 #define _LARGEFILE64_SOURCE 1
+#ifndef _REENTRANT
+#define _REENTRANT 1
+#endif
+#ifndef _THREAD_SAFE
+#define _THREAD_SAFE 1
+#endif
 
 /* To make off_t (used in calls to fseeko) 64 bits type
  * on 32-bit architectures.
  * This will make the names of the (otherwise 32 bit) functions
  * and data types refer to their 64 bit counterparts.
  * off_t will be off64_t, lseek() will use lseek64(), etc.
- * The 32 bit interface is no longer available. */
+ * The 32 bit interface will forward calls to 64 bit versions. */
 #define _FILE_OFFSET_BITS 64
 
 #include <stdlib.h>             /* everything */
