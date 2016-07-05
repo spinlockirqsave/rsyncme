@@ -1890,7 +1890,7 @@ test_rm_tx_local_push_6(void **state) {
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
             send_threshold = L;
-            flags = RM_BIT_0; /* set force creation flag */
+            flags = RM_BIT_4; /* set force creation flag */
 
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);

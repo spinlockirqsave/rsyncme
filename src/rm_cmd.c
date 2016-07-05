@@ -18,20 +18,22 @@
 #define RM_CMD_F_LEN_MAX 100
 
 void rsyncme_usage(const char *name) {
-	if (!name) {
+	if (name == NULL) {
 		return;
     }
-	fprintf(stderr, "\nusage:\t %s [push <-x file> <[-i IPv4]|[-y file]> <-z file> <-s threshold>]\n", name);
-	fprintf(stderr, "\n      \t [--f(orce)]\n");
-	fprintf(stderr, "     \t -x			: local file to synchronize\n");
+	fprintf(stderr, "\nusage:\t %s [ push <-x file> <[-i IPv4]|[-y file]> <-z file> <-s threshold>\n", name);
+	fprintf(stderr, "\n      \t [--f(orce)] [--l(eave)] ]\n");
+	fprintf(stderr, "     \t -x			: file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
-	fprintf(stderr, "     \t -y			: file to sync with (local if [ip]\n"
+	fprintf(stderr, "     \t -y			: reference file used for syncing (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
-	fprintf(stderr, "     \t -z			: result file name [optional]\n");
+	fprintf(stderr, "     \t -z			: synchronization result file name [optional]\n");
 	fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
 			"				: default value 512 is used\n");
 	fprintf(stderr, "     \t -s			: raw bytes send threshold in bytes, if not given\n"
 			"				: default value used is equal to size of the block\n");
+	fprintf(stderr, "     \t --force    : force creation of @z if @y doesn't exist\n");
+	fprintf(stderr, "     \t --leave    : leave @y after @z has been reconstructed\n");
 	fprintf(stderr, "\nExamples:\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
@@ -62,13 +64,14 @@ main( int argc, char *argv[]) {
     char	x[RM_CMD_F_LEN_MAX] = {0};
     char	y[RM_CMD_F_LEN_MAX] = {0};
     char	z[RM_CMD_F_LEN_MAX] = {0};
-    uint8_t	flags = 0;      /* bits		meaning
-                             * 0		cmd (0 RM_MSG_PUSH,
-                             *              1 RM_MSG_PULL)
+    rm_push_flags   push_flags = 0;      /* bits		meaning
+                             * 0		cmd (0 RM_MSG_PUSH, 1 RM_MSG_PULL)
                              * 1		x
                              * 2		y
-                             * 3		ip
-                             * 4        force creation of @y if it doesn't exist */
+                             * 3		z
+                             * 4        force creation of @y if it doesn't exist
+                             * 5		ip
+                             * 6        delete @y after @z has been reconstructed (or created) */
     char                *pCh;
     unsigned long       helper;
     struct rm_delta_reconstruct_ctx rec_ctx = {0};
@@ -77,7 +80,6 @@ main( int argc, char *argv[]) {
     size_t              send_threshold = 0;
     struct sockaddr_in  remote_addr = {0};
     size_t              L = RM_DEFAULT_L;
-    rm_push_flags       push_flags = 0;
 
 	if (argc < 4) {
 		rsyncme_usage(argv[0]);
@@ -90,6 +92,7 @@ main( int argc, char *argv[]) {
 		{ "push", no_argument, 0, 1 },
 		{ "pull", no_argument, 0, 2 },
 		{ "force", no_argument, 0, 3 },
+		{ "delete", no_argument, 0, 4 },
 		{ 0 }
 	};
 
@@ -108,30 +111,34 @@ main( int argc, char *argv[]) {
 			break;
 
 		case 1:
-			flags &= ~RM_BIT_0; /* push request */
+			push_flags &= ~RM_BIT_0; /* push request */
 			break;
 
 		case 2:
-			flags |= RM_BIT_0; /* pull request */
+			push_flags |= RM_BIT_0; /* pull request */
 			break;
 
 		case 3:
-			flags |= RM_BIT_4; /* --force */
+			push_flags |= RM_BIT_4; /* --force */
+			break;
+
+		case 4:
+			push_flags |= RM_BIT_6; /* --delete */
 			break;
 
 		case 'x':
 			strncpy(x, optarg, RM_CMD_F_LEN_MAX);
-			flags |= RM_BIT_1;
+			push_flags |= RM_BIT_1;
 			break;
 
 		case 'y':
 			strncpy(y, optarg, RM_CMD_F_LEN_MAX);
-			flags |= RM_BIT_2;
+			push_flags |= RM_BIT_2;
 			break;
 
 		case 'z':
 			strncpy(z, optarg, RM_CMD_F_LEN_MAX);
-			flags |= RM_BIT_3;
+			push_flags |= RM_BIT_3;
 			break;
 
 		case 'i':
@@ -140,7 +147,7 @@ main( int argc, char *argv[]) {
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
-			flags |= RM_BIT_5;
+			push_flags |= RM_BIT_5;
 			break;
 
 		case 'l':
@@ -199,18 +206,23 @@ main( int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	if (strcmp(argv[optind], "push") == 0) {
-		flags &= ~RM_BIT_0; /* RM_MSG_PUSH */
+		push_flags &= ~RM_BIT_0; /* RM_MSG_PUSH */
 	}
 	else if (strcmp(argv[optind], "pull") == 0) {
-		flags |= RM_BIT_0; /* RM_MSG_PULL */
+		push_flags |= RM_BIT_0; /* RM_MSG_PULL */
 	}
 	else {
 		fprintf(stderr, "\nUnknown command.\nCommand should be one of: <push|pull>\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	if ((flags & RM_BIT_1) == 0u) { /* if -x not set report error */
+	if ((push_flags & RM_BIT_1) == 0u) { /* if -x not set report error */
 		fprintf(stderr, "\n-x option not set.\nWhat is the file you want to sync?\n");
+		rsyncme_usage(argv[0]);
+		exit(EXIT_FAILURE);
+	}
+	if ((push_flags & RM_BIT_6) && (z == NULL || (strcmp(y, z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
+		fprintf(stderr, "\n--leave option set but @z name not given.\nWhat is the file name you want to use as the result of sync (must be different than @y)?\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -218,8 +230,8 @@ main( int argc, char *argv[]) {
         send_threshold = L;
     }
 
-	if ((flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
-		if ((flags & RM_BIT_0) == 0u) { /* remote push request? */
+	if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
+		if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
 			res = rm_tx_remote_push(x, y, &remote_addr, L);
 			if (res < 0) {
@@ -230,11 +242,10 @@ main( int argc, char *argv[]) {
 		}
 	
 	} else { /* local sync */
-		if ((flags & RM_BIT_0) == 0u) { /* push? */
+		if ((push_flags & RM_BIT_0) == 0u) { /* push? */
 			/* local push request */
 			fprintf(stderr, "\nLocal push.\n");
             /* setup push flags */
-            push_flags |= ((flags & RM_BIT_5) >> 5);
 			res = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
 			if (res < 0) {
                 switch (res) {

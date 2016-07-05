@@ -45,7 +45,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     if (f_y != NULL) {
         reference_file_exist = 1;
     } else {
-        if (flags & RM_BIT_0) { /* force creation if @y doesn't exist? */
+        if (flags & RM_BIT_4) { /* force creation if @y doesn't exist? */
             if (z != NULL) { /* use different name? */
                 f_z = fopen(z, "w+b");
             } else {

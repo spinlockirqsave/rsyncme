@@ -396,7 +396,7 @@ test_rm_local_push_err_1(void **state) {
 			RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(err, -2);
 
-            /* RM_BIT_0 (force creation) bit not set, expected -4 */
+            /* RM_BIT_4 (force creation) bit not set, expected -4 */
             flags = 0;
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
             assert_true(f_x != NULL && "Can't open file @x");
@@ -408,8 +408,8 @@ test_rm_local_push_err_1(void **state) {
             assert_int_equal(err, -4);
             f_x = NULL;
 
-            /* RM_BIT_0 (force creation) bit set but call to fopen fails, expected -3 (need to mock three calls to fopen) */
-            flags |= RM_BIT_0;
+            /* RM_BIT_4 (force creation) bit set but call to fopen fails, expected -3 (need to mock three calls to fopen) */
+            flags |= RM_BIT_4;
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
             assert_true(f_x != NULL);
 			RM_TEST_MOCK_FOPEN64 = 1;
