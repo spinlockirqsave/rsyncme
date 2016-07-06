@@ -1,0 +1,16 @@
+image: python:3.5.1
+   
+pipelines:
+  default:
+    - step:
+        script:
+          - pip install -U tox
+          - pip --version
+          - tox --version
+          - apt-get update
+          - rm -rf rsyncme
+          - echo "Step 1 - clonning..." 
+          - git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+          - echo "Step 2 - building master..."
+          - cd rsyncme/src
+          - make

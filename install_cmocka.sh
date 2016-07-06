@@ -30,15 +30,13 @@ install_cmocka ()
     tar xf cmocka-1.0.1.tar.xz
     cd cmocka-1.0.1
     echo "--> creating build directory..."
-    sudo mkdir build
+    mkdir build
     cd build
     echo "--> building..."
-    sudo cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
-    sudo make
+    cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ..
+    make
     echo "--> installing..."
-    sudo make install
-    user=$(whoami)
-    sudo chown -R "$user": .
+    make install
 }
 
 
