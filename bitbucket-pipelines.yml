@@ -10,8 +10,9 @@ pipelines:
           - apt-get update
           - apt-get --force-yes --yes install cmake
           - rm -rf rsyncme
-          - echo "Step 1 - clonning..." 
           - git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
-          - echo "Step 2 - building master..."
           - cd rsyncme/src
           - make
+          - cd ../ && bash ./install_cmocka.sh && cd src
+          - make test
+          - make test-check
