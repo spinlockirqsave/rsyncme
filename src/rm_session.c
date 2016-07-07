@@ -190,7 +190,8 @@ rm_session_delta_tx_f(void *arg) {
     enum rm_session_type    t;
     struct rm_session_push_local    *prvt_local;
     struct rm_session_push_tx       *prvt_tx;
-    int err;
+    int                     err;
+    enum rm_delta_tx_status status = RM_DELTA_TX_STATUS_OK;
 
     s = (struct rm_session*) arg;
     assert(s != NULL);
@@ -222,8 +223,11 @@ rm_session_delta_tx_f(void *arg) {
             goto exit;
     }
     err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0); /* 1. run rolling checksum procedure */
+    if (err != 0) {
+        status = RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
+    }
     pthread_mutex_lock(&s->session_mutex);
-    prvt_local->delta_tx_status = err;
+    prvt_local->delta_tx_status = status;
     pthread_mutex_unlock(&s->session_mutex);
 
 exit:

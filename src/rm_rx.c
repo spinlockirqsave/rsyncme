@@ -68,6 +68,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
     assert(fname != NULL);
     assert(L > 0);
 
+    entries_n = 0;
+
     fd = fileno(f); /* get file size */
     res = fstat(fd, &fs);
     if (res != 0) {
@@ -75,6 +77,10 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
         return -1;
     }
     file_sz = fs.st_size;
+
+    if (file_sz == 0) {
+        goto done;
+    }
 
     read_left = file_sz; /* read L bytes chunks */
     read_now = rm_min(L, read_left);
@@ -84,7 +90,6 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
         return -2;
     }
 
-    entries_n = 0;
     do {
         read = fread(buf, 1, read_now, f);
         if (read != read_now) {
@@ -124,9 +129,11 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
         read_now = rm_min(L, read_left);
     } while (read_now > 0 && entries_n < limit);
 
+    free(buf);
+
+done:
     if (blocks_n != NULL)
         *blocks_n = entries_n;
-    free(buf);
 
     return	0;
 }

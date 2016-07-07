@@ -298,6 +298,7 @@ __wrap_fopen64(const char *path, const char *mode) {
 void
 test_rm_local_push_err_1(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y but with bytes changed) */
     const char              *f_y_name;  /* @y name */
     FILE                    *f_x, *f_copy, *f_y;
@@ -378,47 +379,57 @@ test_rm_local_push_err_1(void **state) {
             flags = 0;
 
             flags = 0;
-            err = rm_tx_local_push(NULL, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, -1);
+            status = rm_tx_local_push(NULL, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-            err = rm_tx_local_push(NULL, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, -1);
+            status = rm_tx_local_push(NULL, f_y_name, "NOT NULL", L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-            err = rm_tx_local_push(buf_x_name, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, -1);
+            status = rm_tx_local_push("NOT NULL", f_y_name, "NOT NULL", L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, NULL);
+            assert_int_equal(status, RM_ERR_BAD_CALL);
+
+            flags = 0;
+            status = rm_tx_local_push("NOT NULL BUT FILE WITH THIS NAME DOES NOT EXIST IN THIS FOLDER", f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OPEN_X);
+
+            flags = 0;
+            status = rm_tx_local_push(NULL, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_BAD_CALL);
+
+            flags = 0;
+            status = rm_tx_local_push(buf_x_name, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
 			RM_TEST_MOCK_FOPEN64 = 1;
 			will_return(__wrap_fopen64, NULL);
-            err = rm_tx_local_push("NOT_NULL", f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push("NOT_NULL", f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
 			RM_TEST_MOCK_FOPEN64 = 0;
-            assert_int_equal(err, -2);
+            assert_int_equal(status, RM_ERR_OPEN_X);
 
-            /* RM_BIT_4 (force creation) bit not set, expected -4 */
-            flags = 0;
+            flags = 0; /* RM_BIT_4 (force creation) bit not set, expected RM_ERR_OPEN_Y */
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
             assert_true(f_x != NULL && "Can't open file @x");
 			RM_TEST_MOCK_FOPEN64 = 1;
 			will_return(__wrap_fopen64, f_x);
 			will_return(__wrap_fopen64, NULL);
-            err = rm_tx_local_push(buf_x_name, "NOT_NULL_EITHER", NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, "NOT_NULL_EITHER", NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
 			RM_TEST_MOCK_FOPEN64 = 0;
-            assert_int_equal(err, -4);
+            assert_int_equal(status, RM_ERR_OPEN_Y);
             f_x = NULL;
 
-            /* RM_BIT_4 (force creation) bit set but call to fopen fails, expected -3 (need to mock three calls to fopen) */
-            flags |= RM_BIT_4;
+            flags |= RM_BIT_4; /* RM_BIT_4 (force creation) bit set but call to fopen fails, expected RM_ERR_OPEN_Z (need to mock three calls to fopen) */
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
             assert_true(f_x != NULL);
 			RM_TEST_MOCK_FOPEN64 = 1;
 			will_return(__wrap_fopen64, f_x);
 			will_return(__wrap_fopen64, NULL);
 			will_return(__wrap_fopen64, NULL);
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
 			RM_TEST_MOCK_FOPEN64 = 0;
-            assert_int_equal(err, -3);
+            assert_int_equal(status, RM_ERR_OPEN_Z);
             f_x = NULL;
 		}
         RM_LOG_INFO("PASSED test #1 (NULL file pointers), file [%s], size [%zu]", f_y_name, f_y_sz);

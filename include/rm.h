@@ -143,6 +143,11 @@ struct rm_delta_e
     size_t                      raw_bytes_n;
     struct twlist_head          link;           /* to link me in list/stack/queue */
 };
+enum rm_delta_tx_status
+{
+    RM_DELTA_TX_STATUS_OK               = 0,    /* most wanted */
+    RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL  = 1   /* error in rolling checkum procedure */
+};
 enum rm_delta_rx_status
 {
     RM_DELTA_RX_STATUS_OK               = 0,    /* most wanted */

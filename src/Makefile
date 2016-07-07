@@ -3,8 +3,8 @@ CFLAGS	=
 CFLAGS_RELEASE = -c -o3 -DNDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-function -Wfatal-errors -Werror
 CFLAGS_DEBUG = -c -g3 -O0 -DDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-function -Wfatal-errors -Werror
 CPPFLAGS += #compiler flags
-LDFLAGS = -pthread 	#-lpcap
-LDFLAGS_D = -g -pthread 	#-lpcap
+LDFLAGS = #-lpcap
+LDFLAGS_D = -g #-lpcap
 LDLIBS := -pthread
 SRCDIR = .
 TESTSRCDIR = ../test/src
@@ -30,7 +30,7 @@ CMDRELEASETARGET = ../build/release/rsyncme
 
 all:	all-release
 all-release:	rsyncme-release release
-all-debug:	rsyncme-debug debugall
+all-debug:	rsyncme-debug debug
 
 debugall:	$(SOURCES) $(DEBUGTARGET)
 releaseall:	$(SOURCES) $(RELEASETARGET)
@@ -57,9 +57,9 @@ test-check:	test
 test-check-debug:	test-debug
 	cd $(TESTSRCDIR) && make test-check-debug
 
-rsyncme-debug:		../build/debug/rsyncme
+rsyncme-debug:		$(CMDDEBUGTARGET)
 rsyncme-debug:		CFLAGS += $(CFLAGS_DEBUG)
-rsyncme-release:	../build/release/rsyncme
+rsyncme-release:	$(CMDRELEASETARGET)
 rsyncme-release:	CFLAGS += $(CFLAGS_RELEASE)
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 

@@ -21,17 +21,19 @@ void rsyncme_usage(const char *name) {
 	if (name == NULL) {
 		return;
     }
-	fprintf(stderr, "\nusage:\t %s [ push <-x file> <[-i IPv4]|[-y file]> <-z file> <-s threshold>\n", name);
+	fprintf(stderr, "\nusage:\t %s [ push <-x file> <[-i IPv4]|[-y file]> <-z file> <-a threshold> <-t threshold> <-s threshold>\n", name);
 	fprintf(stderr, "\n      \t [--f(orce)] [--l(eave)] ]\n");
 	fprintf(stderr, "     \t -x			: file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
 	fprintf(stderr, "     \t -y			: reference file used for syncing (local if [ip]\n"
 			"				: was not given, remote otherwise)\n");
 	fprintf(stderr, "     \t -z			: synchronization result file name [optional]\n");
+	fprintf(stderr, "     \t -a			: raw bytes copy all threshold [optional]\n");
+	fprintf(stderr, "     \t -t			: raw bytes copy tail threshold [optional]\n");
+	fprintf(stderr, "     \t -s			: raw bytes send threshold in bytes [optional]\n"
+			"				: default value used is equal to size of the block\n");
 	fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
 			"				: default value 512 is used\n");
-	fprintf(stderr, "     \t -s			: raw bytes send threshold in bytes, if not given\n"
-			"				: default value used is equal to size of the block\n");
 	fprintf(stderr, "     \t --force    : force creation of @z if @y doesn't exist\n");
 	fprintf(stderr, "     \t --leave    : leave @y after @z has been reconstructed\n");
 	fprintf(stderr, "\nExamples:\n");
@@ -60,10 +62,12 @@ rsyncme_range_error(char argument, unsigned long value) {
 
 int
 main( int argc, char *argv[]) {
-    int     c, idx, res;
+    int             c, idx;
+    enum rm_error   res;
     char	x[RM_CMD_F_LEN_MAX] = {0};
     char	y[RM_CMD_F_LEN_MAX] = {0};
     char	z[RM_CMD_F_LEN_MAX] = {0};
+    char    *xp = NULL, *yp = NULL, *zp = NULL;
     rm_push_flags   push_flags = 0;      /* bits		meaning
                              * 0		cmd (0 RM_MSG_PUSH, 1 RM_MSG_PULL)
                              * 1		x
@@ -96,7 +100,7 @@ main( int argc, char *argv[]) {
 		{ 0 }
 	};
 
-	while ((c = getopt_long(argc, argv, "x:y:z:i:l:s", long_options, &option_index)) != -1) { /* parse optional command line arguments */
+	while ((c = getopt_long(argc, argv, "x:y:z:i:l:a:t:s", long_options, &option_index)) != -1) { /* parse optional command line arguments */
 		switch (c) {
 
 		case 0:
@@ -127,18 +131,36 @@ main( int argc, char *argv[]) {
 			break;
 
 		case 'x':
+            if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
+				fprintf(stderr, "-x name too long\n");
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+            }
 			strncpy(x, optarg, RM_CMD_F_LEN_MAX);
 			push_flags |= RM_BIT_1;
+            xp = &x[0];
 			break;
 
 		case 'y':
+            if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
+				fprintf(stderr, "-y name too long\n");
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+            }
 			strncpy(y, optarg, RM_CMD_F_LEN_MAX);
 			push_flags |= RM_BIT_2;
+            yp = &y[0];
 			break;
 
 		case 'z':
+            if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
+				fprintf(stderr, "-z name too long\n");
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+            }
 			strncpy(z, optarg, RM_CMD_F_LEN_MAX);
 			push_flags |= RM_BIT_3;
+            zp = &z[0];
 			break;
 
 		case 'i':
@@ -147,7 +169,7 @@ main( int argc, char *argv[]) {
 				rsyncme_usage(argv[0]);
 				exit(EXIT_FAILURE);
 			}
-			push_flags |= RM_BIT_5;
+			push_flags |= RM_BIT_5; /* remote */
 			break;
 
 		case 'l':
@@ -164,9 +186,37 @@ main( int argc, char *argv[]) {
 			}
 			L = helper;
 
+		case 'a':
+			helper = strtoul(optarg, &pCh, 10);
+			if (helper > 0x100000000 - 1) {
+				rsyncme_range_error(c, helper);
+				exit(EXIT_FAILURE);
+			}
+			if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+				fprintf(stderr, "Invalid argument\n");
+				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
+			copy_all_threshold = helper;
+
+		case 't':
+			helper = strtoul(optarg, &pCh, 10);
+			if (helper > 0x100000000 - 1) {
+				rsyncme_range_error(c, helper);
+				exit(EXIT_FAILURE);
+			}
+			if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+				fprintf(stderr, "Invalid argument\n");
+				fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+				rsyncme_usage(argv[0]);
+				exit(EXIT_FAILURE);
+			}
+			copy_tail_threshold = helper;
+
 		case 's':
 			helper = strtoul(optarg, &pCh, 10);
-			if (helper > 0x10000 - 1) {
+			if (helper > 0x100000000 - 1) {
 				rsyncme_range_error(c, helper);
 				exit(EXIT_FAILURE);
 			}
@@ -217,7 +267,7 @@ main( int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	if ((push_flags & RM_BIT_1) == 0u) { /* if -x not set report error */
-		fprintf(stderr, "\n-x option not set.\nWhat is the file you want to sync?\n");
+		fprintf(stderr, "\n-x file not set.\nWhat is the file you want to sync?\n");
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -226,6 +276,17 @@ main( int argc, char *argv[]) {
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
 	}
+    if (push_flags & RM_BIT_5) { /* remote */
+        if (y == NULL) {
+            strncpy(y, x, RM_CMD_F_LEN_MAX);
+        }
+    } else { /* local */
+        if (y == NULL) {
+            fprintf(stderr, "\n-y file not set.\nWhat is the file you want to sync with?\n");
+            rsyncme_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    }
     if (send_threshold == 0) { /* TODO set thresholds */
         send_threshold = L;
     }
@@ -233,7 +294,7 @@ main( int argc, char *argv[]) {
 	if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
 		if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
-			res = rm_tx_remote_push(x, y, &remote_addr, L);
+			res = rm_tx_remote_push(xp, yp, &remote_addr, L);
 			if (res < 0) {
                 /* TODO */
 			}
@@ -246,27 +307,68 @@ main( int argc, char *argv[]) {
 			/* local push request */
 			fprintf(stderr, "\nLocal push.\n");
             /* setup push flags */
-			res = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
-			if (res < 0) {
+			res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+			if (res != RM_ERR_OK) {
                 switch (res) {
-                    case -1:
-                        fprintf(stderr, "Error. Couldn't open @x file [%s]\n", x);
+                    case RM_ERR_OPEN_X:
+                        fprintf(stderr, "Error. @x [%s] doesn't exist\n", x);
                         goto fail;
-                    case -2:
-                        fprintf(stderr, "Error. @y [%s] doesn't exist and couldn't create @y\n", y);
-                        goto fail;
-                    case -3:
-                       fprintf(stderr, "Error. Couldn't open @y [%s] and --force flag not set, which file should I use?\nPlease "
+                    case RM_ERR_OPEN_Y:
+                        fprintf(stderr, "Error. @y [%s] doesn't exist and --force flag not set. What file should I use?\nPlease "
                                "check that file exists or add --force flag to force creation of @y file if it doesn't exist.\n", y);
                        goto fail;
-                    case -4:
-                      fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
-                      goto fail;
-                    case -5:
-                      fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
-                      goto fail;
+                    case RM_ERR_OPEN_Z:
+                        fprintf(stderr, "Error. @z [%s] can't be opened\n", (z != NULL ? z : y));
+                        goto fail;
+                    case RM_ERR_COPY_BUFFERED:
+                       fprintf(stderr, "Error. Copy buffered failed\n");
+                       goto fail;
+                    case RM_ERR_FSTAT_X:
+                       fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
+                       goto fail;
+                    case RM_ERR_FSTAT_Y:
+                       fprintf(stderr, "Error. Couldn't stat @y [%s]\n", y);
+                       goto fail;
+                    case RM_ERR_FSTAT_Z:
+                       fprintf(stderr, "Error. Couldn't stat @z [%s]\n", z);
+                       goto fail;
+                    case RM_ERR_OPEN_TMP:
+                        fprintf(stderr, "Error. Temporary @z can't be opened\n");
+                        goto fail;
+                    case RM_ERR_CREATE_SESSION:
+                        fprintf(stderr, "Error. Session failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta tx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta rx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD:
+                        fprintf(stderr, "Error. Delta tx thread failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD:
+                        fprintf(stderr, "Error. Delta rx thread failed\n");
+                        goto fail;
+                    case RM_ERR_FILE_SIZE:
+                       fprintf(stderr, "Error. Bad size of result file\n");
+                       goto fail;
+                    case RM_ERR_FILE_SIZE_REC_MISMATCH:
+                       fprintf(stderr, "Error. Bad size of result file (reconstruction error)\n");
+                       goto fail;
+                    case RM_ERR_UNLINK_Y:
+                       fprintf(stderr, "Error. Cannot unlink @y\n");
+                       goto fail;
+                    case RM_ERR_RENAME_TMP_Y:
+                       fprintf(stderr, "Error. Cannot rename temporary file to @y\n");
+                       goto fail;
+                    case RM_ERR_RENAME_TMP_Z:
+                       fprintf(stderr, "Error. Cannot rename temporary file to @z\n");
+                       goto fail;
+                    case RM_ERR_BAD_CALL:
                     default:
-                        return -1;
+                       fprintf(stderr, "\nInternal error.\n");
+                       return -1;
                 }
 			}
 		} else {

@@ -76,7 +76,7 @@ struct rm_session_push_local
 {
     int fd;                                     /* socket handle */
     pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
-    int                     delta_tx_status;
+    enum rm_delta_tx_status delta_tx_status;
     struct twhlist_head     *h;                 /* nonoverlapping checkums */
     FILE                    *f_x;               /* file on which rolling is performed */              
     FILE                    *f_y;               /* reference file */              
@@ -87,7 +87,7 @@ struct rm_session_push_local
                                                    new delta element has been produced */
     size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
     pthread_t               delta_rx_tid;       /* consumer (of delta elements, reconstruction function) */
-    int                     delta_rx_status;
+    enum rm_delta_rx_status delta_rx_status;
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
     rm_delta_f              *delta_rx_f;        /* delta rx callback (dequeues delta elements and does data reconstruction) */
 /*    size_t                  copy_all_threshold;

@@ -10,10 +10,10 @@
 #include "rm_rx.h"
 
 
-int
+enum rm_error
 rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) {
-    int         err;
+    enum rm_error  err = RM_ERR_OK;
     FILE        *f_x;   /* original file, to be synced into @y */
     FILE        *f_y;   /* file for taking non-overlapping blocks */
     FILE        *f_z;   /* result (with same name as @y) */
@@ -35,15 +35,39 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     twhash_init(h);
 
     if (x == NULL || y == NULL || rec_ctx == NULL) {
-        return -1;
+        return RM_ERR_BAD_CALL;
     }
     f_x = fopen(x, "rb");
     if (f_x == NULL) {
-        return -2;
+        return RM_ERR_OPEN_X;
     }
+	/* get input file size */
+    fd_x = fileno(f_x);
+    memset(&fs, 0, sizeof(fs));
+    if (fstat(fd_x, &fs) != 0) {
+        err = RM_ERR_FSTAT_X;
+        goto err_exit;
+    }
+    x_sz = fs.st_size;
+
     f_y = fopen(y, "rb");
-    if (f_y != NULL) {
+    if (f_y != NULL) { /* if reference file exists, split it and calc checksums */
         reference_file_exist = 1;
+        fd_y = fileno(f_y);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_y, &fs) != 0) {
+            err = RM_ERR_FSTAT_Y;
+            goto err_exit;
+        }
+        y_sz = fs.st_size;
+
+        blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        if (err != 0) {
+            err = RM_ERR_NONOVERLAPPING_INSERT;
+            goto  err_exit;
+        }
+        assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
     } else {
         if (flags & RM_BIT_4) { /* force creation if @y doesn't exist? */
             if (z != NULL) { /* use different name? */
@@ -52,11 +76,22 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
                 f_z = fopen(y, "w+b");
             }
             if (f_z == NULL) {
-                err = -3;
+                err = RM_ERR_OPEN_Z;
                 goto err_exit;
             }
+            err = rm_copy_buffered(f_x, f_z, x_sz); /* @y doesn't exist and --forced flag is specified */
+            if (err < 0) {
+                err = RM_ERR_COPY_BUFFERED;
+                goto err_exit;
+            }
+            if (rec_ctx != NULL) {  /* fill in reconstruction context if given */
+                rec_ctx->method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
+                rec_ctx->delta_raw_n = 1;
+                rec_ctx->rec_by_raw = x_sz;
+            }
+            goto done;
         } else {
-            err = -4;
+            err = RM_ERR_OPEN_Y;
             goto err_exit;
         }
     }
@@ -66,52 +101,22 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     fd_x = fileno(f_x);
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_x, &fs) != 0) {
-        err = -5;
+        err = RM_ERR_FSTAT_X;
         goto err_exit;
     }
     x_sz = fs.st_size;
-
-    if (reference_file_exist == 1) {  /* if reference file exists, split it and calc checksums */
-        fd_y = fileno(f_y);
-        memset(&fs, 0, sizeof(fs));
-        if (fstat(fd_y, &fs) != 0) {
-            err = -6;
-            goto err_exit;
-        }
-        y_sz = fs.st_size;
-
-        blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
-        if (err != 0) {
-            err = -7;
-            goto  err_exit;
-        }
-        assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
-    } else { /* @y doesn't exist and --forced flag is specified */
-        err = rm_copy_buffered(f_x, f_z, x_sz);
-        if (err < 0) {
-            err = -8;
-            goto err_exit;
-        }
-        if (rec_ctx != NULL) {  /* fill in reconstruction context if given */
-            rec_ctx->method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
-            rec_ctx->delta_raw_n = 1;
-            rec_ctx->rec_by_raw = x_sz;
-        }
-        goto done;
-    }
 
     /* Do NOT fclose(f_y); as it must be opened in session rx for reading */
     /* TODO generate unique temporary name based on session uuid for result file, after reconstruction is finished remove @f_y and rename @f_z to @y */
     f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing */
     if (f_z == NULL) {
-        err = -9;
+        err = RM_ERR_OPEN_TMP;
         goto err_exit;
     }
 
     s = rm_session_create(RM_PUSH_LOCAL, L);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
     if (s == NULL) {
-        err = -10;
+        err = RM_ERR_CREATE_SESSION;
         goto err_exit;
     }
     memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));    /* init reconstruction context */
@@ -130,16 +135,22 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
  
     err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx delta vec thread (enqueue delta elements and signal to delta_rx_tid thread */
     if (err != 0) {
-        err = -11;
+        err = RM_ERR_DELTA_TX_THREAD_LAUNCH;
         goto err_exit;
     }
     err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local, s, PTHREAD_CREATE_JOINABLE);   /* reconstruct */
     if (err != 0) {
-        err = -12;
+        err = RM_ERR_DELTA_RX_THREAD_LAUNCH;
         goto err_exit;
     }
     pthread_join(prvt->delta_tx_tid, NULL);
     pthread_join(prvt->delta_rx_tid, NULL);
+    if (prvt->delta_tx_status != RM_DELTA_TX_STATUS_OK) {
+        err = RM_ERR_DELTA_TX_THREAD;
+    }
+    if (prvt->delta_rx_status != RM_DELTA_RX_STATUS_OK) {
+        err = RM_ERR_DELTA_RX_THREAD;
+    }
 
 done:
 
@@ -162,19 +173,19 @@ done:
     fd_z = fileno(f_z);
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_z, &fs) != 0) {
-        err = -13;
+        err = RM_ERR_FSTAT_Z;
         goto err_exit;
     }
     fclose(f_z);
     f_z = NULL;
     z_sz = fs.st_size;
     if (z_sz != x_sz) {
-        err =  -14;
+        err =  RM_ERR_FILE_SIZE;
         goto err_exit;
     }
     if (s != NULL) {
         if (z_sz != s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw) {
-            err = -15;
+            err = RM_ERR_FILE_SIZE_REC_MISMATCH;
             goto err_exit;
         }
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
@@ -182,23 +193,23 @@ done:
         s = NULL;
     } else {
         if (z_sz != rec_ctx->rec_by_raw) {
-            err = -16;
+            err = RM_ERR_FILE_SIZE_REC_MISMATCH;
             goto err_exit;
         }
     }
     if (reference_file_exist == 1) {
         if (unlink(y) != 0) {
-            err = -17;
+            err = RM_ERR_UNLINK_Y;
             goto err_exit;
         }
         if (z != NULL) { /* use different name? */
             if (rename(f_z_name, z) == -1) {
-                err = -18;
+                err = RM_ERR_RENAME_TMP_Z;
                 goto err_exit;
             }
         } else {
             if (rename(f_z_name, y) == -1) {
-                err = -19;
+                err = RM_ERR_RENAME_TMP_Y;
                 goto err_exit;
             }
         }

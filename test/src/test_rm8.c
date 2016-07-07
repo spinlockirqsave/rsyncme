@@ -248,6 +248,7 @@ test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
 void
 test_rm_tx_local_push_1(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
     unsigned char           cx, cz;
@@ -340,8 +341,8 @@ test_rm_tx_local_push_1(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, 0);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
 
             /* general tests */
             assert_int_equal(rec_ctx.rec_by_raw, 0);
@@ -471,6 +472,7 @@ test_rm_tx_local_push_1(void **state) {
 void
 test_rm_tx_local_push_2(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
     unsigned char           cx, cz, cx_copy;
@@ -580,8 +582,8 @@ test_rm_tx_local_push_2(void **state) {
                 fclose(f_y);
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, 0);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
             assert_true(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
@@ -749,6 +751,7 @@ test_rm_tx_local_push_2(void **state) {
 void
 test_rm_tx_local_push_3(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
     unsigned char           cx, cz, cx_copy;
@@ -855,8 +858,8 @@ test_rm_tx_local_push_3(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, 0);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
             assert_true(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
@@ -1017,6 +1020,7 @@ test_rm_tx_local_push_3(void **state) {
 void
 test_rm_tx_local_push_4(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with bytes changed) */
     const char              *f_y_name;  /* @y name */
     unsigned char           cx, cz, cx_copy_first, cx_copy_last;
@@ -1133,8 +1137,8 @@ test_rm_tx_local_push_4(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, 0);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
             assert_true(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
@@ -1348,6 +1352,7 @@ test_rm_tx_local_push_4(void **state) {
 void
 test_rm_tx_local_push_5(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y but with bytes changed) */
     const char              *f_y_name;  /* @y name */
     unsigned char           cx, cz, cx_copy_first, cx_copy_last, cx_copy_middle;
@@ -1521,8 +1526,8 @@ test_rm_tx_local_push_5(void **state) {
                 f_y = NULL;
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, 0);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
             assert_true(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
@@ -1811,6 +1816,7 @@ test_rm_tx_local_push_5(void **state) {
 void
 test_rm_tx_local_push_6(void **state) {
     int                     err;
+    enum rm_error           status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     unsigned char           cx, cz;
     const char              *f_y_name;  /* @y name */
@@ -1893,8 +1899,8 @@ test_rm_tx_local_push_6(void **state) {
             flags = RM_BIT_4; /* set force creation flag */
 
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            err = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-            assert_int_equal(err, 0);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
 
             assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_COPY_BUFFERED);
 

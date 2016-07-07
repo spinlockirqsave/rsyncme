@@ -1,11 +1,9 @@
-/*
- * @file        rm_rx.h
+/* @file        rm_rx.h
  * @brief       Definitions used by rsync receiver (B).
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        2 Jan 2016 11:19 AM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_RX_H
