@@ -13,6 +13,6 @@ pipelines:
           - git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
           - cd rsyncme/src
           - make
-          - cd ../ && bash ./install_cmocka.sh && cd src
+          - cd ../ && bash ./pip_install_cmocka.sh cmocka && cd src
           - make test
           - make test-check
