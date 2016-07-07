@@ -257,6 +257,7 @@ rm_session_delta_rx_f_local(void *arg) {
         goto err_exit;
     }
     assert(s != NULL);
+    memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
 
     pthread_mutex_lock(&s->session_mutex);
     if (s->type != RM_PUSH_LOCAL) {

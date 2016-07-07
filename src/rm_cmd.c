@@ -62,7 +62,7 @@ rsyncme_range_error(char argument, unsigned long value) {
 
 int
 main( int argc, char *argv[]) {
-    int             c, idx;
+    int             c;
     enum rm_error   res;
     char	x[RM_CMD_F_LEN_MAX] = {0};
     char	y[RM_CMD_F_LEN_MAX] = {0};
@@ -76,7 +76,7 @@ main( int argc, char *argv[]) {
                              * 4        force creation of @y if it doesn't exist
                              * 5		ip
                              * 6        delete @y after @z has been reconstructed (or created) */
-    char                *pCh;
+    char                *pCh, *y_copy;
     unsigned long       helper;
     struct rm_delta_reconstruct_ctx rec_ctx = {0};
     size_t              copy_all_threshold = 0;
@@ -247,9 +247,9 @@ main( int argc, char *argv[]) {
 		}
 	}
 
-	for (idx = optind; idx < argc; idx++) { /* parse non-optional arguments */
+	/*for (idx = optind; idx < argc; idx++) {  parse non-optional arguments
 		fprintf(stderr, "Non-option argument[ %s]\n", argv[idx]);
-    }
+    }*/
 	if ((argc - optind) != 1) {
 		fprintf(stderr, "\nInvalid number of non-option arguments.\nThere should be 1 non-option arguments: <push|pull>\n");
 		rsyncme_usage(argv[0]);
@@ -364,6 +364,18 @@ main( int argc, char *argv[]) {
                        goto fail;
                     case RM_ERR_RENAME_TMP_Z:
                        fprintf(stderr, "Error. Cannot rename temporary file to @z\n");
+                       goto fail;
+                    case RM_ERR_MEM:
+                       fprintf(stderr, "Error. Not enough memory\n");
+                       exit(EXIT_FAILURE);
+                    case RM_ERR_CHDIR:
+                       y_copy = strdup(y);
+                       if (y_copy == NULL) {
+                           fprintf(stderr, "Error. Not enough memory\n");
+                           exit(EXIT_FAILURE);
+                       }
+                       fprintf(stderr, "Error. Cannot change directory to [%s]\n", dirname(y_copy));
+                       free(y_copy);
                        goto fail;
                     case RM_ERR_BAD_CALL:
                     default:

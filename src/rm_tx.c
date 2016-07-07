@@ -26,6 +26,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     struct twhlist_node             *tmp;
     struct rm_session               *s;
     struct rm_session_push_local    *prvt;
+    char                            *y_copy = NULL, *cwd = NULL;
     const char *f_z_name = "f_z_tmp";
 
     f_x = f_y = f_z = NULL;
@@ -37,8 +38,29 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     if (x == NULL || y == NULL || rec_ctx == NULL) {
         return RM_ERR_BAD_CALL;
     }
+    cwd = getcwd(NULL, 0);
+    if (cwd == NULL) {
+        return RM_ERR_GETCWD;
+    }
+    y_copy = strdup(y);
+    if (y_copy == NULL) {
+        free(cwd);
+        return RM_ERR_MEM;
+    }
+    if (chdir(dirname(y_copy)) != 0) {
+        free(y_copy);
+        y_copy = NULL;
+        free(cwd);
+        cwd = NULL;
+        return RM_ERR_CHDIR;
+    }
     f_x = fopen(x, "rb");
     if (f_x == NULL) {
+        free(y_copy);
+        y_copy = NULL;
+        chdir(cwd);
+        free(cwd);
+        cwd = NULL;
         return RM_ERR_OPEN_X;
     }
 	/* get input file size */
@@ -214,9 +236,22 @@ done:
             }
         }
     }
+    if (y_copy != NULL) {
+        free(y_copy);
+        y_copy = NULL;
+    }
+    chdir(cwd);
+    if (cwd != NULL) {
+        free(cwd);
+        cwd = NULL;
+    }
     return 0;
 
 err_exit:
+    if (y_copy != NULL) {
+        free(y_copy);
+        y_copy = NULL;
+    }
     if (f_x != NULL) {
         fclose(f_x);
     }
@@ -237,6 +272,11 @@ err_exit:
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
         rm_session_free(s);
         s = NULL;
+    }
+    if (cwd != NULL) {
+        chdir(cwd);
+        free(cwd);
+        cwd = NULL;
     }
     return err;
 }

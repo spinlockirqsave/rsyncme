@@ -34,7 +34,7 @@
 #include <netinet/in.h>         /* networking */
 #include <linux/netdevice.h>
 #include <arpa/inet.h>
-#include <string.h>             /* memset, etc. */
+#include <string.h>             /* memset, strdup, etc. */
 #include <fcntl.h>              /* open, R_ONLY */
 #include <unistd.h>             /* close */
 #include <errno.h>
@@ -45,6 +45,7 @@
 #include <syslog.h>
 #include <stdint.h>
 #include <ctype.h>              /* isprint */
+#include <libgen.h>             /* dirname */
 
 
 #include "twlist.h"
@@ -140,7 +141,14 @@ enum rm_error {
     RM_ERR_FILE_SIZE_REC_MISMATCH = 19,
     RM_ERR_UNLINK_Y = 20,
     RM_ERR_RENAME_TMP_Y = 21,
-    RM_ERR_RENAME_TMP_Z = 22
+    RM_ERR_RENAME_TMP_Z = 22,
+    RM_ERR_MEM = 23,
+    RM_ERR_CHDIR = 24,
+    RM_ERR_GETCWD = 25
 };
+
+/* prototypes */
+char *strdup(const char *s);
+
 
 #endif  /* RSYNCME_DEFS_H */
