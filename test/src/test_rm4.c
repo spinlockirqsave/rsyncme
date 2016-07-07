@@ -235,7 +235,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 		j = 0;
 		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
 			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+			RM_LOG_INFO("Validating number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 			if (0 == L) {
 				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]),  skipping file [%s]", L, 0, fname);
 				continue;
@@ -245,7 +245,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 				continue;
 			}
 	
-			RM_LOG_INFO("Testing of splitting file into non-overlapping blocks: file [%s], size [%zu], block size L [%zu], buffer"
+			RM_LOG_INFO("Testing number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             f_tx_ch_ch_ref_2_callback_count = 0; /* reset callback counter */
@@ -261,7 +261,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
             }
             assert_int_equal(entries_n, blocks_n);
 			
-			RM_LOG_INFO("PASSED test of hashing of non-overlapping blocks, file [%s], size [%zu], L [%zu]", fname, file_sz, L);
+			RM_LOG_INFO("PASSED test of number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref, file [%s], size [%zu], L [%zu]", fname, file_sz, L);
 			rewind(f);
 		}
 		fclose(f);
