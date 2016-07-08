@@ -220,7 +220,7 @@ done:
         }
     }
     if (reference_file_exist == 1) {
-        if (unlink(y) != 0) {
+        if (((flags & RM_BIT_6) == 0u) && (unlink(y) != 0)) { /* if --leave not set and unlink failed */
             err = RM_ERR_UNLINK_Y;
             goto err_exit;
         }

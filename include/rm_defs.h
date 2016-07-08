@@ -105,9 +105,9 @@ typedef uint8_t rm_push_flags;  /* Bit  meaning
                                  * 1    @x name given,
                                  * 2    @y name given,
                                  * 3    @z name given,
-                                 * 4    force creation of @y if it doesn't exist
+                                 * 4    (--force) force creation of @y if it doesn't exist
                                  * 5    IPv4 given,
-                                 * 6    do not delete @y after @z has been reconstructed,
+                                 * 6    (--delete) do not delete @y after @z has been reconstructed,
                                  * 7 */
 enum rm_session_type
 {

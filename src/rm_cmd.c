@@ -96,7 +96,7 @@ main( int argc, char *argv[]) {
 		{ "push", no_argument, 0, 1 },
 		{ "pull", no_argument, 0, 2 },
 		{ "force", no_argument, 0, 3 },
-		{ "delete", no_argument, 0, 4 },
+		{ "leave", no_argument, 0, 4 },
 		{ 0 }
 	};
 
@@ -127,7 +127,7 @@ main( int argc, char *argv[]) {
 			break;
 
 		case 4:
-			push_flags |= RM_BIT_6; /* --delete */
+			push_flags |= RM_BIT_6; /* --leave */
 			break;
 
 		case 'x':
