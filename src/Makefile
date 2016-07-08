@@ -10,8 +10,8 @@ SRCDIR = .
 TESTSRCDIR = ../test/src
 DEBUGOUTPUTDIR = ../build/debug
 RELEASEOUTPUTDIR = ../build/release
-#TESTOUTPUTDIR = ../test/build/release
-#TESTOUTPUTDIR_D = ../test/build/debug
+TESTOUTPUTDIR = ../test/build/release
+TESTOUTPUTDIR_D = ../test/build/debug
 SOURCES = main.c rm.c rm_tcp.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c rm_session.c rm_signal.c rm_serialize.c rm_util.c md5.c
 #TESTSOURCES = ../test/src/test_rsyncme.c
 INCLUDES = -I. -I../include -I../include/twlist/include
@@ -45,11 +45,11 @@ release:	CFLAGS += $(CFLAGS_RELEASE)
 release: 	releaseall
 
 test-debug:	CFLAGS += $(CFLAGS_DEBUG)
-test-debug:	debugall
+test-debug:	rsyncme-debug debugall
 	make -C $(TESTSRCDIR) test-debug
 
 test:	CFLAGS += $(CFLAGS_RELEASE)
-test:	releaseall
+test:	rsyncme-release releaseall
 	cd $(TESTSRCDIR) && make test
 
 test-check:	test
@@ -57,10 +57,12 @@ test-check:	test
 test-check-debug:	test-debug
 	cd $(TESTSRCDIR) && make test-check-debug
 
-rsyncme-debug:		$(CMDDEBUGTARGET)
 rsyncme-debug:		CFLAGS += $(CFLAGS_DEBUG)
-rsyncme-release:	$(CMDRELEASETARGET)
+rsyncme-debug:		$(CMDDEBUGTARGET)
+	cp $(CMDDEBUGTARGET) $(TESTOUTPUTDIR_D)
 rsyncme-release:	CFLAGS += $(CFLAGS_RELEASE)
+rsyncme-release:	$(CMDRELEASETARGET)
+	cp $(CMDRELEASETARGET) $(TESTOUTPUTDIR)
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
 	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@ $(LDLIBS)

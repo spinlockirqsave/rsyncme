@@ -170,9 +170,9 @@ test_rm_setup(void **state) {
     unsigned long const seed = time(NULL);
 
 #ifdef DEBUG
-    err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_9");
+    err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_9", 1);
 #else
-    err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_9");
+    err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_9", 1);
 #endif
     if (err != 0) {
         exit(EXIT_FAILURE);
