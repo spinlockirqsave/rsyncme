@@ -42,12 +42,10 @@ int
 rm_util_log_perr(FILE *stream, const char *fmt, ...);
 
 int
-rm_util_daemonize(const char *dir,
-		int noclose, char *logname);
+rm_util_daemonize(const char *dir, int noclose, char *logname);
 
 int
-rm_util_chdir_umask_openlog(const char *dir,
-		int noclose, char *logname);
+rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t ignore_signals) __attribute__((nonnull(1,3)));
 
 #ifdef DDEBUG
 #define RM_D_ERR(fmt, args...) fprintf(stderr, "DEBUG ERR: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)

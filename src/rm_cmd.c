@@ -21,8 +21,8 @@ void rsyncme_usage(const char *name) {
 	if (name == NULL) {
 		return;
     }
-	fprintf(stderr, "\nusage:\t %s [ push <-x file> <[-i IPv4]|[-y file]> <-z file> <-a threshold> <-t threshold> <-s threshold>\n", name);
-	fprintf(stderr, "\n      \t [--f(orce)] [--l(eave)] ]\n");
+	fprintf(stderr, "\nusage:\t %s [ push <-x file> <[-i IPv4]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n", name);
+	fprintf(stderr, "\n      \t        [-l block_size] [--f(orce)] [--l(eave)] ]\n");
 	fprintf(stderr, "     \t -x			: file to synchronize\n");
 	fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
 	fprintf(stderr, "     \t -y			: reference file used for syncing (local if [ip]\n"
@@ -174,7 +174,7 @@ main( int argc, char *argv[]) {
 
 		case 'l':
 			helper = strtoul(optarg, &pCh, 10);
-			if (helper > 0x10000 - 1) {
+			if (helper > 0x100000000 - 1) {
 				rsyncme_range_error(c, helper);
 				exit(EXIT_FAILURE);
 			}
@@ -185,6 +185,7 @@ main( int argc, char *argv[]) {
 				exit(EXIT_FAILURE);
 			}
 			L = helper;
+            break;
 
 		case 'a':
 			helper = strtoul(optarg, &pCh, 10);
@@ -199,6 +200,7 @@ main( int argc, char *argv[]) {
 				exit(EXIT_FAILURE);
 			}
 			copy_all_threshold = helper;
+            break;
 
 		case 't':
 			helper = strtoul(optarg, &pCh, 10);
@@ -213,6 +215,7 @@ main( int argc, char *argv[]) {
 				exit(EXIT_FAILURE);
 			}
 			copy_tail_threshold = helper;
+            break;
 
 		case 's':
 			helper = strtoul(optarg, &pCh, 10);
@@ -227,6 +230,7 @@ main( int argc, char *argv[]) {
 				exit(EXIT_FAILURE);
 			}
 			send_threshold = helper;
+            break;
 
 		case '?':
 			if (optopt == 'x' || optopt == 'y' || optopt == 'i')

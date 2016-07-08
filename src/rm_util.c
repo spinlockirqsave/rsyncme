@@ -170,16 +170,16 @@ rm_util_daemonize(const char *dir, int noclose, char *logname) {
 }
 
 int
-rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname) {
+rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t ignore_signals) {
 	int 	fd;
 
 	assert(logname != NULL);
 
-	/* TODO: handle signals */
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGCHLD, SIG_IGN);
-
+	if (ignore_signals != 0) { /* TODO: handle signals */
+        signal(SIGINT, SIG_IGN);
+        signal(SIGHUP, SIG_IGN);
+        signal(SIGCHLD, SIG_IGN);
+    }
 	umask(S_IWGRP | S_IWOTH); /* set file mode to 0x622 (rw-r--r--) umask syscall always succeedes */
 	if (dir != NULL) { /* change dir */
 		if (chdir(dir) == -1) {

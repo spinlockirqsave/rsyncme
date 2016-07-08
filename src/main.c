@@ -31,7 +31,7 @@ main() {
 			exit(EXIT_FAILURE);
         }
 	} else {
-		err = rm_util_chdir_umask_openlog("/usr/local/rsyncme/", 1, "rsyncme");
+		err = rm_util_chdir_umask_openlog("/usr/local/rsyncme/", 1, "rsyncme", 1);
 		if (err != 0) {
 			exit(EXIT_FAILURE);
         }
