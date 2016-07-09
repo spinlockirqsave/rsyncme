@@ -122,6 +122,7 @@ test_rm_teardown(void **state) {
     if (rm_state->array != NULL) {
         free(rm_state->array);
     }
+    remove(rm_state->f_2.name);
 	return 0;
 }
 
@@ -219,6 +220,7 @@ test_rm_copy_buffered(void **state) {
         RM_LOG_INFO("PASSED test #1 (copy buffered), file [%s]", fname);
     }
     RM_LOG_INFO("%s", "PASSED test #1 (copy buffered)");
+    remove(f_y_name);
 }
 
 void
@@ -483,6 +485,7 @@ test_rm_copy_buffered_offset(void **state) {
         RM_LOG_INFO("PASSED test #4 (copy buffered offset), file [%s]", fname);
     }
     RM_LOG_INFO("%s", "PASSED test #4 (copy buffered offset)");
+    remove(f_y_name);
 }
 
 void

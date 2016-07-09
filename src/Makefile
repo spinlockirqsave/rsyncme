@@ -29,33 +29,17 @@ CMDDEBUGTARGET = ../build/debug/rsyncme
 CMDRELEASETARGET = ../build/release/rsyncme
 
 all:	all-release
-all-release:	rsyncme-release release
-all-debug:	rsyncme-debug debug
-
-debugall:	$(SOURCES) $(DEBUGTARGET)
-releaseall:	$(SOURCES) $(RELEASETARGET)
+all-release:	release rsyncme-release
+all-debug:	debug rsyncme-debug
 
 # additional flags
 # CONFIG_DEBUG_LIST	- extensive debugging of list with external debugging
 # 			functions
 debug:		CFLAGS += $(CFLAGS_DEBUG)
-debug:		debugall
+debug:		$(SOURCES) $(DEBUGTARGET)
 
 release:	CFLAGS += $(CFLAGS_RELEASE)
-release: 	releaseall
-
-test-debug:	CFLAGS += $(CFLAGS_DEBUG)
-test-debug:	rsyncme-debug debugall
-	make -C $(TESTSRCDIR) test-debug
-
-test:	CFLAGS += $(CFLAGS_RELEASE)
-test:	rsyncme-release releaseall
-	cd $(TESTSRCDIR) && make test
-
-test-check:	test
-	cd $(TESTSRCDIR) && make test-check
-test-check-debug:	test-debug
-	cd $(TESTSRCDIR) && make test-check-debug
+release: 	$(SOURCES) $(RELEASETARGET)
 
 rsyncme-debug:		CFLAGS += $(CFLAGS_DEBUG)
 rsyncme-debug:		$(CMDDEBUGTARGET)
@@ -63,6 +47,19 @@ rsyncme-debug:		$(CMDDEBUGTARGET)
 rsyncme-release:	CFLAGS += $(CFLAGS_RELEASE)
 rsyncme-release:	$(CMDRELEASETARGET)
 	cp $(CMDRELEASETARGET) $(TESTOUTPUTDIR)
+
+test-debug:	CFLAGS += $(CFLAGS_DEBUG)
+test-debug:	all-debug
+	make -C $(TESTSRCDIR) test-debug
+
+test:	CFLAGS += $(CFLAGS_RELEASE)
+test:	all-release
+	cd $(TESTSRCDIR) && make test
+
+test-check:	test
+	cd $(TESTSRCDIR) && make test-check
+test-check-debug:	test-debug
+	cd $(TESTSRCDIR) && make test-check-debug
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
 	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@ $(LDLIBS)
