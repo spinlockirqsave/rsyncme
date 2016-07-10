@@ -218,6 +218,7 @@ test_rm_copy_buffered(void **state) {
         if (f_y != NULL) {
             fclose(f_y);
             f_y = NULL;
+            remove(f_y_name);
         }
         RM_LOG_INFO("PASSED test #1 (copy buffered), file [%s]", fname);
     }
@@ -485,6 +486,7 @@ test_rm_copy_buffered_offset(void **state) {
         if (f_y != NULL) {
             fclose(f_y);
             f_y = NULL;
+            remove(f_y_name);
         }
         RM_LOG_INFO("PASSED test #4 (copy buffered offset), file [%s]", fname);
     }

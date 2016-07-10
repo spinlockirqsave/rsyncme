@@ -10,16 +10,22 @@
 
 rsyncme
 
+1. OVERVIEW
+
 A simple implementation of rsync algorithm
 for efficient file synchronization.
 
 
-DOWNLOAD
+
+2. DOWNLOAD
+
 git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
 
 
-DIRECTORY structure
-rsyncme/		<-- this directory
+
+3. DIRECTORY STRUCTURE
+
+rsyncme/		<-- this directory (ROOT)
 	- README
 	- LICENSE
 	- include/
@@ -42,88 +48,90 @@ rsyncme/		<-- this directory
 			- log/
 				Logs are written here.
 
-BUILD & TEST
+
+4.BUILD & TEST
+
 There are few targets available: rsyncme_d, rsyncme, test executables.
 
-Default release build:
+4.1 Default release build:
     cd src
-    make    (will build rsyncme and rsyncme_d in release mode
-            same as "make all" and "make all-release")
-Default debug build:
-    cd src
-    make all-debug  (will build rsymcme and rsyncme_d in debug mode)
-To build rsyncme_d (daemon's executable):
-	cd src
-	make debug (or make release)
-To build rsyncme (commandline executable):
-	cd src
-	make rsyncme-debug (or make rsyncme-release)
+    make    (will build everything [apart from tests] in release mode, same as "make all" and "make release")
 
-TESTS
+4.2 Default debug build:
+    cd src
+    make debug
+
+
+5. TESTS
+
 Our tests depend on cmocka, which depends on cmake, so be sure to have them installed first
 (you can do it manually following below instructions or run our install_cmocka.sh script).
-To install cmocka using script:
-	bash install_cmocka.sh cmocka (give name of folder where to install cmocka, e.g. "cmocka")
-To install manually:
-	First, install cmake:
-	sudo apt-get install cmake
-	1. Download https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
-	2. Follow instructions from INSTALL file
 
-To build tests:
-	bash install_cmocka.sh cmocka (if you don't have cmocka installed and haven't installed manually)
+5.1 Installing cmocka:
+
+    A. Using script:
+	    bash install_cmocka.sh cmocka (give name of folder where to install cmocka, e.g. "cmocka")
+
+    B. To install manually:
+	    First, install cmake:
+	        sudo apt-get install cmake
+        Then install cmocka:
+	        1. Download https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
+	        2. Follow instructions from INSTALL file
+
+5.2. To build tests:
+
+Make sure cmocka support is installed (see 5.1)
 	cd src
-	make test
-To run tests:
+	make test       ("make test-debug" for debug)
+
+5.3 To run tests:
+
 	cd src
-	make test-check
+	make test-check     ("make test-check-debug" for debug)
 		Make will execute all cmocka test-suites.
-		Results of each are written in folder ./test/build/release/log. Short summary
-		is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
-		in rsyncme_test_<#>_<timestamp>.err. If you would like to inspect intermadiate
-		files created during test <#> run, please change RM_TEST_DELETE_FILES
-		definition in file test/include/test_rm<#>.h to 0.
-To build tests in debug mode:
-	bash install_cmocka.sh cmocka (if you don't have cmocka installed and haven't installed manually)
-	cd src
-	make test-debug
-		Output is written to ./test/build/debug.
-To run tests built in debug mode:
-	cd src
-	make test-debug-check
-		Make will execute all cmocka test-suites.
-		Results of each are written in folder ./test/build/debug/log. Short summary
-		is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
-		in rsyncme_test_<#>_<timestamp>.err. If you would like to inspect intermadiate
-		files created during test <#> run, please change RM_TEST_DELETE_FILES
-		definition in file test/include/test_rm<#>.h to 0.
+		Results of each are written in folder ROOT/test/build/release/log (ROOT/test/build/debug/log if debug tests are executed)
+        Short summary of each executed test suite is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
+		in rsyncme_test_<#>_<timestamp>.err for each of the test suites. If you would like to inspect intermediate files created
+        during test suite <#> run, please change RM_TEST_<#>_DELETE_FILES definition in header ROOT/test/include/test_rm<#>.h to 0.
 
-DEBUGGING
-Should be done from test/src folder. E.g:
-piotr@world:~/projects/rsyncme/test/src$ gdb ../build/debug/test_rm_main1
 
-CLEAN
-To clean rsyncme_d (daemon's executable) and rsyncme (commandline executable):
-	cd src
-	make clean
-To clean tests (but not test logs):
-	cd src
-	make test-clean
-To clean test logs:
-	cd src
-	make test-clean-logs
-To clean tests-debug build(but not test logs):
-	cd src
-	make test-clean-debug
-To clean test-debug logs:
-	cd src
-	make test-clean-logs-debug
-To clean test and test logs (release and debug):
-	cd src
-	make test-clean-all
-To clean rsyncme_d, rsyncme, tests & test logs (release & debug):
-	cd src
-	make clean-all
+6. DEBUGGING
+
+Debugging should be done from ROOT/test/src folder.
+E.g:
+    piotr@world:~/projects/rsyncme/test/src$ gdb ../build/debug/test_rm_main1
+
+
+7. CLEAN
+
+    To clean everything:
+	    cd src
+	    make clean-all
+
+    To clean rsyncme_d (daemon's executable) and rsyncme (commandline executable):
+	    cd src
+	    make clean
+
+    To clean tests (but not test logs):
+	    cd src
+	    make test-clean
+
+    To clean test logs:
+	    cd src
+	    make test-clean-logs
+
+    To clean tests-debug build(but not test logs):
+	    cd src
+	    make test-clean-debug
+
+    To clean test-debug logs:
+	    cd src
+	    make test-clean-logs-debug
+
+    To clean test and test logs (release and debug):
+	    cd src
+	    make test-clean-all
 
 
 

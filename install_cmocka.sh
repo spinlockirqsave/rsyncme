@@ -68,5 +68,9 @@ cd $dir											# change directory
 
 pack=cmake										# check/install cmake
 pkg_check_install "$pack"
-install_cmocka
+pack=uuid										# check/install uuid
+pkg_check_install "$pack"
+pack=uuid-dev									# check/install uuid-dev
+pkg_check_install "$pack"
+install_cmocka                                  # install cmocka
 
