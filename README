@@ -55,7 +55,8 @@ There are few targets available: rsyncme_d, rsyncme, test executables.
 
 4.1 Default release build:
     cd src
-    make    (will build everything [apart from tests] in release mode, same as "make all" and "make release")
+    make    (will build everything [apart from tests] in release mode,
+            same as "make all" and "make release")
 
 4.2 Default debug build:
     cd src
@@ -64,13 +65,15 @@ There are few targets available: rsyncme_d, rsyncme, test executables.
 
 5. TESTS
 
-Our tests depend on cmocka, which depends on cmake, so be sure to have them installed first
-(you can do it manually following below instructions or run our install_cmocka.sh script).
+Our tests depend on cmocka, which depends on cmake, so please be sure
+to have them installed first (you can do it manually following below
+instructions or run our install_cmocka.sh script).
 
 5.1 Installing cmocka:
 
     A. Using script:
-	    bash install_cmocka.sh cmocka (give name of folder where to install cmocka, e.g. "cmocka")
+	    bash install_cmocka.sh cmocka   (give name of folder
+                                        where to install cmocka, e.g. "cmocka")
 
     B. To install manually:
 	    First, install cmake:
@@ -89,11 +92,15 @@ Make sure cmocka support is installed (see 5.1)
 
 	cd src
 	make test-check     ("make test-check-debug" for debug)
-		Make will execute all cmocka test-suites.
-		Results of each are written in folder ROOT/test/build/release/log (ROOT/test/build/debug/log if debug tests are executed)
-        Short summary of each executed test suite is saved in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
-		in rsyncme_test_<#>_<timestamp>.err for each of the test suites. If you would like to inspect intermediate files created
-        during test suite <#> run, please change RM_TEST_<#>_DELETE_FILES definition in header ROOT/test/include/test_rm<#>.h to 0.
+        Make will execute all cmocka test-suites.
+        Results of each are written in folder ROOT/test/build/release/log
+        (ROOT/test/build/debug/log if debug tests are executed)
+        Short summary of each executed test suite is saved
+        in rsyncme_test_<#>_<timestamp>.log file. Detailed log is saved
+        in rsyncme_test_<#>_<timestamp>.err for each of the test suites.
+        If you would like to inspect intermediate files created during each
+        test suite <#> run, please change RM_TEST_<#>_DELETE_FILES
+        definition in header ROOT/test/include/test_rm<#>.h to 0.
 
 
 6. DEBUGGING
