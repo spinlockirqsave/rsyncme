@@ -82,7 +82,7 @@ test_rm_setup(void **state) {
     rm_state.array = array;
 
     memcpy(file_content_payload, "abcdefghij", RM_TEST_1_2_BUF_SZ);
-    strcpy(rm_state.f_2.name, "f_2");
+    rm_get_unique_string(rm_state.f_2.name);
     rm_state.f_2.f = fopen(rm_state.f_2.name, "w+b");
     if (rm_state.f_2.f == NULL) {
         RM_LOG_ERR("Can't create test file [%s]", rm_state.f_2.name);
@@ -131,7 +131,8 @@ test_rm_copy_buffered(void **state) {
     FILE        *f_x, *f_y;
     int         fd, err;
 	struct stat fs;
-	const char  *fname, *f_y_name = "rm_test_1_1_tmp";
+	const char  *fname;
+    char        f_y_name[40];   /* unique temporary file name */
     size_t      i, file_sz, k;
     unsigned char cx, cy;
 
@@ -155,6 +156,7 @@ test_rm_copy_buffered(void **state) {
 			assert_true(1 == 0 && "Can't fstat @x");
 		}
 		file_sz = fs.st_size;
+        rm_get_unique_string(f_y_name);
 		f_y = fopen(f_y_name, "w+b");
 		if (f_y == NULL) {
 			RM_LOG_PERR("%s", "Can't open @y file");
@@ -394,7 +396,8 @@ test_rm_copy_buffered_offset(void **state) {
     FILE        *f_x, *f_y;
     int         fd, err;
 	struct stat fs;
-	const char  *fname, *f_y_name = "rm_test_1_4_tmp";
+	const char  *fname;
+    char        f_y_name[40];   /* unique temporary file name */
     size_t      i, file_sz, k, offset_x, offset_y;
     unsigned char cx, cy;
 
@@ -418,6 +421,7 @@ test_rm_copy_buffered_offset(void **state) {
 			assert_true(1 == 0 && "Can't fstat @x");
 		}
 		file_sz = fs.st_size;
+        rm_get_unique_string(f_y_name);
 		f_y = fopen(f_y_name, "w+b");
 		if (f_y == NULL) {
 			RM_LOG_PERR("%s", "Can't open @y file");

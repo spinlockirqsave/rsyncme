@@ -5,7 +5,7 @@ CFLAGS_DEBUG = -c -g3 -O0 -DDEBUG -Wall -Wextra -std=c99 -pedantic -Wno-unused-f
 CPPFLAGS += #compiler flags
 LDFLAGS = #-lpcap
 LDFLAGS_D = -g #-lpcap
-LDLIBS := -pthread
+LDLIBS := -luuid -pthread
 SRCDIR = .
 TESTSRCDIR = ../test/src
 DEBUGOUTPUTDIR = ../build/debug
@@ -28,18 +28,16 @@ RELEASETARGET = ../build/release/rsyncme_d
 CMDDEBUGTARGET = ../build/debug/rsyncme
 CMDRELEASETARGET = ../build/release/rsyncme
 
-all:	all-release
-all-release:	release rsyncme-release
-all-debug:	debug rsyncme-debug
+all:	release
 
 # additional flags
 # CONFIG_DEBUG_LIST	- extensive debugging of list with external debugging
 # 			functions
 debug:		CFLAGS += $(CFLAGS_DEBUG)
-debug:		$(SOURCES) $(DEBUGTARGET)
+debug:		$(SOURCES) $(DEBUGTARGET) rsyncme-debug
 
 release:	CFLAGS += $(CFLAGS_RELEASE)
-release: 	$(SOURCES) $(RELEASETARGET)
+release: 	$(SOURCES) $(RELEASETARGET) rsyncme-release
 
 rsyncme-debug:		CFLAGS += $(CFLAGS_DEBUG)
 rsyncme-debug:		$(CMDDEBUGTARGET)
@@ -49,11 +47,11 @@ rsyncme-release:	$(CMDRELEASETARGET)
 	cp $(CMDRELEASETARGET) $(TESTOUTPUTDIR)
 
 test-debug:	CFLAGS += $(CFLAGS_DEBUG)
-test-debug:	all-debug
+test-debug:	debug
 	make -C $(TESTSRCDIR) test-debug
 
 test:	CFLAGS += $(CFLAGS_RELEASE)
-test:	all-release
+test:	release
 	cd $(TESTSRCDIR) && make test
 
 test-check:	test

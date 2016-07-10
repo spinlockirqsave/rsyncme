@@ -7,7 +7,7 @@ LDFLAGS9 := -L../../include -L../include  -Wl,--wrap=fopen -Wl,--wrap=fopen64 -W
 LDFLAGS_D = -g -L../../include -L../include  #-lpcap
 LDFLAGS2_D = -g -L../../include -L../include  -Wl,--wrap=fstat -Wl,--wrap=fstat64 -Wl,--wrap=malloc -Wl,--wrap=fread
 LDFLAGS9_D :=  -g -L../../include -L../include -Wl,--wrap=fopen -Wl,--wrap=fopen64 -Wno-nonnull
-LDLIBS = -pthread -lcmocka
+LDLIBS = -luuid -lcmocka -pthread
 TESTSRCDIR := .
 AUXOBJDIR_D := ../../build/debug
 AUXOBJDIR := ../../build/release

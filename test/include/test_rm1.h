@@ -36,7 +36,7 @@ unsigned char file_content_payload[RM_TEST_1_2_BUF_SZ];
 
 struct test_rm_file {
     FILE    *f;
-    char    name[RM_FILE_LEN_MAX + 100];
+    char    name[RM_FILE_LEN_MAX + 100]; /* must be at least 37 */
 };
 
 struct test_rm_state
