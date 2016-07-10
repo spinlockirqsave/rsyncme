@@ -46,6 +46,7 @@
 #include <stdint.h>
 #include <ctype.h>              /* isprint */
 #include <libgen.h>             /* dirname */
+#include <uuid/uuid.h>
 
 
 #include "twlist.h"
@@ -109,6 +110,7 @@ typedef uint8_t rm_push_flags;  /* Bit  meaning
                                  * 5    IPv4 given,
                                  * 6    (--leave) do not delete @y after @z has been reconstructed,
                                  * 7 */
+
 enum rm_session_type
 {
     RM_PUSH_LOCAL,

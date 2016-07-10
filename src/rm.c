@@ -609,3 +609,11 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) 
     if (ferror(y) != 0) return -8;
     return -13;   /* unknown error */
 }
+
+void
+rm_get_unique_string(char name[37]) {
+    uuid_t out_and_then_in;
+    uuid_generate(out_and_then_in);
+    uuid_unparse(out_and_then_in, name);
+    name[36] = '\0';                        /* assert string is null terminated */
+}
