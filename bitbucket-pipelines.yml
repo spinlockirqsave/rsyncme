@@ -12,7 +12,7 @@ pipelines:
           - rm -rf rsyncme
           - git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
           - cd rsyncme/src
-          - cd ../ && bash ./pip_install_cmocka.sh cmocka && cd src
+          - cd ../ && bash ./pip_install_deps.sh cmocka && cd src
           - make
           - make test
           - make test-check
