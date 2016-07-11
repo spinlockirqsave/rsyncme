@@ -107,7 +107,7 @@ main( int argc, char *argv[]) {
         { 0 }
     };
 
-    while ((c = getopt_long(argc, argv, "x:y:z:i:l:a:t:s", long_options, &option_index)) != -1) { /* parse optional command line arguments */
+    while ((c = getopt_long(argc, argv, "x:y:z:i:l:a:t:s:", long_options, &option_index)) != -1) { /* parse optional command line arguments */
         switch (c) {
 
             case 0:
