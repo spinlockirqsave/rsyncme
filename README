@@ -26,29 +26,34 @@ git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
 3. DIRECTORY STRUCTURE
 
 rsyncme/		<-- this directory (ROOT)
-	- README
-	- LICENSE
-	- include/
-		- twlist/
-	- src/
-	- build/
-		- debug/
-		- release/
-	- test/
-		- include/
-		- src/
-		- build/
-			-debug/
-				-log/
-			-release/
-				-log/
+    - README
+        This file
+    - LICENSE
+    - include/
+        - twlist/
+            Submodule (implementation of list, queue and hashtable)
+    - src/
+    - build/
+        - debug/
+        - release/
+    - test/
+        - include/
+        - src/
+        - build/
+            -debug/
+                -log/
+                    Test logs (debug mode) are written here
+            -release/
+                -log/
+                    Test logs (release mode) are written here
     - install_deps.sh
+                    Script for installation of dependencies (see 4.1)
 
 /usr/
-	- local/
-		- rsyncme/
-			- log/
-				Logs are written here.
+    - local/
+        - rsyncme/
+            - log/
+				Server logs are written here
 
 
 4.BUILD & TEST

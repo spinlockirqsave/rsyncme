@@ -59,6 +59,9 @@ test-check:	test
 test-check-debug:	test-debug
 	cd $(TESTSRCDIR) && make test-check-debug
 
+install:	all
+	cp $(CMDRELEASETARGET) /usr/bin
+
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
 	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@ $(LDLIBS)
 
