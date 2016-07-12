@@ -157,7 +157,8 @@ enum rm_delta_rx_status
 enum rm_reconstruct_method
 {
     RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION  = 0,    /* usual */
-    RM_RECONSTRUCT_METHOD_COPY_BUFFERED         = 1     /* @y doesn't exist and --forced flag is specified, rolling proc is not used, file is simply copied */
+    RM_RECONSTRUCT_METHOD_COPY_BUFFERED         = 1     /* @y doesn't exist and --forced flag is specified, rolling proc is not used, file is simply copied,
+                                                           rec_ctx->delta_raw_n == 1, rec_ctx->rec_by_raw == file size */
 };
 struct rm_delta_reconstruct_ctx
 {

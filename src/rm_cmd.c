@@ -17,23 +17,28 @@
 
 #define RM_CMD_F_LEN_MAX 100
 
-void rsyncme_usage(const char *name) {
+static void
+rsyncme_usage(const char *name) {
     if (name == NULL) {
         return;
     }
-    fprintf(stderr, "\nusage:\t %s [ push <-x file> <[-i IPv4]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n", name);
-    fprintf(stderr, "\n      \t        [-l block_size] [--f(orce)] [--l(eave)] ] [--help] [--version]\n");
-    fprintf(stderr, "     \t -x			: file to synchronize\n");
-    fprintf(stderr, "     \t -i			: IPv4 if syncing with remote file\n");
-    fprintf(stderr, "     \t -y			: reference file used for syncing (local if [ip]\n"
-            "				: was not given, remote otherwise)\n");
-    fprintf(stderr, "     \t -z			: synchronization result file name [optional]\n");
-    fprintf(stderr, "     \t -a			: raw bytes copy all threshold [optional]\n");
-    fprintf(stderr, "     \t -t			: raw bytes copy tail threshold [optional]\n");
-    fprintf(stderr, "     \t -s			: raw bytes send threshold in bytes [optional]\n"
-            "				: default value used is equal to size of the block\n");
-    fprintf(stderr, "     \t -l			: block size in bytes, if not given\n"
-            "				: default value 512 is used\n");
+    fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
+    fprintf(stderr, "      \t             [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
+    fprintf(stderr, "     \t -x         : file to synchronize\n");
+    fprintf(stderr, "     \t -i         : IPv4 if syncing with remote file\n");
+    fprintf(stderr, "     \t -y         : reference file used for syncing (local if [ip]\n"
+                    "     \t            : was not given, remote otherwise)\n");
+    fprintf(stderr, "     \t -z         : synchronization result file name [optional]\n");
+    fprintf(stderr, "     \t -a         : copy all threshold. Send file as raw bytes if it's size\n"
+                    "     \t              is less or equal this threshold [optional]\n");
+    fprintf(stderr, "     \t -t         : copy tail threshold. Send remaining bytes as raw elements\n"
+                    "     \t              instead of performing rolling match algorithm if the number\n"
+                    "     \t              of bytes to process is less or equal this threshold [optional]\n");
+    fprintf(stderr, "     \t -s         : send threshold. Raw bytes are not sent until\n"
+                    "     \t              that many bytes have been accumulated. Default value used\n"
+                    "     \t              is equal to size of the block\n");
+    fprintf(stderr, "     \t -l         : block size in bytes, if it is not given then\n"
+                    "     \t              default value of 512 bytes is used\n");
     fprintf(stderr, "     \t --force    : force creation of @z if @y doesn't exist\n");
     fprintf(stderr, "     \t --leave    : leave @y after @z has been reconstructed\n");
     fprintf(stderr, "     \t --help     : display this help and exit\n");
@@ -62,7 +67,35 @@ void rsyncme_usage(const char *name) {
 
 static void
 rsyncme_range_error(char argument, unsigned long value) {
-    fprintf(stderr, "argument [%c] too big [%lu]\n", argument, value);
+    fprintf(stderr, "\nERR, argument [%c] too big [%lu]\n\n", argument, value);
+}
+
+static void
+print_stats(struct rm_delta_reconstruct_ctx rec_ctx) {
+    enum rm_reconstruct_method method;
+
+    method = rec_ctx.method;
+    switch (method) {
+
+        case RM_RECONSTRUCT_METHOD_COPY_BUFFERED:
+            fprintf(stderr, "\nmethod : COPY_BUFFERED");
+            fprintf(stderr, "\nbytes  : [%zu]\n", rec_ctx.rec_by_raw);
+            break;
+
+        case RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION:
+            fprintf(stderr, "\nmethod : DELTA_RECONSTRUCTION (block [%zu])\n", rec_ctx.L);
+            fprintf(stderr, "\nbytes  : [%zu] (by raw [%zu], by refs [%zu])", rec_ctx.rec_by_raw + rec_ctx.rec_by_ref, rec_ctx.rec_by_raw, rec_ctx.rec_by_ref);
+            if (rec_ctx.rec_by_zero_diff != 0) {
+                fprintf(stderr, " (zero difference)");
+            }
+            fprintf(stderr, "\ndeltas : [%zu] (raw [%zu], refs [%zu])", rec_ctx.delta_raw_n + rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.delta_ref_n);
+            break;
+
+        default:
+            fprintf(stderr, "\nERR, unknown delta reconstruction method\n");
+            exit(EXIT_FAILURE);
+            break;
+    }
 }
 
 int
@@ -323,18 +356,17 @@ main( int argc, char *argv[]) {
         }
 
     } else { /* local sync */
-        if ((push_flags & RM_BIT_0) == 0u) { /* push? */
-            /* local push request */
+        if ((push_flags & RM_BIT_0) == 0u) { /* local push? */
             fprintf(stderr, "\nLocal push.\n");
-            /* setup push flags */
             res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
             if (res != RM_ERR_OK) {
+            fprintf(stderr, "\n");
                 switch (res) {
                     case RM_ERR_OPEN_X:
                         fprintf(stderr, "Error. @x [%s] doesn't exist\n", x);
                         goto fail;
                     case RM_ERR_OPEN_Y:
-                        fprintf(stderr, "Error. @y [%s] doesn't exist and --force flag not set. What file should I use?\nPlease "
+                        fprintf(stderr, "Error. @y [%s] doesn't exist and --force flag is not set. What file should I use?\nPlease "
                                 "check that file exists or add --force flag to force creation of @y file if it doesn't exist.\n", y);
                         goto fail;
                     case RM_ERR_OPEN_Z:
@@ -403,15 +435,16 @@ main( int argc, char *argv[]) {
                         return -1;
                 }
             }
-        } else {
-            /* local pull request */
+        } else { /* local pull request */
             fprintf(stderr, "\nLocal pull.\n");
         }
     }
 
+    print_stats(rec_ctx);
     fprintf(stderr, "\nOK.\n");
     return 0;
 
 fail:
+    fprintf(stderr, "\n");
     return res;
 }
