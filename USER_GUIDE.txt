@@ -45,19 +45,21 @@ calc2.ods to be same as just changed calc1.ods. You can do it with push command:
 
     Local push.
 
-    method : DELTA_RECONSTRUCTION (block [512])
+    method      : DELTA_RECONSTRUCTION (block [512])
+    bytes       : [15744] (by raw [7040], by refs [8704])
+    deltas      : [31] (raw [14], refs [17])
+    time        : real [0.002247]s, cpu [0.003514]s
+    bandwidth   : [7.007268]MB/s
 
-    bytes  : [15348] (by raw [6644], by refs [8704])
-    deltas : [31] (raw [14], refs [17])
     OK.
 
-It can be read from the output that source file @x is 15348 bytes and delta
+It can be read from the output that source file @x is 15744 bytes and delta
 reconstruction procedure has been used as synchronization method (as opposed
 to copying of bytes). This method has resulted in 31 delta elements being
 created. 14 of them contained raw bytes, while 17 contained references
 to matching blocks found in old version of file (@y) and reused (no copying
-involved). As a result 6444 bytes from new file has been used, avoiding
-copying of 8704 bytes.
+involved). As a result 7040 bytes from new file has been used, avoiding
+copying of 8704 bytes (which have been copied from referenced file).
 
 
 3. OPTIONS
