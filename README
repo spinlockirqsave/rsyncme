@@ -1,14 +1,22 @@
-/*
-* @file         README
+/*@file         README
 * @brief        Project description.
 * @author       Piotr Gregor <piotrek.gregor at gmail.com>
 * @version      0.1.2
 * @date         24 Jan 2016 06:16 PM
-* @copyright    LGPLv2.1
-*/
+* @copyright    LGPLv2.1 */
 
 
 rsyncme
+
+Content
+1. OVERVIEW
+2. DOWNLOAD
+3. DIRECTORY STRUCTURE
+4. BUILD , TEST, INSTALLATION
+5. TESTS
+6. USAGE
+7. DEBUGGING
+8. CLEAN
 
 1. OVERVIEW
 
@@ -28,6 +36,8 @@ git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
 rsyncme/		<-- this directory (ROOT)
     - README
         This file
+    - USER_GUIDE.txt
+        A brief tutorial
     - LICENSE
     - include/
         - twlist/
@@ -56,7 +66,7 @@ rsyncme/		<-- this directory (ROOT)
 				Server logs are written here
 
 
-4.BUILD & TEST
+4. BUILD , TEST, INSTALLATION
 
 There are few targets available: rsyncme_d, rsyncme, test executables.
 
@@ -71,7 +81,7 @@ if you wish to run tests).
     A. Manually
         apt-get install uuid uuid-dev
     B. Using our script
-	    bash install_deps.sh cmocka   (give name of folder where to install cmocka,
+        bash install_deps.sh cmocka   (give name of folder where to install cmocka,
                                         e.g. "cmocka", you may need sudo to install
                                         packages)
         
@@ -82,25 +92,31 @@ following below instructions or run our install_deps.sh script).
 4.1.2 Installing cmocka:
 
     A. Using script:
-	    bash install_deps.sh cmocka   (give name of folder where to install cmocka,
+        bash install_deps.sh cmocka   (give name of folder where to install cmocka,
                                         e.g. "cmocka", you may need sudo to install
                                         packages)
 
     B. To install manually:
-	    First, install cmake:
-	        sudo apt-get install cmake
+        First, install cmake:
+            sudo apt-get install cmake
         Then install cmocka:
-	        1. Download https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
-	        2. Follow instructions from INSTALL file
+            1. Download https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
+            2. Follow instructions from INSTALL file
 
 4.2 Default release build:
+
     cd src
     make    (will build everything [apart from tests] in release mode,
             same as "make all" and "make release")
 
 4.3 Default debug build:
+
     cd src
     make debug
+
+4.4 Installation
+
+    make install    (you may need to run this with sudo depending on your environment)
 
 
 5. TESTS
@@ -110,6 +126,7 @@ Please be sure dependencies are installed (see 4.1)
 5.1. To build tests:
 
 Make sure cmocka support is installed (see 4.1)
+
 	cd src
 	make test       ("make test-debug" for debug)
 
@@ -128,40 +145,53 @@ Make sure cmocka support is installed (see 4.1)
         definition in header ROOT/test/include/test_rm<#>.h to 0.
 
 
-6. DEBUGGING
+6. USAGE
+
+    Please read USER_GUIDE.txt.
+
+
+7. DEBUGGING
 
 Debugging should be done from ROOT/test/src folder.
 E.g:
+
     piotr@world:~/projects/rsyncme/test/src$ gdb ../build/debug/test_rm_main1
 
 
-7. CLEAN
+8. CLEAN
 
     To clean everything:
+
 	    cd src
 	    make clean-all
 
     To clean rsyncme_d (daemon's executable) and rsyncme (commandline executable):
+
 	    cd src
 	    make clean
 
     To clean tests (but not test logs):
+
 	    cd src
 	    make test-clean
 
     To clean test logs:
+
 	    cd src
 	    make test-clean-logs
 
     To clean tests-debug build(but not test logs):
+
 	    cd src
 	    make test-clean-debug
 
     To clean test-debug logs:
+
 	    cd src
 	    make test-clean-logs-debug
 
     To clean test and test logs (release and debug):
+
 	    cd src
 	    make test-clean-all
 

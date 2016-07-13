@@ -39,7 +39,7 @@ rsyncme_usage(const char *name) {
                     "     \t              is equal to size of the block\n");
     fprintf(stderr, "     \t -l         : block size in bytes, if it is not given then\n"
                     "     \t              default value of 512 bytes is used\n");
-    fprintf(stderr, "     \t --force    : force creation of @z if @y doesn't exist\n");
+    fprintf(stderr, "     \t --force    : force creation of @y if it doesn't exist\n");
     fprintf(stderr, "     \t --leave    : leave @y after @z has been reconstructed\n");
     fprintf(stderr, "     \t --help     : display this help and exit\n");
     fprintf(stderr, "     \t --version  : output version information and exit\n");

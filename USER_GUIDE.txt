@@ -1,0 +1,133 @@
+/*@file         USER_GUIDE.txt
+* @brief        Description of rsyncme usage.
+* @author       Piotr Gregor <piotrek.gregor at gmail.com>
+* @version      0.1.2
+* @date         13 July 2016 12:50 PM
+* @copyright    LGPLv2.1 */
+
+
+USAGE OF rsyncme
+
+Content
+1. OVERVIEW
+2. EXAMPLE
+3. OPTIONS
+4. LOCAL SYNCHRONIZATION
+4.1 OPTIONS
+4.1.1 -z OPTION
+4.1.2 --leave OPTION
+4.1.3 -l OPTION
+5. REMOTE SYNCHRONIZATION
+
+
+1. OVERVIEW
+
+rsyncme can be used to synchronize data on the same machine (locally)
+or between endpoints connected over IP. There is always constant part
+of all commands using rsyncme, -x and -y options necessarily followed
+by file names, for example
+
+    rsyncme push -x @x -y @y
+
+In all possible commands -x gives always the name of the file that you want
+to use as a new/current version of data and you want to make the target file
+@y the same as this version.
+
+
+2. EXAMPLE
+
+Let us assume two files, calc1.ods and calc2.ods are present in ~/Documents
+directory and you made some changes to calc1.ods (a value of single cell
+has been changed in this example). You now wish to synchronize
+calc2.ods to be same as just changed calc1.ods. You can do it with push command:
+
+    $ rsyncme push -x ~/Documents/calc1.ods -y ~/Documents/calc2.ods
+
+    Local push.
+
+    method : DELTA_RECONSTRUCTION (block [512])
+
+    bytes  : [15348] (by raw [6644], by refs [8704])
+    deltas : [31] (raw [14], refs [17])
+    OK.
+
+It can be read from the output that source file @x is 15348 bytes and delta
+reconstruction procedure has been used as synchronization method (as opposed
+to copying of bytes). This method has resulted in 31 delta elements being
+created. 14 of them contained raw bytes, while 17 contained references
+to matching blocks found in old version of file (@y) and reused (no copying
+involved). As a result 6444 bytes from new file has been used, avoiding
+copying of 8704 bytes.
+
+
+3. OPTIONS
+
+push        Set up @x as source of changes, @y as result/output.
+pull        Set up @y as source of changes, @x as result/output.
+-x          The name of source of changes (if push, see -y if pull)
+-y          The name of target to be synchronized to be same as @x, it is
+            reference file (if push, see -x if pull).
+-z          The new name of target.
+--leave     Will leave reference file unchanged, producing output as @z.
+--force     Will create @y if it doesn't exist.
+--version   Will output version of program.
+--help      Will print short help information.
+-l          The size of block used in synchronization algorithm [in bytes].
+            Default used is 512.
+-a          Copy all threshold [in bytes]. The file will be sent as raw bytes
+            if it's size is less than this.
+-t          Copy tail threashold [in bytes]. Bytes will be sent litearally
+            instead of performing rolling match algorithm
+            if there is less than this to be processed.
+-s          Send threshold [in bytes]. This determines the maximum size
+            of delta raw element. Bytes will be queued up to this number
+            if the match is not found in @y. If the match is found at some
+            point before the limit is reached and delta reference to matching
+            block is just to be senti (or the EOF is reached), then already
+            accumulated bytes are sent immediately.
+
+
+4. LOCAL SYNCHRONIZATION
+
+If the -i option is not given in the command, that means this is local sync.
+The basic command to synchronize file @x and file @y on the same machine is
+
+    rsyncme push -x @x -y @y
+
+This command will synchronize file @y with @x, that is @y will be the same
+as @x after this is done, and @x is unchanged.
+The basic command will create sychronized version of @y with the same name
+and in the same location, but this can be changed with -z and/or --leave option.
+
+4.1 OPTIONS
+
+4.1.1 -z OPTION
+
+    rsyncme push -x @x -y @y -z @z
+
+This will output new version of @y as @z, i.e. @y becomes @z.
+
+4.1.2 --leave OPTION
+
+    rsyncme push -x @x -y @y -z @z --leave
+
+will work as 2.1.2 but @y file will not be deleted.
+
+4.1.3 -l OPTION
+
+    rsyncme push -x @x -y @y -l block_size
+
+Use different size of block for synchronization. This option influences
+number of matches found and number of raw bytes used. The general rule
+is less this value is more matches are found while simultaneously less
+this value is less space for performance improvement is left.
+Example:
+
+    rsyncme push -x @x -y @y -l 16
+
+This will use 16 bytes as synchronization block size.
+
+
+5. REMOTE SYNCHRONIZATION
+
+Remote synchronization will be implemented in 0.1.3 version.
