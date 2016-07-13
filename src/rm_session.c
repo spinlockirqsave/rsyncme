@@ -116,6 +116,8 @@ rm_session_create(enum rm_session_type t, size_t L) {
         default:
             goto fail;
     }
+    clock_gettime(CLOCK_REALTIME, &s->clk_realtime_start);
+    s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
     return s;
 
 fail:

@@ -50,6 +50,7 @@
 #include <ctype.h>              /* isprint */
 #include <libgen.h>             /* dirname */
 #include <uuid/uuid.h>
+#include <sys/time.h>
 
 
 #include "twlist.h"
@@ -91,6 +92,7 @@
 #define RM_CH_CH_SIZE (sizeof((((struct rm_ch_ch_ref*)0)->ch_ch)))
 #define RM_CH_CH_REF_SIZE (RM_CH_CH_SIZE + \
         (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
+#define RM_NANOSEC_PER_SEC          1000000000U
 
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */
