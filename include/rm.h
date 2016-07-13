@@ -169,6 +169,8 @@ struct rm_delta_reconstruct_ctx
                                 delta_tail_n, delta_zero_diff_n;
     size_t                      L;
     size_t                      copy_all_threshold, copy_tail_threshold, send_threshold;
+    struct timespec             time_real;
+    double                      time_cpu;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given

@@ -28,6 +28,10 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     struct rm_session_push_local    *prvt;
     char                            *y_copy = NULL, *cwd = NULL;
     const char *f_z_name = "f_z_tmp";
+    struct timespec         clk_realtime_start, clk_realtime_stop;
+    double                  clk_cputime_start, clk_cputime_stop;
+    struct timespec         real_time;
+    double                  cpu_time;
 
     f_x = f_y = f_z = NULL;
     reference_file_exist = 0;
@@ -101,6 +105,8 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
                 err = RM_ERR_OPEN_Z;
                 goto err_exit;
             }
+            clock_gettime(CLOCK_REALTIME, &clk_realtime_start);
+            clk_cputime_start = clock() / CLOCKS_PER_SEC;
             err = rm_copy_buffered(f_x, f_z, x_sz); /* @y doesn't exist and --forced flag is specified */
             if (err < 0) {
                 err = RM_ERR_COPY_BUFFERED;
@@ -117,7 +123,8 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
             goto err_exit;
         }
     }
-    /* @y doesn't exist but --forced specified (f_y == NULL) or @y exists and is opened for reading  (f_y != NULL) */
+    /* @y exists and is opened for reading  (f_y != NULL), reference_file_exist == 1 */
+    /* Do NOT fclose(f_y); as it must be opened in session rx for reading */
 
 	/* get input file size */
     fd_x = fileno(f_x);
@@ -128,7 +135,6 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     }
     x_sz = fs.st_size;
 
-    /* Do NOT fclose(f_y); as it must be opened in session rx for reading */
     /* TODO generate unique temporary name based on session uuid for result file, after reconstruction is finished remove @f_y and rename @f_z to @y */
     f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing */
     if (f_z == NULL) {
@@ -176,17 +182,6 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 
 done:
 
-    if (reference_file_exist == 1) {
-        if (f_y != NULL) {
-            fclose(f_y);
-            f_y = NULL;
-        }
-        bkt = 0;
-        twhash_for_each_safe(h, bkt, tmp, e, hlink) {
-            twhash_del((struct twhlist_node*)&e->hlink);
-            free((struct rm_ch_ch_ref_hlink*)e);
-        }
-    }
     if (f_x != NULL) {
         fclose(f_x);
         f_x = NULL;
@@ -205,21 +200,28 @@ done:
         err =  RM_ERR_FILE_SIZE;
         goto err_exit;
     }
-    if (s != NULL) {
+    if (reference_file_exist == 1) {            /* delta reconstruction has happened */
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
+        bkt = 0;
+        twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+            twhash_del((struct twhlist_node*)&e->hlink);
+            free((struct rm_ch_ch_ref_hlink*)e);
+        }
         if (z_sz != s->rec_ctx.rec_by_ref + s->rec_ctx.rec_by_raw) {
             err = RM_ERR_FILE_SIZE_REC_MISMATCH;
             goto err_exit;
         }
+        s->clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
+        cpu_time = s->clk_cputime_stop - s->clk_cputime_start;
+        clock_gettime(CLOCK_REALTIME, &s->clk_realtime_stop);    
+        real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
+        real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec; 
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
         rm_session_free(s);
         s = NULL;
-    } else {
-        if (z_sz != rec_ctx->rec_by_raw) {
-            err = RM_ERR_FILE_SIZE_REC_MISMATCH;
-            goto err_exit;
-        }
-    }
-    if (reference_file_exist == 1) {
         if (((flags & RM_BIT_6) == 0u) && (unlink(y) != 0)) { /* if --leave not set and unlink failed */
             err = RM_ERR_UNLINK_Y;
             goto err_exit;
@@ -235,7 +237,19 @@ done:
                 goto err_exit;
             }
         }
+    } else {                                    /* copy buffered has happened */
+        if (z_sz != rec_ctx->rec_by_raw) {
+            err = RM_ERR_FILE_SIZE_REC_MISMATCH;
+            goto err_exit;
+        }
+        clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
+        cpu_time = clk_cputime_stop - clk_cputime_start;
+        clock_gettime(CLOCK_REALTIME, &clk_realtime_stop);    
+        real_time.tv_sec = clk_realtime_stop.tv_sec - clk_realtime_start.tv_sec; 
+        real_time.tv_nsec = clk_realtime_stop.tv_nsec - clk_realtime_start.tv_nsec; 
     }
+    rec_ctx->time_cpu = cpu_time;
+    rec_ctx->time_real = real_time;
     if (y_copy != NULL) {
         free(y_copy);
         y_copy = NULL;

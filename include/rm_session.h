@@ -26,6 +26,8 @@ struct rm_session
     enum rm_session_type    type;
     struct rm_delta_reconstruct_ctx rec_ctx;
     void                    *prvt;
+    struct timespec         clk_realtime_start, clk_realtime_stop;
+    double                  clk_cputime_start, clk_cputime_stop;
 };
 
 /* Receiver of file (delta vector) */
