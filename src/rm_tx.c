@@ -27,7 +27,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     struct rm_session               *s;
     struct rm_session_push_local    *prvt;
     char                            *y_copy = NULL, *cwd = NULL;
-    const char *f_z_name = "f_z_tmp";
+    char                            f_z_name[38];
     struct timespec         clk_realtime_start, clk_realtime_stop;
     double                  clk_cputime_start, clk_cputime_stop;
     struct timespec         real_time;
@@ -135,7 +135,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     }
     x_sz = fs.st_size;
 
-    /* TODO generate unique temporary name based on session uuid for result file, after reconstruction is finished remove @f_y and rename @f_z to @y */
+    rm_get_unique_string(f_z_name);
     f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing */
     if (f_z == NULL) {
         err = RM_ERR_OPEN_TMP;

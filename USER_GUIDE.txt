@@ -78,20 +78,20 @@ pull        Set up @y as source of changes, @x as result/output.
             Default used is 512.
 -a          Copy all threshold [in bytes]. The file will be sent as raw bytes
             if it's size is less than this.
--t          Copy tail threashold [in bytes]. Bytes will be sent litearally
+-t          Copy tail threshold [in bytes]. Bytes will be sent litearally
             instead of performing rolling match algorithm
             if there is less than this to be processed.
 -s          Send threshold [in bytes]. This determines the maximum size
             of delta raw element. Bytes will be queued up to this number
             if the match is not found in @y. If the match is found at some
-            point before the limit is reached and delta reference to matching
-            block is just to be senti (or the EOF is reached), then already
-            accumulated bytes are sent immediately.
+            point before this limit is reached and therefore delta reference
+            to matching block is just to be sent (or the EOF is reached),
+            then already accumulated bytes are sent immediately.
 
 
 4. LOCAL SYNCHRONIZATION
 
-If the -i option is not given in the command, that means this is local sync.
+If the -i option is not given in the command, this means this is local sync.
 The basic command to synchronize file @x and file @y on the same machine is
 
     rsyncme push -x @x -y @y
@@ -113,7 +113,7 @@ This will output new version of @y as @z, i.e. @y becomes @z.
 
     rsyncme push -x @x -y @y -z @z --leave
 
-will work as 2.1.2 but @y file will not be deleted.
+will work as 2.1.2 but @y file will not be deleted nor changed.
 
 4.1.3 -l OPTION
 

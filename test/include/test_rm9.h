@@ -40,6 +40,7 @@ struct test_rm_state
     void                *buf;
     void                *buf2;
     struct rm_session   *s;
+    char                unique_name[100];
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
