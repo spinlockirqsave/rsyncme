@@ -66,43 +66,27 @@ test_rm_copy_files_and_postfix(const char *postfix) {
             }
             err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
             switch (err) {
-                case 0:
+                case RM_ERR_OK:
                     break;
-                case -2:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s]", buf, rm_test_fnames[i]);
-                    if (f != NULL) {
-						fclose(f);
-					}
-                    if (f_copy != NULL) {
-						fclose(f_copy);
-					}
+                case RM_ERR_FEOF:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy [%s], EOF", buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
                     return -2;
-                case -3:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], error set on original file", buf, rm_test_fnames[i]);
-                    if (f != NULL) {
-						fclose(f);
-					}
-                    if (f_copy != NULL) {
-						fclose(f_copy);
-					}
+                case RM_ERR_FERROR:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], error set on @x or @y", buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
                     return -3;
-                case -4:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], error set on copy", buf, rm_test_fnames[i]);
-                    if (f != NULL) {
-						fclose(f);
-					}
-                    if (f_copy != NULL) {
-						fclose(f_copy);
-					}
+                case RM_ERR_TOO_MUCH_REQUESTED:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], too much requested", buf, rm_test_fnames[i]);
+                    fclose(f);
+                    fclose(f_copy);
                     return -4;
                 default:
                     RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], unknown error", buf, rm_test_fnames[i]);
-                    if (f != NULL) {
-						fclose(f);
-					}
-                    if (f_copy != NULL) {
-						fclose(f_copy);
-					}
+                    fclose(f);
+                    fclose(f_copy);
                     return -13;
             }
         } else {
@@ -712,8 +696,7 @@ test_rm_tx_local_push_2(void **state) {
                 RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
             }
             assert_true(f_y != NULL);
-            err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
-            if (err != 0) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -993,8 +976,7 @@ test_rm_tx_local_push_3(void **state) {
                 if (f_x != NULL) fclose(f_x);
             }
             assert_true(f_y != NULL);
-            err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
-            if (err != 0) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
@@ -1321,8 +1303,7 @@ test_rm_tx_local_push_4(void **state) {
                 if (f_x != NULL) fclose(f_x);
             }
             assert_true(f_y != NULL);
-            err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
-            if (err != 0) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
@@ -1749,8 +1730,7 @@ test_rm_tx_local_push_5(void **state) {
                 RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
             }
             assert_true(f_y != NULL && "Can't recreate @y file");
-            err = rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]);
-            if (err != 0) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
