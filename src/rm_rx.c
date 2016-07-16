@@ -306,7 +306,7 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
             break;
 
         case RM_DELTA_ELEMENT_ZERO_DIFF:
-            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != 0) { /* copy all bytes from @f_y to @f_z */
+            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != RM_ERR_OK) { /* copy all bytes from @f_y to @f_z */
                 return -4;
             }
             ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check here at receiver that is correct */

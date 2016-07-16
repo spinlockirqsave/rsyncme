@@ -33,8 +33,9 @@ rm_fast_check_block(const unsigned char *data, size_t len) {
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;
-#endif
+#else
 	return (r2 << 16) | r1;
+#endif
 }
 
 uint32_t
@@ -56,8 +57,9 @@ rm_adler32_1(const unsigned char *data, size_t len) {
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;
-#endif
+#else
 	return (r2 << 16) | r1;
+#endif
 }
 
 #define RM_DO1(buf, i)	{ r1 += buf[i]; r2 += r1; }
@@ -98,8 +100,9 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, size_t L) {
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;
-#endif
+#else
 	return (r2 << 16) | r1;
+#endif
 }
 
 /* rolling adler with prime modulus won't work */
@@ -117,8 +120,9 @@ rm_adler32_roll(uint32_t adler, unsigned char a_k,
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;
-#endif
+#else
 	return (r2 << 16) | r1;
+#endif
 }
 
 /* modulus MUST be even */
@@ -136,8 +140,9 @@ rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;
-#endif
+#else
 	return (r2 << 16) | r1;
+#endif
 }
 
 
@@ -172,8 +177,9 @@ rm_rolling_ch(const unsigned char *data, size_t len,
 #ifdef DEBUG
 	res = (r2 << 16) | r1;
 	return res;
-#endif
+#else
 	return (r2 << 16) | r1;
+#endif
 }
  
 
@@ -205,17 +211,14 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) {
-            return -2;
+            return RM_ERR_FEOF;
         }
-        return 0;
+        return RM_ERR_OK;
     }
-    if (ferror(x) != 0) {
-        return -3;
+    if (ferror(x) != 0 || ferror(y) != 0) {
+        return RM_ERR_FERROR;
     }
-    if (ferror(y) != 0) {
-        return -4;
-    }
-    return -13; /* too much requested */
+    return RM_ERR_TOO_MUCH_REQUESTED;
 }
 
 int

@@ -250,10 +250,10 @@ rm_md5(const unsigned char *data, size_t len, unsigned char res[16]);
 /* @brief   Copy @bytes_n bytes from @x into @y.
  * @details Calls fread/fwrite buffered API functions.
  *          Files must be already opened.
- * @return  0: success,
- *          -1: fwrite failed,
- *          -2: fread failed,
- *          -3: other error set on @y */
+ * @return  RM_ERR_OK: success,
+ *          RM_ERR_FEOF: eof set on @x,
+ *          RM_ERR_FERROR: ferror set on either @x or @y,
+ *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 int
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
 

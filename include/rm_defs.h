@@ -151,7 +151,10 @@ enum rm_error {
     RM_ERR_RENAME_TMP_Z = 22,
     RM_ERR_MEM = 23,
     RM_ERR_CHDIR = 24,
-    RM_ERR_GETCWD = 25
+    RM_ERR_GETCWD = 25,
+    RM_ERR_FEOF = 26,
+    RM_ERR_FERROR = 27,
+    RM_ERR_TOO_MUCH_REQUESTED = 28
 };
 
 /* prototypes */

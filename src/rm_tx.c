@@ -107,8 +107,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
             }
             clock_gettime(CLOCK_REALTIME, &clk_realtime_start);
             clk_cputime_start = clock() / CLOCKS_PER_SEC;
-            err = rm_copy_buffered(f_x, f_z, x_sz); /* @y doesn't exist and --forced flag is specified */
-            if (err < 0) {
+            if (rm_copy_buffered(f_x, f_z, x_sz) != RM_ERR_OK) { /* @y doesn't exist and --forced flag is specified */
                 err = RM_ERR_COPY_BUFFERED;
                 goto err_exit;
             }

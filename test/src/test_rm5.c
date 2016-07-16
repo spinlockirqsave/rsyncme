@@ -66,28 +66,25 @@ test_rm_copy_files_and_postfix(const char *postfix) {
             }
             err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
             switch (err) {
-                case 0:
+                case RM_ERR_OK:
                     break;
-                case -2:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s]", buf, rm_test_fnames[i]);
+                case RM_ERR_FEOF:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy [%s], EOF", buf, rm_test_fnames[i]);
                     fclose(f);
                     fclose(f_copy);
                     return -2;
-                case -3:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s],"
-                            " error set on original file", buf, rm_test_fnames[i]);
+                case RM_ERR_FERROR:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], error set on @x or @y", buf, rm_test_fnames[i]);
                     fclose(f);
                     fclose(f_copy);
                     return -3;
-                case -4:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s],"
-                            " error set on copy", buf, rm_test_fnames[i]);
+                case RM_ERR_TOO_MUCH_REQUESTED:
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], too much requested", buf, rm_test_fnames[i]);
                     fclose(f);
                     fclose(f_copy);
                     return -4;
                 default:
-                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], unknown error", 
-                            buf, rm_test_fnames[i]);
+                    RM_LOG_ERR("Can't write from [%s] to it's copy  [%s], unknown error", buf, rm_test_fnames[i]);
                     fclose(f);
                     fclose(f_copy);
                     return -13;

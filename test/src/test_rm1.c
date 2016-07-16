@@ -167,7 +167,7 @@ test_rm_copy_buffered(void **state) {
 		}
 		assert_true(f_y != NULL && "Can't open @y file");
         err = rm_copy_buffered(f_x, f_y, file_sz);
-        if (err != 0) {
+        if (err != RM_ERR_OK) {
             RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
             if (f_x != NULL) {
                 fclose(f_x);
