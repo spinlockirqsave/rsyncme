@@ -290,7 +290,7 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
     switch (delta_e->type) {
 
         case RM_DELTA_ELEMENT_REFERENCE:
-            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) { /* copy referenced bytes from @f_y to @f_z */
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK) { /* copy referenced bytes from @f_y to @f_z */
                 return -2;
             }
             ctx->rec_by_ref += delta_e->raw_bytes_n;    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
@@ -317,7 +317,7 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
 
         case RM_DELTA_ELEMENT_TAIL:
 
-            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != 0) { /* copy referenced bytes from @f_y to @f_z */
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK) { /* copy referenced bytes from @f_y to @f_z */
                 return -5;
             }
             ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check here at receiver there is no error */

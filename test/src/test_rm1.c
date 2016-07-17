@@ -257,14 +257,14 @@ test_rm_copy_buffered_2_1(void **state) {
 		file_sz = fs.st_size;
         bytes_requested = rm_min(RM_TEST_1_2_BUF_SZ, file_sz);
         err = rm_copy_buffered_2(f_x, 0, buf, bytes_requested);
-        if (err != 0) {
+        if (err != RM_ERR_OK) {
             RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
             if (f_x != NULL) {
                 fclose(f_x);
                 f_x = NULL;
             }
         }
-        assert(err == 0 && "Copy buffered failed");
+        assert(err == RM_ERR_OK && "Copy buffered failed");
         k = 0; /* verify files are the same */
         while (k < bytes_requested) {
             if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
@@ -327,26 +327,26 @@ test_rm_copy_buffered_2_2(void **state) {
     bytes_requested = 0;
     offset = 0;
     err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
         if (f != NULL) {
             fclose(f);
             f = NULL;
         }
     }
-    assert(err == 0 && "Copy buffered failed");
+    assert(err == RM_ERR_OK && "Copy buffered failed");
     /* 2 request 1 byte, first byte */
     bytes_requested = 1;
     offset = 0;
     err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
         if (f != NULL) {
             fclose(f);
             f = NULL;
         }
     }
-    assert(err == 0 && "Copy buffered failed");
+    assert(err == RM_ERR_OK && "Copy buffered failed");
     if (0 != test_rm_copy_buffered_bytes_cmp(buf, bytes_requested, offset)) { /* verify bytes returned */
             RM_LOG_ERR("%s", "Wrong bytes returned!");
             assert_true(1 == 0 && "Wrong bytes returned!");
@@ -357,14 +357,14 @@ test_rm_copy_buffered_2_2(void **state) {
         bytes_requested = 0;
         do {
             err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
-            if (err != 0) {
+            if (err != RM_ERR_OK) {
                 RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
                 if (f != NULL) {
                     fclose(f);
                     f = NULL;
                 }
             }
-            assert(err == 0 && "Copy buffered failed");
+            assert(err == RM_ERR_OK && "Copy buffered failed");
             if (0 != test_rm_copy_buffered_bytes_cmp(buf, bytes_requested, offset)) { /* verify bytes returned */
                 RM_LOG_ERR("%s", "Wrong bytes returned!");
                 assert_true(1 == 0 && "Wrong bytes returned!");
@@ -376,14 +376,14 @@ test_rm_copy_buffered_2_2(void **state) {
     bytes_requested = RM_TEST_1_2_BUF_SZ + 1;
     offset = 0;
     err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
-    if (err != -2) {
+    if (err != RM_ERR_TOO_MUCH_REQUESTED) {
         RM_LOG_ERR("Copy buffered failed with WRONG error [%d], file [%s]", err, fname);
         if (f != NULL) {
             fclose(f);
             f = NULL;
         }
     }
-    assert(err == -2 && "Copy buffered failed with WRONG error");
+    assert(err == RM_ERR_TOO_MUCH_REQUESTED && "Copy buffered failed with WRONG error");
     if (f != NULL) {
         fclose(f);
         f = NULL;
@@ -435,7 +435,7 @@ test_rm_copy_buffered_offset(void **state) {
         offset_x = 0;
         offset_y = 0;
         err = rm_copy_buffered_offset(f_x, f_y, file_sz, offset_x, offset_y);
-        if (err != 0) {
+        if (err != RM_ERR_OK) {
             RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -446,7 +446,7 @@ test_rm_copy_buffered_offset(void **state) {
                 f_y = NULL;
             }
         }
-        assert(err == 0 && "Copy buffered failed");
+        assert(err == RM_ERR_OK && "Copy buffered failed");
         k = 0; /* verify files are the same */
         while (k < file_sz) {
             if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {

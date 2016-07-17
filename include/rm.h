@@ -261,9 +261,10 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
  *          into @dst buffer.
  * @details Calls fread buffered API functions writing directly to @dst.
  *          File @x must be already opened.
- * @return  0: success,
- *          -1: fseek failed,
- *          -2: fread failed */
+ * @return  RM_ERR_OK: success,
+ *          RM_ERR_FSEEK: fseek failed,
+ *          RM_ERR_FERROR: ferror set on @x,
+ *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 int
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 
@@ -281,10 +282,11 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
 /* @brief   Copy @bytes_n bytes from @x at offset @x_offset into @y at @y_offset.
  * @details Calls rm_fpread/rm_fpwrite buffered API functions.
  *          Files must be already opened.
- * @return  0: success,
- *          -1: rm_fpwrite failed,
- *          -2: rm_fpread failed,
- *          -3: other error set on @y */
+ * @return  RM_ERR_OK: success,
+ *          RM_ERR_WRITE: rm_fpwrite failed,
+ *          RM_ERR_FEOF: eof set on @x,
+ *          RM_ERR_FERROR: error set on @x or @y,
+ *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 int
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
 

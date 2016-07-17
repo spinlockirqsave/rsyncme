@@ -226,7 +226,7 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     size_t read = 0, read_exp;
 
     if (fseek(x, offset, SEEK_SET) != 0) {
-        return -1;
+        return RM_ERR_FSEEK;
     }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
@@ -238,12 +238,12 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     }
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
-        return 0;
+        return RM_ERR_OK;
     }
     if (ferror(x) != 0) {
-        return -1;
+        return RM_ERR_FERROR;
     }
-    return -2; /* EOF, too much requested */
+    return RM_ERR_TOO_MUCH_REQUESTED;
 }
 
 size_t
@@ -273,7 +273,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
     offset = 0;
     while (bytes_n > 0 && ((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp)) {
         if (rm_fpwrite(buf, 1, read_exp, y_offset + offset, y) != read_exp)
-            return -1;
+            return RM_ERR_WRITE;
         bytes_n -= read;
         offset += read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
@@ -282,17 +282,14 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
         if (feof(x)) {
-            return -2;
+            return RM_ERR_FEOF;
         }
-        return 0;
+        return RM_ERR_OK;
     }
-    if (ferror(x) != 0) {
-        return -3;
+    if (ferror(x) != 0 || ferror(y) != 0) {
+        return RM_ERR_FERROR;
     }
-    if (ferror(y) != 0) {
-        return -4;
-    }
-    return -13; /* too much requested */
+    return RM_ERR_TOO_MUCH_REQUESTED;
 }
 
 /* If there are raw bytes to tx copy them here! */
@@ -423,7 +420,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
         twhlist_for_each_entry(e, &h[hash], hlink) {        /* hit 1, 1st Level match? (hashtable hash match) */
             if (e->data.ch_ch.f_ch == ch.f_ch) {            /* hit 2, 2nd Level match?, (fast rolling checksum match) */
-                if (rm_copy_buffered_2(f_x, a_k_pos, buf, read) != 0) {
+                if (rm_copy_buffered_2(f_x, a_k_pos, buf, read) != RM_ERR_OK) {
                     return -14;
                 }
                 beginning_bytes_in_buf = 0;
@@ -497,8 +494,7 @@ end:
     return 0;
 
 copy_tail:
-    err = rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left);
-    if (err < 0) {
+    if (rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left) != RM_ERR_OK) {
         return -13;
     }
     err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left);   /* tx */
