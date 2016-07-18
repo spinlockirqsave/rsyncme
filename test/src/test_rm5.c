@@ -307,7 +307,7 @@ test_rm_rolling_ch_proc_1(void **state) {
             prvt->f_x = f_x;                        /* run on same file */
             prvt->delta_f = rm_roll_proc_cb_1;
             err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
-            assert_int_equal(err, 0);
+            assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
             assert_true(q != NULL);
@@ -553,7 +553,7 @@ test_rm_rolling_ch_proc_2(void **state) {
             prvt->f_x = f_x;                        /* run on @x */
             prvt->delta_f = rm_roll_proc_cb_1;
             err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
-            assert_int_equal(err, 0);
+            assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
             assert_true(q != NULL);

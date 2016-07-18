@@ -225,7 +225,7 @@ rm_session_delta_tx_f(void *arg) {
             goto exit;
     }
     err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0); /* 1. run rolling checksum procedure */
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         status = RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
     }
     pthread_mutex_lock(&s->session_mutex);

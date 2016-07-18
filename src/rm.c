@@ -323,7 +323,7 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     return 0;
 }
 
-int
+enum rm_error
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) {
     size_t          L;
@@ -350,8 +350,8 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     e = NULL;
     a_k_pos = 0;
 
-    if (s == NULL) {
-        return -1;
+    if (s == NULL || f_x == NULL) {
+        return RM_ERR_BAD_CALL;
     }
     cb_arg.s = s;                           /* setup callback argument */
     L = s->rec_ctx.L;
@@ -361,20 +361,20 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
     fd = fileno(f_x);
     if (fstat(fd, &fs) != 0) {
-         return -2;
+         return RM_ERR_FSTAT_X;
     }
     file_sz = fs.st_size;
-    send_left = file_sz - from;
-    if (send_left == 0) {                   /* Nothing to do */
-        return -3;
+    if (from >= file_sz) {
+        return RM_ERR_TOO_MUCH_REQUESTED;   /* Nothing to do */
     }
-    if (send_left < copy_all_threshold) {   /* copy all bytes */
+    send_left = file_sz - from;             /* positive value */
+    if (send_left < copy_all_threshold || h == NULL) {   /* copy all bytes */
         a_kL_pos = 0;
         goto copy_tail;
     }
     buf = malloc(L * sizeof(unsigned char));
     if (buf == NULL) {
-        return -4;
+        return RM_ERR_MEM;
     }
     a_k_pos = a_kL_pos = 0;
     match = 1;
@@ -390,7 +390,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             }
             read = rm_fpread(buf, 1, read_now, a_kL_pos, f_x);
             if (read != read_now) {
-                return -9;
+                return RM_ERR_READ;
             }
             if (read_begin == 0) {
                 read_begin = read;
@@ -404,7 +404,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         } else {
             if (read == L && (a_kL_pos - a_k_pos == L)) {
                 if (rm_fpread(&a_kL, sizeof(unsigned char), 1, a_kL_pos, f_x) != 1) {
-                    return -11;
+                    return RM_ERR_READ;
                 }
                 ch.f_ch = rm_fast_check_roll(ch.f_ch, a_k, a_kL, L);
                 read = read_now = rm_max(1u, a_kL_pos - a_k_pos);
@@ -421,7 +421,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         twhlist_for_each_entry(e, &h[hash], hlink) {        /* hit 1, 1st Level match? (hashtable hash match) */
             if (e->data.ch_ch.f_ch == ch.f_ch) {            /* hit 2, 2nd Level match?, (fast rolling checksum match) */
                 if (rm_copy_buffered_2(f_x, a_k_pos, buf, read) != RM_ERR_OK) {
-                    return -14;
+                    return RM_ERR_COPY_BUFFERED;
                 }
                 beginning_bytes_in_buf = 0;
                 rm_md5(buf, read, ch.s_ch.data);            /* compute strong checksum */
@@ -440,26 +440,32 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n);   /* send them first */
                 if (err != 0) {
-                    return -5;
+                    return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
             }
             if (read == file_sz) {
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, e->data.ref, NULL, file_sz);
+                if (err != 0) {
+                    return RM_ERR_TX_ZERO_DIFF;
+                }
             } else if (read < L) {
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, e->data.ref, NULL, read);
+                if (err != 0) {
+                    return RM_ERR_TX_TAIL;
+                }
             } else {
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, L);
-            }
-            if (err != 0) {
-                return -6;
+                if (err != 0) {
+                    return RM_ERR_TX_REF;
+                }
             }
             send_left -= read;
         } else { /* tx raw bytes */
             if (raw_bytes == NULL) {
                 raw_bytes = malloc(L * sizeof(*raw_bytes));
                 if (raw_bytes == NULL) {
-                    return -7;
+                    return RM_ERR_MEM;
                 }
                 memset(raw_bytes, 0, L * sizeof(*raw_bytes));
                 raw_bytes_n = 0;
@@ -468,7 +474,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
                 a_k = buf[a_k_pos];                                     /* read a_k byte */
             } else {
                 if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f_x) != 1) {
-                    return -10;
+                    return RM_ERR_READ;
                 }
             }
             raw_bytes[raw_bytes_n] = a_k;                               /* enqueue raw byte */
@@ -477,7 +483,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             if ((raw_bytes_n == send_threshold) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
                 err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n);   /* tx */
                 if (err != 0) {
-                    return -8;
+                    return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
             }
@@ -491,15 +497,15 @@ end:
     if (buf != NULL) {
         free(buf);
     }
-    return 0;
+    return RM_ERR_OK;
 
 copy_tail:
     if (rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left) != RM_ERR_OK) {
-        return -13;
+        return RM_ERR_COPY_BUFFERED_2;
     }
     err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left);   /* tx */
     if (err != 0) {
-        return -14;
+        return RM_ERR_TX_RAW;
     }
     if (raw_bytes != NULL) {
         free(raw_bytes);
@@ -507,7 +513,7 @@ copy_tail:
     if (buf != NULL) {
         free(buf);
     }
-    return 0;
+    return RM_ERR_OK;
 }
 
 int

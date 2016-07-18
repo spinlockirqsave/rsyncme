@@ -309,10 +309,16 @@ struct rm_session;
  *          element if less than this bytes to roll has left
  * @param   send_threshold - raw bytes will not be sent if there is less than this number of them
  *          in the buffer unless delta reference elements is being produced, that means
- *          raw bytes will be sent if delta element comes or @send_threshold has been reached */
-int
+ *          raw bytes will be sent if delta element comes or @send_threshold has been reached
+ * @return  RM_ERR_OK - success,
+ *          RM_ERR_BAD_CALL - NULL session has been passed,
+ *          RM_ERR_FSTAT_X - fstat failed on @x,
+ *          RM_ERR_TOO_MUCH_REQUESTED - not enough data in file (from >= file size),
+ *          RM_ERR_MEM - malloc failed,
+ *          RM_ERR_READ - fpread failed */
+enum rm_error
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, size_t from);
+        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1)));
 
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
