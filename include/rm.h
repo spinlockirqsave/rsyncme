@@ -337,9 +337,12 @@ struct rm_roll_proc_cb_arg
  * @details Rolling proc callback. Called synchronously.
  *          This is being called from rolling checksum proc
  *          rm_rolling_ch_proc. Enqueues delta elements to queue
- *          and signals this to delta_rx_tid in local push session. */
+ *          and signals this to delta_rx_tid in local push session.
+ * @return  RM_ERR_OK - success,
+ *          RM_ERR_BAD_CALL - callback argument and/or session and/or delta
+ *          and/or private session object is NULL */
 rm_delta_f
-rm_roll_proc_cb_1;
+rm_roll_proc_cb_1 __attribute__((nonnull(1)));
 
 /* @brief   Tx delta element from (A) to (B) (RM_PUSH_TX).
  * @details Rolling proc callback. Called synchronously.

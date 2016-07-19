@@ -533,8 +533,7 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
     if (err != 0) {
         goto fail;
     }
-    return RM_ERR_OK;
-
+    return 0;
 fail:
     pthread_attr_destroy(&attr);
     return RM_ERR_FAIL;
@@ -549,28 +548,28 @@ rm_roll_proc_cb_1(void *arg) {
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
     if (cb_arg == NULL) {
-        RM_LOG_CRIT("%s", "WTF! NULL callback argument?! Have you added some neat code recently?");
+        RM_DEBUG_LOG_CRIT("%s", "WTF! NULL callback argument?! Have you added some neat code recently?");
         assert(cb_arg != NULL);
-        return -1;
+        return RM_ERR_BAD_CALL;
     }
 
     s = cb_arg->s;
     delta_e = cb_arg->delta_e;
     if (s == NULL) {
-        RM_LOG_CRIT("%s", "WTF! NULL session?! Have you added  some neat code recently?");
+        RM_DEBUG_LOG_CRIT("%s", "WTF! NULL session?! Have you added  some neat code recently?");
         assert(s != NULL);
-        return -2;
+        return RM_ERR_BAD_CALL;
     }
     if (delta_e == NULL) {
-        RM_LOG_CRIT("%s", "WTF! NULL delta element?! Have you added some neat code recently?");
+        RM_DEBUG_LOG_CRIT("%s", "WTF! NULL delta element?! Have you added some neat code recently?");
         assert(delta_e != NULL);
-        return -3;
+        return RM_ERR_BAD_CALL;
     }
     prvt_local = (struct rm_session_push_local*) s->prvt;
     if (prvt_local == NULL) {
-        RM_LOG_CRIT("%s", "WTF! NULL private session?! Have you added  some neat code recently?");
+        RM_DEBUG_LOG_CRIT("%s", "WTF! NULL private session?! Have you added  some neat code recently?");
         assert(prvt_local != NULL);
-        return -4;
+        return RM_ERR_BAD_CALL;
     }
 
     pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);    /* enqueue delta (and move ownership to delta_rx_tid!) */
@@ -578,7 +577,7 @@ rm_roll_proc_cb_1(void *arg) {
     pthread_cond_signal(&prvt_local->tx_delta_e_queue_signal);
     pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
 
-    return 0;
+    return RM_ERR_OK;
 }
 
 int

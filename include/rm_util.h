@@ -88,5 +88,19 @@ rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t
 #define RM_LOG_WARN(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s(): " fmt, "WARN", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define RM_LOG_CRIT(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s(): " fmt, "CRIT", __FILE__, __LINE__, __func__, __VA_ARGS__)
 
+#ifdef DDEBUG
+    #define RM_DEBUG_LOG_ERR(fmt, ...) RM_LOG_ERR(fmt, ...)
+    #define RM_DEBUG_LOG_PERR(fmt, ...) RM_LOG_PERR(fmt, ...)
+    #define RM_DEBUG_LOG_INFO(fmt, ...) RM_LOG_INFO(fmt, ...)
+    #define RM_DEBUG_LOG_WARN(fmt, ...) RM_LOG_WARN(fmt, ...)
+    #define RM_DEBUG_LOG_CRIT(fmt, ...) RM_LOG_CRIT(fmt, ...)
+#else
+    #define RM_DEBUG_LOG_ERR(fmt, ...) do {} while (0)
+    #define RM_DEBUG_LOG_PERR(fmt, ...) do {} while (0)
+    #define RM_DEBUG_LOG_INFO(fmt, ...) do {} while (0)
+    #define RM_DEBUG_LOG_WARN(fmt, ...) do {} while (0)
+    #define RM_DEBUG_LOG_CRIT(fmt, ...) do {} while (0)
+#endif
+
 
 #endif	/* RSYNCME_UTIL_H */

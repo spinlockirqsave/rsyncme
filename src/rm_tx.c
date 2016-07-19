@@ -161,12 +161,12 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     prvt->f_x_sz = x_sz;
  
     err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx delta vec thread (enqueue delta elements and signal to delta_rx_tid thread */
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         err = RM_ERR_DELTA_TX_THREAD_LAUNCH;
         goto err_exit;
     }
     err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_local, s, PTHREAD_CREATE_JOINABLE);   /* reconstruct */
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         err = RM_ERR_DELTA_RX_THREAD_LAUNCH;
         goto err_exit;
     }
