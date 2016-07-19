@@ -168,7 +168,8 @@ enum rm_error {
     RM_ERR_TX_RAW = 39,
     RM_ERR_TX_ZERO_DIFF = 40,
     RM_ERR_TX_TAIL = 41,
-    RM_ERR_TX_REF = 42
+    RM_ERR_TX_REF = 42,
+    RM_ERR_UNKNOWN_ERROR
 };
 
 /* prototypes */

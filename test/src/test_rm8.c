@@ -387,7 +387,7 @@ test_rm_tx_local_push_1(void **state) {
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
-            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Bytes differ, err [%d]", err);
                 assert_true(1 == 0);
             }
@@ -633,7 +633,7 @@ test_rm_tx_local_push_2(void **state) {
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
-            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Bytes differ, err [%d]", err);
                 assert_true(1 == 0);
             }
@@ -910,7 +910,7 @@ test_rm_tx_local_push_3(void **state) {
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
-            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Bytes differ, err [%d]", err);
                 assert_true(1 == 0);
             }
@@ -1194,7 +1194,7 @@ test_rm_tx_local_push_4(void **state) {
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
-            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Bytes differ, err [%d]", err);
                 assert_true(1 == 0);
             }
@@ -1611,7 +1611,7 @@ test_rm_tx_local_push_5(void **state) {
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
-            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Bytes differ, err [%d]", err);
                 assert_true(1 == 0);
             }
@@ -1956,7 +1956,7 @@ test_rm_tx_local_push_6(void **state) {
                 assert_true(cx == cz && "Bytes differ!");
                 ++k;
             }
-            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Bytes differ, err [%d]", err);
                 assert_true(1 == 0);
             }

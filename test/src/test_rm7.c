@@ -648,7 +648,7 @@ test_rm_rx_process_delta_element_1(void **state) {
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
             }
 
-            if ((err = rm_file_cmp(f_x, f_z->f, 0, 0, file_sz)) != 0) {
+            if ((err = rm_file_cmp(f_x, f_z->f, 0, 0, file_sz)) != RM_ERR_OK) {
                 RM_LOG_ERR("Delta reconstruction failed [%d], file [%s]", err, fname);
                 assert_true(1 == 0);
             }

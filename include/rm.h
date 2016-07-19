@@ -354,7 +354,12 @@ rm_delta_f
 rm_roll_proc_cb_2;
 
 /* @brief   Compare @bytes_n bytes of @x with @y starting from @x_offset
- *          in @x and @y_offset in @y.  */
+ *          in @x and @y_offset in @y.
+ * @return  RM_ERR_OK - success, files content is the same,
+ *          RM_ERR_FAIL - fail, files content differs,
+ *          RM_ERR_FSEEK - fseek failed on @x or @y,
+ *          RM_ERR_READ - fread failed,
+ *          RM_ERR_IO_ERROR - I/O operation failed */
 int
 rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
 
