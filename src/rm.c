@@ -523,7 +523,7 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
 
     err = pthread_attr_init(&attr);
     if (err != 0) {
-        return -1;
+        return RM_ERR_FAIL;
     }
     err = pthread_attr_setdetachstate(&attr, detachstate);
     if (err != 0) {
@@ -533,10 +533,11 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
     if (err != 0) {
         goto fail;
     }
-    return 0;
+    return RM_ERR_OK;
+
 fail:
     pthread_attr_destroy(&attr);
-    return -1;
+    return RM_ERR_FAIL;
 }
 
 int

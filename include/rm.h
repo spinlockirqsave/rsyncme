@@ -320,6 +320,10 @@ enum rm_error
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1)));
 
+/* @brief   Start execution of @f function in new thread.
+ * @details Thread is started in @detachstate with @arg argument passed to @f.
+ * return   RM_ERR_OK - sccess,
+ *          RM_ERR_FAIL - error initializing thread's environment */
 int
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
 
