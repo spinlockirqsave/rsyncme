@@ -348,9 +348,13 @@ test_rm_cmd_1(void **state) {
             assert_true(cx == cz && "Bytes differ!");
             ++k;
         }
-        if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+        if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) == RM_ERR_FAIL) {
             RM_LOG_ERR("Files differ err [%d]", err);
             assert_true(1 == 0 && "Files differ!");
+        }
+        if (err != RM_ERR_OK) {
+            RM_LOG_ERR("File cmp function failed, err [%d]", err);
+            assert_true(1 == 0 && "Files cmp function failed!");
         }
         /* don't unlink/remove result file, as it is just the same as @x and can be reused */
         /* no need to recreate @y file as input to local push in this test, as @y stays the same all the time */
@@ -532,6 +536,10 @@ test_rm_cmd_2(void **state) {
             if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
                 RM_LOG_ERR("Files differ err [%d]", err);
                 assert_true(1 == 0 && "Files differ!");
+            }
+            if (err != RM_ERR_OK) {
+                RM_LOG_ERR("File cmp function failed, err [%d]", err);
+                assert_true(1 == 0 && "Files cmp function failed!");
             }
             /* don't unlink/remove result file, as it is just the same as @x and can be reused */
             RM_LOG_INFO("PASSED test #2 (commandline utility - local push): files [%s] [%s], block [%zu], files are the same", buf_x_name, f_y_name, L);

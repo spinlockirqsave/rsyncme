@@ -585,34 +585,32 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) 
     size_t read = 0, read_exp;
     unsigned char buf1[RM_L1_CACHE_RECOMMENDED], buf2[RM_L1_CACHE_RECOMMENDED];
 
-    if (fseek(x, x_offset, SEEK_SET) != 0) {
-        return -1;
-    }
-    if (fseek(y, y_offset, SEEK_SET) != 0) {
-        return -2;
+    if (fseek(x, x_offset, SEEK_SET) != 0 || fseek(y, y_offset, SEEK_SET) != 0) {
+        return RM_ERR_FSEEK;
     }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
                         RM_L1_CACHE_RECOMMENDED : bytes_n;
     while ((bytes_n > 0) && ((read = fread(buf1, 1, read_exp, x)) == read_exp)) {
         if (fread(buf2, 1, read_exp, y) != read_exp) {
-            return -3;
+            return RM_ERR_READ;
         }
         if (memcmp(buf1, buf2, read) != 0) {
-            return -4;
+            return RM_ERR_FAIL;
         }
         bytes_n -= read;
-        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+        read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ? RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
-        if (feof(x)) return -5;
-        if (feof(y)) return -6;
-        return 0;
+        if (feof(x) || feof(y)) {
+            return RM_ERR_FEOF;
+        }
+        if (ferror(x) != 0 || ferror(y) != 0) {
+            return RM_ERR_FERROR;
+        }
+        return RM_ERR_OK;
     }
-    if (ferror(x) != 0) return -7;
-    if (ferror(y) != 0) return -8;
-    return -13;   /* unknown error */
+    return RM_ERR_IO_ERROR;   /* I/O operation failed */
 }
 
 void
