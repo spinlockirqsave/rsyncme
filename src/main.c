@@ -15,7 +15,7 @@
 
 
 int
-main() {
+main(void) {
     struct rsyncme  rm;
     int             read_n;
     unsigned char   buf[RM_TCP_MSG_MAX_LEN];
