@@ -133,7 +133,7 @@ test_rm_setup(void **state) {
 #else
     err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_5", 1);
 #endif
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         exit(EXIT_FAILURE);
     }
     rm_state.l = rm_test_L_blocks;

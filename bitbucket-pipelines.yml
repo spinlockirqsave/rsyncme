@@ -7,6 +7,7 @@ pipelines:
           - pip install -U tox
           - pip --version
           - tox --version
+          - uname -a
           - apt-get update
           - apt-get --force-yes --yes install cmake
           - rm -rf rsyncme
