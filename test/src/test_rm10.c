@@ -154,7 +154,7 @@ test_rm_setup(void **state) {
     err = rm_util_chdir_umask_openlog("../build/release", 1, "rsyncme_test_10", 0);
 #endif
 
-    if (err != 0) {
+    if (err != RM_ERR_OK) {
         exit(EXIT_FAILURE);
     }
 

@@ -20,30 +20,56 @@
 
 /* @brief       Get date timestamp.
  * @details     @buf must be at least 20 chars.
- * @return      0 success, -1 failure */
+ * @return      RM_ERR_OK - success,
+ *              RM_ERR_FAIL - failure */
 int
 rm_util_dt(char *buf);
 
 /* @brief       Get detailed date timestamp.
  * @details     @buf must be at least 27 chars.
- * @return      0 success, -1 failure */
+ * @return      RM_ERR_OK - success,
+ *              RM_ERR_FAIL - failure */
 int
 rm_util_dt_detail(char *buf);
 
 /* @details     @dir does include terminating '/',
- *              may be "./" for current dir */
+ *              may be "./" for current dir
+ * @return      RM_ERR_OK - success,
+ *              RM_ERR_FAIL - failure,
+ *              RM_ERR_BAD_CALL - @dir is NULL
+ *              RM_ERR_MEM - malloc failed,
+ *              RM_ERR_GENERAL_ERROR - rm_util_dt_detail failed,
+ *              RM_ERR_FOPEN_STDOUT - fopen failed for stdout log,
+ *              RM_ERR_FREOPEN_STDOUT - stream redirection failed,
+ *              RM_ERR_FOPEN_STDERR - fopen failed for stderr log,
+ *              RM_ERR_FREOPEN_STDERR - stream redirection failed */
 int
-rm_util_openlogs(const char *dir, const char *name);
+rm_util_openlogs(const char *dir, const char *name) __attribute__((nonnull(1)));
 
+/* @return      RM_ERR_OK - success,
+ *              RM_ERR_FAIL - failure */
 int
 rm_util_log(FILE *stream, const char *fmt, ...);
 
+/* @return      RM_ERR_OK - success,
+ *              RM_ERR_FAIL - failure */
 int
 rm_util_log_perr(FILE *stream, const char *fmt, ...);
 
+/* @return      RM_ERR_OK - success,
+ *              RM_ERR_BAD_CALL - logname is NULL,
+ *              RM_ERR_FAIL - failure (first fork failed),
+ *              RM_ERR_SETSID - 1st child failed to become session leader,
+ *              RM_ERR_FORK -  second fork failed,
+ *              RM_ERR_IO_ERROR - can't open logs,
+ *              RM_ERR_CHDIR - can't chdir */
 int
-rm_util_daemonize(const char *dir, int noclose, char *logname);
+rm_util_daemonize(const char *dir, int noclose, char *logname) __attribute__((nonnull(3)));
 
+/* @return      RM_ERR_OK - success,
+ *              RM_ERR_BAD_CALL - logname is NULL,
+ *              RM_ERR_CHDIR - can't chdir,
+ *              RM_ERR_IO_ERROR - can't open logs */
 int
 rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t ignore_signals) __attribute__((nonnull(1,3)));
 

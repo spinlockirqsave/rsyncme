@@ -27,12 +27,12 @@ main() {
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
-        if (err < 0) {
-            exit(EXIT_FAILURE);
+        if (err != RM_ERR_OK) {
+            exit(EXIT_FAILURE); /* TODO handle other errors */
         }
     } else {
         err = rm_util_chdir_umask_openlog("/usr/local/rsyncme/", 1, "rsyncme", 1);
-        if (err != 0) {
+        if (err != RM_ERR_OK) {
             exit(EXIT_FAILURE);
         }
     }
