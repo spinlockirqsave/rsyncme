@@ -299,18 +299,18 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     struct rm_delta_e           *delta_e;
 
     if ((cb_arg == NULL) || (delta_f == NULL)) {
-        return -1;
+        return RM_ERR_BAD_CALL;
     }
     delta_e = malloc(sizeof(*delta_e));
     if (delta_e == NULL) {
-        return -2;
+        return RM_ERR_MEM;
     }
     delta_e->type = type;
     delta_e->ref = ref;
     if (type == RM_DELTA_ELEMENT_RAW_BYTES) {
         delta_e->raw_bytes = malloc(raw_bytes_n * sizeof(unsigned char));   /* TODO cleanup in callback! */
         if (delta_e->raw_bytes == NULL) {   /* TODO Add tests for this execution path! */
-            return -3;
+            return RM_ERR_IO_ERROR;
         }
         memcpy(delta_e->raw_bytes, raw_bytes, raw_bytes_n);
     } else {
@@ -320,7 +320,8 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     TWINIT_LIST_HEAD(&delta_e->link);
     cb_arg->delta_e = delta_e;                  /* tx, signal delta_rx_tid, etc */
     delta_f(cb_arg);                            /* TX, enqueue delta */
-    return 0;
+
+    return RM_ERR_OK;
 }
 
 enum rm_error
@@ -328,7 +329,6 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) {
     size_t          L;
     size_t          copy_all_threshold, copy_tail_threshold, send_threshold;
-    int             err;
     uint32_t        hash;
     unsigned char   *buf;
     int             fd;
@@ -438,25 +438,21 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
         if (match == 1) { /* tx RM_DELTA_ELEMENT_REFERENCE, TODO free delta object in callback!*/
             if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n);   /* send them first */
-                if (err != 0) {
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first */
                     return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
             }
             if (read == file_sz) {
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, e->data.ref, NULL, file_sz);
-                if (err != 0) {
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, e->data.ref, NULL, file_sz) != RM_ERR_OK) {
                     return RM_ERR_TX_ZERO_DIFF;
                 }
             } else if (read < L) {
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, e->data.ref, NULL, read);
-                if (err != 0) {
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, e->data.ref, NULL, read) != RM_ERR_OK) {
                     return RM_ERR_TX_TAIL;
                 }
             } else {
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, L);
-                if (err != 0) {
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, e->data.ref,  NULL, L) != RM_ERR_OK) {
                     return RM_ERR_TX_REF;
                 }
             }
@@ -481,8 +477,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             send_left -= 1;
             ++raw_bytes_n;
             if ((raw_bytes_n == send_threshold) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
-                err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n);   /* tx */
-                if (err != 0) {
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK) {   /* tx */
                     return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
@@ -503,8 +498,7 @@ copy_tail:
     if (rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left) != RM_ERR_OK) {
         return RM_ERR_COPY_BUFFERED_2;
     }
-    err = rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left);   /* tx */
-    if (err != 0) {
+    if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx */
         return RM_ERR_TX_RAW;
     }
     if (raw_bytes != NULL) {
