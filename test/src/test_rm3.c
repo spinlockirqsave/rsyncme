@@ -152,7 +152,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_1(void **state) {
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             TWINIT_LIST_HEAD(&l);
             res = rm_rx_insert_nonoverlapping_ch_ch_ref_link(f, fname, &l, L, blocks_n, &entries_n);
-            assert_int_equal(res, 0);
+            assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
 
             blocks_n = 0;
@@ -223,7 +223,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state) {
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             TWINIT_LIST_HEAD(&l);
             res = rm_rx_insert_nonoverlapping_ch_ch_ref_link(f, fname, &l, L, blocks_n, &entries_n);
-            assert_int_equal(res, 0);
+            assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
             rewind(f);
 
