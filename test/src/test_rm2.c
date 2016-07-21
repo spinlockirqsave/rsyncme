@@ -166,7 +166,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	res_expected = -1; /* test failed call to fstat */
+	res_expected = RM_ERR_FSTAT; /* test failing call to fstat */
 	i = 0; /* test on all files */
 	for (; i < RM_TEST_FNAMES_N; ++i) {
 		fname = rm_test_fnames[i];
@@ -234,7 +234,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state) {
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	res_expected = -2; /* test failed call to malloc */
+	res_expected = RM_ERR_MEM; /* test failing call to malloc */
 	i = 0; /* test on all files */
 	for (; i < RM_TEST_FNAMES_N; ++i) {
 		fname = rm_test_fnames[i];
@@ -302,7 +302,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_4(void **state) {
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	res_expected = -3; /* test failed call to fread */
+	res_expected = RM_ERR_READ; /* test failing call to fread */
 	i = 0; /* test on all files */
 	for (; i < RM_TEST_FNAMES_N; ++i) {
 		fname = rm_test_fnames[i];
@@ -371,7 +371,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_5(void **state) {
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	res_expected = -4; /* test failed second call to malloc (first is successfull) */
+	res_expected = RM_ERR_MEM; /* test failing second call to malloc (first is successfull) */
 	i = 0; /* test on all files */
 	for (; i < RM_TEST_FNAMES_N; ++i) {
 		fname = rm_test_fnames[i];
@@ -454,7 +454,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_6(void **state) {
 	rm_state = *state;
 	assert_true(rm_state != NULL);
 
-	res_expected = -5; /* test failed call to function sending checksums to remote A */
+	res_expected = RM_ERR_TX; /* test failing call to function sending checksums to remote A */
 	i = 0; /* test on all files */
 	for (; i < RM_TEST_FNAMES_N; ++i) {
 		fname = rm_test_fnames[i];

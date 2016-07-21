@@ -416,7 +416,7 @@ test_rm_rx_process_delta_element_1(void **state) {
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
-            assert_int_equal(err, 0);
+            assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
 
@@ -821,7 +821,7 @@ test_rm_rx_process_delta_element_2(void **state) {
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0);
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
-            assert_int_equal(err, 0);
+            assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
             rewind(f_y);

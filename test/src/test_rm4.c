@@ -166,7 +166,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
 			blocks_n = file_sz / L + (file_sz % L ? 1 : 0); /* number of blocks */
 			res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, NULL, blocks_n, &entries_n);
-            assert_int_equal(res, 0);
+            assert_int_equal(res, RM_ERR_OK);
 			assert_int_equal(entries_n, blocks_n);
 
             blocks_n = 0;
@@ -327,7 +327,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, NULL, blocks_n, &entries_n);
-            assert_int_equal(res, 0);
+            assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
             rewind(f);
 

@@ -88,8 +88,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
         y_sz = fs.st_size;
 
         blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
-        if (err != 0) {
+        if (rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n) != RM_ERR_OK) {
             err = RM_ERR_NONOVERLAPPING_INSERT;
             goto  err_exit;
         }
