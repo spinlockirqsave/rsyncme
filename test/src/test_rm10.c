@@ -1,6 +1,6 @@
 /* @file        test_rm10.c
  * @brief       Test suite #10.
- * @details     Test of commandline utility.
+ * @details     Black box testing of local push (using commandline utility).
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        8 July 2016 07:08 PM

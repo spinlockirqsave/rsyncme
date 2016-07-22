@@ -375,7 +375,7 @@ main( int argc, char *argv[]) {
                         goto fail;
                     case RM_ERR_OPEN_Y:
                         fprintf(stderr, "Error. @y [%s] doesn't exist and --force flag is not set. What file should I use?\nPlease "
-                                "check that file exists or add --force flag to force creation of @y file if it doesn't exist.\n", y);
+                                "check that @y file exists or add --force flag to force creation of target file if it doesn't exist.\n", y);
                         goto fail;
                     case RM_ERR_OPEN_Z:
                         fprintf(stderr, "Error. @z [%s] can't be opened\n", (z != NULL ? z : y));

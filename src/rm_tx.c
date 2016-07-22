@@ -51,13 +51,13 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
         free(cwd);
         return RM_ERR_MEM;
     }
-    if (chdir(dirname(y_copy)) != 0) {
+    /*if (chdir(dirname(y_copy)) != 0) {
         free(y_copy);
         y_copy = NULL;
         free(cwd);
         cwd = NULL;
         return RM_ERR_CHDIR;
-    }
+    }*/
     f_x = fopen(x, "rb");
     if (f_x == NULL) {
         free(y_copy);
@@ -134,7 +134,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     x_sz = fs.st_size;
 
     rm_get_unique_string(f_z_name);
-    f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing */
+    f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing in @z path */
     if (f_z == NULL) {
         err = RM_ERR_OPEN_TMP;
         goto err_exit;
