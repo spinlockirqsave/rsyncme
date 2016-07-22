@@ -257,7 +257,7 @@ done:
         free(cwd);
         cwd = NULL;
     }
-    return 0;
+    return RM_ERR_OK;
 
 err_exit:
     if (y_copy != NULL) {
@@ -294,12 +294,10 @@ err_exit:
 }
 
 int
-rm_tx_remote_push(const char *x, const char *y,
-		struct sockaddr_in *remote_addr,
-		uint32_t L) {
+rm_tx_remote_push(const char *x, const char *y, struct sockaddr_in *remote_addr, size_t L) {
     (void) x;
     (void) y;
     (void) remote_addr;
     (void) L;
-	return 0;
+	return RM_ERR_OK;
 }

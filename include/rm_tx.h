@@ -41,14 +41,12 @@
  *          -7 buffered copy failed */
 enum rm_error
 rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
-        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) __attribute__ ((nonnull(1,2)));
+        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) 
+    __attribute__ ((nonnull(1,2)));
 
-/* Initialize PUSH, ask for nonoverlapping checksums,
- * send delta vector. */
+/* Initialize PUSH, ask for nonoverlapping checksums, send delta vector. */
 int
-rm_tx_remote_push(const char *x, const char *y,
-		struct sockaddr_in *remote_addr,
-		uint32_t L);
+rm_tx_remote_push(const char *x, const char *y, struct sockaddr_in *remote_addr, size_t L);
 
 
 #endif	/* RSYNCME_TX_H */
