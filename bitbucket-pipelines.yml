@@ -17,3 +17,4 @@ pipelines:
           - make
           - make test
           - make test-check
+          - make test-check-debug
