@@ -17,48 +17,48 @@
 uint32_t
 rm_fast_check_block(const unsigned char *data, size_t len) {
 #ifdef DEBUG
-	uint32_t res;
+    uint32_t res;
 #endif
-	uint32_t	r1, r2;
+    uint32_t	r1, r2;
     size_t      i;
 
-	assert(data != NULL);
-	r1 = 0;
-	r2 = 0;
-	i = 0;
-	for (; i < len; ++i) {
-		r1 = (r1 + data[i]) % RM_FASTCHECK_MODULUS;
-		r2 = (r2 + r1) % RM_FASTCHECK_MODULUS;
-	}
+    assert(data != NULL);
+    r1 = 0;
+    r2 = 0;
+    i = 0;
+    for (; i < len; ++i) {
+        r1 = (r1 + data[i]) % RM_FASTCHECK_MODULUS;
+        r2 = (r2 + r1) % RM_FASTCHECK_MODULUS;
+    }
 #ifdef DEBUG
-	res = (r2 << 16) | r1;
-	return res;
+    res = (r2 << 16) | r1;
+    return res;
 #else
-	return (r2 << 16) | r1;
+    return (r2 << 16) | r1;
 #endif
 }
 
 uint32_t
 rm_adler32_1(const unsigned char *data, size_t len) {
 #ifdef DEBUG
-	uint32_t res;
+    uint32_t res;
 #endif
-	uint32_t	r1, r2;
+    uint32_t	r1, r2;
     size_t      i;
 
-	assert(data != NULL);
-	r1 = 1;
-	r2 = 0;
-	i = 0;
-	for (; i < len; ++i) {
-		r1 = (r1 + data[i]) % RM_ADLER32_MODULUS;
-		r2 = (r2 + r1) % RM_ADLER32_MODULUS;
-	}
+    assert(data != NULL);
+    r1 = 1;
+    r2 = 0;
+    i = 0;
+    for (; i < len; ++i) {
+        r1 = (r1 + data[i]) % RM_ADLER32_MODULUS;
+        r2 = (r2 + r1) % RM_ADLER32_MODULUS;
+    }
 #ifdef DEBUG
-	res = (r2 << 16) | r1;
-	return res;
+    res = (r2 << 16) | r1;
+    return res;
 #else
-	return (r2 << 16) | r1;
+    return (r2 << 16) | r1;
 #endif
 }
 
@@ -71,77 +71,77 @@ rm_adler32_1(const unsigned char *data, size_t len) {
 uint32_t
 rm_adler32_2(uint32_t adler, const unsigned char *data, size_t L) {
 #ifdef DEBUG
-	uint32_t res;
+    uint32_t res;
 #endif
-	uint32_t	k;
-	uint32_t	r1 = adler & 0xffff;
-	uint32_t	r2 = (adler >> 16) & 0xffff;
+    uint32_t	k;
+    uint32_t	r1 = adler & 0xffff;
+    uint32_t	r2 = (adler >> 16) & 0xffff;
 
-	assert(data != NULL);
-	while(L) {
-		k = L < RM_ADLER32_NMAX ? L : RM_ADLER32_NMAX;
-		L -= k;
-		while (k >= 16) { /* process 16bits blocks */
-			RM_DO16(data);
-			data += 16;
-			k-=16;
-		}
-		if (k > 0) { /* remainder */
-			do
-			{
-				r1 += *data++;
-				r2 += r1;
-			} while (--k);
-		}
+    assert(data != NULL);
+    while(L) {
+        k = L < RM_ADLER32_NMAX ? L : RM_ADLER32_NMAX;
+        L -= k;
+        while (k >= 16) { /* process 16bits blocks */
+            RM_DO16(data);
+            data += 16;
+            k-=16;
+        }
+        if (k > 0) { /* remainder */
+            do
+            {
+                r1 += *data++;
+                r2 += r1;
+            } while (--k);
+        }
 
-		r1 = r1  % RM_ADLER32_MODULUS;
-		r2 = r2  % RM_ADLER32_MODULUS;
-	}
+        r1 = r1  % RM_ADLER32_MODULUS;
+        r2 = r2  % RM_ADLER32_MODULUS;
+    }
 #ifdef DEBUG
-	res = (r2 << 16) | r1;
-	return res;
+    res = (r2 << 16) | r1;
+    return res;
 #else
-	return (r2 << 16) | r1;
+    return (r2 << 16) | r1;
 #endif
 }
 
 /* rolling adler with prime modulus won't work */
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, size_t L) {
+        unsigned char a_kL, size_t L) {
 #ifdef DEBUG
-	uint32_t res;
+    uint32_t res;
 #endif
-	uint32_t	r1, r2;
-	r1 = adler & 0xFFFF; /* r1 and r2 from adler on block [k,k+L]] */
-	r2 = (adler >> 16) & 0xFFFF;
-	r1 = (r1 - a_k + a_kL) % RM_ADLER32_MODULUS; /* update */
-	r2 = (r2 + r1 - L*a_k - 1) % RM_ADLER32_MODULUS;
+    uint32_t	r1, r2;
+    r1 = adler & 0xFFFF; /* r1 and r2 from adler on block [k,k+L]] */
+    r2 = (adler >> 16) & 0xFFFF;
+    r1 = (r1 - a_k + a_kL) % RM_ADLER32_MODULUS; /* update */
+    r2 = (r2 + r1 - L*a_k - 1) % RM_ADLER32_MODULUS;
 #ifdef DEBUG
-	res = (r2 << 16) | r1;
-	return res;
+    res = (r2 << 16) | r1;
+    return res;
 #else
-	return (r2 << 16) | r1;
+    return (r2 << 16) | r1;
 #endif
 }
 
 /* modulus MUST be even */
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
-		unsigned char a_kL, size_t L) {
+        unsigned char a_kL, size_t L) {
 #ifdef DEBUG
-	uint32_t res;
+    uint32_t res;
 #endif
-	uint32_t	r1, r2;
-	r1 = adler & 0xFFFF; /* r1 and r2 from adler on block [k,k+L]] */
-	r2 = (adler >> 16) & 0xFFFF;
-	r1 = (r1 - a_k + a_kL) % RM_FASTCHECK_MODULUS; /* update */
-	r2 = (r2 + r1 - L*a_k) % RM_FASTCHECK_MODULUS;
+    uint32_t	r1, r2;
+    r1 = adler & 0xFFFF; /* r1 and r2 from adler on block [k,k+L]] */
+    r2 = (adler >> 16) & 0xFFFF;
+    r1 = (r1 - a_k + a_kL) % RM_FASTCHECK_MODULUS; /* update */
+    r2 = (r2 + r1 - L*a_k) % RM_FASTCHECK_MODULUS;
 #ifdef DEBUG
-	res = (r2 << 16) | r1;
-	return res;
+    res = (r2 << 16) | r1;
+    return res;
 #else
-	return (r2 << 16) | r1;
+    return (r2 << 16) | r1;
 #endif
 }
 
@@ -160,36 +160,36 @@ rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, size_t L) {
 
 uint32_t
 rm_rolling_ch(const unsigned char *data, size_t len,
-				uint32_t M) {
-	uint32_t	r1, r2;
+        uint32_t M) {
+    uint32_t	r1, r2;
     size_t      i;
 
 #ifdef DEBUG
-	uint32_t res;
+    uint32_t res;
 #endif
-	assert(data != NULL);
-	r1 = r2 = 0;
-	i = 0;
-	for (; i < len; ++i) {
-		r1 = (r1 + data[i]) % M;
-		r2 = (r2 + r1) % M;
-	}
+    assert(data != NULL);
+    r1 = r2 = 0;
+    i = 0;
+    for (; i < len; ++i) {
+        r1 = (r1 + data[i]) % M;
+        r2 = (r2 + r1) % M;
+    }
 #ifdef DEBUG
-	res = (r2 << 16) | r1;
-	return res;
+    res = (r2 << 16) | r1;
+    return res;
 #else
-	return (r2 << 16) | r1;
+    return (r2 << 16) | r1;
 #endif
 }
- 
+
 
 void
 rm_md5(const unsigned char *data, size_t len,
-		unsigned char res[16]) {
-	MD5_CTX ctx;
-	md5_init(&ctx);
-	md5_update(&ctx, data, len);
-	md5_final(&ctx, res);
+        unsigned char res[16]) {
+    MD5_CTX ctx;
+    md5_init(&ctx);
+    md5_update(&ctx, data, len);
+    md5_final(&ctx, res);
 }
 
 int
@@ -200,13 +200,13 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     rewind(x);
     rewind(y);
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+        RM_L1_CACHE_RECOMMENDED : bytes_n;
     while (bytes_n > 0 && ((read = fread(buf, 1, read_exp, x)) == read_exp)) {
         if (fwrite(buf, 1, read_exp, y) != read_exp)
             return -1;
         bytes_n -= read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+            RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
@@ -229,12 +229,12 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
         return RM_ERR_FSEEK;
     }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+        RM_L1_CACHE_RECOMMENDED : bytes_n;
     while (bytes_n > 0 && ((read = fread(dst, 1, read_exp, x)) == read_exp)) {
         bytes_n -= read;
         dst = (unsigned char*)dst + read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+            RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
@@ -269,7 +269,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
     char buf[RM_L1_CACHE_RECOMMENDED];
 
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+        RM_L1_CACHE_RECOMMENDED : bytes_n;
     offset = 0;
     while (bytes_n > 0 && ((read = rm_fpread(buf, 1, read_exp, x_offset + offset, x)) == read_exp)) {
         if (rm_fpwrite(buf, 1, read_exp, y_offset + offset, y) != read_exp)
@@ -277,7 +277,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
         bytes_n -= read;
         offset += read;
         read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+            RM_L1_CACHE_RECOMMENDED : bytes_n;
     }
 
     if (bytes_n == 0) { /* read all bytes_n or EOF reached */
@@ -295,7 +295,7 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
 /* If there are raw bytes to tx copy them here! */
 static int
 rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
-                                    size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n) {
+        size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n) {
     struct rm_delta_e           *delta_e;
 
     if ((cb_arg == NULL) || (delta_f == NULL)) {
@@ -308,11 +308,10 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     delta_e->type = type;
     delta_e->ref = ref;
     if (type == RM_DELTA_ELEMENT_RAW_BYTES) {
-        delta_e->raw_bytes = malloc(raw_bytes_n * sizeof(unsigned char));   /* TODO cleanup in callback! */
+        delta_e->raw_bytes = raw_bytes;   /* take ownership and cleanup in callback! */
         if (delta_e->raw_bytes == NULL) {   /* TODO Add tests for this execution path! */
             return RM_ERR_IO_ERROR;
         }
-        memcpy(delta_e->raw_bytes, raw_bytes, raw_bytes_n);
     } else {
         delta_e->raw_bytes = NULL;
     }
@@ -339,7 +338,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
     struct rm_ch_ch ch;
     struct rm_roll_proc_cb_arg  cb_arg;         /* callback argument */
     size_t                      raw_bytes_n;
-    unsigned char               *raw_bytes;     /* buffer */
+    unsigned char               *raw_bytes;     /* buffer for literal bytes */
     size_t                      a_k_pos, a_kL_pos;
     unsigned char               a_k, a_kL;      /* bytes to remove/add from rolling checksum */
     size_t          collisions_1st_level = 0;
@@ -361,7 +360,7 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
     fd = fileno(f_x);
     if (fstat(fd, &fs) != 0) {
-         return RM_ERR_FSTAT_X;
+        return RM_ERR_FSTAT_X;
     }
     file_sz = fs.st_size;
     if (from >= file_sz) {
@@ -438,10 +437,11 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
 
         if (match == 1) { /* tx RM_DELTA_ELEMENT_REFERENCE, TODO free delta object in callback!*/
             if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
-                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first */
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first, move ownership of raw bytes */
                     return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
+                raw_bytes = NULL;
             }
             if (read == file_sz) {
                 if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, e->data.ref, NULL, file_sz) != RM_ERR_OK) {
@@ -458,13 +458,12 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             }
             send_left -= read;
         } else { /* tx raw bytes */
-            if (raw_bytes == NULL) {
+            if (raw_bytes_n == 0) {
                 raw_bytes = malloc(L * sizeof(*raw_bytes));
                 if (raw_bytes == NULL) {
                     return RM_ERR_MEM;
                 }
                 memset(raw_bytes, 0, L * sizeof(*raw_bytes));
-                raw_bytes_n = 0;
             }
             if (beginning_bytes_in_buf == 1 && a_k_pos < read_begin) {  /* if we have still L bytes read at the beginning in the buffer */
                 a_k = buf[a_k_pos];                                     /* read a_k byte */
@@ -477,10 +476,11 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             send_left -= 1;
             ++raw_bytes_n;
             if ((raw_bytes_n == send_threshold) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
-                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK) {   /* tx */
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
                     return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
+                raw_bytes = NULL;
             }
         } /* match */
     } while (send_left > 0);
@@ -495,10 +495,19 @@ end:
     return RM_ERR_OK;
 
 copy_tail:
+    raw_bytes = malloc(send_left * sizeof(*raw_bytes));
+    if (raw_bytes == NULL) {
+        if (buf != NULL) free(buf);
+        return RM_ERR_MEM;
+    }
     if (rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left) != RM_ERR_OK) {
+        if (buf != NULL) free(buf);
+        free(raw_bytes);
         return RM_ERR_COPY_BUFFERED_2;
     }
-    if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx */
+    if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
+        if (buf != NULL) free(buf);
+        free(raw_bytes);
         return RM_ERR_TX_RAW;
     }
     if (raw_bytes != NULL) {
@@ -583,7 +592,7 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) 
         return RM_ERR_FSEEK;
     }
     read_exp = RM_L1_CACHE_RECOMMENDED < bytes_n ?
-                        RM_L1_CACHE_RECOMMENDED : bytes_n;
+        RM_L1_CACHE_RECOMMENDED : bytes_n;
     while ((bytes_n > 0) && ((read = fread(buf1, 1, read_exp, x)) == read_exp)) {
         if (fread(buf2, 1, read_exp, y) != read_exp) {
             return RM_ERR_READ;

@@ -29,11 +29,11 @@
  * @param   fname - file name, used only for logging
  * @return  On success the number of inserted entries
  *          is returned, -1 on error. 
-int
-rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
-		struct twhlist_head *h, uint32_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *),
-        size_t limit, size_t *blocks_n);*/
+ int
+ rm_rx_insert_nonoverlapping_ch_ch(FILE *f, const char *fname,
+ struct twhlist_head *h, uint32_t L,
+ int (*f_tx_ch_ch)(const struct rm_ch_ch *),
+ size_t limit, size_t *blocks_n);*/
 
 struct f_tx_ch_ch_ref_arg_1
 {
@@ -57,8 +57,7 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg);
  *          RM_ERR_TX - transmission error */
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f_x, const char *fname, struct twhlist_head *h, size_t L,
-        int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) 
-    __attribute__((nonnull(1,2)));
+        int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) __attribute__((nonnull(1,2)));
 
 /* @brief   Calculates ch_ch structs for all non-overlapping @L bytes blocks (last one may be less than @L)
  *          from file @f and inserts them into array @checkums.
@@ -73,8 +72,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f_x, const char *fname, struct twhli
  *          RM_ERR_TX - transmission error */
 int
 rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f_x, const char *fname, struct rm_ch_ch *checksums, size_t L,
-        int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n) 
-    __attribute__((nonnull(1,2,3)));
+        int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n) __attribute__((nonnull(1,2,3)));
 
 /* @brief   Creates ch_ch_ref_link structs for all non-overlapping @L bytes blocks (last one may be less than @L)
  *          from file @f and inserts them into list @l.

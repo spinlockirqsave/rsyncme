@@ -100,8 +100,8 @@
                                                  * L1 cache on most architectures */
 
 #define rm_container_of(ptr, type, member) __extension__({  \
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-	(type *)( (char *)__mptr - offsetof(type,member) );})
+        const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+        (type *)( (char *)__mptr - offsetof(type,member) );})
 
 #define rm_max(a,b) __extension__	({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 #define rm_min(a,b)	__extension__ ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _b : _a; })
@@ -181,7 +181,8 @@ enum rm_error {
     RM_ERR_SETSID = 52,
     RM_ERR_FORK = 53,
     RM_ERR_ARG = 54,
-    RM_ERR_UNKNOWN_ERROR = 55
+    RM_ERR_QUEUE_NOT_EMPTY = 55,
+    RM_ERR_UNKNOWN_ERROR = 56
 };
 
 /* prototypes */
