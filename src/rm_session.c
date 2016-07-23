@@ -77,14 +77,14 @@ struct rm_session *
 rm_session_create(enum rm_session_type t, size_t L) {
     struct rm_session   *s;
 
-	s = malloc(sizeof *s);
-	if (s == NULL) {
-		return NULL;
+    s = malloc(sizeof *s);
+    if (s == NULL) {
+        return NULL;
     }
-	memset(s, 0, sizeof(*s));
+    memset(s, 0, sizeof(*s));
     s->type = t;
     s->rec_ctx.L = L;
-	pthread_mutex_init(&s->session_mutex, NULL);
+    pthread_mutex_init(&s->session_mutex, NULL);
 
     switch (t) {
         case RM_PUSH_RX:
@@ -133,8 +133,8 @@ void
 rm_session_free(struct rm_session *s) {
     enum rm_session_type    t;
 
-	assert(s != NULL);
-	pthread_mutex_destroy(&s->session_mutex);
+    assert(s != NULL);
+    pthread_mutex_destroy(&s->session_mutex);
     t = s->type;
     if (s->prvt == NULL) {
         goto end;
@@ -161,26 +161,26 @@ end:
 
 void *
 rm_session_ch_ch_tx_f(void *arg) {
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
+    struct rm_session *s =
+        (struct rm_session *)arg;
+    assert(s != NULL);
     if (s == NULL) {
         goto exit;
     }
 exit:
-	return NULL;
+    return NULL;
 }
 
 void *
 rm_session_ch_ch_rx_f(void *arg) {
-	struct rm_session *s =
-			(struct rm_session *)arg;
-	assert(s != NULL);
+    struct rm_session *s =
+        (struct rm_session *)arg;
+    assert(s != NULL);
     if (s == NULL) {
         goto exit;
     }
 exit:
-	return NULL;
+    return NULL;
 }
 
 void *
@@ -233,7 +233,7 @@ rm_session_delta_tx_f(void *arg) {
     pthread_mutex_unlock(&s->session_mutex);
 
 exit:
-	pthread_exit(NULL);
+    pthread_exit(NULL);
 }
 
 
@@ -246,7 +246,7 @@ rm_session_delta_rx_f_local(void *arg) {
     const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
     struct twlist_head              *lh;
     size_t                          bytes_to_rx;
-	struct rm_session               *s;
+    struct rm_session               *s;
     struct rm_delta_reconstruct_ctx rec_ctx = {0};  /* describes result of reconstruction,
                                                        we will copy this to session reconstruct context
                                                        after all is done to avoid locking on each delta element */
@@ -295,11 +295,11 @@ rm_session_delta_rx_f_local(void *arg) {
     q = &prvt_local->tx_delta_e_queue;
 
     while (bytes_to_rx > 0) {
-        if (bytes_to_rx == 0) { /* checking for missing signal is not needed here as bytes_to_rx is local variable */
+        if (bytes_to_rx == 0) { /* checking for missing signal is not really needed here, as bytes_to_rx is local variable, nevertheless... */
             pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
             goto done;
         }
-        /* TODO process delta element */
+        /* process delta element */
         for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
             delta_e = tw_container_of(lh, struct rm_delta_e, link);
             err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
@@ -327,13 +327,13 @@ done:
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
     pthread_mutex_unlock(&s->session_mutex);
-	pthread_exit(NULL);
+    pthread_exit(NULL);
 
 err_exit:
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_rx_status = status;
     pthread_mutex_unlock(&s->session_mutex);
-	pthread_exit(NULL);
+    pthread_exit(NULL);
 }
 
 void *
@@ -344,7 +344,7 @@ rm_session_delta_rx_f_remote(void *arg) {
     /*struct twlist_head              *lh;*/
     struct rm_session_push_rx       *prvt_rx;
     size_t                          bytes_to_rx;
-	struct rm_session               *s;
+    struct rm_session               *s;
 
     (void) f_y;
     s = (struct rm_session*) arg;

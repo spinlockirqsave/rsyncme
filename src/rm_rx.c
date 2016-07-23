@@ -52,7 +52,7 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg) {
 
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist_head *h, size_t L,
-		int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) {
+        int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) {
     int                 fd, res;
     struct stat         fs;
     uint32_t	        file_sz, read_left, read_now, read;
@@ -138,7 +138,7 @@ done:
 
 int
 rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch_ch *checksums, size_t L,
-		int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n) {
+        int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n) {
     int         fd, res;
     struct stat fs;
     uint32_t	file_sz, read_left, read_now, read;
@@ -271,16 +271,16 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struct tw
     return	RM_ERR_OK;
 }
 /*
-int
-rm_rx_delta_e_reconstruct_f_1(void *arg)
-{
-	struct rm_rx_delta_e_reconstruct_arg *delta_pack =
-			(struct rm_rx_delta_e_reconstruct_arg*) arg;
-	assert(delta_pack != NULL);
-    (void)delta_pack;
-	return NULL;
-}
-*/
+   int
+   rm_rx_delta_e_reconstruct_f_1(void *arg)
+   {
+   struct rm_rx_delta_e_reconstruct_arg *delta_pack =
+   (struct rm_rx_delta_e_reconstruct_arg*) arg;
+   assert(delta_pack != NULL);
+   (void)delta_pack;
+   return NULL;
+   }
+   */
 
 int
 rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
@@ -335,6 +335,6 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
             assert(1 == 0 && "Unknown delta element type!");
             return RM_ERR_ARG;
     }
-    
+
     return RM_ERR_OK;
 }

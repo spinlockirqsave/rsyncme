@@ -26,12 +26,15 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     struct twhlist_node             *tmp;
     struct rm_session               *s;
     struct rm_session_push_local    *prvt;
-    char                            *y_copy = NULL, *cwd = NULL;
+    char                            *y_copy = NULL;/* *cwd = NULL;*/
     char                            f_z_name[38];
     struct timespec         clk_realtime_start, clk_realtime_stop;
     double                  clk_cputime_start, clk_cputime_stop;
     struct timespec         real_time;
     double                  cpu_time;
+    twfifo_queue            *q;
+    const struct rm_delta_e *delta_e;
+    struct twlist_head      *lh;
 
     f_x = f_y = f_z = NULL;
     reference_file_exist = 0;
@@ -42,13 +45,13 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     if (x == NULL || y == NULL || rec_ctx == NULL) {
         return RM_ERR_BAD_CALL;
     }
-    cwd = getcwd(NULL, 0);
+    /*cwd = getcwd(NULL, 0);
     if (cwd == NULL) {
         return RM_ERR_GETCWD;
-    }
+    }*/
     y_copy = strdup(y);
     if (y_copy == NULL) {
-        free(cwd);
+        /*free(cwd);*/
         return RM_ERR_MEM;
     }
     /*if (chdir(dirname(y_copy)) != 0) {
@@ -62,9 +65,9 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     if (f_x == NULL) {
         free(y_copy);
         y_copy = NULL;
-        chdir(cwd);
+        /*chdir(cwd);
         free(cwd);
-        cwd = NULL;
+        cwd = NULL;*/
         return RM_ERR_OPEN_X;
     }
 	/* get input file size */
@@ -218,6 +221,14 @@ done:
         real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
         real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec; 
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
+
+        /* queue of delta elements MUST be empty now */
+        assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
+        q = &prvt->tx_delta_e_queue;
+        if (!twlist_empty(q)) {
+            err = RM_ERR_QUEUE_NOT_EMPTY;
+            goto err_exit;
+        }
         rm_session_free(s);
         s = NULL;
         if (((flags & RM_BIT_6) == 0u) && (unlink(y) != 0)) { /* if --leave not set and unlink failed */
@@ -252,11 +263,11 @@ done:
         free(y_copy);
         y_copy = NULL;
     }
-    chdir(cwd);
+    /*chdir(cwd);
     if (cwd != NULL) {
         free(cwd);
         cwd = NULL;
-    }
+    }*/
     return RM_ERR_OK;
 
 err_exit:
@@ -282,14 +293,23 @@ err_exit:
     }
     if (s != NULL) {
         memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
+        if (prvt != NULL) {
+            q = &prvt->tx_delta_e_queue;
+            if (!twlist_empty(q)) {
+                for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {    /* dequeue, so can free */
+                    delta_e = tw_container_of(lh, struct rm_delta_e, link);
+                    free((void*)delta_e);
+                }
+            }
+        }
         rm_session_free(s);
         s = NULL;
     }
-    if (cwd != NULL) {
+    /*if (cwd != NULL) {
         chdir(cwd);
         free(cwd);
         cwd = NULL;
-    }
+    }*/
     return err;
 }
 
