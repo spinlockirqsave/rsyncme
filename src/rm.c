@@ -617,9 +617,9 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n) 
 }
 
 void
-rm_get_unique_string(char name[37]) {
+rm_get_unique_string(char name[RM_UNIQUE_STRING_LEN]) {
     uuid_t out_and_then_in;
     uuid_generate(out_and_then_in);
     uuid_unparse(out_and_then_in, name);
-    name[36] = '\0';                        /* assert string is null terminated */
+    name[RM_UNIQUE_STRING_LEN - 1] = '\0';                        /* assert string is null terminated */
 }

@@ -41,6 +41,8 @@ struct test_rm_file {
 struct test_rm_state
 {
     struct test_rm_file f_z;
+    uint8_t             tmp_dir_created;
+    char                tmp_dir_name[38];
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -73,6 +75,12 @@ test_rm_cmd_1(void **state);
  *          block size -l is set */
 void
 test_rm_cmd_2(void **state);
+
+/* @brief   Test if result file @f_z is reconstructed in proper path
+ *          when x file is same as y (file has no changes),
+ *          -z flag is set */
+void
+test_rm_cmd_3(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM10_H */
