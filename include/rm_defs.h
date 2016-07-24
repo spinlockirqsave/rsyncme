@@ -66,6 +66,8 @@
 #define RM_BIT_6	(1u << 6)
 #define RM_BIT_7	(1u << 7)
 
+#define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end */
+
 /* TCP messages */
 #define RM_MSG_PUSH                 2           /* rsync push */
 #define RM_MSG_PULL                 3           /* rsync pull */

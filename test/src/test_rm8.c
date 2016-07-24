@@ -644,7 +644,7 @@ test_rm_tx_local_push_2(void **state) {
 				}
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
-                    assert_true(1 == 0);
+                    assert_true(1 == 0 && "Can't unlink @y file");
                 }
             }
             /* detail cases */

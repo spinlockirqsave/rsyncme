@@ -146,7 +146,7 @@ test_rm_setup(void **state) {
     FILE        *f;
     unsigned long seed;
 
-    (void) state;
+    *state = &rm_state;
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_10", 0);
@@ -179,6 +179,12 @@ test_rm_setup(void **state) {
         }
         fclose(f);
     }
+    rm_get_unique_string(rm_state.tmp_dir_name);
+    if (mkdir(rm_state.tmp_dir_name, S_IRWXU | S_IRWXG | S_IROTH) != 0) {
+        rm_state.tmp_dir_created = 0;
+    } else {
+        rm_state.tmp_dir_created = 1;
+    }
     return 0;
 }
 
@@ -200,6 +206,9 @@ test_rm_teardown(void **state) {
                 remove(rm_test_fnames[i]);
             }
         }
+    }
+    if (rm_state.tmp_dir_created == 1) {
+        rmdir(rm_state.tmp_dir_name);
     }
     return 0;
 }
@@ -554,6 +563,202 @@ test_rm_cmd_2(void **state) {
 
     if (RM_TEST_10_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
+        if (err != 0) {
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
+            assert_true(1 == 0 && "Error removing files (unlink)");
+            return;
+        }
+    }
+    return;
+}
+
+/* @brief   Test if result file @f_z is reconstructed in proper path
+ *          when x file is same as y (file has no changes),
+ *          -z flag is set */
+void
+test_rm_cmd_3(void **state) {
+    int                     err;
+    enum rm_error           status = RM_ERR_OK;
+    char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
+    char                    buf_z_name[RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
+    char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
+    const char              *f_y_name; /* @y name */
+    unsigned char           cx, cz;
+    FILE                    *f_copy, *f_x, *f_y, *f_z;
+    int                     fd_x, fd_y, fd_z;
+    size_t                  i, j, k, L, f_x_sz, f_y_sz, f_z_sz;
+    struct stat             fs;
+
+    (void) state;
+
+    err = test_rm_copy_files_and_postfix("_test_3");
+    if (err != 0) {
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
+        return;
+    }
+
+    f_x = NULL;
+    f_y = NULL;
+    f_copy = NULL;
+
+    strncpy(buf_z_name, rm_state.tmp_dir_name, RM_UNIQUE_STRING_LEN);
+    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN - 1, "_test_3", 7);
+    buf_z_name[RM_UNIQUE_STRING_LEN - 1 + 7] = '\0';
+
+    i = 0;  /* test on all files */
+    for (; i < RM_TEST_FNAMES_N; ++i) {
+        f_y_name = rm_test_fnames[i];
+        f_y = fopen(f_y_name, "rb");
+        if (f_y == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", f_y_name);
+        }
+        assert_true(f_y != NULL && "Can't open @y file");
+        fd_y = fileno(f_y);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_y, &fs) != 0) {    /* get file size */
+            RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
+            fclose(f_y);
+            assert_true(1 == 0);
+        }
+        f_y_sz = fs.st_size;
+        if (f_y_sz < 2) {
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
+            fclose(f_y);
+            continue;
+        }
+
+        /* create/open copy */
+        strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX);
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_3", 49);
+        buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
+        f_copy = fopen(buf_x_name, "rb+");
+        if (f_copy == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            if (f_y != NULL) fclose(f_y);
+        }
+        assert_true(f_copy != NULL && "Can't open copy");
+        f_x = f_copy;
+        fd_x = fileno(f_x);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_x, &fs) != 0) {    /* get @x size */
+            RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
+            assert_true(1 == 0);
+        }
+        f_x_sz = fs.st_size;
+
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing #3(commandline utility - local push), file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
+                continue;
+            }
+            if (f_y_sz < 1) {
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
+                continue;
+            }
+            RM_LOG_INFO("Testing local push via commandline utility #3: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+
+            if (f_x != NULL) fclose(f_x);
+            if (f_y != NULL) fclose(f_y);
+            snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s -z %s", buf_x_name, f_y_name, buf_z_name); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+            status = system(cmd);
+            assert_int_equal(status, RM_ERR_OK);
+
+            /* general tests */
+            f_x = fopen(buf_x_name, "rb+");
+            if (f_x == NULL) {
+                RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+            }
+            assert_true(f_x != NULL && "Can't open file @x");
+            fd_x = fileno(f_x);
+            f_z = fopen(buf_z_name, "rb");
+            if (f_z == NULL) {
+                RM_LOG_PERR("Can't open @z file [%s]", buf_z_name);
+                if (f_x != NULL) fclose(f_x);
+            }
+            assert_true(f_z != NULL && "Can't open file @z");
+            fd_z = fileno(f_z);
+
+            /* verify files size */
+            memset(&fs, 0, sizeof(fs)); /* get @x size */
+            if (fstat(fd_x, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
+                fclose(f_x);
+                fclose(f_y);
+                assert_true(1 == 0);
+            }
+            f_x_sz = fs.st_size;
+            memset(&fs, 0, sizeof(fs));
+            if (fstat(fd_z, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat file @z [%s]", buf_z_name);
+                fclose(f_x);
+                fclose(f_z);
+                assert_true(1 == 0);
+            }
+            f_z_sz = fs.st_size;
+            assert_true(f_x_sz == f_z_sz && "File sizes differ!");
+
+            k = 0; /* verify files content */
+            while (k < f_x_sz) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
+                    fclose(f_x);
+                    fclose(f_y);
+                    assert_true(1 == 0 && "ERROR reading byte in file @x!");
+                }
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", buf_z_name);
+                    fclose(f_x);
+                    fclose(f_z);
+                    assert_true(1 == 0 && "ERROR reading byte in file @z!");
+                }
+                if (cx != cz) {
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
+                }
+                assert_true(cx == cz && "Bytes differ!");
+                ++k;
+            }
+            if ((err = rm_file_cmp(f_x, f_z, 0, 0, f_x_sz)) != 0) {
+                RM_LOG_ERR("Files differ err [%d]", err);
+                assert_true(1 == 0 && "Files differ!");
+            }
+            if (err != RM_ERR_OK) {
+                RM_LOG_ERR("File cmp function failed, err [%d]", err);
+                assert_true(1 == 0 && "Files cmp function failed!");
+            }
+            fclose(f_z); /* unlink target file */
+            f_z = NULL;
+            if (unlink(buf_z_name) != 0) {
+                RM_LOG_ERR("Can't unlink result file [%s]", buf_z_name);
+                assert_true(1 == 0 && "Can't unlink @z file");
+            }
+            RM_LOG_INFO("PASSED test #3 (commandline utility - local push): files [%s] [%s], block [%zu], files are the same", buf_x_name, f_y_name, L);
+            /* recreate @y file as input to local push in this test, as --leave is not used and so @y is deleted */
+            f_y = fopen(f_y_name, "wb+");
+            if (f_y == NULL) {
+                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                if (f_x != NULL) {
+                    fclose(f_x);
+                    f_x = NULL;
+                }
+            }
+            assert_true(f_y != NULL && "Can't open file @y");
+            fd_y = fileno(f_y);
+            rm_copy_buffered(f_x, f_y, f_x_sz);
+        }
+        if (f_x != NULL) fclose(f_x);
+        f_x = NULL;
+        if (f_y != NULL) fclose(f_y);
+        f_y = NULL;
+        RM_LOG_INFO("PASSED test #3 (commandline utility - local push): files [%s] [%s] passed delta reconstruction for all block sizes, files are the same", buf_x_name, f_y_name);
+    }
+
+    if (RM_TEST_10_DELETE_FILES == 1) {
+        err = test_rm_delete_copies_of_files_postfixed("_test_3");
         if (err != 0) {
             RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");

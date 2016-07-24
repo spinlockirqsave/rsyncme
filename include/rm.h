@@ -366,6 +366,6 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
 /* @brief   Generate unique string.
  * @details Uses uuid generation support, the character array must be at least 37 bytes. */
 void
-rm_get_unique_string(char name[37]);
+rm_get_unique_string(char name[RM_UNIQUE_STRING_LEN]);
 
 #endif	/* RSYNCME_H */
