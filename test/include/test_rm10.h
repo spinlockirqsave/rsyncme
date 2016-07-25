@@ -78,9 +78,17 @@ test_rm_cmd_2(void **state);
 
 /* @brief   Test if result file @f_z is reconstructed in proper path
  *          when x file is same as y (file has no changes),
- *          -z flag is set */
+ *          -z flag is set. @x and @y are in same folder, target file @z
+ *          is created in different folder */
 void
 test_rm_cmd_3(void **state);
+
+/* @brief   Test --leave flag: if result file @f_z is reconstructed in proper path
+ *          and if @y has been left in it's folder. @x is same as @y,
+ *          -z flag  and --leave flag are set. @x and @y are in same folder,
+ *          target file @z is created in different folder */
+void
+test_rm_cmd_4(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM10_H */
