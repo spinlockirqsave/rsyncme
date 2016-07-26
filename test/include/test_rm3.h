@@ -1,7 +1,7 @@
 /*
  * @file        test_rm3.h
  * @brief       Test suite #3.
- * @details     Test of [ref_link checksums calculation correctness.
+ * @details     Test of ref_link nonoverlapping checksums calculation correctness.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        6 Mar 2016 11:29 PM
