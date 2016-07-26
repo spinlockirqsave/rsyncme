@@ -217,6 +217,14 @@ test_rm_teardown(void **state) {
     return 0;
 }
 
+static void
+test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
+    RM_LOG_CRIT("rec_ctx dump:\nmethod [%zu], rec_by_ref [%zu], rec_by_raw [%zu], delta_ref_n [%zu], delta_raw_n [%zu], "
+            "rec_by_tail [%zu], rec_by_zero_diff [%zu], delta_tail_n [%zu], delta_zero_diff_n [%zu], L [%zu], "
+            "copy_all_threshold [%zu], copy_tail_threshold [%zu], send_threshold [%zu]", rec_ctx.method, rec_ctx.rec_by_ref, rec_ctx.rec_by_raw,
+            rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.rec_by_tail, rec_ctx.rec_by_zero_diff, rec_ctx.delta_tail_n,
+            rec_ctx.delta_zero_diff_n, rec_ctx.L, rec_ctx.copy_all_threshold, rec_ctx.copy_tail_threshold, rec_ctx.send_threshold);
+}
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x file is same as y (file has no changes). */
@@ -524,7 +532,7 @@ test_rm_rolling_ch_proc_2(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #2 of rolling checksum procedure, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #2 (first byte changed) of rolling checksum procedure, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
@@ -533,7 +541,7 @@ test_rm_rolling_ch_proc_2(void **state) {
                 RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #2: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing rolling checksum procedure #2 (first byte changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
@@ -605,11 +613,11 @@ test_rm_rolling_ch_proc_2(void **state) {
             assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
-                RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #2 (first byte changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
             } else {
-                RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #2 (first byte changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
@@ -669,7 +677,7 @@ test_rm_rolling_ch_proc_2(void **state) {
         }
         fclose(f_x);
         fclose(f_y);
-        RM_LOG_INFO("PASSED test #2 detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
+        RM_LOG_INFO("PASSED test #2 (first byte changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
 
@@ -689,7 +697,7 @@ test_rm_rolling_ch_proc_2(void **state) {
 void
 test_rm_rolling_ch_proc_3(void **state) {
     int                     err;
-    char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
+    char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the end) */
     const char              *f_y_name;  /* @y name */
     unsigned char           c;
     FILE                    *f_copy, *f_x, *f_y;
@@ -769,7 +777,7 @@ test_rm_rolling_ch_proc_3(void **state) {
             fclose(f_y);
             continue;
         }
-        c = (c + 1) % 256; /* change last byte, so ZERO_DIFF delta can't happen in this test, this would be an error */
+        c = (c + 1) % 256; /* change last byte, so ZERO_DIFF delta and TAIL delta can't happen in this test, this would be an error */
         if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
@@ -783,7 +791,7 @@ test_rm_rolling_ch_proc_3(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #3 of rolling checksum, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #3 (last byte changed) of rolling checksum, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
@@ -792,7 +800,7 @@ test_rm_rolling_ch_proc_3(void **state) {
                 RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #3: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing rolling checksum procedure #3 (last byte changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
@@ -858,16 +866,16 @@ test_rm_rolling_ch_proc_3(void **state) {
             }
 
             assert_int_equal(rec_by_ref + rec_by_raw, f_x_sz); /* general tests */
-            assert_true(delta_tail_n == 0 || delta_tail_n == 1);
+            assert_true(delta_tail_n == 0 && "DELTA TAIL can't happen in this test!");
             assert_true(delta_zero_diff_n == 0 && "DELTA ELEMENT ZERO DIFF can't happen in this test!");
             assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
-                RM_LOG_INFO("PASSED test #2: delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #3 (last byte changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
             } else {
-                RM_LOG_INFO("PASSED test #3: delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #3 (last byte changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
@@ -923,12 +931,310 @@ test_rm_rolling_ch_proc_3(void **state) {
         }
         fclose(f_x);
         fclose(f_y);
-        RM_LOG_INFO("PASSED test #3 detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
+        RM_LOG_INFO("PASSED test #3 (last byte changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
 
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_3");
+        if (err != 0) {
+            RM_LOG_ERR("%s", "Error removing files (unlink)");
+            assert_true(1 == 0 && "Error removing files (unlink)");
+            return;
+        }
+    }
+    return;
+}
+
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
+ *          when x is copy of y, but first and last bytes in x are changed. */
+void
+test_rm_rolling_ch_proc_4(void **state) {
+    int                     err;
+    char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed bytes) */
+    const char              *f_y_name;  /* @y name */
+    unsigned char           c;
+    FILE                    *f_copy, *f_x, *f_y;
+    int                     fd_x, fd_y;
+    size_t                  i, j, L, f_x_sz, f_y_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    size_t                  blocks_n_exp, blocks_n;
+    struct twhlist_node     *tmp;
+    struct rm_session       *s;
+    struct rm_session_push_local    *prvt;
+
+    /* hashtable deletion */
+    unsigned int            bkt;
+    const struct rm_ch_ch_ref_hlink *e;
+
+    /* delta queue's content verification */
+    const twfifo_queue          *q;             /* produced queue of delta elements */
+    const struct rm_delta_e     *delta_e;       /* iterator over delta elements */
+    struct twlist_head          *lh;
+    size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
+                                rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
+    size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
+    size_t                      send_threshold;
+
+    err = test_rm_copy_files_and_postfix("_test_4");
+    if (err != 0) {
+        RM_LOG_ERR("%s", "Error copying files, skipping test");
+        return;
+    }
+
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i) { /* test on all files */
+        f_y_name = rm_test_fnames[i];
+        f_y = fopen(f_y_name, "rb");
+        if (f_y == NULL)
+        {
+            RM_LOG_PERR("Can't open file [%s]", f_y_name);
+        }
+        assert_true(f_y != NULL && "Can't fopen file");
+        fd_y = fileno(f_y);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_y, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat file [%s]", f_y_name);
+            fclose(f_y);
+            assert_true(1 == 0 && "Can't fstat file");
+        }
+        f_y_sz = fs.st_size;
+        if (f_y_sz < 2) {
+            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
+            fclose(f_y);
+            continue;
+        }
+        strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX); /* change byte in copy */
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_4", 49);
+        buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
+        f_copy = fopen(buf_x_name, "rb+");
+        if (f_copy == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", buf_x_name);
+        }
+        f_x = f_copy;
+        fd_x = fileno(f_x);
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_x, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat file [%s]", buf_x_name);
+            fclose(f_x);
+            assert_true(1 == 0);
+        }
+        f_x_sz = fs.st_size;
+        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+            RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
+            fclose(f_x);
+            fclose(f_y);
+            continue;
+        }
+        c = (c + 1) % 256; /* change first byte, so ZERO_DIFF delta can't happen in this test, this would be an error */
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
+            RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
+            fclose(f_x);
+            fclose(f_y);
+            continue;
+        }
+        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+            RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
+            fclose(f_x);
+            fclose(f_y);
+            continue;
+        }
+        c = (c + 1) % 256; /* change last byte, so TAIL delta can't happen in this test, this would be an error */
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+            RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
+            fclose(f_x);
+            fclose(f_y);
+            continue;
+        }
+        detail_case_1_n = 0;
+        detail_case_2_n = 0;
+        detail_case_3_n = 0;
+
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing #4 (2 bytes changed) of rolling checksum, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
+                continue;
+            }
+            if (f_y_sz < 2) {
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
+                continue;
+            }
+            RM_LOG_INFO("Testing rolling checksum procedure #4 (2 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+
+            blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            assert_int_equal(err, RM_ERR_OK);
+            assert_int_equal(blocks_n_exp, blocks_n);
+            rewind(f_x);
+            rewind(f_y);
+
+            s = rm_state->s; /* run rolling checksum procedure on @x */
+            memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* init reconstruction context */
+            s->rec_ctx.L = L;
+            s->rec_ctx.copy_all_threshold = 0;
+            s->rec_ctx.copy_tail_threshold = 0;
+            send_threshold = L;
+            s->rec_ctx.send_threshold = send_threshold;
+            prvt = s->prvt; /* setup private session's arguments */
+            prvt->h = h;
+            prvt->f_x = f_x;                        /* run on @x */
+            prvt->delta_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            assert_int_equal(err, RM_ERR_OK);
+
+            q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
+            assert_true(q != NULL);
+
+            rec_by_ref = rec_by_raw  = 0;
+            delta_ref_n = delta_raw_n = 0;
+            rec_by_tail = delta_tail_n = 0;
+            rec_by_zero_diff = delta_zero_diff_n = 0;
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
+                delta_e = tw_container_of(lh, struct rm_delta_e, link);
+                switch (delta_e->type) {
+                    case RM_DELTA_ELEMENT_REFERENCE:
+                        rec_by_ref += delta_e->raw_bytes_n;
+                        assert_int_equal(delta_e->raw_bytes_n, L);  /* can't be different here */
+                        ++delta_ref_n;
+                        break;
+                    case RM_DELTA_ELEMENT_RAW_BYTES:
+                        rec_by_raw += delta_e->raw_bytes_n;
+                        ++delta_raw_n;
+                        break;
+                    case RM_DELTA_ELEMENT_ZERO_DIFF:
+                        rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check at receiver that is correct */
+                        ++delta_ref_n;
+
+                        rec_by_zero_diff += delta_e->raw_bytes_n;
+                        ++delta_zero_diff_n;
+                        break;
+                    case RM_DELTA_ELEMENT_TAIL:
+                        rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check at receiver there is no error */
+                        ++delta_ref_n;
+
+                        rec_by_tail += delta_e->raw_bytes_n;
+                        ++delta_tail_n;
+                        break;
+                    default:
+                        RM_LOG_ERR("%s", "Unknown delta element type!");
+                        assert_true(1 == 0 && "Unknown delta element type!");
+                }
+                if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
+                    free(delta_e->raw_bytes);
+                }
+                free((void*)delta_e);
+            }
+
+            assert_int_equal(rec_by_ref + rec_by_raw, f_x_sz); /* general tests */
+            assert_true(delta_tail_n == 0 && "DELTA TAIL can't happen in this test!");
+            assert_true(delta_zero_diff_n == 0 && "DELTA ELEMENT ZERO DIFF can't happen in this test!");
+            assert_true(rec_by_zero_diff == 0);
+
+            if (delta_tail_n == 0) {
+                RM_LOG_INFO("PASSED test #4 (2 bytes changed): delta elements cover whole file, file [%s], size [%zu], "
+                        "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
+                        f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
+            } else {
+                RM_LOG_INFO("PASSED test #4 (2 bytes changed): delta elements cover whole file, file [%s], size [%zu], "
+                        "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
+                        f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
+                        delta_raw_n, rec_by_raw);
+            }
+            /* detail cases */
+            /* 1. if L is >= file size, delta must be single RAW element */
+            if (L >= f_y_sz) {
+                assert_true(delta_ref_n == 0);
+                assert_true(delta_tail_n == 0);
+                assert_true(delta_raw_n == 1);
+                assert_true(rec_by_ref == 0);
+                assert_true(rec_by_tail == 0);
+                assert_true(rec_by_raw == f_x_sz);
+                ++detail_case_1_n;
+            }
+            /* 2. if L is less than file size and does divide evenly file size, there will usually be f_y_sz/L - 2 delta reference blocks present
+             * and 1 raw byte block because the first block in @x doesn't match the first block in @y (all other blocks in @x always match corresponding blocks in @y in this test #2),
+             * and none of the checksums computed by rolling checksum procedure starting from second byte in @x up to Lth byte, i.e. on blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
+             * will match some of the nonoverlapping checksums from @y.
+             * But there is a chance one of nonoverlapping blocks in @y will match first block in @x (which has first byte changed), e.g if L is 1, size is 100 and @y file is 0x1 0x2 0x3 0x78 0x5 ...
+             * the @x file is then 0x78 0x2 0x3 0x78 0x5 ... and first block will match 4th block in @y. There is also a chance this won't match BUT some of blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
+             * will find a match and rolling proc will move on offsets different that nonoverlapping blocks. All next f_y_sz/L - 2 blocks may match or not and up to L bytes will be transferred as raw elements in any
+             * possible way: L blocks each 1 byte size, or L/2 each 2 bytes or 1 block 1 byte long and one L-1, etc. The same applies to last block, THEREFORE:
+             *  -> if last block is sent by delta ref - all file must be sent by delta ref,
+             *  -> if last block doesn't match - there maust be f_y_sz/L - 1 DELTA REFERENCE blocks and f_y_sz % L raw bytes sent by up to f_y_sz % L DELTA RAW elements (depends on send threshold) */
+            if ((L < f_y_sz) && (f_y_sz % L == 0)) {
+                assert_true(rec_by_raw <= 2 * L);
+                assert_true(delta_raw_n <= f_y_sz);
+                if (f_y_sz <= (2 * L)) {
+                    if (delta_ref_n == 0) {
+                        assert_true(rec_by_ref == 0 && delta_raw_n > 0 && delta_raw_n == (f_y_sz / send_threshold + (f_y_sz % send_threshold ? 1 : 0)) && rec_by_raw == f_y_sz);
+                    } else {
+                        assert_true(delta_ref_n > 0 && rec_by_ref == (delta_ref_n * L) && delta_raw_n > 0 && delta_raw_n <= 2 * L && rec_by_raw == (f_y_sz - rec_by_ref));
+                    }
+                } else {
+                    if (delta_ref_n == f_y_sz / L - 2) {
+                        if (rec_by_ref != f_y_sz - 2 * L) {
+                            test_rm_dump(s->rec_ctx);
+                        }
+                        assert_true(rec_by_ref == f_y_sz - 2 * L);
+                        assert_true(delta_raw_n > 0);
+                        if (delta_raw_n > 2 * L) {
+                            test_rm_dump(s->rec_ctx);
+                        }
+                        assert_true(delta_raw_n <= 2 * L);
+                        if (rec_by_raw != 2 * L) {
+                            test_rm_dump(s->rec_ctx);
+                        }
+                        assert_true(rec_by_raw == 2 * L);
+                    } else if (delta_ref_n == (f_y_sz / L - 1)) {
+                        assert_true(rec_by_ref == (f_y_sz - L) && delta_raw_n > 0 && delta_raw_n <= L && rec_by_raw == L);
+                    } else {
+                       assert_true(delta_ref_n == f_y_sz / L && rec_by_ref == f_y_sz && delta_raw_n == 0 && rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first block */
+                    }
+                }
+                assert_true(delta_ref_n * L == f_y_sz - rec_by_raw);
+                assert_true(delta_tail_n == 0); /* impossible as L divides @y evenly */
+                assert_true(rec_by_tail == 0);
+                ++detail_case_2_n;
+            }
+            /* 3. if L is less than file size and doesn't divide evenly file size the last block will not match, but the first still may match */
+            if ((L < f_y_sz) && (f_y_sz % L != 0)) {
+                assert_true(rec_by_raw <= L + (f_y_sz % L) && rec_by_raw >= f_y_sz % L);
+                assert_true(delta_raw_n >= 1);
+                assert_true((delta_ref_n == f_y_sz/L - 1 && delta_raw_n == 2 && rec_by_raw == L + f_y_sz % L) || (delta_ref_n == f_y_sz/L && delta_raw_n == 1 && rec_by_raw == L)); /* the last block in @x will not match the last block in @y but the first may match some block */
+                assert_true(delta_tail_n == 0 && delta_ref_n * L == f_y_sz - rec_by_raw);
+                ++detail_case_3_n;
+            }
+
+            /* move file pointer back to the beginning */
+            rewind(f_x);
+            rewind(f_y);
+
+            blocks_n = 0;
+            bkt = 0;
+            twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+                twhash_del((struct twhlist_node*)&e->hlink);
+                free((struct rm_ch_ch_ref_hlink*)e);
+                ++blocks_n;
+            }
+            assert_int_equal(blocks_n_exp, blocks_n);
+        }
+        fclose(f_x);
+        fclose(f_y);
+        RM_LOG_INFO("PASSED test #4 (2 bytes changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
+                f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
+    }
+
+    if (RM_TEST_5_DELETE_FILES == 1) {
+        err = test_rm_delete_copies_of_files_postfixed("_test_4");
         if (err != 0) {
             RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
