@@ -70,5 +70,9 @@ test_rm_rolling_ch_proc_1(void **state);
 void
 test_rm_rolling_ch_proc_2(void **state);
 
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
+ *          when x is copy of y, but last byte in x is changed. */
+void
+test_rm_rolling_ch_proc_3(void **state);
 
 #endif	/* RSYNCME_TEST_RM5_H */
