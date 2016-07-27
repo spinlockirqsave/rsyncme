@@ -68,7 +68,8 @@ created. 14 of them contained raw bytes, while 17 contained references
 to matching blocks found in old version of data (@y) and reused (there would be
 no sending over ethernet if it was remote sync). As a result 7040 bytes from new
 version of file would be used literally, avoiding copying of 8704 bytes,
-which would be copied from referenced old version of file if it was remote sync.
+which would be copied at the other end of the link from referenced old version
+of file, if it was remote sync.
 
 
 3. OPTIONS
