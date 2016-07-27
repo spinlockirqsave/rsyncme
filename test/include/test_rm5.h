@@ -29,7 +29,7 @@
 #define RM_TEST_L_BLOCKS_SIZE       34
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            15
-#define RM_TEST_9_FILE_IDX          3
+#define RM_TEST_5_9_FILE_IDX        3
 
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t    rm_test_fsizes[RM_TEST_FNAMES_N];

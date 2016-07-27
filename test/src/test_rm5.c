@@ -1722,14 +1722,14 @@ test_rm_rolling_ch_proc_9(void **state) {
     s->rec_ctx.send_threshold = 512;
     prvt = s->prvt; /* set private session's arguments */
     prvt->h = h;
-    f_x = fopen(rm_test_fnames[RM_TEST_9_FILE_IDX], "rb");
+    f_x = fopen(rm_test_fnames[RM_TEST_5_9_FILE_IDX], "rb");
     if (f_x == NULL) {
-        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_9_FILE_IDX]);
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_5_9_FILE_IDX]);
         assert_true(1 == 0 && "Can't open @x file!");
     }
     fd = fileno(f_x);
     if (fstat(fd, &fs) != 0) {
-        RM_LOG_CRIT("Can't fstat file [%s]", rm_test_fnames[RM_TEST_9_FILE_IDX]);
+        RM_LOG_CRIT("Can't fstat file [%s]", rm_test_fnames[RM_TEST_5_9_FILE_IDX]);
         assert_true(1 == 0 && "Can't fstat @x file!");
     }
     file_sz = fs.st_size;
