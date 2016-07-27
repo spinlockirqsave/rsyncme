@@ -23,15 +23,23 @@ Content
 1. OVERVIEW
 
 rsyncme can be used to synchronize data on the same machine (locally)
-or between endpoints connected over IP. There is always constant part
-of all commands using rsyncme, -x and -y options necessarily followed
-by file names, for example
+or between endpoints connected over IP. In current version 0.1.2 only
+local sync is possible and you must wait for version 0.1.3 to be ready
+to synchronize data between machines. Even if local sync doesn't offer
+many benefits over simple copying of data in terms of time improvement,
+it is necessary step in development process and inspecting the results
+locally is great source of knowledge about algorithm's behavior.
 
-    rsyncme push -x @x -y @y
+There is always constant part of all commands using rsyncme,
+-x and -y options necessarily followed by file names, for example:
+
+    rsyncme push -x input.txt -y output.txt
 
 In all possible commands -x gives always the name of the file that you want
-to use as a new/current version of data and you want to make the target file
-@y the same as this version.
+to use as a source of changes (new/current version of data) and -y gives
+the name of the file that is the old version of data. This name may
+be the name of target (so -y file will be changed) or output may be written
+to a new file and -y file deleted or left intact.
 
 
 2. EXAMPLE
@@ -54,12 +62,13 @@ calc2.ods to be same as just changed calc1.ods. You can do it with push command:
     OK.
 
 It can be read from the output that source file @x is 15744 bytes and delta
-reconstruction procedure has been used as synchronization method (as opposed
-to copying of bytes). This method has resulted in 31 delta elements being
+reconstruction procedure has been used as the synchronization method (as opposed
+to sending bytes literally). This method has resulted in 31 delta elements being
 created. 14 of them contained raw bytes, while 17 contained references
-to matching blocks found in old version of file (@y) and reused (no copying
-involved). As a result 7040 bytes from new file has been used, avoiding
-copying of 8704 bytes (which have been copied from referenced file).
+to matching blocks found in old version of data (@y) and reused (there would be
+no sending over ethernet if it was remote sync). As a result 7040 bytes from new
+version of file would be used literally, avoiding copying of 8704 bytes,
+which would be copied from referenced old version of file if it was remote sync.
 
 
 3. OPTIONS
