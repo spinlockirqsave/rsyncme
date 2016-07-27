@@ -181,12 +181,25 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
-    s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for loccal push */
+    s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for local push */
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
     }
     assert_true(s != NULL);
     rm_state.s = s;
+
+    rm_get_unique_string(rm_state.f.name);
+    f = fopen(rm_state.f.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating file [%s]", rm_state.f.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f.name); 
+            exit(EXIT_FAILURE);
+        }
+    }
+    rm_state.f.f_created = 1;
+    fclose(f);
     return 0;
 }
 
@@ -201,7 +214,7 @@ test_rm_teardown(void **state) {
     if (RM_TEST_5_DELETE_FILES == 1) { /* delete all test files */
         i = 0;
         for (; i < RM_TEST_FNAMES_N; ++i) {
-            f = fopen(rm_test_fnames[i], "wb+");
+            f = fopen(rm_test_fnames[i], "rb");
             if (f == NULL) {
                 RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);	
             } else {
@@ -214,6 +227,18 @@ test_rm_teardown(void **state) {
     free(rm_state->buf);
     free(rm_state->buf2);
     rm_session_free(rm_state->s);
+    if (rm_state->f.f_created == 1) {
+        f = fopen(rm_state->f.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s]", rm_state->f.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s]...", rm_state->f.name);
+            fclose(f);
+            if (unlink(rm_state->f.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f.name);
+            }
+        }
+    }
     return 0;
 }
 
@@ -1194,7 +1219,7 @@ test_rm_rolling_ch_proc_4(void **state) {
                     } else if (delta_ref_n == (f_y_sz / L - 1)) {
                         assert_true(rec_by_ref == (f_y_sz - L) && delta_raw_n > 0 && delta_raw_n <= L && rec_by_raw == L);
                     } else {
-                       assert_true(delta_ref_n == f_y_sz / L && rec_by_ref == f_y_sz && delta_raw_n == 0 && rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first block */
+                        assert_true(delta_ref_n == f_y_sz / L && rec_by_ref == f_y_sz && delta_raw_n == 0 && rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first block */
                     }
                 }
                 assert_true(delta_ref_n * L == f_y_sz - rec_by_raw);
@@ -1272,7 +1297,7 @@ test_rm_rolling_ch_proc_5(void **state) {
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
     size_t                      send_threshold;
 
-    err = test_rm_copy_files_and_postfix("_test_4");
+    err = test_rm_copy_files_and_postfix("_test_5");
     if (err != 0) {
         RM_LOG_ERR("%s", "Error copying files, skipping test");
         return;
@@ -1306,7 +1331,7 @@ test_rm_rolling_ch_proc_5(void **state) {
             continue;
         }
         strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX); /* change byte in copy */
-        strncpy(buf_x_name + strlen(buf_x_name), "_test_4", 49);
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_5", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
@@ -1380,7 +1405,7 @@ test_rm_rolling_ch_proc_5(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #4 (2 bytes changed) of rolling checksum, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #5 (3 bytes changed) of rolling checksum, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
@@ -1389,7 +1414,7 @@ test_rm_rolling_ch_proc_5(void **state) {
                 RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #4 (2 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
+            RM_LOG_INFO("Testing rolling checksum procedure #3 (3 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
@@ -1461,11 +1486,11 @@ test_rm_rolling_ch_proc_5(void **state) {
             assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
-                RM_LOG_INFO("PASSED test #4 (2 bytes changed): delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #5 (3bytes changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
             } else {
-                RM_LOG_INFO("PASSED test #4 (2 bytes changed): delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #5 (3 bytes changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail,
                         delta_raw_n, rec_by_raw);
@@ -1514,11 +1539,11 @@ test_rm_rolling_ch_proc_5(void **state) {
                         }
                         assert_true(rec_by_raw == 3 * L);
                     } else if (delta_ref_n == (f_y_sz / L - 2)) {
-                       assert_true(rec_by_ref == (f_y_sz - 2 * L) && delta_raw_n > 0 && delta_raw_n <= 2 * L  && rec_by_raw == 2 * L);
+                        assert_true(rec_by_ref == (f_y_sz - 2 * L) && delta_raw_n > 0 && delta_raw_n <= 2 * L  && rec_by_raw == 2 * L);
                     } else if (delta_ref_n == (f_y_sz / L - 1)) {
-                       assert_true(rec_by_ref == (f_y_sz - 1 * L) && delta_raw_n > 0 && delta_raw_n <= 1 * L  && rec_by_raw == 1 * L);
+                        assert_true(rec_by_ref == (f_y_sz - 1 * L) && delta_raw_n > 0 && delta_raw_n <= 1 * L  && rec_by_raw == 1 * L);
                     } else {
-                       assert_true(delta_ref_n == f_y_sz / L && rec_by_ref == f_y_sz && delta_raw_n == 0 && rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with middle and first block */
+                        assert_true(delta_ref_n == f_y_sz / L && rec_by_ref == f_y_sz && delta_raw_n == 0 && rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with middle and first block */
                     }
                 }
                 assert_true(delta_ref_n * L == f_y_sz - rec_by_raw);
@@ -1545,7 +1570,7 @@ test_rm_rolling_ch_proc_5(void **state) {
                         assert_true(delta_raw_n > 0 && delta_raw_n <= L + (f_y_sz % L));
                         assert_true(rec_by_raw == (L + f_y_sz % L));
                     } else if (delta_ref_n == (f_y_sz / L + 1 - 1)) {
-                       assert_true((rec_by_ref == (f_y_sz - L) || rec_by_ref == (f_y_sz - f_y_sz % L)) && delta_raw_n > 0 && delta_raw_n <= L && (rec_by_raw == L || rec_by_raw == f_y_sz % L));
+                        assert_true((rec_by_ref == (f_y_sz - L) || rec_by_ref == (f_y_sz - f_y_sz % L)) && delta_raw_n > 0 && delta_raw_n <= L && (rec_by_raw == L || rec_by_raw == f_y_sz % L));
                     } else {
                         assert_true(1 == 0 && "Got only delta reference blocks but TAIL can't match in this test!"); 
                     }
@@ -1569,12 +1594,12 @@ test_rm_rolling_ch_proc_5(void **state) {
         }
         fclose(f_x);
         fclose(f_y);
-        RM_LOG_INFO("PASSED test #4 (2 bytes changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
+        RM_LOG_INFO("PASSED test #5 (3 bytes changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
 
     if (RM_TEST_5_DELETE_FILES == 1) {
-        err = test_rm_delete_copies_of_files_postfixed("_test_4");
+        err = test_rm_delete_copies_of_files_postfixed("_test_5");
         if (err != 0) {
             RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
@@ -1582,4 +1607,53 @@ test_rm_rolling_ch_proc_5(void **state) {
         }
     }
     return;
+}
+
+/* @brief   Test error reporting.
+ * @details NULL session. */
+void
+test_rm_rolling_ch_proc_6(void **state) {
+    FILE                *f_x;
+    struct rm_session   *s;
+    enum rm_error       err;
+    struct test_rm_state     *rm_state = *state;
+
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+
+    s = NULL;
+    f_x = fopen(rm_state->f.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_state->f.name);
+        assert_true(1 == 0 && "Can't open @x file!");
+    }
+    err = rm_rolling_ch_proc(s, h, f_x, rm_roll_proc_cb_1, 0); /* 1. run rolling checksum procedure */
+    fclose(f_x);
+    assert_int_equal(err, RM_ERR_BAD_CALL);
+}
+
+/* @brief   Test error reporting.
+ * @details NULL file @x. */
+void
+test_rm_rolling_ch_proc_7(void **state) {
+    struct rm_session   *s;
+    struct rm_session_push_local *prvt;
+    enum rm_error       err;
+    struct test_rm_state     *rm_state = *state;
+
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+
+    s = rm_state->s; /* run rolling checksum procedure on @x */
+    memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* init reconstruction context */
+    s->rec_ctx.L = 512;
+    s->rec_ctx.copy_all_threshold = 0;
+    s->rec_ctx.copy_tail_threshold = 0;
+    s->rec_ctx.send_threshold = 512;
+    prvt = s->prvt; /* set private session's arguments */
+    prvt->h = h;
+    prvt->f_x = NULL;                        /* run on @x */
+    prvt->delta_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    assert_int_equal(err, RM_ERR_BAD_CALL);
 }

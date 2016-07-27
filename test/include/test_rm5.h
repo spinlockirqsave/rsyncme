@@ -33,12 +33,18 @@ const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
 size_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
+struct test_rm_file {
+    uint8_t f_created;
+    char    name[RM_FILE_LEN_MAX + 100];
+};
+
 struct test_rm_state
 {
-	size_t	        *l;
+	size_t	            *l;
 	void                *buf;
 	void                *buf2;
     struct rm_session   *s;
+    struct test_rm_file f;
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -84,6 +90,16 @@ test_rm_rolling_ch_proc_4(void **state);
  *          when x is copy of y, but first, middle and last bytes in x are changed. */
 void
 test_rm_rolling_ch_proc_5(void **state);
+
+/* @brief   Test error reporting.
+ * @details NULL session. */
+void
+test_rm_rolling_ch_proc_6(void **state);
+
+/* @brief   Test error reporting.
+ * @details NULL file @x. */
+void
+test_rm_rolling_ch_proc_7(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM5_H */

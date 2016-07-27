@@ -323,6 +323,7 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     return RM_ERR_OK;
 }
 
+/* NOTE: @f_x MUST be already opened */
 enum rm_error
 rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) {
