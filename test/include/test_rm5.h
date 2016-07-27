@@ -29,6 +29,8 @@
 #define RM_TEST_L_BLOCKS_SIZE       34
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            15
+#define RM_TEST_9_FILE_IDX          3
+
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
 size_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
@@ -97,9 +99,19 @@ void
 test_rm_rolling_ch_proc_6(void **state);
 
 /* @brief   Test error reporting.
- * @details NULL file @x. */
+ * @details NULL file @x pointer. */
 void
 test_rm_rolling_ch_proc_7(void **state);
+
+/* @brief   Test error reporting.
+ * @details NULL request of reading out of range from file @x. */
+void
+test_rm_rolling_ch_proc_8(void **state);
+
+/* @brief   Test error reporting.
+ * @details NULL request of reading out of range from file @x, file size is not 0. */
+void
+test_rm_rolling_ch_proc_9(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM5_H */

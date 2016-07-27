@@ -1618,6 +1618,7 @@ test_rm_rolling_ch_proc_6(void **state) {
     enum rm_error       err;
     struct test_rm_state     *rm_state = *state;
 
+    RM_LOG_INFO("%s", "Running test #6 (Test error reporting: NULL session)...");
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     twhash_init(h);
 
@@ -1630,10 +1631,11 @@ test_rm_rolling_ch_proc_6(void **state) {
     err = rm_rolling_ch_proc(s, h, f_x, rm_roll_proc_cb_1, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #6 (Test error reporting: NULL session)");
 }
 
 /* @brief   Test error reporting.
- * @details NULL file @x. */
+ * @details NULL file @x pointer. */
 void
 test_rm_rolling_ch_proc_7(void **state) {
     struct rm_session   *s;
@@ -1641,6 +1643,7 @@ test_rm_rolling_ch_proc_7(void **state) {
     enum rm_error       err;
     struct test_rm_state     *rm_state = *state;
 
+    RM_LOG_INFO("%s", "Running test #7 (Test error reporting: NULL file pointer)...");
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     twhash_init(h);
 
@@ -1656,4 +1659,85 @@ test_rm_rolling_ch_proc_7(void **state) {
     prvt->delta_f = rm_roll_proc_cb_1;
     err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
     assert_int_equal(err, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #7 (Test error reporting: NULL file pointer)");
+}
+
+/* @brief   Test error reporting.
+ * @details Bad request of reading out of range from file @x, file size is 0. */
+void
+test_rm_rolling_ch_proc_8(void **state) {
+    struct rm_session   *s;
+    struct rm_session_push_local *prvt;
+    enum rm_error       err;
+    FILE                *f_x;
+    struct test_rm_state     *rm_state = *state;
+
+    RM_LOG_INFO("%s", "Running test #8 (Test error reporting: zero size file)...");
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+
+    s = rm_state->s; /* run rolling checksum procedure on @x */
+    memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* init reconstruction context */
+    s->rec_ctx.L = 512;
+    s->rec_ctx.copy_all_threshold = 0;
+    s->rec_ctx.copy_tail_threshold = 0;
+    s->rec_ctx.send_threshold = 512;
+    prvt = s->prvt; /* set private session's arguments */
+    prvt->h = h;
+    f_x = fopen(rm_state->f.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_state->f.name);
+        assert_true(1 == 0 && "Can't open @x file!");
+    }
+    prvt->f_x = f_x;                        /* run on @x */
+    prvt->delta_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    fclose(f_x);
+    assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
+    RM_LOG_INFO("%s", "PASSED test #8 (Test error reporting: zero size file)");
+}
+
+/* @brief   Test error reporting.
+ * @details NULL request of reading out of range from file @x, file size is not 0. */
+void
+test_rm_rolling_ch_proc_9(void **state) {
+    struct rm_session   *s;
+    struct rm_session_push_local *prvt;
+    enum rm_error       err;
+    FILE                *f_x;
+    int                 fd;
+    size_t              file_sz;
+    struct stat         fs;
+    struct test_rm_state     *rm_state = *state;
+
+    RM_LOG_INFO("%s", "Running test #9 (Test error reporting: reading out of range on nonzero size file)...");
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+
+    s = rm_state->s; /* run rolling checksum procedure on @x */
+    memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* init reconstruction context */
+    s->rec_ctx.L = 512;
+    s->rec_ctx.copy_all_threshold = 0;
+    s->rec_ctx.copy_tail_threshold = 0;
+    s->rec_ctx.send_threshold = 512;
+    prvt = s->prvt; /* set private session's arguments */
+    prvt->h = h;
+    f_x = fopen(rm_test_fnames[RM_TEST_9_FILE_IDX], "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_9_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open @x file!");
+    }
+    fd = fileno(f_x);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_CRIT("Can't fstat file [%s]", rm_test_fnames[RM_TEST_9_FILE_IDX]);
+        assert_true(1 == 0 && "Can't fstat @x file!");
+    }
+    file_sz = fs.st_size;
+    assert_true(file_sz > 0);
+    prvt->f_x = f_x;                        /* run on @x */
+    prvt->delta_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, file_sz); /* 1. run rolling checksum procedure */
+    fclose(f_x);
+    assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
+    RM_LOG_INFO("%s", "PASSED test #9 (Test error reporting: reading out of range on nonzero size file)");
 }
