@@ -139,6 +139,8 @@ test_rm_setup(void **state) {
     rm_state.l = rm_test_L_blocks;
     *state = &rm_state;
 
+    assert_true(RM_TEST_5_9_FILE_IDX >= 0 && RM_TEST_5_9_FILE_IDX < RM_TEST_FNAMES_N);
+
     i = 0;
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f = fopen(rm_test_fnames[i], "rb+");
@@ -220,7 +222,9 @@ test_rm_teardown(void **state) {
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
                 fclose(f);
-                remove(rm_test_fnames[i]);
+                if (remove(rm_test_fnames[i]) != 0) {
+                    assert_true(1 == 0 && "Can't remove!");
+                }
             }
         }
     }
@@ -236,6 +240,7 @@ test_rm_teardown(void **state) {
             fclose(f);
             if (unlink(rm_state->f.name) != 0) {
                 RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f.name);
+                assert_true(1 == 0 && "Can't unlink!");
             }
         }
     }
@@ -1193,7 +1198,13 @@ test_rm_rolling_ch_proc_4(void **state) {
              * the @x file is then 0x78 0x2 0x3 0x78 0x5 ... and first block will match 4th block in @y. There is also a chance this won't match BUT some of blocks [1,1+L], [2,2+L], ..., [L-1,2L-1]
              * will find a match and rolling proc will move on offsets different that nonoverlapping blocks. All next f_y_sz/L - 2 blocks may match or not and up to 2*L bytes will be transferred as raw delta elements */
             if ((L < f_y_sz) && (f_y_sz % L == 0)) {
+                if (rec_by_raw > 2 * L) {
+                    test_rm_dump(s->rec_ctx);
+                }
                 assert_true(rec_by_raw <= 2 * L);
+                if (delta_raw_n > f_y_sz) {
+                    test_rm_dump(s->rec_ctx);
+                }
                 assert_true(delta_raw_n <= f_y_sz);
                 if (f_y_sz <= (2 * L)) {
                     if (delta_ref_n == 0) {
@@ -1231,10 +1242,14 @@ test_rm_rolling_ch_proc_4(void **state) {
             if ((L < f_y_sz) && (f_y_sz % L != 0)) {
                 assert_true(rec_by_raw <= L + (f_y_sz % L) && rec_by_raw >= f_y_sz % L);
                 assert_true(delta_raw_n >= 1);
-                assert_true((delta_ref_n == f_y_sz/L - 1 && delta_raw_n == 2 && rec_by_raw == L + f_y_sz % L) || (delta_ref_n == f_y_sz/L && delta_raw_n == 1 && rec_by_raw == L)); /* the last block in @x will not match the last block in @y but the first may match some block */
+                assert_true((delta_ref_n == f_y_sz/L - 1 && delta_raw_n > 0 && rec_by_raw == L + f_y_sz % L) || (delta_ref_n == f_y_sz/L && delta_raw_n > 0 && rec_by_raw == f_y_sz % L)); /* the last block in @x will not match the last block in @y but the first may match some block */
                 assert_true(delta_tail_n == 0 && delta_ref_n * L == f_y_sz - rec_by_raw);
                 ++detail_case_3_n;
             }
+            /* 4. sanity check for L == 1 */
+            if (f_y_sz >= 3 && L == 1) {
+                assert_true(delta_raw_n <= 2 && "L == 1 but matching blocks not found!");
+            } 
 
             /* move file pointer back to the beginning */
             rewind(f_x);

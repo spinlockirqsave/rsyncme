@@ -157,6 +157,7 @@ test_rm_setup(void **state) {
     if (err != RM_ERR_OK) {
         exit(EXIT_FAILURE);
     }
+    assert_true(RM_TEST_10_5_FILE_IDX >= 0 && RM_TEST_10_5_FILE_IDX < RM_TEST_FNAMES_N);
 
     i = 0;
     seed = time(NULL);
@@ -185,6 +186,26 @@ test_rm_setup(void **state) {
     } else {
         rm_state.tmp_dir_created = 1;
     }
+    rm_get_unique_string(rm_state.f1.name);
+    f = fopen(rm_state.f1.name, "rb+");
+    if (f != NULL) {
+        fclose(f);
+        RM_LOG_INFO("File [%s] exists. removing...", rm_state.f1.name); /* file doesn't exist, create */
+        if (unlink(rm_state.f1.name) != 0) {
+            RM_LOG_CRIT("Can't unlink file [%s]!", rm_state.f1.name);
+            assert_true(1 == 0 && "Can't unlink!");
+        }
+    }
+    rm_get_unique_string(rm_state.f2.name);
+    f = fopen(rm_state.f2.name, "rb+");
+    if (f != NULL) {
+        fclose(f);
+        RM_LOG_INFO("File [%s] exists. removing...", rm_state.f1.name); /* file doesn't exist, create */
+        if (unlink(rm_state.f1.name) != 0) {
+            RM_LOG_CRIT("Can't unlink file [%s]!", rm_state.f1.name);
+            assert_true(1 == 0 && "Can't unlink!");
+        }
+    }
     return 0;
 }
 
@@ -192,7 +213,10 @@ int
 test_rm_teardown(void **state) {
     size_t  i;
     FILE    *f;
-    (void) state;
+    struct  test_rm_state *rm_state;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
 
     if (RM_TEST_10_DELETE_FILES == 1) {
         i = 0; /* delete all test files */
@@ -203,12 +227,40 @@ test_rm_teardown(void **state) {
             } else {
                 RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
                 fclose(f);
-                remove(rm_test_fnames[i]);
+                if (remove(rm_test_fnames[i]) != 0) {
+                    assert_true(1 == 0 && "Can't remove!");
+                }
             }
         }
     }
-    if (rm_state.tmp_dir_created == 1) {
-        rmdir(rm_state.tmp_dir_name);
+    if (rm_state->tmp_dir_created == 1) {
+        rmdir(rm_state->tmp_dir_name);
+    }
+    if (rm_state->f1_created == 1) {
+        f = fopen(rm_state->f1.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s]", rm_state->f1.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s]...", rm_state->f1.name);
+            fclose(f);
+            if (unlink(rm_state->f1.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f1.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
+    if (rm_state->f2_created == 1) {
+        f = fopen(rm_state->f2.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s]", rm_state->f2.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s]...", rm_state->f2.name);
+            fclose(f);
+            if (unlink(rm_state->f2.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f2.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
     }
     return 0;
 }
@@ -218,8 +270,7 @@ test_rm_teardown(void **state) {
  *          block size -l is not set (use default setting) */
 void
 test_rm_cmd_1(void **state) {
-    int                     err;
-    enum rm_error           status = RM_ERR_OK;
+    int                     err, status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
     const char              *f_y_name; /* @y name */
@@ -301,6 +352,13 @@ test_rm_cmd_1(void **state) {
 
         snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s", buf_x_name, f_y_name); /* execute built image of rsyncme from debug/release build folder and not from system global path */
         status = system(cmd);
+        if (status == -1) {
+            RM_LOG_INFO("%s", "System call failed, skipping the test...");
+        } else if (WIFEXITED(status) == 0) {
+                RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+        }
+        status = WEXITSTATUS(status);
         assert_int_equal(status, RM_ERR_OK);
 
         /* general tests */
@@ -402,8 +460,7 @@ test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
  *          block size -l is set */
 void
 test_rm_cmd_2(void **state) {
-    int                     err;
-    enum rm_error           status = RM_ERR_OK;
+    int                     err, status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
     const char              *f_y_name; /* @y name */
@@ -486,6 +543,13 @@ test_rm_cmd_2(void **state) {
             if (f_y != NULL) fclose(f_y);
             snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s -l %zu", buf_x_name, f_y_name, L); /* execute built image of rsyncme from debug/release build folder and not from system global path */
             status = system(cmd);
+            if (status == -1) {
+                RM_LOG_INFO("%s", "System call failed, skipping the test...");
+            } else if (WIFEXITED(status) == 0) {
+                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                    assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+            }
+            status = WEXITSTATUS(status);
             assert_int_equal(status, RM_ERR_OK);
 
             /* general tests */
@@ -577,8 +641,7 @@ test_rm_cmd_2(void **state) {
  *          -z flag is set */
 void
 test_rm_cmd_3(void **state) {
-    int                     err;
-    enum rm_error           status = RM_ERR_OK;
+    int                     err, status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     char                    buf_z_name[RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
@@ -666,6 +729,15 @@ test_rm_cmd_3(void **state) {
             if (f_y != NULL) fclose(f_y);
             snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s -z %s", buf_x_name, f_y_name, buf_z_name); /* execute built image of rsyncme from debug/release build folder and not from system global path */
             status = system(cmd);
+            if (status == -1) {
+                RM_LOG_INFO("%s", "System call failed, skipping the test...");
+            } else {
+                if (WIFEXITED(status) == 0) {
+                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                    assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+                }
+            }
+            status = WEXITSTATUS(status);
             assert_int_equal(status, RM_ERR_OK);
 
             /* general tests */
@@ -773,8 +845,7 @@ test_rm_cmd_3(void **state) {
  *          -z flag  and --leave flag are set */
 void
 test_rm_cmd_4(void **state) {
-    int                     err;
-    enum rm_error           status = RM_ERR_OK;
+    int                     err, status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     char                    buf_z_name[RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
@@ -862,6 +933,13 @@ test_rm_cmd_4(void **state) {
             if (f_y != NULL) fclose(f_y);
             snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s -z %s --leave", buf_x_name, f_y_name, buf_z_name); /* execute built image of rsyncme from debug/release build folder and not from system global path */
             status = system(cmd);
+            if (status == -1) {
+                RM_LOG_INFO("%s", "System call failed, skipping the test...");
+            } else if (WIFEXITED(status) == 0) {
+                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                    assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+            }
+            status = WEXITSTATUS(status);
             assert_int_equal(status, RM_ERR_OK);
 
             /* general tests */
@@ -990,5 +1068,39 @@ test_rm_cmd_4(void **state) {
             return;
         }
     }
+    return;
+}
+
+/* @brief   Test error reporting: @x not specified */
+void
+test_rm_cmd_5(void **state) {
+    int                     status;
+    char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
+    FILE                    *f_y;
+    struct test_rm_state    *rm_state;
+
+    rm_state = *state;
+
+    f_y = fopen(rm_test_fnames[RM_TEST_10_5_FILE_IDX], "rb");
+    if (f_y == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open @y file!");
+    }
+        RM_LOG_INFO("Testing #5 (local push: non-existing @x), file [%s]", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+
+        snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s", rm_state->f1.name, rm_test_fnames[RM_TEST_10_5_FILE_IDX]); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+        status = system(cmd);
+        if (status == -1) {
+            RM_LOG_INFO("%s", "System call failed, skipping the test...");
+        } else {
+            if (WIFEXITED(status) == 0) {
+                RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+            }
+        }
+        status = WEXITSTATUS(status);
+        assert_int_equal(status, RM_ERR_OPEN_X);
+
+        RM_LOG_INFO("%s", "PASSED test #5 (local push: non-existing @x)");
     return;
 }
