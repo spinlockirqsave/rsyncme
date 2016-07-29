@@ -29,20 +29,22 @@
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            15
 #define RM_TEST_10_CMD_LEN_MAX      300
+#define RM_TEST_10_5_FILE_IDX       3u
+
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
 size_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_file {
-    FILE    *f;
     char    name[RM_FILE_LEN_MAX + 100];
 };
 
 struct test_rm_state
 {
     struct test_rm_file f_z;
-    uint8_t             tmp_dir_created;
-    char                tmp_dir_name[38];
+    struct test_rm_file f1, f2; /* used as non-existing @x and @y */
+    uint8_t             tmp_dir_created, f1_created, f2_created;
+    char                tmp_dir_name[38]; /* used as dir for target file @z */
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -89,6 +91,10 @@ test_rm_cmd_3(void **state);
  *          target file @z is created in different folder */
 void
 test_rm_cmd_4(void **state);
+
+/* @brief   Test error reporting: @x not specified */
+void
+test_rm_cmd_5(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM10_H */

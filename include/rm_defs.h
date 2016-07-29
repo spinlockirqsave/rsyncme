@@ -12,6 +12,7 @@
 #define RM_VERSION "0.1.2"
 
 
+#define _XOPEN_SOURCE 500
 #define _POSIX_C_SOURCE 200112L
 #define _LARGEFILE64_SOURCE 1
 #ifndef _REENTRANT
