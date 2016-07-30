@@ -114,14 +114,14 @@ main( int argc, char *argv[]) {
     char	y[RM_CMD_F_LEN_MAX] = {0};
     char	z[RM_CMD_F_LEN_MAX] = {0};
     char    *xp = NULL, *yp = NULL, *zp = NULL;
-    rm_push_flags   push_flags = 0;      /* bits		meaning
+    rm_push_flags   push_flags = 0;      /* bits    meaning
                                           * 0		cmd (0 RM_MSG_PUSH, 1 RM_MSG_PULL)
                                           * 1		x
                                           * 2		y
                                           * 3		z
-                                          * 4        force creation of @y if it doesn't exist
+                                          * 4       force creation of @y if it doesn't exist
                                           * 5		ip
-                                          * 6        delete @y after @z has been reconstructed (or created) */
+                                          * 6       delete @y after @z has been reconstructed (or created) */
     char                *pCh, *y_copy;
     unsigned long       helper;
     struct rm_delta_reconstruct_ctx rec_ctx = {0};

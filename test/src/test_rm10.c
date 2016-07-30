@@ -1071,7 +1071,7 @@ test_rm_cmd_4(void **state) {
     return;
 }
 
-/* @brief   Test error reporting: @x not specified */
+/* @brief   Test error reporting: @x do not exist */
 void
 test_rm_cmd_5(void **state) {
     int                     status;
@@ -1086,21 +1086,53 @@ test_rm_cmd_5(void **state) {
         RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
         assert_true(1 == 0 && "Can't open @y file!");
     }
-        RM_LOG_INFO("Testing #5 (local push: non-existing @x), file [%s]", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
-
-        snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s", rm_state->f1.name, rm_test_fnames[RM_TEST_10_5_FILE_IDX]); /* execute built image of rsyncme from debug/release build folder and not from system global path */
-        status = system(cmd);
-        if (status == -1) {
-            RM_LOG_INFO("%s", "System call failed, skipping the test...");
-        } else {
-            if (WIFEXITED(status) == 0) {
-                RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
-                assert_true(1 == 0 && "System call failed, cmd returned abnormally");
-            }
+    RM_LOG_INFO("Testing #5 (local push: non-existing @x), file [%s]", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+    fclose(f_y);
+    snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s", rm_state->f1.name, rm_test_fnames[RM_TEST_10_5_FILE_IDX]); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+    status = system(cmd);
+    if (status == -1) {
+        RM_LOG_INFO("%s", "System call failed, skipping the test...");
+    } else {
+        if (WIFEXITED(status) == 0) {
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+            assert_true(1 == 0 && "System call failed, cmd returned abnormally");
         }
-        status = WEXITSTATUS(status);
-        assert_int_equal(status, RM_ERR_OPEN_X);
+    }
+    status = WEXITSTATUS(status);
+    assert_int_equal(status, RM_ERR_OPEN_X);
+    RM_LOG_INFO("%s", "PASSED test #5 (local push: non-existing @x)");
+    return;
+}
 
-        RM_LOG_INFO("%s", "PASSED test #5 (local push: non-existing @x)");
+/* @brief   Test error reporting: @x exists, @y do not exist */
+void
+test_rm_cmd_6(void **state) {
+    int                     status;
+    char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
+    FILE                    *f_x;
+    struct test_rm_state    *rm_state;
+
+    rm_state = *state;
+
+    f_x = fopen(rm_test_fnames[RM_TEST_10_5_FILE_IDX], "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open file!");
+    }
+    RM_LOG_INFO("Testing #6 (local push: non-existing @y), file [%s]", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+    fclose(f_x);
+    snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s", rm_test_fnames[RM_TEST_10_5_FILE_IDX], rm_state->f1.name); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+    status = system(cmd);
+    if (status == -1) {
+        RM_LOG_INFO("%s", "System call failed, skipping the test...");
+    } else {
+        if (WIFEXITED(status) == 0) {
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+            assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+        }
+    }
+    status = WEXITSTATUS(status);
+    assert_int_equal(status, RM_ERR_OPEN_Y);
+    RM_LOG_INFO("%s", "PASSED test #6 (local push: non-existing @y)");
     return;
 }
