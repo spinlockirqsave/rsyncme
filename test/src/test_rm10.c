@@ -643,7 +643,7 @@ void
 test_rm_cmd_3(void **state) {
     int                     err, status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
-    char                    buf_z_name[RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
+    char                    buf_z_name[2 * RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
     const char              *f_y_name; /* @y name */
     unsigned char           cx, cz;
@@ -665,8 +665,10 @@ test_rm_cmd_3(void **state) {
     f_copy = NULL;
 
     strncpy(buf_z_name, rm_state.tmp_dir_name, RM_UNIQUE_STRING_LEN);
-    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN - 1, "_test_3", 7);
-    buf_z_name[RM_UNIQUE_STRING_LEN - 1 + 7] = '\0';
+    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN - 1, "/", 1);
+    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN, rm_state.tmp_dir_name, RM_UNIQUE_STRING_LEN);
+    strncpy(buf_z_name + 2 * (RM_UNIQUE_STRING_LEN - 1) + 1, "_test_3", 7);
+    buf_z_name[2 * (RM_UNIQUE_STRING_LEN - 1) + 7 + 1] = '\0';
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -847,7 +849,7 @@ void
 test_rm_cmd_4(void **state) {
     int                     err, status;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
-    char                    buf_z_name[RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
+    char                    buf_z_name[2 * RM_UNIQUE_STRING_LEN + 50];   /* @z (target in specific directory) */
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
     const char              *f_y_name; /* @y name */
     unsigned char           cx, cy, cz;
@@ -869,8 +871,10 @@ test_rm_cmd_4(void **state) {
     f_copy = NULL;
 
     strncpy(buf_z_name, rm_state.tmp_dir_name, RM_UNIQUE_STRING_LEN);
-    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN - 1, "_test_4", 7);
-    buf_z_name[RM_UNIQUE_STRING_LEN - 1 + 7] = '\0';
+    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN - 1, "/", 1);
+    strncpy(buf_z_name + RM_UNIQUE_STRING_LEN, rm_state.tmp_dir_name, RM_UNIQUE_STRING_LEN);
+    strncpy(buf_z_name + 2 * (RM_UNIQUE_STRING_LEN - 1) + 1, "_test_4", 7);
+    buf_z_name[2 * (RM_UNIQUE_STRING_LEN - 1) + 7 + 1] = '\0';
 
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
@@ -1071,7 +1075,7 @@ test_rm_cmd_4(void **state) {
     return;
 }
 
-/* @brief   Test error reporting: @x do not exist */
+/* @brief   Test error reporting: @x do not exist, @y exists */
 void
 test_rm_cmd_5(void **state) {
     int                     status;
@@ -1134,5 +1138,50 @@ test_rm_cmd_6(void **state) {
     status = WEXITSTATUS(status);
     assert_int_equal(status, RM_ERR_OPEN_Y);
     RM_LOG_INFO("%s", "PASSED test #6 (local push: non-existing @y)");
+    return;
+}
+
+/* @brief   Test error reporting: @x exists, @y do not exist, --force
+ * NOTE: new file will be created */
+void
+test_rm_cmd_7(void **state) {
+    int                     status;
+    char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
+    FILE                    *f_x, *f_z;
+    struct test_rm_state    *rm_state;
+
+    rm_state = *state;
+
+    f_x = fopen(rm_test_fnames[RM_TEST_10_5_FILE_IDX], "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open file!");
+    }
+    RM_LOG_INFO("Testing #7 (local push: non-existing @y, --force), file [%s]", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+    fclose(f_x);
+    snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s --force", rm_test_fnames[RM_TEST_10_5_FILE_IDX], rm_state->f1.name); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+    status = system(cmd);
+    if (status == -1) {
+        RM_LOG_INFO("%s", "System call failed, skipping the test...");
+    } else {
+        if (WIFEXITED(status) == 0) {
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+            assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+        }
+    }
+    status = WEXITSTATUS(status);
+    assert_int_equal(status, RM_ERR_OK);
+    RM_LOG_INFO("%s", "PASSED test #7 (local push: non-existing @y, --force)");
+    f_z = fopen(rm_state->f1.name, "rb");
+    if (f_z == NULL) {
+        RM_LOG_ERR("Can't open result file [%s]", rm_state->f1.name);
+    } else {
+        RM_LOG_INFO("Removing result file [%s]...", rm_state->f1.name);
+        fclose(f_z);
+        if (unlink(rm_state->f1.name) != 0) {
+            RM_LOG_CRIT("Can't unlink result file [%s]!", rm_state->f1.name);
+            assert_true(1 == 0 && "Can't unlink result file!");
+        }
+    }
     return;
 }

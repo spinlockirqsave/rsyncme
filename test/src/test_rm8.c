@@ -1,6 +1,6 @@
 /* @file        test_rm8.c
  * @brief       Test suite #8.
- * @details     Test of rm_tx_local_push.
+ * @details     White box testing of rm_tx_local_push.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        15 June 2016 10:44 PM

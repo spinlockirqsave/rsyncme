@@ -413,7 +413,6 @@ test_rm_local_push_err_1(void **state) {
         if (err != 0) {
             RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
-            return;
         }
     }
     return;
