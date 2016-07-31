@@ -100,5 +100,10 @@ test_rm_cmd_5(void **state);
 void
 test_rm_cmd_6(void **state);
 
+/* @brief   Test error reporting: @x exists, @y do not exist, --force
+ * NOTE: new file will be created */
+void
+test_rm_cmd_7(void **state);
+
 
 #endif	/* RSYNCME_TEST_RM10_H */
