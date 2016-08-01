@@ -323,6 +323,8 @@ done:
     pthread_mutex_lock(&s->session_mutex);
     assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == prvt_local->f_x_sz);
     assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
+    rec_ctx.collisions_1st_level = s->rec_ctx.collisions_1st_level; /* tx thread might have assigned to collisions variables already and memcpy would overwrite them */
+    rec_ctx.collisions_2nd_level = s->rec_ctx.collisions_2nd_level;
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
     pthread_mutex_unlock(&s->session_mutex);
