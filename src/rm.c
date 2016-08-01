@@ -325,7 +325,7 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
 
 /* NOTE: @f_x MUST be already opened */
 enum rm_error
-rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
+rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) {
     size_t          L;
     size_t          copy_all_threshold, copy_tail_threshold, send_threshold;
@@ -485,6 +485,11 @@ rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
             }
         } /* match */
     } while (send_left > 0);
+    
+    pthread_mutex_lock(&s->session_mutex);
+    s->rec_ctx.collisions_1st_level = collisions_1st_level;
+    s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
+    pthread_mutex_unlock(&s->session_mutex);
 
 end:
     if (raw_bytes != NULL) {

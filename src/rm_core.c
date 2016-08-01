@@ -41,11 +41,11 @@ rm_core_session_find(struct rsyncme *rm,
 }
 
 struct rm_session *
-rm_core_session_add(struct rsyncme *rm, enum rm_session_type type, size_t L) {
+rm_core_session_add(struct rsyncme *rm, enum rm_session_type type) {
     struct rm_session	*s = NULL;
     assert(rm != NULL);
 
-    s = rm_session_create(type, L);
+    s = rm_session_create(type);
     if (s == NULL) {
         return NULL;
     }

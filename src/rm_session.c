@@ -74,7 +74,7 @@ rm_session_push_local_free(struct rm_session_push_local *prvt) {
 
 /* TODO: generate GUID here */
 struct rm_session *
-rm_session_create(enum rm_session_type t, size_t L) {
+rm_session_create(enum rm_session_type t) {
     struct rm_session   *s;
 
     s = malloc(sizeof *s);
@@ -83,7 +83,6 @@ rm_session_create(enum rm_session_type t, size_t L) {
     }
     memset(s, 0, sizeof(*s));
     s->type = t;
-    s->rec_ctx.L = L;
     pthread_mutex_init(&s->session_mutex, NULL);
 
     switch (t) {

@@ -206,7 +206,7 @@ test_rm_setup(void **state) {
     rm_state.buf2 = buf;
 
     /* session for local push */
-    s = rm_session_create(RM_PUSH_LOCAL, 0);
+    s = rm_session_create(RM_PUSH_LOCAL);
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
 	}
