@@ -203,7 +203,7 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL && "Can't malloc buffer");
     rm_state.buf2 = buf;
 
-    s = rm_session_create(RM_PUSH_LOCAL, 0); /* session for local push */
+    s = rm_session_create(RM_PUSH_LOCAL); /* session for local push */
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
         if (f != NULL) {

@@ -143,12 +143,11 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
         goto err_exit;
     }
 
-    s = rm_session_create(RM_PUSH_LOCAL, L);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+    s = rm_session_create(RM_PUSH_LOCAL);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
     if (s == NULL) {
         err = RM_ERR_CREATE_SESSION;
         goto err_exit;
     }
-    memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx));    /* init reconstruction context */
     s->rec_ctx.method = RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION;
     s->rec_ctx.L = L;
     s->rec_ctx.copy_all_threshold = copy_all_threshold;

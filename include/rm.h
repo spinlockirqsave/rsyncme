@@ -171,6 +171,7 @@ struct rm_delta_reconstruct_ctx
     size_t                      copy_all_threshold, copy_tail_threshold, send_threshold;
     struct timespec             time_real;
     double                      time_cpu;
+    size_t                      collisions_1st_level, collisions_2nd_level;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given
@@ -317,7 +318,7 @@ struct rm_session;
  *          RM_ERR_MEM - malloc failed,
  *          RM_ERR_READ - fpread failed */
 enum rm_error
-rm_rolling_ch_proc(const struct rm_session *s, const struct twhlist_head *h,
+rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1)));
 
 /* @brief   Start execution of @f function in new thread.

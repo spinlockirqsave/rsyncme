@@ -18,15 +18,14 @@ rm_do_msg_push_rx(struct rsyncme *rm, unsigned char *buf) {
 	int                         err;
 	struct rm_session	        *s;
     struct rm_session_push_rx   *prvt;
-    size_t                      L;
 
     (void) buf;
     assert(rm != NULL && buf != NULL);
 
-    L = 0;  /* TODO get L from message */
+    /* L = 0;   TODO get L from message */
 
 	/* create session, assign SID, insert session into table */
-    s = rm_core_session_add(rm, RM_PUSH_RX, L);
+    s = rm_core_session_add(rm, RM_PUSH_RX);
     if (s == NULL) {
         return -1;
     }
@@ -55,13 +54,12 @@ rm_do_msg_push_tx(struct rsyncme *rm, unsigned char *buf) {
 	int                         err;
 	struct rm_session           *s;
     struct rm_session_push_tx   *prvt;
-    size_t                      L;
 
     (void) buf;
     assert(rm != NULL && buf != NULL);
 
-    L = 0;  /* TODO get L from message */
-    s = rm_core_session_add(rm, RM_PUSH_TX, L); /* create session, assign SID, insert into hashtable */
+    /* L = 0;   TODO get L from message */
+    s = rm_core_session_add(rm, RM_PUSH_TX); /* create session, assign SID, insert into hashtable */
     if (s == NULL) {
         return -1;
     }
@@ -86,12 +84,11 @@ int
 rm_do_msg_pull_tx(struct rsyncme *rm, unsigned char *buf) {
 	struct rm_session           *s;
     struct rm_session_pull_tx   *prvt;
-    size_t                      L;
 
     (void) buf;
     assert(rm != NULL && buf != NULL);
-    L = 0;  /* TODO get L from message */
-    s = rm_core_session_add(rm, RM_PULL_TX, L); /* create session, assign SID, insert session into table */
+    /* L = 0;   TODO get L from message */
+    s = rm_core_session_add(rm, RM_PULL_TX); /* create session, assign SID, insert session into table */
     if (s == NULL) {
         return -1;
     }
@@ -104,12 +101,11 @@ int
 rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 	struct rm_session           *s;
     struct rm_session_pull_rx   *prvt;
-    size_t                      L;
 
     (void) buf;
     assert(rm != NULL && buf != NULL);
-    L = 0;  /* TODO get L from message */
-    s = rm_core_session_add(rm, RM_PULL_RX, L);
+    /* L = 0;   TODO get L from message */
+    s = rm_core_session_add(rm, RM_PULL_RX);
     if (s == NULL) {
         return -1;
     }
