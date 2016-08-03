@@ -342,8 +342,10 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     unsigned char               *raw_bytes;     /* buffer for literal bytes */
     size_t                      a_k_pos, a_kL_pos;
     unsigned char               a_k, a_kL;      /* bytes to remove/add from rolling checksum */
+    uint8_t         hit;
     size_t          collisions_1st_level = 0;
     size_t          collisions_2nd_level = 0;
+    size_t          collisions_3rd_level = 0;
 
     raw_bytes = NULL;
     raw_bytes_n = 0;
@@ -417,8 +419,10 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
             }
         } /* roll */
         match = 0;
+        hit = 0;
         hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
         twhlist_for_each_entry(e, &h[hash], hlink) {        /* hit 1, 1st Level match? (hashtable hash match) */
+            hit = 1;
             if (e->data.ch_ch.f_ch == ch.f_ch) {            /* hit 2, 2nd Level match?, (fast rolling checksum match) */
                 if (rm_copy_buffered_2(f_x, a_k_pos, buf, read) != RM_ERR_OK) {
                     return RM_ERR_COPY_BUFFERED;
@@ -459,6 +463,9 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
             }
             send_left -= read;
         } else { /* tx raw bytes */
+            if (hit == 1) {             /* no match found, if hash tag was hit increase 3rd level collisions */
+                ++collisions_3rd_level;
+            }
             if (raw_bytes_n == 0) {
                 raw_bytes = malloc(L * sizeof(*raw_bytes));
                 if (raw_bytes == NULL) {
@@ -489,6 +496,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     pthread_mutex_lock(&s->session_mutex);
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
+    s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
     pthread_mutex_unlock(&s->session_mutex);
 
 end:
