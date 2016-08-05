@@ -353,7 +353,7 @@ main( int argc, char *argv[]) {
         send_threshold = L;
     }
     if (L <= sizeof(struct rm_ch_ch)) { /* warn there is no performance benefit in using rsyncme when block size is less than checksums overhead (apart from nonuniform distribution of byte stream transmitted) */
-        fprintf(stderr, "\nWarning: block size [%zu] disables possibility of improvement. Consider morre than [%zu].\n", L, sizeof(struct rm_ch_ch));
+        fprintf(stderr, "\nWarning: block size [%zu] disables possibility of improvement. Consider block bigger than [%zu].\n", L, sizeof(struct rm_ch_ch));
     }
 
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
