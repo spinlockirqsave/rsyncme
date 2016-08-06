@@ -202,6 +202,50 @@ test_rm_setup(void **state) {
     }
     rm_state.f.f_created = 1;
     fclose(f);
+    rm_get_unique_string(rm_state.f1.name);
+    f = fopen(rm_state.f1.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating file [%s] (f1)", rm_state.f1.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f1.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f1.name); 
+            exit(EXIT_FAILURE);
+        }
+        j = RM_TEST_5_FILE_X_SZ;
+        RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_state.f1.name);
+        while (j--) {
+                fputc(rand(), f);
+        }
+    }
+    rm_state.f1.f_created = 1;
+    fclose(f);
+    rm_get_unique_string(rm_state.f2.name);
+    f = fopen(rm_state.f2.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating file [%s] (f2)", rm_state.f2.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f2.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f2.name); 
+            exit(EXIT_FAILURE);
+        }
+        j = RM_TEST_5_FILE_Y_SZ;
+        RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_state.f2.name);
+        while (j--) {
+                fputc(rand(), f);
+        }
+    }
+    rm_state.f2.f_created = 1;
+    fclose(f);
+    rm_get_unique_string(rm_state.f3.name);
+    f = fopen(rm_state.f3.name, "rb+");
+    if (f != NULL) {
+        fclose(f);
+        RM_LOG_INFO("File [%s] exists. removing (f3)...", rm_state.f3.name); /* file exists, remove */
+        if (unlink(rm_state.f3.name) != 0) {
+            RM_LOG_CRIT("Can't unlink file [%s]!", rm_state.f3.name);
+            assert_true(1 == 0 && "Can't unlink!");
+        }
+    }
     return 0;
 }
 
@@ -240,6 +284,32 @@ test_rm_teardown(void **state) {
             fclose(f);
             if (unlink(rm_state->f.name) != 0) {
                 RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
+    if (rm_state->f1.f_created == 1) {
+        f = fopen(rm_state->f1.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s] (f1)", rm_state->f1.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s] (f1)...", rm_state->f1.name);
+            fclose(f);
+            if (unlink(rm_state->f1.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f1.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
+    if (rm_state->f2.f_created == 1) {
+        f = fopen(rm_state->f2.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s] (f2)", rm_state->f2.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s] (f2)...", rm_state->f2.name);
+            fclose(f);
+            if (unlink(rm_state->f2.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f2.name);
                 assert_true(1 == 0 && "Can't unlink!");
             }
         }
@@ -1501,7 +1571,7 @@ test_rm_rolling_ch_proc_5(void **state) {
             assert_true(rec_by_zero_diff == 0);
 
             if (delta_tail_n == 0) {
-                RM_LOG_INFO("PASSED test #5 (3bytes changed): delta elements cover whole file, file [%s], size [%zu], "
+                RM_LOG_INFO("PASSED test #5 (3 bytes changed): delta elements cover whole file, file [%s], size [%zu], "
                         "L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
             } else {
@@ -1755,4 +1825,140 @@ test_rm_rolling_ch_proc_9(void **state) {
     fclose(f_x);
     assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
     RM_LOG_INFO("%s", "PASSED test #9 (Test error reporting: reading out of range on nonzero size file)");
+}
+
+/* @brief   Test send threshold. */
+void
+test_rm_rolling_ch_proc_10(void **state) {
+    FILE                    *f_x, *f_y;
+    int                     fd;
+    int                     err;
+    size_t                  j, L, y_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    const char              *y;
+    size_t                  blocks_n_exp, blocks_n;
+    struct twhlist_node     *tmp;
+    struct rm_session       *s;
+    struct rm_session_push_local    *prvt;
+    size_t                  send_threshold;
+    size_t                  delta_ref_n, delta_raw_n, delta_tail_n, delta_zero_diff_n;
+
+    /* hashtable deletion */
+    unsigned int            bkt;
+    const struct rm_ch_ch_ref_hlink *e;
+
+    /* delta queue's content verification */
+    const twfifo_queue          *q;             /* produced queue of delta elements */
+    const struct rm_delta_e     *delta_e;       /* iterator over delta elements */
+    struct twlist_head          *lh;
+
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    f_x = fopen(rm_state->f1.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
+    }
+    assert_true(f_x != NULL && "Can't fopen file");
+    f_y = fopen(rm_state->f2.name, "rb");
+    if (f_y == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f2.name);
+    }
+    assert_true(f_y != NULL && "Can't fopen file");
+    y = rm_state->f2.name;
+    fd = fileno(f_y);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_state->f2.name);
+        fclose(f_y);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    y_sz = fs.st_size;
+    
+    j = 0;
+    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+        L = rm_test_L_blocks[j];
+        send_threshold = L;
+        RM_LOG_INFO("Testing rolling checksum procedure (send threshold) #10: block size [%zu], send threshold [%zu]", L, send_threshold);
+        blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        assert_int_equal(err, RM_ERR_OK);
+        assert_int_equal(blocks_n_exp, blocks_n);
+        rewind(f_y);
+        
+        s = rm_state->s; /* run rolling checksum procedure */
+        memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* reset reconstruction context */
+        s->rec_ctx.L = L;
+        s->rec_ctx.copy_all_threshold = 0;
+        s->rec_ctx.copy_tail_threshold = 0;
+        s->rec_ctx.send_threshold = send_threshold;
+        prvt = s->prvt;
+        prvt->h = h;
+        prvt->f_x = f_x;
+        prvt->delta_f = rm_roll_proc_cb_1;
+        err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
+        assert_int_equal(err, RM_ERR_OK);
+
+        q = &prvt->tx_delta_e_queue; /* check delta elements */
+        assert_true(q != NULL);
+
+        delta_ref_n = delta_raw_n = 0;
+        delta_tail_n = delta_zero_diff_n = 0;
+        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {    /* dequeue, so can free later */
+            delta_e = tw_container_of(lh, struct rm_delta_e, link);
+            switch (delta_e->type) {
+                case RM_DELTA_ELEMENT_REFERENCE:
+                    ++delta_ref_n;
+                    break;
+                case RM_DELTA_ELEMENT_RAW_BYTES:
+                    assert_true(delta_e->raw_bytes_n > 0);
+                    assert_true(delta_e->raw_bytes_n <= send_threshold);
+                    free(delta_e->raw_bytes);
+                    ++delta_raw_n;
+                    break;
+                case RM_DELTA_ELEMENT_ZERO_DIFF:
+                    ++delta_ref_n;
+                    ++delta_zero_diff_n;
+                    break;
+                case RM_DELTA_ELEMENT_TAIL:
+                    ++delta_ref_n;
+                    ++delta_tail_n;
+                    break;
+                default:
+                    RM_LOG_ERR("%s", "Unknown delta element type!");
+                    assert_true(1 == 0 && "Unknown delta element type!");
+            }
+            free((void*) delta_e);  /* free delta element */
+        }
+
+        if (delta_tail_n == 0) {
+            if (delta_zero_diff_n > 0) {
+                RM_LOG_INFO("PASSED test #10 (send threshold): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA ZERO DIFF [%zu]",
+                        send_threshold, L, blocks_n, delta_ref_n, delta_zero_diff_n);
+            } else {
+                RM_LOG_INFO("PASSED test #10 (send threshold): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA RAW [%zu]",
+                        send_threshold, L, blocks_n, delta_ref_n, delta_raw_n);
+            }
+        } else {
+            RM_LOG_INFO("PASSED test #10 (send threshold): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA_TAIL [%zu], DELTA RAW [%zu]",
+                    send_threshold, L, blocks_n, delta_ref_n, delta_tail_n, delta_raw_n);
+        }
+
+        blocks_n = 0;
+        bkt = 0;
+        twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+            twhash_del((struct twhlist_node*)&e->hlink);
+            free((struct rm_ch_ch_ref_hlink*)e);
+            ++blocks_n;
+        }
+        assert_int_equal(blocks_n_exp, blocks_n);
+        rewind(f_x);
+        rewind(f_y);
+    }
+    fclose(f_x);
+    fclose(f_y);
+    RM_LOG_INFO("%s", "PASSED test #10 (send threshold)");
+    return;
 }

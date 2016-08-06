@@ -190,7 +190,7 @@ test_rm_setup(void **state) {
     f = fopen(rm_state.f1.name, "rb+");
     if (f != NULL) {
         fclose(f);
-        RM_LOG_INFO("File [%s] exists. removing...", rm_state.f1.name); /* file doesn't exist, create */
+        RM_LOG_INFO("File [%s] exists. removing...", rm_state.f1.name); /* file exists, remove */
         if (unlink(rm_state.f1.name) != 0) {
             RM_LOG_CRIT("Can't unlink file [%s]!", rm_state.f1.name);
             assert_true(1 == 0 && "Can't unlink!");
@@ -200,7 +200,7 @@ test_rm_setup(void **state) {
     f = fopen(rm_state.f2.name, "rb+");
     if (f != NULL) {
         fclose(f);
-        RM_LOG_INFO("File [%s] exists. removing...", rm_state.f1.name); /* file doesn't exist, create */
+        RM_LOG_INFO("File [%s] exists. removing...", rm_state.f1.name); /* file exists, remove */
         if (unlink(rm_state.f1.name) != 0) {
             RM_LOG_CRIT("Can't unlink file [%s]!", rm_state.f1.name);
             assert_true(1 == 0 && "Can't unlink!");
