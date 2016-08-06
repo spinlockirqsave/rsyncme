@@ -171,7 +171,7 @@ struct rm_delta_reconstruct_ctx
     size_t                      copy_all_threshold, copy_tail_threshold, send_threshold;
     struct timespec             time_real;
     double                      time_cpu;
-    size_t                      collisions_1st_level, collisions_2nd_level;
+    size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level;
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given

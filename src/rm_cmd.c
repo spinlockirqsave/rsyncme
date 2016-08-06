@@ -95,7 +95,7 @@ print_stats(struct rm_delta_reconstruct_ctx rec_ctx) {
                 fprintf(stderr, " (zero difference)");
             }
             fprintf(stderr, "\ndeltas      : [%zu] (raw [%zu], refs [%zu])", rec_ctx.delta_raw_n + rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.delta_ref_n);
-            fprintf(stderr, "\ncollisions  : 1st level [%zu], 2nd level [%zu])", rec_ctx.collisions_1st_level, rec_ctx.collisions_2nd_level);
+            fprintf(stderr, "\ncollisions  : 1st [%zu], 2nd [%zu], 3rd [%zu]", rec_ctx.collisions_1st_level, rec_ctx.collisions_2nd_level, rec_ctx.collisions_3rd_level);
             break;
 
         default:
@@ -353,7 +353,7 @@ main( int argc, char *argv[]) {
         send_threshold = L;
     }
     if (L <= sizeof(struct rm_ch_ch)) { /* warn there is no performance benefit in using rsyncme when block size is less than checksums overhead (apart from nonuniform distribution of byte stream transmitted) */
-        fprintf(stderr, "\nWarning: block size [%zu] disables possibility of improvement. Consider morre than [%zu].\n", L, sizeof(struct rm_ch_ch));
+        fprintf(stderr, "\nWarning: block size [%zu] disables possibility of improvement. Consider block bigger than [%zu].\n", L, sizeof(struct rm_ch_ch));
     }
 
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
