@@ -69,6 +69,10 @@ rsyncme/		<-- this directory (ROOT)
 4. BUILD , TEST, INSTALLATION
 
 There are few targets available: rsyncme_d, rsyncme, test executables.
+Only commandline utility "rsyncme" is needed for local synchronization
+Installation scripts are available for out of the box installation
+on Linux Debian and Ubuntu - there is no support for other platforms
+at this moment. Linux Debian is suggested.
 
 4.1 Dependencies
 
