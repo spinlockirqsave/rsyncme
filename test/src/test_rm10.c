@@ -355,7 +355,7 @@ test_rm_cmd_1(void **state) {
         if (status == -1) {
             RM_LOG_INFO("%s", "System call failed, skipping the test...");
         } else if (WIFEXITED(status) == 0) {
-                RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
                 assert_true(1 == 0 && "System call failed, cmd returned abnormally");
         }
         status = WEXITSTATUS(status);
@@ -546,7 +546,7 @@ test_rm_cmd_2(void **state) {
             if (status == -1) {
                 RM_LOG_INFO("%s", "System call failed, skipping the test...");
             } else if (WIFEXITED(status) == 0) {
-                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
                     assert_true(1 == 0 && "System call failed, cmd returned abnormally");
             }
             status = WEXITSTATUS(status);
@@ -735,7 +735,7 @@ test_rm_cmd_3(void **state) {
                 RM_LOG_INFO("%s", "System call failed, skipping the test...");
             } else {
                 if (WIFEXITED(status) == 0) {
-                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
                     assert_true(1 == 0 && "System call failed, cmd returned abnormally");
                 }
             }
@@ -940,7 +940,7 @@ test_rm_cmd_4(void **state) {
             if (status == -1) {
                 RM_LOG_INFO("%s", "System call failed, skipping the test...");
             } else if (WIFEXITED(status) == 0) {
-                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+                    RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
                     assert_true(1 == 0 && "System call failed, cmd returned abnormally");
             }
             status = WEXITSTATUS(status);
@@ -1098,7 +1098,7 @@ test_rm_cmd_5(void **state) {
         RM_LOG_INFO("%s", "System call failed, skipping the test...");
     } else {
         if (WIFEXITED(status) == 0) {
-            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
             assert_true(1 == 0 && "System call failed, cmd returned abnormally");
         }
     }
@@ -1131,7 +1131,7 @@ test_rm_cmd_6(void **state) {
         RM_LOG_INFO("%s", "System call failed, skipping the test...");
     } else {
         if (WIFEXITED(status) == 0) {
-            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
             assert_true(1 == 0 && "System call failed, cmd returned abnormally");
         }
     }
@@ -1165,7 +1165,7 @@ test_rm_cmd_7(void **state) {
         RM_LOG_INFO("%s", "System call failed, skipping the test...");
     } else {
         if (WIFEXITED(status) == 0) {
-            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally wit error [%d]", WEXITSTATUS(status));
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
             assert_true(1 == 0 && "System call failed, cmd returned abnormally");
         }
     }
@@ -1175,6 +1175,7 @@ test_rm_cmd_7(void **state) {
     f_z = fopen(rm_state->f1.name, "rb");
     if (f_z == NULL) {
         RM_LOG_ERR("Can't open result file [%s]", rm_state->f1.name);
+        assert_true(1 == 0 && "Can't open result file!");
     } else {
         RM_LOG_INFO("Removing result file [%s]...", rm_state->f1.name);
         fclose(f_z);
