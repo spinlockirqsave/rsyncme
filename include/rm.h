@@ -316,7 +316,11 @@ struct rm_session;
  *          RM_ERR_FSTAT_X - fstat failed on @x,
  *          RM_ERR_TOO_MUCH_REQUESTED - not enough data in file (from >= file size),
  *          RM_ERR_MEM - malloc failed,
- *          RM_ERR_READ - fpread failed */
+ *          RM_ERR_READ - fpread failed
+ *          RM_ERR_TX_RAW - tx failed on raw delta element,
+ *          RM_ERR_TX_REF - tx ref failed,
+ *          RM_ERR_TX_TAIL - tx on tail failed,
+ *          RM_ERR_TX_ZERO_DIFF - zero difference tx failed */
 enum rm_error
 rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1)));
