@@ -349,6 +349,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
 
     raw_bytes = NULL;
     raw_bytes_n = 0;
+    buf = NULL;
     e = NULL;
     a_k_pos = 0;
 
@@ -519,10 +520,18 @@ copy_tail:
         free(raw_bytes);
         return RM_ERR_COPY_BUFFERED_2;
     }
-    if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
-        if (buf != NULL) free(buf);
-        free(raw_bytes);
-        return RM_ERR_TX_RAW;
+    if (send_left < file_sz) {
+            if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
+                if (buf != NULL) free(buf);
+                free(raw_bytes);
+                return RM_ERR_TX_RAW;
+            }
+    } else {
+            if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
+                if (buf != NULL) free(buf);
+                free(raw_bytes);
+                return RM_ERR_TX_ZERO_DIFF;
+            }
     }
     if (raw_bytes != NULL) {
         free(raw_bytes);
