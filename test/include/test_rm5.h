@@ -119,9 +119,13 @@ test_rm_rolling_ch_proc_9(void **state);
 void
 test_rm_rolling_ch_proc_10(void **state);
 
-/* @brief   Test copy all threshold. */
+/* @brief   Test copy all threshold. (ZERO DIFF expected) */
 void
 test_rm_rolling_ch_proc_11(void **state);
+
+/* @brief   Test copy tail threshold. (ZERO DIFF expected) */
+void
+test_rm_rolling_ch_proc_12(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM5_H */
