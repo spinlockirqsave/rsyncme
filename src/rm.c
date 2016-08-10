@@ -371,7 +371,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         return RM_ERR_TOO_MUCH_REQUESTED;   /* Nothing to do */
     }
     send_left = file_sz - from;             /* positive value */
-    if (send_left < copy_all_threshold || h == NULL) {   /* copy all bytes */
+    if ((send_left < copy_all_threshold) || (send_left < copy_tail_threshold) || (h == NULL)) {   /* copy all bytes */
         a_kL_pos = 0;
         goto copy_tail;
     }
@@ -383,14 +383,11 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     match = 1;
     beginning_bytes_in_buf = 0;
     do {
+        if (send_left < copy_tail_threshold) { /* send last bytes instead of doing normal lookup? */
+            goto copy_tail;
+        }
         if (match == 1) {
-            if (send_left == 0) { /* done? */
-                goto end;
-            }
             read_now = rm_min(L, send_left);
-            if (send_left < copy_tail_threshold) { /* send last bytes instead of doing normal lookup? */
-                goto copy_tail;
-            }
             read = rm_fpread(buf, 1, read_now, a_kL_pos, f_x);
             if (read != read_now) {
                 return RM_ERR_READ;
@@ -500,7 +497,6 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
     pthread_mutex_unlock(&s->session_mutex);
 
-end:
     if (raw_bytes != NULL) {
         free(raw_bytes);
     }
@@ -510,6 +506,12 @@ end:
     return RM_ERR_OK;
 
 copy_tail:
+    pthread_mutex_lock(&s->session_mutex);
+    s->rec_ctx.collisions_1st_level = collisions_1st_level;
+    s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
+    s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
+    pthread_mutex_unlock(&s->session_mutex);
+
     raw_bytes = malloc(send_left * sizeof(*raw_bytes));
     if (raw_bytes == NULL) {
         if (buf != NULL) free(buf);
@@ -520,7 +522,7 @@ copy_tail:
         free(raw_bytes);
         return RM_ERR_COPY_BUFFERED_2;
     }
-    if (send_left < file_sz) {
+    if (send_left < file_sz) { /* this is the case also for send_left < copy_tail_threshold if copy_tail_threshold is < file_sz, otherwise COPY BUFFERED happens */ 
             if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
                 if (buf != NULL) free(buf);
                 free(raw_bytes);
