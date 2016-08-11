@@ -16,15 +16,15 @@ const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
     "rm_f_1024_ts8", "rm_f_1025_ts8", "rm_f_4096_ts8", "rm_f_7787_ts8", "rm_f_20100_ts8"};
 
 size_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
-                                                100, 511, 512, 513, 1023,
-                                                1024, 1025, 4096, 7787, 20100 };
+    100, 511, 512, 513, 1023,
+    1024, 1025, 4096, 7787, 20100 };
 
 size_t
 rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
-                    24, 32, 50, 64, 100, 127, 128, 129,
-                    130, 200, 400, 499, 500, 501, 511, 512,
-                    513, 600, 800, 1000, 1100, 1123, 1124, 1125,
-                    1200, 100000 };
+    24, 32, 50, 64, 100, 127, 128, 129,
+    130, 200, 400, 499, 500, 501, 511, 512,
+    513, 600, 800, 1000, 1100, 1123, 1124, 1125,
+    1200, 100000 };
 
 static int
 test_rm_copy_files_and_postfix(const char *postfix) {
@@ -92,12 +92,12 @@ test_rm_copy_files_and_postfix(const char *postfix) {
         } else {
             RM_LOG_INFO("Using previously created copy of file [%s]", rm_test_fnames[i]);
         }
-		if (f != NULL) {
-			fclose(f);
-		}
-		if (f_copy != NULL) {
-			fclose(f_copy);
-		}
+        if (f != NULL) {
+            fclose(f);
+        }
+        if (f_copy != NULL) {
+            fclose(f_copy);
+        }
     }
     return 0;
 }
@@ -173,22 +173,66 @@ test_rm_setup(void **state) {
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 1st memory buffer of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
     s = rm_session_create(RM_PUSH_LOCAL);
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
-	}
+    }
     assert_true(s != NULL);
     rm_state.s = s;
+    rm_get_unique_string(rm_state.f1.name);
+    f = fopen(rm_state.f1.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating file [%s] (f1)", rm_state.f1.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f1.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f1.name); 
+            exit(EXIT_FAILURE);
+        }
+        j = RM_TEST_8_FILE_X_SZ;
+        RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_state.f1.name);
+        while (j--) {
+            fputc(rand(), f);
+        }
+    }
+    rm_state.f1.f_created = 1;
+    fclose(f);
+    rm_get_unique_string(rm_state.f2.name);
+    f = fopen(rm_state.f2.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating file [%s] (f2)", rm_state.f2.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f2.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f2.name); 
+            exit(EXIT_FAILURE);
+        }
+        j = RM_TEST_8_FILE_Y_SZ;
+        RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_state.f2.name);
+        while (j--) {
+            fputc(rand(), f);
+        }
+    }
+    rm_state.f2.f_created = 1;
+    fclose(f);
+    rm_get_unique_string(rm_state.f3.name);
+    f = fopen(rm_state.f3.name, "rb+");
+    if (f != NULL) {
+        fclose(f);
+        RM_LOG_INFO("File [%s] exists. removing (f3)...", rm_state.f3.name); /* file exists, remove */
+        if (unlink(rm_state.f3.name) != 0) {
+            RM_LOG_CRIT("Can't unlink file [%s]!", rm_state.f3.name);
+            assert_true(1 == 0 && "Can't unlink!");
+        }
+    }
     return 0;
 }
 
@@ -216,6 +260,32 @@ test_rm_teardown(void **state) {
     free(rm_state->buf);
     free(rm_state->buf2);
     rm_session_free(rm_state->s);
+    if (rm_state->f1.f_created == 1) {
+        f = fopen(rm_state->f1.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s] (f1)", rm_state->f1.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s] (f1)...", rm_state->f1.name);
+            fclose(f);
+            if (unlink(rm_state->f1.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f1.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
+    if (rm_state->f2.f_created == 1) {
+        f = fopen(rm_state->f2.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open file [%s] (f2)", rm_state->f2.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s] (f2)...", rm_state->f2.name);
+            fclose(f);
+            if (unlink(rm_state->f2.name) != 0) {
+                RM_LOG_CRIT("Can't unlink file [%s]!", rm_state->f2.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
     return 0;
 }
 
@@ -310,10 +380,6 @@ test_rm_tx_local_push_1(void **state) {
             RM_LOG_INFO("Validating testing #1 of local push, file [%s], size [%zu], block size L [%zu]", f_y_name, f_y_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
-                continue;
-            }
-            if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
                 continue;
             }
             RM_LOG_INFO("Testing local push #1: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
@@ -441,7 +507,7 @@ test_rm_tx_local_push_1(void **state) {
         f_y = NULL;
         RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_1");
@@ -553,10 +619,6 @@ test_rm_tx_local_push_2(void **state) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
-                continue;
-            }
             RM_LOG_INFO("Testing local push #2 [first byte changed]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
@@ -639,9 +701,9 @@ test_rm_tx_local_push_2(void **state) {
             }
 
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
-				if (f_y) {
-					fclose(f_y);
-				}
+                if (f_y) {
+                    fclose(f_y);
+                }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     assert_true(1 == 0 && "Can't unlink @y file");
@@ -712,18 +774,18 @@ test_rm_tx_local_push_2(void **state) {
                 fclose(f_y);
                 continue;
             }
-		}
-		if (f_x) {
-			fclose(f_x);
+        }
+        if (f_x) {
+            fclose(f_x);
             f_x = NULL;
-		}
-		if (f_y) {
-			fclose(f_y);
+        }
+        if (f_y) {
+            fclose(f_y);
             f_y = NULL;
-		}
+        }
         RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
@@ -836,10 +898,6 @@ test_rm_tx_local_push_3(void **state) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, f_y_name);
                 continue;
             }
-            if (f_y_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", f_y_name, f_y_sz);
-                continue;
-            }
             RM_LOG_INFO("Testing local push #3 [last byte changed]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
             copy_all_threshold = 0;
             copy_tail_threshold = 0;
@@ -916,9 +974,9 @@ test_rm_tx_local_push_3(void **state) {
             }
 
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
-				if (f_y) {
-					fclose(f_y);
-				}
+                if (f_y) {
+                    fclose(f_y);
+                }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     assert_true(1 == 0);
@@ -995,7 +1053,7 @@ test_rm_tx_local_push_3(void **state) {
         f_y = NULL;
         RM_LOG_INFO("PASSED test #3: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_3");
@@ -1200,10 +1258,10 @@ test_rm_tx_local_push_4(void **state) {
             }
 
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
-				if (f_y) {
-					fclose(f_y);
+                if (f_y) {
+                    fclose(f_y);
                     f_y = NULL;
-				}
+                }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     if (f_x != NULL) fclose(f_x);
@@ -1255,9 +1313,9 @@ test_rm_tx_local_push_4(void **state) {
                         }
                         assert_true(rec_ctx.rec_by_raw == 2 * L);
                     } else if (rec_ctx.delta_ref_n == (f_y_sz / L - 1)) {
-                       assert_true(rec_ctx.rec_by_ref == (f_y_sz - L) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L && rec_ctx.rec_by_raw == L);
+                        assert_true(rec_ctx.rec_by_ref == (f_y_sz - L) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L && rec_ctx.rec_by_raw == L);
                     } else {
-                       assert_true(rec_ctx.delta_ref_n == f_y_sz / L && rec_ctx.rec_by_ref == f_y_sz && rec_ctx.delta_raw_n == 0 && rec_ctx.rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first block */
+                        assert_true(rec_ctx.delta_ref_n == f_y_sz / L && rec_ctx.rec_by_ref == f_y_sz && rec_ctx.delta_raw_n == 0 && rec_ctx.rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first block */
                     }
                 }
                 assert_true(rec_ctx.delta_ref_n * L == f_y_sz - rec_ctx.rec_by_raw);
@@ -1281,7 +1339,7 @@ test_rm_tx_local_push_4(void **state) {
                         assert_true(rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L + (f_y_sz % L));
                         assert_true(rec_ctx.rec_by_raw == (L + f_y_sz % L));
                     } else if (rec_ctx.delta_ref_n == (f_y_sz / L + 1 - 1)) {
-                       assert_true((rec_ctx.rec_by_ref == (f_y_sz - L) || rec_ctx.rec_by_ref == (f_y_sz - f_y_sz % L)) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L && (rec_ctx.rec_by_raw == L || rec_ctx.rec_by_raw == f_y_sz % L));
+                        assert_true((rec_ctx.rec_by_ref == (f_y_sz - L) || rec_ctx.rec_by_ref == (f_y_sz - f_y_sz % L)) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L && (rec_ctx.rec_by_raw == L || rec_ctx.rec_by_raw == f_y_sz % L));
                     } else {
                         assert_true(1 == 0 && "Got only delta reference blocks but TAIL can't match in this test!"); 
                     }
@@ -1325,7 +1383,7 @@ test_rm_tx_local_push_4(void **state) {
         f_y = NULL;
         RM_LOG_INFO("PASSED test #4: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_4");
@@ -1614,9 +1672,9 @@ test_rm_tx_local_push_5(void **state) {
             }
 
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
-				if (f_y) {
-					fclose(f_y);
-				}
+                if (f_y) {
+                    fclose(f_y);
+                }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     if (f_x != NULL) {
@@ -1674,11 +1732,11 @@ test_rm_tx_local_push_5(void **state) {
                         }
                         assert_true(rec_ctx.rec_by_raw == 3 * L);
                     } else if (rec_ctx.delta_ref_n == (f_y_sz / L - 2)) {
-                       assert_true(rec_ctx.rec_by_ref == (f_y_sz - 2 * L) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= 2 * L  && rec_ctx.rec_by_raw == 2 * L);
+                        assert_true(rec_ctx.rec_by_ref == (f_y_sz - 2 * L) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= 2 * L  && rec_ctx.rec_by_raw == 2 * L);
                     } else if (rec_ctx.delta_ref_n == (f_y_sz / L - 1)) {
-                       assert_true(rec_ctx.rec_by_ref == (f_y_sz - 1 * L) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= 1 * L  && rec_ctx.rec_by_raw == 1 * L);
+                        assert_true(rec_ctx.rec_by_ref == (f_y_sz - 1 * L) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= 1 * L  && rec_ctx.rec_by_raw == 1 * L);
                     } else {
-                       assert_true(rec_ctx.delta_ref_n == f_y_sz / L && rec_ctx.rec_by_ref == f_y_sz && rec_ctx.delta_raw_n == 0 && rec_ctx.rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first and middle block */
+                        assert_true(rec_ctx.delta_ref_n == f_y_sz / L && rec_ctx.rec_by_ref == f_y_sz && rec_ctx.delta_raw_n == 0 && rec_ctx.rec_by_raw == 0); /* the last (tail) block in @x will not match the last block in @y, but it can match some other block in @y, same with first and middle block */
                     }
                 }
                 assert_true(rec_ctx.delta_ref_n * L == f_y_sz - rec_ctx.rec_by_raw);
@@ -1706,7 +1764,7 @@ test_rm_tx_local_push_5(void **state) {
                         assert_true(rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L + (f_y_sz % L));
                         assert_true(rec_ctx.rec_by_raw == (L + f_y_sz % L));
                     } else if (rec_ctx.delta_ref_n == (f_y_sz / L + 1 - 1)) {
-                       assert_true((rec_ctx.rec_by_ref == (f_y_sz - L) || rec_ctx.rec_by_ref == (f_y_sz - f_y_sz % L)) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L && (rec_ctx.rec_by_raw == L || rec_ctx.rec_by_raw == f_y_sz % L));
+                        assert_true((rec_ctx.rec_by_ref == (f_y_sz - L) || rec_ctx.rec_by_ref == (f_y_sz - f_y_sz % L)) && rec_ctx.delta_raw_n > 0 && rec_ctx.delta_raw_n <= L && (rec_ctx.rec_by_raw == L || rec_ctx.rec_by_raw == f_y_sz % L));
                     } else {
                         assert_true(1 == 0 && "Got only delta reference blocks but TAIL can't match in this test!"); 
                     }
@@ -1783,7 +1841,7 @@ test_rm_tx_local_push_5(void **state) {
         }
         RM_LOG_INFO("PASSED test #5: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_5");
@@ -1838,7 +1896,7 @@ test_rm_tx_local_push_6(void **state) {
             RM_LOG_ERR("Can't open file [%s]", rm_test_fnames[i]);
         } else {
             RM_LOG_INFO("Removing file [%s]", rm_test_fnames[i]);
-			fclose(f);
+            fclose(f);
             remove(rm_test_fnames[i]);
         }
     }
@@ -1849,8 +1907,7 @@ test_rm_tx_local_push_6(void **state) {
     i = 0;  /* test on all files */
     for (; i < RM_TEST_FNAMES_N; ++i) {
         f_y_name = rm_test_fnames[i];
-        /* change byte in copy */
-        strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX);
+        strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX); /* change byte in copy */
         strncpy(buf_x_name + strlen(buf_x_name), "_test_6", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf_x_name, "rb+");
@@ -1880,10 +1937,6 @@ test_rm_tx_local_push_6(void **state) {
             RM_LOG_INFO("Validating testing #6 of local push [copy buffered], file [%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, buf_x_name);
-                continue;
-            }
-            if (f_x_sz < 2) {
-                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", buf_x_name, f_x_sz);
                 continue;
             }
             RM_LOG_INFO("Testing local push #6 [copy buffered]: file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_x_sz, L);
@@ -1956,32 +2009,32 @@ test_rm_tx_local_push_6(void **state) {
             }
 
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
-				if (f_y != NULL) {
-					fclose(f_y);
-					f_y = NULL;
-				}
+                if (f_y != NULL) {
+                    fclose(f_y);
+                    f_y = NULL;
+                }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
                     assert_true(1 == 0);
                 }
             }
-			if (f_x != NULL) {
-				fclose(f_x);
-				f_x = NULL;
-			}
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
             RM_LOG_INFO("PASSED test #6: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
-		}
-		if (f_x != NULL) {
-			fclose(f_x);
-			f_x = NULL;
-		}
+        }
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
         if (f_y != NULL) {
-			fclose(f_y);
-			f_x = NULL;
-		}
+            fclose(f_y);
+            f_x = NULL;
+        }
         RM_LOG_INFO("PASSED test #6 (copy buffered): files [%s] [%s] passed delta reconstruction for all block sizes, files are the same", buf_x_name, f_y_name);
-	}
+    }
 
     if (RM_TEST_8_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_6");
@@ -1991,5 +2044,165 @@ test_rm_tx_local_push_6(void **state) {
             return;
         }
     }
+    return;
+}
+
+/* @brief   Test #7. */
+/* @brief   Test if result file @f_z is reconstructed properly on test files with random content */
+void
+test_rm_tx_local_push_7(void **state) {
+    int                     err;
+    enum rm_error           status;
+    unsigned char           cx, cz;
+    const char              *x, *y, *z;  /* @x, @y, @z names */
+    FILE                    *f_x, *f_y, *f_z;
+    int                     fd_x, fd_y, fd_z;
+    size_t                  j, k, L, f_x_sz, f_y_sz, f_z_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    rm_push_flags                   flags = 0;
+    size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+    f_x = fopen(rm_state->f1.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
+    }
+    assert_true(f_x != NULL && "Can't fopen file");
+    x = rm_state->f1.name;
+    fd_x = fileno(f_x);
+    if (fstat(fd_x, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", x);
+        fclose(f_x);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    f_x_sz = fs.st_size;
+    fclose(f_x);
+    f_x = NULL;
+    f_y = fopen(rm_state->f2.name, "rb");
+    if (f_y == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f2.name);
+    }
+    assert_true(f_y != NULL && "Can't fopen file");
+    y = rm_state->f2.name;
+    fd_y = fileno(f_y);
+    if (fstat(fd_y, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", y);
+        fclose(f_y);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    f_y_sz = fs.st_size;
+    fclose(f_y);
+    f_y = NULL;
+    z = rm_state->f3.name;
+
+    j = 0;
+    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+        L = rm_test_L_blocks[j];
+        RM_LOG_INFO("Validating testing #7 of local push [files with random content], block size L [%zu]", L);
+        if (0 == L) {
+            RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping...", L, 0);
+            continue;
+        }
+        RM_LOG_INFO("Testing local push #7 [files with random content]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
+        copy_all_threshold = 0;
+        copy_tail_threshold = 0;
+        send_threshold = L;
+        flags |= RM_BIT_6; /* set --leave flag */
+
+        memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+        assert_int_equal(status, RM_ERR_OK);
+
+        assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
+
+        f_x = fopen(x, "rb+");
+        if (f_x == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", x);
+        }
+        assert_true(f_x != NULL && "Can't open file @x");
+        fd_x = fileno(f_x);
+        f_z = fopen(z, "rb");
+        if (f_z == NULL) {
+            RM_LOG_PERR("Can't open result file [%s]", z);
+        }
+        assert_true(f_z != NULL && "Can't open file @z");
+        fd_z = fileno(f_z);
+
+        /* verify files size */
+        memset(&fs, 0, sizeof(fs)); /* get @x size */
+        if (fstat(fd_x, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat file [%s]", x);
+            fclose(f_x);
+            fclose(f_z);
+            assert_true(1 == 0);
+        }
+        f_x_sz = fs.st_size;
+        memset(&fs, 0, sizeof(fs));
+        if (fstat(fd_z, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat result file [%s]", z);
+            fclose(f_x);
+            fclose(f_z);
+            assert_true(1 == 0);
+        }
+        f_z_sz = fs.st_size;
+        assert_true(f_x_sz == f_z_sz && "File sizes differ!");
+
+        k = 0;
+        while (k < f_x_sz) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", x);
+                fclose(f_x);
+                fclose(f_z);
+                assert_true(1 == 0 && "ERROR reading byte in file @x!");
+            }
+            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+                RM_LOG_CRIT("Error reading file [%s]!", z);
+                fclose(f_x);
+                fclose(f_z);
+                assert_true(1 == 0 && "ERROR reading byte in file @z!");
+            }
+            if (cx != cz) {
+                RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
+            }
+            assert_true(cx == cz && "Bytes differ!");
+            ++k;
+        }
+        if ((err = rm_file_cmp(f_x, f_z, 0, 0, f_x_sz)) != RM_ERR_OK) {
+            RM_LOG_ERR("Bytes differ, err [%d]", err);
+            assert_true(1 == 0);
+        }
+
+        if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
+            if (f_z != NULL) {
+                fclose(f_z);
+                f_z = NULL;
+            }
+            if (unlink(z) != 0) {
+                RM_LOG_ERR("Can't unlink result file [%s]", z);
+                assert_true(1 == 0);
+            }
+        }
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        RM_LOG_INFO("PASSED test #7 (files with random content): block [%zu], passed delta reconstruction, files are the same", L);
+    }
+    if (f_x != NULL) {
+        fclose(f_x);
+        f_x = NULL;
+    }
+    if (f_y != NULL) {
+        fclose(f_y);
+        f_y = NULL;
+    }
+    if (f_z != NULL) {
+        fclose(f_z);
+        f_z = NULL;
+    }
+    RM_LOG_INFO("%s", "PASSED test #7 (files with random content): passed delta reconstruction for all block sizes, files are the same");
     return;
 }

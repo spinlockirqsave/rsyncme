@@ -28,12 +28,15 @@
 #define RM_TEST_L_BLOCKS_SIZE       34
 #define RM_TEST_L_MAX               1024UL
 #define RM_TEST_FNAMES_N            15
+#define RM_TEST_8_FILE_X_SZ         200
+#define RM_TEST_8_FILE_Y_SZ         300
+
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
 size_t    rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE];
 
 struct test_rm_file {
-    FILE    *f;
+    uint8_t f_created;
     char    name[RM_FILE_LEN_MAX + 100];
 };
 
@@ -44,6 +47,7 @@ struct test_rm_state
     void                *buf2;
     struct rm_session   *s;
     struct test_rm_file f_z;
+    struct test_rm_file f1, f2, f3; /* f1, f2, f3 are used as @x, @y, @z in tests >= 7 */
 };
 
 struct test_rm_state	rm_state;	/* global tests state */
@@ -94,6 +98,10 @@ test_rm_tx_local_push_5(void **state);
  *          when @y doesn't exist and copy buffered is used. */
 void
 test_rm_tx_local_push_6(void **state);
+
+/* @brief   Test if result file @f_z is reconstructed properly on test files with random content */
+void
+test_rm_tx_local_push_7(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM7_H */
