@@ -145,8 +145,8 @@ struct rm_delta_e
 };
 enum rm_delta_tx_status
 {
-    RM_DELTA_TX_STATUS_OK               = 0,    /* most wanted */
-    RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL  = 1   /* error in rolling checkum procedure */
+    RM_DELTA_TX_STATUS_OK               = 0,    /* WANTED */
+    RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL  = 1   /* error in rolling checksum procedure */
 };
 enum rm_delta_rx_status
 {
@@ -168,7 +168,9 @@ struct rm_delta_reconstruct_ctx
                                 rec_by_tail, rec_by_zero_diff,
                                 delta_tail_n, delta_zero_diff_n;
     size_t                      L;
-    size_t                      copy_all_threshold, copy_tail_threshold, send_threshold;
+    size_t                      copy_all_threshold; /* if file is less than this, it will be sent as ZERO DIFF element */
+    size_t                      copy_tail_threshold; /* if less than this bytes have left to process, they will be sent as raw delta element */
+    size_t                      send_threshold; /* limit on the value of bytes to be sent in a single delta RAW element */
     struct timespec             time_real;
     double                      time_cpu;
     size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level;
