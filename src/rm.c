@@ -383,7 +383,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     match = 1;
     beginning_bytes_in_buf = 0;
     do {
-        if (send_left < copy_tail_threshold) { /* send last bytes instead of doing normal lookup? */
+        if (send_left <= copy_tail_threshold) { /* send last bytes instead of doing normal lookup? */
             goto copy_tail;
         }
         if (match == 1) {
@@ -517,26 +517,15 @@ copy_tail:
         if (buf != NULL) free(buf);
         return RM_ERR_MEM;
     }
-    if (rm_copy_buffered_2(f_x, a_kL_pos, raw_bytes, send_left) != RM_ERR_OK) {
+    if (rm_copy_buffered_2(f_x, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {
         if (buf != NULL) free(buf);
         free(raw_bytes);
         return RM_ERR_COPY_BUFFERED_2;
     }
-    if (send_left < file_sz) { /* this is the case also for send_left < copy_tail_threshold if copy_tail_threshold is < file_sz, otherwise COPY BUFFERED happens */ 
-            if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
-                if (buf != NULL) free(buf);
-                free(raw_bytes);
-                return RM_ERR_TX_RAW;
-            }
-    } else {
-            if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
-                if (buf != NULL) free(buf);
-                free(raw_bytes);
-                return RM_ERR_TX_ZERO_DIFF;
-            }
-    }
-    if (raw_bytes != NULL) {
+    if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
+        if (buf != NULL) free(buf);
         free(raw_bytes);
+        return RM_ERR_TX_RAW;
     }
     if (buf != NULL) {
         free(buf);
