@@ -1969,7 +1969,7 @@ test_rm_rolling_ch_proc_10(void **state) {
     return;
 }
 
-/* @brief   Test copy all threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen)*/
+/* @brief   Test copy all threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen) */
 void
 test_rm_rolling_ch_proc_11(void **state) {
     FILE                    *f, *f_x, *f_y;
