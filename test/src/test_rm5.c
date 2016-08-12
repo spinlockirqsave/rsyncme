@@ -2142,7 +2142,7 @@ test_rm_rolling_ch_proc_11(void **state) {
     return;
 }
 
-/* @brief   Test copy tail threshold. Specify threshold of file size + 1 so copying must happened, single RAW element expected, (ZERO DIFF can't happen) */
+/* @brief   Test copy tail threshold (#1). Specify threshold of file size + 1 so copying must happened, single RAW element expected, (ZERO DIFF can't happen) */
 void
 test_rm_rolling_ch_proc_12(void **state) {
     FILE                    *f, *f_x, *f_y;
@@ -2198,12 +2198,12 @@ test_rm_rolling_ch_proc_12(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #12 of rolling checksum (copy tail threshold): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Validating testing #12 (copy tail threshold #1): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing #12 (copy tail threshold): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Testing #12 (copy tail threshold #1): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 
             f_x = f;
             fd = fileno(f_y);
@@ -2302,7 +2302,7 @@ test_rm_rolling_ch_proc_12(void **state) {
             }
             assert_true(hit == 1);
             
-            RM_LOG_INFO("PASSED test #12 (copy tail threshold): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
+            RM_LOG_INFO("PASSED test #12 (copy tail threshold #1): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                     fname, file_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
             rewind(f);
             blocks_n = 0;
@@ -2319,7 +2319,7 @@ test_rm_rolling_ch_proc_12(void **state) {
         fclose(f_x);
         fclose(f_y);
     }
-    RM_LOG_INFO("%s", "PASSED test #12 (copy tail threshold)");
+    RM_LOG_INFO("%s", "PASSED test #12 (copy tail threshold #1)");
     return;
 }
 
