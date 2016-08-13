@@ -315,7 +315,7 @@ struct rm_session;
  *          in the buffer unless delta reference elements is being produced, that means
  *          raw bytes will be sent if delta element comes or @send_threshold has been reached
  * @return  RM_ERR_OK - success,
- *          RM_ERR_BAD_CALL - NULL session has been passed,
+ *          RM_ERR_BAD_CALL - NULL session or file has been passed, or L is 0
  *          RM_ERR_FSTAT_X - fstat failed on @x,
  *          RM_ERR_TOO_MUCH_REQUESTED - not enough data in file (from >= file size),
  *          RM_ERR_MEM - malloc failed,
