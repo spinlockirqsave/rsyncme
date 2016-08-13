@@ -87,10 +87,12 @@ pull        Set up @y as source of changes, @x as result/output.
 -l          The size of block used in synchronization algorithm [in bytes].
             Default used is 512.
 -a          Copy all threshold [in bytes]. The file will be sent as raw bytes
-            if it's size is less than this.
+            if it's size is less than this. (If the copy tail threshold
+            value is equal to this value and they are equal to file size
+            than file is sent literally).
 -t          Copy tail threshold [in bytes]. Bytes will be sent litearally
             instead of performing rolling match algorithm
-            if there is less than this to be processed.
+            if bytes to be processed are equal or less than this value.
 -s          Send threshold [in bytes]. This determines the maximum size
             of delta raw element. Bytes will be queued up to this number
             if the match is not found in @y. If the match is found at some
