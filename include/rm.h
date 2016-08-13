@@ -162,18 +162,19 @@ enum rm_reconstruct_method
 };
 struct rm_delta_reconstruct_ctx
 {
-    enum rm_reconstruct_method  method;
+    enum rm_reconstruct_method  method; /* updated by rx thread */
     size_t                      rec_by_ref, rec_by_raw,
                                 delta_ref_n, delta_raw_n,
                                 rec_by_tail, rec_by_zero_diff,
-                                delta_tail_n, delta_zero_diff_n;
+                                delta_tail_n, delta_zero_diff_n; /* updated by rx thread */
     size_t                      L;
-    size_t                      copy_all_threshold; /* if file is less than this, it will be sent as ZERO DIFF element */
+    size_t                      copy_all_threshold; /* if file is less than this, it will be sent as ZERO DIFF element, updated by main thread (cmd)*/
     size_t                      copy_tail_threshold; /* if less than this bytes have left to process, they will be sent as raw delta element */
     size_t                      send_threshold; /* limit on the value of bytes to be sent in a single delta RAW element */
-    struct timespec             time_real;
+    uint8_t                     copy_all_threshold_fired, copy_tail_threshold_fired; /* updated by tx thread */
+    struct timespec             time_real; /* updated by main thread (tx_local_push)*/
     double                      time_cpu;
-    size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level;
+    size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
 };
 
 /* @brief   Calculate similar to adler32 fast checkum on a given

@@ -107,9 +107,13 @@ test_rm_tx_local_push_7(void **state);
 void
 test_rm_tx_local_push_8(void **state);
 
-/* @brief   Test copy tail threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen) */
+/* @brief   Test copy tail threshold (#1). Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen) */
 void
 test_rm_tx_local_push_9(void **state);
 
+/* @brief   Test copy tail threshold (#2). Specify threshold of file size % L (RAW bytes element at the tail expected, ZERO DIFF Can't happen) */
+void
+test_rm_tx_local_push_10(void **state);
 
-#endif	/* RSYNCME_TEST_RM7_H */
+
+#endif	/* RSYNCME_TEST_RM8_H */

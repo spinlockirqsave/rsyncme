@@ -330,28 +330,23 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     size_t          L;
     size_t          copy_all_threshold, copy_tail_threshold, send_threshold;
     uint32_t        hash;
-    unsigned char   *buf;
+    unsigned char   *buf = NULL;
     int             fd;
     struct stat     fs;
     size_t          file_sz, send_left, read_now, read, read_begin = 0;
     uint8_t         match, beginning_bytes_in_buf;
-    const struct rm_ch_ch_ref_hlink   *e;
+    const struct rm_ch_ch_ref_hlink   *e = NULL;
     struct rm_ch_ch ch;
     struct rm_roll_proc_cb_arg  cb_arg;         /* callback argument */
-    size_t                      raw_bytes_n;
-    unsigned char               *raw_bytes;     /* buffer for literal bytes */
-    size_t                      a_k_pos, a_kL_pos;
+    size_t                      raw_bytes_n = 0;
+    unsigned char               *raw_bytes = NULL;     /* buffer for literal bytes */
+    size_t                      a_k_pos = 0, a_kL_pos;
     unsigned char               a_k, a_kL;      /* bytes to remove/add from rolling checksum */
     uint8_t         hit;
     size_t          collisions_1st_level = 0;
     size_t          collisions_2nd_level = 0;
     size_t          collisions_3rd_level = 0;
-
-    raw_bytes = NULL;
-    raw_bytes_n = 0;
-    buf = NULL;
-    e = NULL;
-    a_k_pos = 0;
+    uint8_t         copy_all_threshold_fired = 0, copy_tail_threshold_fired = 0;
 
     if (s == NULL || f_x == NULL) {
         return RM_ERR_BAD_CALL;
@@ -371,8 +366,8 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         return RM_ERR_TOO_MUCH_REQUESTED;   /* Nothing to do */
     }
     send_left = file_sz - from;             /* positive value */
-    if ((send_left < copy_all_threshold) || (send_left < copy_tail_threshold) || (h == NULL)) {   /* copy all bytes */
-        a_kL_pos = 0;
+    if ((send_left < copy_all_threshold) || (send_left <= copy_tail_threshold) || (h == NULL)) {   /* copy all bytes */
+        copy_all_threshold_fired = 1;
         goto copy_tail;
     }
     buf = malloc(L * sizeof(unsigned char));
@@ -384,6 +379,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     beginning_bytes_in_buf = 0;
     do {
         if (send_left <= copy_tail_threshold) { /* send last bytes instead of doing normal lookup? */
+            copy_tail_threshold_fired = 1;
             goto copy_tail;
         }
         if (match == 1) {
@@ -495,6 +491,8 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
+    s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
+    s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
     pthread_mutex_unlock(&s->session_mutex);
 
     if (raw_bytes != NULL) {
@@ -510,8 +508,24 @@ copy_tail:
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
+    s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
+    s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
     pthread_mutex_unlock(&s->session_mutex);
 
+    if (copy_all_threshold_fired == 0) { /* if copy tail but not all */
+        if (match == 0) {
+            a_k_pos++;
+        } else {
+            a_k_pos = a_kL_pos;
+        }
+    }
+    if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
+        if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first, move ownership of raw bytes */
+            return RM_ERR_TX_RAW;
+        }
+        raw_bytes_n = 0;
+        raw_bytes = NULL;
+    }
     raw_bytes = malloc(send_left * sizeof(*raw_bytes));
     if (raw_bytes == NULL) {
         if (buf != NULL) free(buf);

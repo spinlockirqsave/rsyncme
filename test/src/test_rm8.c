@@ -2271,6 +2271,7 @@ test_rm_tx_local_push_8(void **state) {
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
+        assert_true(rec_ctx.copy_all_threshold_fired == 1);
         assert_true(rec_ctx.delta_raw_n == 1);
         assert_true(rec_ctx.rec_by_raw == f_x_sz);
         assert_true(rec_ctx.delta_ref_n == 0);
@@ -2369,7 +2370,7 @@ test_rm_tx_local_push_8(void **state) {
     return;
 }
 
-/* @brief   Test copy tail threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen) */
+/* @brief   Test copy tail threshold #1. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen) */
 void
 test_rm_tx_local_push_9(void **state) {
     int                     err;
@@ -2422,8 +2423,8 @@ test_rm_tx_local_push_9(void **state) {
     j = 0;
     for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
         L = rm_test_L_blocks[j];
-        RM_LOG_INFO("Validating testing #9 of local push [copy tail threshold], block size L [%zu]", L);
-        RM_LOG_INFO("Testing local push #9 [copy tail threshold]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
+        RM_LOG_INFO("Validating testing #9 of local push [copy tail threshold #1], block size L [%zu]", L);
+        RM_LOG_INFO("Testing local push #9 [copy tail threshold #1]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
         copy_all_threshold = 0;
         copy_tail_threshold = f_x_sz + 1;
         send_threshold = L;
@@ -2434,6 +2435,8 @@ test_rm_tx_local_push_9(void **state) {
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
+        assert_true(rec_ctx.copy_all_threshold_fired == 1); /* if copy_tail is >= file size copy all happens, copy_tail_threshold is not triggered */
+        assert_true(rec_ctx.copy_tail_threshold_fired == 0);
         assert_true(rec_ctx.delta_raw_n == 1);
         assert_true(rec_ctx.rec_by_raw == f_x_sz);
         assert_true(rec_ctx.delta_ref_n == 0);
@@ -2514,7 +2517,7 @@ test_rm_tx_local_push_9(void **state) {
             fclose(f_z);
             f_z = NULL;
         }
-        RM_LOG_INFO("PASSED test #9 (copy tail threshold): block [%zu], passed delta reconstruction, files are the same", L);
+        RM_LOG_INFO("PASSED test #9 (copy tail threshold #1): block [%zu], passed delta reconstruction, files are the same", L);
     }
     if (f_x != NULL) {
         fclose(f_x);
@@ -2528,6 +2531,179 @@ test_rm_tx_local_push_9(void **state) {
         fclose(f_z);
         f_z = NULL;
     }
-    RM_LOG_INFO("%s", "PASSED test #9 (copy tail threshold): passed delta reconstruction for all block sizes, files are the same");
+    RM_LOG_INFO("%s", "PASSED test #9 (copy tail threshold #1): passed delta reconstruction for all block sizes, files are the same");
+    return;
+}
+
+/* @brief   Test copy tail threshold (#2). Specify threshold of file size % L (RAW bytes element at the tail expected, ZERO DIFF Can't happen) */
+void
+test_rm_tx_local_push_10(void **state) {
+    int                     err;
+    enum rm_error           status;
+    unsigned char           cx, cz;
+    const char              *x, *y, *z;  /* @x, @y, @z names */
+    FILE                    *f_x, *f_y, *f_z;
+    int                     fd_x, fd_y, fd_z;
+    size_t                  j, k, L, f_x_sz, f_y_sz, f_z_sz, threshold, tests;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    rm_push_flags                   flags = 0;
+    size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+    f_x = fopen(rm_state->f1.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
+    }
+    assert_true(f_x != NULL && "Can't fopen file");
+    x = rm_state->f1.name;
+    fd_x = fileno(f_x);
+    if (fstat(fd_x, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", x);
+        fclose(f_x);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    f_x_sz = fs.st_size;
+    fclose(f_x);
+    f_x = NULL;
+    f_y = fopen(rm_state->f2.name, "rb");
+    if (f_y == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f2.name);
+    }
+    assert_true(f_y != NULL && "Can't fopen file");
+    y = rm_state->f2.name;
+    fd_y = fileno(f_y);
+    if (fstat(fd_y, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", y);
+        fclose(f_y);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    f_y_sz = fs.st_size;
+    fclose(f_y);
+    f_y = NULL;
+    z = rm_state->f3.name;
+
+    j = 0;
+    tests = 0;
+    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+        L = rm_test_L_blocks[j];
+        threshold = 0;
+        for (; threshold <= f_x_sz; threshold++) {
+            RM_LOG_INFO("Validating testing #10 of local push [copy tail threshold #2], threshold [%zu], block size L [%zu], @x [%s], @y [%s]", threshold, L, x, y);
+            RM_LOG_INFO("Testing local push #10 [copy tail threshold #2]: threshold [%zu], @x size [%zu], @y size [%zu], block size L [%zu]", threshold, f_x_sz, f_y_sz, L);
+            copy_all_threshold = 0;
+            copy_tail_threshold = threshold;
+            send_threshold = L;
+            flags |= RM_BIT_6; /* set --leave flag */
+
+            memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+            status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            assert_int_equal(status, RM_ERR_OK);
+
+            assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
+            assert_true(rec_ctx.delta_raw_n >= 1);
+            if (rec_ctx.copy_all_threshold_fired == 1 || rec_ctx.copy_tail_threshold_fired == 1) {
+                tests++;
+            }
+            if (rec_ctx.copy_tail_threshold_fired == 1) {
+                assert_true(rec_ctx.rec_by_raw >= rm_min(f_x_sz, rm_max(1u, threshold)));
+            }
+            if (rec_ctx.copy_all_threshold_fired == 1) {
+                assert_true(rec_ctx.rec_by_raw == f_x_sz);
+            }
+
+            f_x = fopen(x, "rb+");
+            if (f_x == NULL) {
+                RM_LOG_PERR("Can't open file [%s]", x);
+            }
+            assert_true(f_x != NULL && "Can't open file @x");
+            fd_x = fileno(f_x);
+            f_z = fopen(z, "rb");
+            if (f_z == NULL) {
+                RM_LOG_PERR("Can't open result file [%s]", z);
+            }
+            assert_true(f_z != NULL && "Can't open file @z");
+            fd_z = fileno(f_z);
+
+            /* verify files size */
+            memset(&fs, 0, sizeof(fs)); /* get @x size */
+            if (fstat(fd_x, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat file [%s]", x);
+                fclose(f_x);
+                fclose(f_z);
+                assert_true(1 == 0);
+            }
+            f_x_sz = fs.st_size;
+            memset(&fs, 0, sizeof(fs));
+            if (fstat(fd_z, &fs) != 0) {
+                RM_LOG_PERR("Can't fstat result file [%s]", z);
+                fclose(f_x);
+                fclose(f_z);
+                assert_true(1 == 0);
+            }
+            f_z_sz = fs.st_size;
+            assert_true(f_x_sz == f_z_sz && "File sizes differ!");
+
+            k = 0;
+            while (k < f_x_sz) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", x);
+                    fclose(f_x);
+                    fclose(f_z);
+                    assert_true(1 == 0 && "ERROR reading byte in file @x!");
+                }
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+                    RM_LOG_CRIT("Error reading file [%s]!", z);
+                    fclose(f_x);
+                    fclose(f_z);
+                    assert_true(1 == 0 && "ERROR reading byte in file @z!");
+                }
+                if (cx != cz) {
+                    RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
+                }
+                assert_true(cx == cz && "Bytes differ!");
+                ++k;
+            }
+            if ((err = rm_file_cmp(f_x, f_z, 0, 0, f_x_sz)) != RM_ERR_OK) {
+                RM_LOG_ERR("Bytes differ, err [%d]", err);
+                assert_true(1 == 0);
+            }
+
+            if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
+                if (f_z != NULL) {
+                    fclose(f_z);
+                    f_z = NULL;
+                }
+                if (unlink(z) != 0) {
+                    RM_LOG_ERR("Can't unlink result file [%s]", z);
+                    assert_true(1 == 0);
+                }
+            }
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_z != NULL) {
+                fclose(f_z);
+                f_z = NULL;
+            }
+            RM_LOG_INFO("PASSED test #10 (copy tail threshold #2): block [%zu], passed delta reconstruction, files are the same", L);
+        }
+    }
+    if (f_x != NULL) {
+        fclose(f_x);
+        f_x = NULL;
+    }
+    if (f_y != NULL) {
+        fclose(f_y);
+        f_y = NULL;
+    }
+    if (f_z != NULL) {
+        fclose(f_z);
+        f_z = NULL;
+    }
+    RM_LOG_INFO("PASSED test #10 (copy tail threshold #2): passed delta reconstruction for all block sizes, files are the same, tests [%zu]", tests);
     return;
 }
