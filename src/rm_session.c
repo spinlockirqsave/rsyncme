@@ -325,6 +325,8 @@ done:
     assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
     rec_ctx.collisions_1st_level = s->rec_ctx.collisions_1st_level; /* tx thread might have assigned to collisions variables already and memcpy would overwrite them */
     rec_ctx.collisions_2nd_level = s->rec_ctx.collisions_2nd_level;
+    rec_ctx.copy_all_threshold_fired = s->rec_ctx.copy_all_threshold_fired; /* tx thread might have assigned to thresold_fired variables already and memcpy would overwrite them */
+    rec_ctx.copy_tail_threshold_fired = s->rec_ctx.copy_tail_threshold_fired;
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
     pthread_mutex_unlock(&s->session_mutex);
