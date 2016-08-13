@@ -353,6 +353,9 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     }
     cb_arg.s = s;                           /* setup callback argument */
     L = s->rec_ctx.L;
+    if (L == 0) {
+        return RM_ERR_BAD_CALL;
+    }
     copy_all_threshold  = s->rec_ctx.copy_all_threshold;
     copy_tail_threshold = s->rec_ctx.copy_tail_threshold;
     send_threshold      = s->rec_ctx.send_threshold;

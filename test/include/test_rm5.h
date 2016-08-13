@@ -111,29 +111,39 @@ void
 test_rm_rolling_ch_proc_8(void **state);
 
 /* @brief   Test error reporting.
- * @details NULL request of reading out of range from file @x, file size is not 0. */
+ * @details Bad request, block size is 0, file size is 0. */
 void
 test_rm_rolling_ch_proc_9(void **state);
 
-/* @brief   Test send threshold. */
+/* @brief   Test error reporting.
+ * @details Bad request, block size is 0, file size is not 0. */
 void
 test_rm_rolling_ch_proc_10(void **state);
 
-/* @brief   Test copy all threshold. (ZERO DIFF expected) */
+/* @brief   Test error reporting.
+ * @details NULL request of reading out of range from file @x, file size is not 0. */
 void
 test_rm_rolling_ch_proc_11(void **state);
 
-/* @brief   Test copy tail threshold (#1). (ZERO DIFF expected) */
+/* @brief   Test send threshold. */
 void
 test_rm_rolling_ch_proc_12(void **state);
 
-/* @brief   Test copy tail threshold (#2) file size % L. (RAW element at the tail expected) */
+/* @brief   Test copy all threshold. (ZERO DIFF expected) */
 void
 test_rm_rolling_ch_proc_13(void **state);
 
-/* @brief   Test copy tail threshold(#3) file size % L - 1. (RAW element at the tail expected) */
+/* @brief   Test copy tail threshold (#1). (ZERO DIFF expected) */
 void
 test_rm_rolling_ch_proc_14(void **state);
+
+/* @brief   Test copy tail threshold (#2) file size % L. (RAW element at the tail expected) */
+void
+test_rm_rolling_ch_proc_15(void **state);
+
+/* @brief   Test copy tail threshold(#3) file size % L - 1. (RAW element at the tail expected) */
+void
+test_rm_rolling_ch_proc_16(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM5_H */
