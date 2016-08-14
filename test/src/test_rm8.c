@@ -2188,6 +2188,10 @@ test_rm_tx_local_push_7(void **state) {
             fclose(f_x);
             f_x = NULL;
         }
+        if (f_z != NULL) {
+            fclose(f_z);
+            f_z = NULL;
+        }
         RM_LOG_INFO("PASSED test #7 (files with random content): block [%zu], passed delta reconstruction, files are the same", L);
     }
     if (f_x != NULL) {
@@ -2435,8 +2439,8 @@ test_rm_tx_local_push_9(void **state) {
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
-        assert_true(rec_ctx.copy_all_threshold_fired == 1); /* if copy_tail is >= file size copy all happens, copy_tail_threshold is not triggered */
-        assert_true(rec_ctx.copy_tail_threshold_fired == 0);
+        assert_true(rec_ctx.copy_all_threshold_fired == 0); /* copy_tail_threshold MUST NOT be triggered as copy_all_threshold is set to 0 */
+        assert_true(rec_ctx.copy_tail_threshold_fired == 1);
         assert_true(rec_ctx.delta_raw_n == 1);
         assert_true(rec_ctx.rec_by_raw == f_x_sz);
         assert_true(rec_ctx.delta_ref_n == 0);

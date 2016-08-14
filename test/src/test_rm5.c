@@ -1910,7 +1910,7 @@ test_rm_rolling_ch_proc_11(void **state) {
     RM_LOG_INFO("%s", "PASSED test #11 (Test error reporting: reading out of range on nonzero size file)");
 }
 
-/* @brief   Test send threshold */
+/* @brief   Test send threshold #1 */
 void
 test_rm_rolling_ch_proc_12(void **state) {
     FILE                    *f_x, *f_y;
@@ -1964,7 +1964,7 @@ test_rm_rolling_ch_proc_12(void **state) {
     for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
         L = rm_test_L_blocks[j];
         send_threshold = L;
-        RM_LOG_INFO("Testing (send threshold) #12: block size [%zu], send threshold [%zu]", L, send_threshold);
+        RM_LOG_INFO("Testing (send threshold #1) #12: block size [%zu], send threshold [%zu]", L, send_threshold);
         blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
         err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
         assert_int_equal(err, RM_ERR_OK);
@@ -2021,14 +2021,14 @@ test_rm_rolling_ch_proc_12(void **state) {
 
         if (delta_tail_n == 0) {
             if (delta_zero_diff_n > 0) {
-                RM_LOG_INFO("PASSED test #12 (send threshold): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA ZERO DIFF [%zu]",
+                RM_LOG_INFO("PASSED test #12 (send threshold #1): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA ZERO DIFF [%zu]",
                         send_threshold, L, blocks_n, delta_ref_n, delta_zero_diff_n);
             } else {
-                RM_LOG_INFO("PASSED test #12 (send threshold): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA RAW [%zu]",
+                RM_LOG_INFO("PASSED test #12 (send threshold #1): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA RAW [%zu]",
                         send_threshold, L, blocks_n, delta_ref_n, delta_raw_n);
             }
         } else {
-            RM_LOG_INFO("PASSED test #12 (send threshold): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA_TAIL [%zu], DELTA RAW [%zu]",
+            RM_LOG_INFO("PASSED test #12 (send threshold #1): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA_TAIL [%zu], DELTA RAW [%zu]",
                     send_threshold, L, blocks_n, delta_ref_n, delta_tail_n, delta_raw_n);
         }
 
@@ -2045,13 +2045,151 @@ test_rm_rolling_ch_proc_12(void **state) {
     }
     fclose(f_x);
     fclose(f_y);
-    RM_LOG_INFO("%s", "PASSED test #12 (send threshold)");
+    RM_LOG_INFO("%s", "PASSED test #12 (send threshold #1)");
+    return;
+}
+/* @brief   Test send threshold #2 (send threshold = L + 1) */
+void
+test_rm_rolling_ch_proc_13(void **state) {
+    FILE                    *f_x, *f_y;
+    int                     fd;
+    int                     err;
+    size_t                  j, L, y_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    const char              *y;
+    size_t                  blocks_n_exp, blocks_n;
+    struct twhlist_node     *tmp;
+    struct rm_session       *s;
+    struct rm_session_push_local    *prvt;
+    size_t                  send_threshold;
+    size_t                  delta_ref_n, delta_raw_n, delta_tail_n, delta_zero_diff_n;
+
+    /* hashtable deletion */
+    unsigned int            bkt;
+    const struct rm_ch_ch_ref_hlink *e;
+
+    /* delta queue's content verification */
+    const twfifo_queue          *q;             /* produced queue of delta elements */
+    const struct rm_delta_e     *delta_e;       /* iterator over delta elements */
+    struct twlist_head          *lh;
+
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    f_x = fopen(rm_state->f1.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
+    }
+    assert_true(f_x != NULL && "Can't fopen file");
+    f_y = fopen(rm_state->f2.name, "rb");
+    if (f_y == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f2.name);
+    }
+    assert_true(f_y != NULL && "Can't fopen file");
+    y = rm_state->f2.name;
+    fd = fileno(f_y);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_state->f2.name);
+        fclose(f_y);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    y_sz = fs.st_size;
+    
+    j = 0;
+    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+        L = rm_test_L_blocks[j];
+        send_threshold = L + 1;
+        RM_LOG_INFO("Testing (send threshold #2) #13: block size [%zu], send threshold [%zu]", L, send_threshold);
+        blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        assert_int_equal(err, RM_ERR_OK);
+        assert_int_equal(blocks_n_exp, blocks_n);
+        rewind(f_y);
+        
+        s = rm_state->s; /* run rolling checksum procedure */
+        memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* reset reconstruction context */
+        s->rec_ctx.L = L;
+        s->rec_ctx.copy_all_threshold = 0;
+        s->rec_ctx.copy_tail_threshold = 0;
+        s->rec_ctx.send_threshold = send_threshold;
+        prvt = s->prvt;
+        prvt->h = h;
+        prvt->f_x = f_x;
+        prvt->delta_f = rm_roll_proc_cb_1;
+        err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
+        assert_int_equal(err, RM_ERR_OK);
+
+        q = &prvt->tx_delta_e_queue; /* check delta elements */
+        assert_true(q != NULL);
+
+        delta_ref_n = delta_raw_n = 0;
+        delta_tail_n = delta_zero_diff_n = 0;
+        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {    /* dequeue, so can free later */
+            delta_e = tw_container_of(lh, struct rm_delta_e, link);
+            switch (delta_e->type) {
+                case RM_DELTA_ELEMENT_REFERENCE:
+                    ++delta_ref_n;
+                    break;
+                case RM_DELTA_ELEMENT_RAW_BYTES:
+                    assert_true(delta_e->raw_bytes_n > 0);
+                    assert_true(delta_e->raw_bytes_n <= send_threshold);
+                    assert_true(delta_e->raw_bytes != NULL);
+                    ++delta_raw_n;
+                    break;
+                case RM_DELTA_ELEMENT_ZERO_DIFF:
+                    ++delta_ref_n;
+                    ++delta_zero_diff_n;
+                    break;
+                case RM_DELTA_ELEMENT_TAIL:
+                    ++delta_ref_n;
+                    ++delta_tail_n;
+                    break;
+                default:
+                    RM_LOG_ERR("%s", "Unknown delta element type!");
+                    assert_true(1 == 0 && "Unknown delta element type!");
+            }
+            if (delta_e->raw_bytes != NULL) {
+                free(delta_e->raw_bytes);
+            }
+            free((void*) delta_e);  /* free delta element */
+        }
+
+        if (delta_tail_n == 0) {
+            if (delta_zero_diff_n > 0) {
+                RM_LOG_INFO("PASSED test #13 (send threshold #2): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA ZERO DIFF [%zu]",
+                        send_threshold, L, blocks_n, delta_ref_n, delta_zero_diff_n);
+            } else {
+                RM_LOG_INFO("PASSED test #13 (send threshold #2): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA RAW [%zu]",
+                        send_threshold, L, blocks_n, delta_ref_n, delta_raw_n);
+            }
+        } else {
+            RM_LOG_INFO("PASSED test #13 (send threshold #2): send threshold [%zu], L [%zu], blocks [%zu], DELTA REF [%zu], DELTA_TAIL [%zu], DELTA RAW [%zu]",
+                    send_threshold, L, blocks_n, delta_ref_n, delta_tail_n, delta_raw_n);
+        }
+
+        blocks_n = 0;
+        bkt = 0;
+        twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+            twhash_del((struct twhlist_node*)&e->hlink);
+            free((struct rm_ch_ch_ref_hlink*)e);
+            ++blocks_n;
+        }
+        assert_int_equal(blocks_n_exp, blocks_n);
+        rewind(f_x);
+        rewind(f_y);
+    }
+    fclose(f_x);
+    fclose(f_y);
+    RM_LOG_INFO("%s", "PASSED test #13 (send threshold #2)");
     return;
 }
 
-/* @brief   Test copy all threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen, copy_all_threshold_fired set) */
+/* @brief   Test copy all threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen, copy_all_threshold_fired MUST be set) */
 void
-test_rm_rolling_ch_proc_13(void **state) {
+test_rm_rolling_ch_proc_14(void **state) {
     FILE                    *f, *f_x, *f_y;
     int                     fd;
     int                     err;
@@ -2105,12 +2243,12 @@ test_rm_rolling_ch_proc_13(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #13 (copy all threshold): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Validating testing #14 (copy all threshold): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing #13 (copy all threshold): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Testing #14 (copy all threshold): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 
             f_x = f;
             fd = fileno(f_y);
@@ -2201,8 +2339,9 @@ test_rm_rolling_ch_proc_13(void **state) {
             /* details */
             assert_true(hit == 1); /* there was only one delta element sent */
             assert_true(s->rec_ctx.copy_all_threshold_fired == 1);
+            assert_true(s->rec_ctx.copy_tail_threshold_fired == 0);
             
-            RM_LOG_INFO("PASSED test #13 (copy all threshold): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
+            RM_LOG_INFO("PASSED test #14 (copy all threshold): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                     fname, file_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
             rewind(f);
             blocks_n = 0;
@@ -2219,13 +2358,13 @@ test_rm_rolling_ch_proc_13(void **state) {
         fclose(f_x);
         fclose(f_y);
     }
-    RM_LOG_INFO("%s", "PASSED test #13 (copy all threshold)");
+    RM_LOG_INFO("%s", "PASSED test #14 (copy all threshold)");
     return;
 }
 
-/* @brief   Test copy tail threshold (#1). Specify threshold of file size + 1 so copying must happened, single RAW element expected, copy_all_threshold_fired must be set, (ZERO DIFF can't happen) */
+/* @brief   Test copy tail threshold (#1). Specify threshold of file size + 1 so copying must happened, single RAW element expected, copy_all_threshold_fired must NOT be set as copy_all_threshold is set to 0, (ZERO DIFF can't happen) */
 void
-test_rm_rolling_ch_proc_14(void **state) {
+test_rm_rolling_ch_proc_15(void **state) {
     FILE                    *f, *f_x, *f_y;
     int                     fd;
     int                     err;
@@ -2279,12 +2418,12 @@ test_rm_rolling_ch_proc_14(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #14 (copy tail threshold #1): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Validating testing #15 (copy tail threshold #1): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing #14 (copy tail threshold #1): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Testing #15 (copy tail threshold #1): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 
             f_x = f;
             fd = fileno(f_y);
@@ -2382,9 +2521,10 @@ test_rm_rolling_ch_proc_14(void **state) {
                 assert_true(rec_by_tail == 0);
             }
             assert_true(hit == 1);
-            assert_true(s->rec_ctx.copy_all_threshold_fired == 1);
+            assert_true(s->rec_ctx.copy_tail_threshold_fired == 1);
+            assert_true(s->rec_ctx.copy_all_threshold_fired == 0);
             
-            RM_LOG_INFO("PASSED test #14 (copy tail threshold #1): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
+            RM_LOG_INFO("PASSED test #15 (copy tail threshold #1): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                     fname, file_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
             rewind(f);
             blocks_n = 0;
@@ -2401,13 +2541,13 @@ test_rm_rolling_ch_proc_14(void **state) {
         fclose(f_x);
         fclose(f_y);
     }
-    RM_LOG_INFO("%s", "PASSED test #14 (copy tail threshold #1)");
+    RM_LOG_INFO("%s", "PASSED test #15 (copy tail threshold #1)");
     return;
 }
 
 /* @brief   Test copy tail threshold (#2) file size % L. (RAW element at the tail expected), copy_tail_threshold_fired must be set. */
 void
-test_rm_rolling_ch_proc_15(void **state) {
+test_rm_rolling_ch_proc_16(void **state) {
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with last bytes changed) */
     const char              *f_y_name;  /* @y name */
     unsigned char           c;
@@ -2433,7 +2573,7 @@ test_rm_rolling_ch_proc_15(void **state) {
     size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
                                 rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
 
-    err = test_rm_copy_files_and_postfix("_test_15");
+    err = test_rm_copy_files_and_postfix("_test_16");
     if (err != 0) {
         RM_LOG_CRIT("%s", "Error copying files!");
         assert_true(1 == 0 && "Error copying files");
@@ -2467,7 +2607,7 @@ test_rm_rolling_ch_proc_15(void **state) {
             continue;
         }
         strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX); /* change byte in copy */
-        strncpy(buf_x_name + strlen(buf_x_name), "_test_15", 49);
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_16", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
@@ -2500,12 +2640,12 @@ test_rm_rolling_ch_proc_15(void **state) {
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
             threshold = f_y_sz % L;
-            RM_LOG_INFO("Validating testing #15 of rolling checksum (copy tail threshold #2): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
+            RM_LOG_INFO("Validating testing #16 of rolling checksum (copy tail threshold #2): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
             if (L < 2 || f_y_sz % L < 2) {
                 RM_LOG_INFO("Block size [%zu] and file @y size [%zu] combination not suitable for this test, skipping...", L, f_y_sz);
                 continue;
             }
-            RM_LOG_INFO("Testing #15 (copy tail threshold #2): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
+            RM_LOG_INFO("Testing #16 (copy tail threshold #2): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
@@ -2599,7 +2739,7 @@ test_rm_rolling_ch_proc_15(void **state) {
                 assert_true(s->rec_ctx.copy_tail_threshold_fired == 1);
             }
             
-            RM_LOG_INFO("PASSED test #15 (copy tail threshold #2): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu], threshold [%zu]",
+            RM_LOG_INFO("PASSED test #16 (copy tail threshold #2): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu], threshold [%zu]",
                     buf_x_name, f_x_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff, threshold);
             /* move file pointer back to the beginning */
             rewind(f_x);
@@ -2618,9 +2758,9 @@ test_rm_rolling_ch_proc_15(void **state) {
         fclose(f_x);
         fclose(f_y);
     }
-    RM_LOG_INFO("%s", "PASSED test #15 (copy tail threshold #2)");
+    RM_LOG_INFO("%s", "PASSED test #16 (copy tail threshold #2)");
     if (RM_TEST_5_DELETE_FILES == 1) {
-        err = test_rm_delete_copies_of_files_postfixed("_test_15");
+        err = test_rm_delete_copies_of_files_postfixed("_test_16");
         if (err != 0) {
             RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");
@@ -2632,7 +2772,7 @@ test_rm_rolling_ch_proc_15(void **state) {
 
 /* @brief   Test copy tail threshold (#3) file size % L - 1. (RAW element at the tail expected), copy_tail_threshold_fired must be set */
 void
-test_rm_rolling_ch_proc_16(void **state) {
+test_rm_rolling_ch_proc_17(void **state) {
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with last bytes changed) */
     const char              *f_y_name;  /* @y name */
     unsigned char           c;
@@ -2658,7 +2798,7 @@ test_rm_rolling_ch_proc_16(void **state) {
     size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
                                 rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
 
-    err = test_rm_copy_files_and_postfix("_test_16");
+    err = test_rm_copy_files_and_postfix("_test_17");
     if (err != 0) {
         RM_LOG_CRIT("%s", "Error copying files!");
         assert_true(1 == 0 && "Error copying files");
@@ -2692,7 +2832,7 @@ test_rm_rolling_ch_proc_16(void **state) {
             continue;
         }
         strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX); /* change byte in copy */
-        strncpy(buf_x_name + strlen(buf_x_name), "_test_16", 49);
+        strncpy(buf_x_name + strlen(buf_x_name), "_test_17", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
         f_copy = fopen(buf_x_name, "rb+");
         if (f_copy == NULL) {
@@ -2724,13 +2864,13 @@ test_rm_rolling_ch_proc_16(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #16 of rolling checksum (copy tail threshold #3): file [%s], size [%zu], @y size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_sz, L);
+            RM_LOG_INFO("Validating testing #17 of rolling checksum (copy tail threshold #3): file [%s], size [%zu], @y size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_sz, L);
             if (L >= f_x_sz || f_x_sz % L < 2) {
                 RM_LOG_INFO("Block size [%zu] and file @y size [%zu] combination not suitable for this test, skipping...", L, f_y_sz);
                 continue;
             }
             threshold = f_x_sz % L - 1;
-            RM_LOG_INFO("Testing #16 (copy tail threshold #3): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
+            RM_LOG_INFO("Testing #17 (copy tail threshold #3): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
@@ -2813,7 +2953,7 @@ test_rm_rolling_ch_proc_16(void **state) {
             assert_true(rec_by_tail == 0);
             assert_true(s->rec_ctx.copy_tail_threshold_fired == 1);
             
-            RM_LOG_INFO("PASSED test #16 (copy tail threshold #3): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu], threshold [%zu]",
+            RM_LOG_INFO("PASSED test #17 (copy tail threshold #3): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu], threshold [%zu]",
                     buf_x_name, f_x_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff, threshold);
             /* move file pointer back to the beginning */
             rewind(f_x);
@@ -2832,9 +2972,9 @@ test_rm_rolling_ch_proc_16(void **state) {
         fclose(f_x);
         fclose(f_y);
     }
-    RM_LOG_INFO("%s", "PASSED test #16 (copy tail threshold #3)");
+    RM_LOG_INFO("%s", "PASSED test #17 (copy tail threshold #3)");
     if (RM_TEST_5_DELETE_FILES == 1) {
-        err = test_rm_delete_copies_of_files_postfixed("_test_16");
+        err = test_rm_delete_copies_of_files_postfixed("_test_17");
         if (err != 0) {
             RM_LOG_ERR("%s", "Error removing files (unlink)");
             assert_true(1 == 0 && "Error removing files (unlink)");

@@ -338,7 +338,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     const struct rm_ch_ch_ref_hlink   *e = NULL;
     struct rm_ch_ch ch;
     struct rm_roll_proc_cb_arg  cb_arg;         /* callback argument */
-    size_t                      raw_bytes_n = 0;
+    size_t                      raw_bytes_n = 0, raw_bytes_max;
     unsigned char               *raw_bytes = NULL;     /* buffer for literal bytes */
     size_t                      a_k_pos = 0, a_kL_pos;
     unsigned char               a_k, a_kL;      /* bytes to remove/add from rolling checksum */
@@ -346,7 +346,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     size_t          collisions_1st_level = 0;
     size_t          collisions_2nd_level = 0;
     size_t          collisions_3rd_level = 0;
-    uint8_t         copy_all_threshold_fired = 0, copy_tail_threshold_fired = 0;
+    uint8_t         copy_all = 0, copy_all_threshold_fired = 0, copy_tail_threshold_fired = 0;
 
     if (s == NULL || f_x == NULL) {
         return RM_ERR_BAD_CALL;
@@ -360,6 +360,8 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     copy_tail_threshold = s->rec_ctx.copy_tail_threshold;
     send_threshold      = s->rec_ctx.send_threshold;
 
+    raw_bytes_max = rm_max(L, send_threshold);
+
     fd = fileno(f_x);
     if (fstat(fd, &fs) != 0) {
         return RM_ERR_FSTAT_X;
@@ -369,10 +371,18 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         return RM_ERR_TOO_MUCH_REQUESTED;   /* Nothing to do */
     }
     send_left = file_sz - from;             /* positive value */
-    if ((send_left < copy_all_threshold) || (send_left <= copy_tail_threshold) || (h == NULL)) {   /* copy all bytes */
+
+    if ((send_left < copy_all_threshold) || (h == NULL)) {   /* copy all bytes */
         copy_all_threshold_fired = 1;
+        copy_all = 1;
         goto copy_tail;
     }
+    if (send_left <= copy_tail_threshold) {   /* copy all bytes */
+        copy_tail_threshold_fired = 1;
+        copy_all = 1;
+        goto copy_tail;
+    }
+
     buf = malloc(L * sizeof(unsigned char));
     if (buf == NULL) {
         return RM_ERR_MEM;
@@ -464,11 +474,11 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
                 ++collisions_3rd_level;
             }
             if (raw_bytes_n == 0) {
-                raw_bytes = malloc(L * sizeof(*raw_bytes));
+                raw_bytes = malloc(raw_bytes_max * sizeof(*raw_bytes));
                 if (raw_bytes == NULL) {
                     return RM_ERR_MEM;
                 }
-                memset(raw_bytes, 0, L * sizeof(*raw_bytes));
+                memset(raw_bytes, 0, raw_bytes_max * sizeof(*raw_bytes));
             }
             if (beginning_bytes_in_buf == 1 && a_k_pos < read_begin) {  /* if we have still L bytes read at the beginning in the buffer */
                 a_k = buf[a_k_pos];                                     /* read a_k byte */
@@ -515,7 +525,7 @@ copy_tail:
     s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
     pthread_mutex_unlock(&s->session_mutex);
 
-    if (copy_all_threshold_fired == 0) { /* if copy tail but not all */
+    if ((copy_all == 0) && (copy_tail_threshold_fired == 1)) { /* if copy tail but not all */
         if (match == 0) {
             a_k_pos++;
         } else {
