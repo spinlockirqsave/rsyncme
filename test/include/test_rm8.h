@@ -115,5 +115,15 @@ test_rm_tx_local_push_9(void **state);
 void
 test_rm_tx_local_push_10(void **state);
 
+/* @brief   Test error reporting.
+ * @details NULL file name pointers. */
+void
+test_rm_tx_local_push_11(void **state);
+
+/* @brief   Test error reporting.
+ * @details 0 block size */
+void
+test_rm_tx_local_push_12(void **state);
+
 
 #endif	/* RSYNCME_TEST_RM8_H */

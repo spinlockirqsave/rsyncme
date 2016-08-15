@@ -14,17 +14,17 @@ enum rm_error
 rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) {
     enum rm_error  err = RM_ERR_OK;
-    FILE        *f_x;   /* original file, to be synced into @y */
-    FILE        *f_y;   /* file for taking non-overlapping blocks */
-    FILE        *f_z;   /* result (with same name as @y) */
+    FILE        *f_x = NULL;   /* original file, to be synced into @y */
+    FILE        *f_y = NULL;   /* file for taking non-overlapping blocks */
+    FILE        *f_z = NULL;   /* result (with same name as @y) */
     int         fd_x, fd_y, fd_z;
-    uint8_t     reference_file_exist;
+    uint8_t     reference_file_exist = 0;
     struct      stat	fs;
     size_t      x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
     size_t                          bkt;    /* hashtable deletion */
     const struct rm_ch_ch_ref_hlink *e;
     struct twhlist_node             *tmp;
-    struct rm_session               *s;
+    struct rm_session               *s = NULL;
     struct rm_session_push_local    *prvt;
     char                            *y_copy = NULL;/* *cwd = NULL;*/
     char                            f_z_name[38];
@@ -36,15 +36,13 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     const struct rm_delta_e *delta_e;
     struct twlist_head      *lh;
 
-    f_x = f_y = f_z = NULL;
-    reference_file_exist = 0;
-    s = NULL;
+    if ((x == NULL) || (y == NULL) || (L == 0) || (rec_ctx == NULL)) {
+        return RM_ERR_BAD_CALL;
+    }
+
     TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     twhash_init(h);
 
-    if (x == NULL || y == NULL || rec_ctx == NULL) {
-        return RM_ERR_BAD_CALL;
-    }
     /*cwd = getcwd(NULL, 0);
     if (cwd == NULL) {
         return RM_ERR_GETCWD;
@@ -262,6 +260,10 @@ done:
         free(y_copy);
         y_copy = NULL;
     }
+    if (f_z != NULL) {
+        fclose(f_z);
+        f_z = NULL;
+    }
     /*chdir(cwd);
     if (cwd != NULL) {
         free(cwd);
@@ -276,12 +278,15 @@ err_exit:
     }
     if (f_x != NULL) {
         fclose(f_x);
+        f_x = NULL;
     }
     if (f_y != NULL) {
         fclose(f_y);
+        f_y = NULL;
     }
     if (f_z != NULL) {
         fclose(f_z);
+        f_z = NULL;
     }
     if (reference_file_exist == 1) {
         bkt = 0;

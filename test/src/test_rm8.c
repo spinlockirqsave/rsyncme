@@ -2711,3 +2711,113 @@ test_rm_tx_local_push_10(void **state) {
     RM_LOG_INFO("PASSED test #10 (copy tail threshold #2): passed delta reconstruction for all block sizes, files are the same, tests [%zu]", tests);
     return;
 }
+
+/* @brief   Test error reporting.
+ * @details NULL file name pointers. */
+void
+test_rm_tx_local_push_11(void **state) {
+    enum rm_error           status;
+    struct test_rm_state    *rm_state;
+    rm_push_flags           flags = 0;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+    memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+
+    /* 1. test with --leave flag NOT set */
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#1 NULL @x file name pointer, --leave flag NOT set]");
+    status = rm_tx_local_push(NULL, rm_state->f2.name, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#1 NULL @x file name pointer, --leave flag NOT set)");
+
+    RM_LOG_INFO("%s", "Testing local push #11 [#2 NULL @y file name pointer, --leave flag NOT set]");
+    status = rm_tx_local_push(rm_state->f1.name, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#2 NULL @y file name pointer, --leave flag NOT set)");
+
+    RM_LOG_INFO("%s", "Testing local push #11 [#3 NULL @z file name pointer, --leave flag NOT set]");
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_OK);
+    RM_LOG_INFO("%s", "PASSED test #11 (#3 NULL @z file name pointer, --leave flag NOT set)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#4 NULL @x and @y file name pointers, --leave flag NOT set]");
+    status = rm_tx_local_push(NULL, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#4 NULL @x and @y file name pointers, --leave flag NOT set)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#5 NULL @y and @z file name pointers, --leave flag NOT set]");
+    status = rm_tx_local_push(rm_state->f1.name, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#5 NULL @y and @z file name pointers, --leave flag NOT set)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#6 NULL @x and @z file name pointers, --leave flag NOT set]");
+    status = rm_tx_local_push(NULL, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#6 NULL @x and @z file name pointers, --leave flag NOT set)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#7 NULL @x @y and @z file name pointers, --leave flag NOT set]");
+    status = rm_tx_local_push(NULL, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#7 NULL @x @y and @z file name pointers, --leave flag NOT set)");
+
+    /* 2. test with --leave flag SET */
+    flags |= RM_BIT_6;
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#8 NULL @x file name pointer, --leave flag SET]");
+    status = rm_tx_local_push(NULL, rm_state->f2.name, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#8 NULL @x file name pointer, --leave flag SET)");
+
+    RM_LOG_INFO("%s", "Testing local push #11 [#9 NULL @y file name pointer, --leave flag SET]");
+    status = rm_tx_local_push(rm_state->f1.name, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#9 NULL @y file name pointer, --leave flag SET)");
+
+    RM_LOG_INFO("%s", "Testing local push #11 [#10 NULL @z file name pointer, --leave flag SET]");
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_OK); /* --leave has no effect in this case, result file name is @y */
+    RM_LOG_INFO("%s", "PASSED test #11 (#10 NULL @z file name pointer, --leave flag SET)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#11 NULL @x and @y file name pointers, --leave flag SET]");
+    status = rm_tx_local_push(NULL, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#11 NULL @x and @y file name pointers, --leave flag SET)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#12 NULL @y and @z file name pointers, --leave flag SET]");
+    status = rm_tx_local_push(rm_state->f1.name, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#12 NULL @y and @z file name pointers, --leave flag SET)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#13 NULL @x and @z file name pointers, --leave flag SET]");
+    status = rm_tx_local_push(NULL, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#13 NULL @x and @z file name pointers, --leave flag SET)");
+    
+    RM_LOG_INFO("%s", "Testing local push #11 [#14 NULL @x @y and @z file name pointers, --leave flag SET]");
+    status = rm_tx_local_push(NULL, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #11 (#14 NULL @x @y and @z file name pointers, --leave flag SET)");
+    return;
+}
+
+/* @brief   Test error reporting.
+ * @details 0 block size */
+void
+test_rm_tx_local_push_12(void **state) {
+    enum rm_error           status;
+    struct test_rm_state    *rm_state;
+    rm_push_flags           flags = 0;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+    memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+
+    RM_LOG_INFO("%s", "Testing local push #12 [zero block size, L = 0]");
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 0, 0, 0, 10, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #12 (zero block size, L = 0)");
+    return;
+}

@@ -21,7 +21,9 @@ int main(void) {
 	    cmocka_unit_test(test_rm_tx_local_push_7),
 	    cmocka_unit_test(test_rm_tx_local_push_8),
 	    cmocka_unit_test(test_rm_tx_local_push_9),
-	    cmocka_unit_test(test_rm_tx_local_push_10)
+	    cmocka_unit_test(test_rm_tx_local_push_10),
+	    cmocka_unit_test(test_rm_tx_local_push_11),
+	    cmocka_unit_test(test_rm_tx_local_push_12)
     };
     return cmocka_run_group_tests(tests,
 		test_rm_setup, test_rm_teardown);

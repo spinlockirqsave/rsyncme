@@ -133,6 +133,9 @@ $(TESTOUTPUTDIR)/%.o: $(TESTSRCDIR)/%.c
 $(TESTOUTPUTDIR_D)/%.o: $(TESTSRCDIR)/%.c
 	$(CC) $(CFLAGS_D) -Wno-nonnull $(INCLUDES) $< -o $@
 
+$(TESTOUTPUTDIR)/test_rm8.o: $(TESTSRCDIR)/test_rm8.c
+	$(CC) $(CFLAGS) -Wno-nonnull $(INCLUDES) $< -o $@
+
 $(TESTOUTPUTDIR)/test_rm9.o: $(TESTSRCDIR)/test_rm9.c
 	$(CC) $(CFLAGS) -Wno-nonnull $(INCLUDES) $< -o $@
 
