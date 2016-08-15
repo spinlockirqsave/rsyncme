@@ -359,6 +359,9 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     copy_all_threshold  = s->rec_ctx.copy_all_threshold;
     copy_tail_threshold = s->rec_ctx.copy_tail_threshold;
     send_threshold      = s->rec_ctx.send_threshold;
+    if (send_threshold == 0) {
+        return RM_ERR_BAD_CALL;
+    }
 
     raw_bytes_max = rm_max(L, send_threshold);
 

@@ -36,7 +36,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     const struct rm_delta_e *delta_e;
     struct twlist_head      *lh;
 
-    if ((x == NULL) || (y == NULL) || (L == 0) || (rec_ctx == NULL)) {
+    if ((x == NULL) || (y == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
         return RM_ERR_BAD_CALL;
     }
 

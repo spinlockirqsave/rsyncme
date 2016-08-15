@@ -347,6 +347,14 @@ main( int argc, char *argv[]) {
         rsyncme_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
+    if (L == 0) {
+        fprintf(stderr, "\nBlock size can't be 0.\nConsider block size of more than zero.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (send_threshold == 0) {
+        fprintf(stderr, "\nSend threshold can't be 0.\nConsider send threshold of more than zero.\n");
+        exit(EXIT_FAILURE);
+    }
     if (push_flags & RM_BIT_5) { /* remote */
         if (y == NULL) {
             strncpy(y, x, RM_CMD_F_LEN_MAX);
@@ -357,9 +365,6 @@ main( int argc, char *argv[]) {
             rsyncme_usage(argv[0]);
             exit(EXIT_FAILURE);
         }
-    }
-    if (send_threshold == 0) { /* TODO set thresholds */
-        send_threshold = L;
     }
     if (L <= sizeof(struct rm_ch_ch)) { /* warn there is no performance benefit in using rsyncme when block size is less than checksums overhead (apart from nonuniform distribution of byte stream transmitted) */
         fprintf(stderr, "\nWarning: block size [%zu] disables possibility of improvement. Consider block bigger than [%zu].\n", L, sizeof(struct rm_ch_ch));
