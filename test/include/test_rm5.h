@@ -149,5 +149,15 @@ test_rm_rolling_ch_proc_16(void **state);
 void
 test_rm_rolling_ch_proc_17(void **state);
 
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is 0. */
+void
+test_rm_rolling_ch_proc_18(void **state);
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is not 0. */
+void
+test_rm_rolling_ch_proc_19(void **state);
+
 
 #endif	/* RSYNCME_TEST_RM5_H */

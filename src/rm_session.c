@@ -232,7 +232,7 @@ rm_session_delta_tx_f(void *arg) {
     pthread_mutex_unlock(&s->session_mutex);
 
 exit:
-    pthread_exit(NULL);
+    return NULL; /* this thread must be created in joinable state */
 }
 
 
@@ -330,13 +330,13 @@ done:
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
     pthread_mutex_unlock(&s->session_mutex);
-    pthread_exit(NULL);
+    return NULL; /* this thread must be created in joinable state */
 
 err_exit:
     pthread_mutex_lock(&s->session_mutex);
     prvt_local->delta_rx_status = status;
     pthread_mutex_unlock(&s->session_mutex);
-    pthread_exit(NULL);
+    return NULL; /* this thread must be created in joinable state */
 }
 
 void *

@@ -26,7 +26,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     struct twhlist_node             *tmp;
     struct rm_session               *s = NULL;
     struct rm_session_push_local    *prvt;
-    char                            *y_copy = NULL;/* *cwd = NULL;*/
+    /*char                            *y_copy = NULL; *cwd = NULL;*/
     char                            f_z_name[38];
     struct timespec         clk_realtime_start, clk_realtime_stop;
     double                  clk_cputime_start, clk_cputime_stop;
@@ -47,11 +47,11 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     if (cwd == NULL) {
         return RM_ERR_GETCWD;
     }*/
-    y_copy = strdup(y);
+    /*y_copy = strdup(y);
     if (y_copy == NULL) {
-        /*free(cwd);*/
+        free(cwd);
         return RM_ERR_MEM;
-    }
+    }*/
     /*if (chdir(dirname(y_copy)) != 0) {
         free(y_copy);
         y_copy = NULL;
@@ -61,9 +61,9 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     }*/
     f_x = fopen(x, "rb");
     if (f_x == NULL) {
-        free(y_copy);
+        /*free(y_copy);
         y_copy = NULL;
-        /*chdir(cwd);
+        chdir(cwd);
         free(cwd);
         cwd = NULL;*/
         return RM_ERR_OPEN_X;
@@ -256,10 +256,10 @@ done:
     }
     rec_ctx->time_cpu = cpu_time;
     rec_ctx->time_real = real_time;
-    if (y_copy != NULL) {
+    /*if (y_copy != NULL) {
         free(y_copy);
         y_copy = NULL;
-    }
+    }*/
     if (f_z != NULL) {
         fclose(f_z);
         f_z = NULL;
@@ -272,10 +272,10 @@ done:
     return RM_ERR_OK;
 
 err_exit:
-    if (y_copy != NULL) {
+    /*if (y_copy != NULL) {
         free(y_copy);
         y_copy = NULL;
-    }
+    }*/
     if (f_x != NULL) {
         fclose(f_x);
         f_x = NULL;

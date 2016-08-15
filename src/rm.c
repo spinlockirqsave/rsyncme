@@ -580,6 +580,7 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
     if (err != 0) {
         goto fail;
     }
+    pthread_attr_destroy(&attr);
     return 0;
 fail:
     pthread_attr_destroy(&attr);

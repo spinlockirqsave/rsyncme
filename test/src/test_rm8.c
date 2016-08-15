@@ -140,6 +140,7 @@ test_rm_setup(void **state) {
     if (err != RM_ERR_OK) {
         exit(EXIT_FAILURE);
     }
+
     rm_state.l = rm_test_L_blocks;
     *state = &rm_state;
 
@@ -2261,11 +2262,11 @@ test_rm_tx_local_push_8(void **state) {
     z = rm_state->f3.name;
 
     j = 0;
-    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+    for (; j < 1; ++j) {
         L = rm_test_L_blocks[j];
         RM_LOG_INFO("Validating testing #8 of local push [copy all threshold], block size L [%zu]", L);
         RM_LOG_INFO("Testing local push #8 [copy all threshold]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
-        copy_all_threshold = f_x_sz + 1;
+        copy_all_threshold = f_x_sz + 10;
         copy_tail_threshold = 0;
         send_threshold = L;
         flags |= RM_BIT_6; /* set --leave flag */
@@ -2381,7 +2382,7 @@ test_rm_tx_local_push_9(void **state) {
     enum rm_error           status;
     unsigned char           cx, cz;
     const char              *x, *y, *z;  /* @x, @y, @z names */
-    FILE                    *f_x, *f_y, *f_z;
+    FILE                    *f_x = NULL, *f_y = NULL, *f_z = NULL;
     int                     fd_x, fd_y, fd_z;
     size_t                  j, k, L, f_x_sz, f_y_sz, f_z_sz;
     struct test_rm_state    *rm_state;
@@ -2425,12 +2426,12 @@ test_rm_tx_local_push_9(void **state) {
     z = rm_state->f3.name;
 
     j = 0;
-    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+    for (; j < 1; ++j) {
         L = rm_test_L_blocks[j];
         RM_LOG_INFO("Validating testing #9 of local push [copy tail threshold #1], block size L [%zu]", L);
         RM_LOG_INFO("Testing local push #9 [copy tail threshold #1]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
         copy_all_threshold = 0;
-        copy_tail_threshold = f_x_sz + 1;
+        copy_tail_threshold = f_x_sz;
         send_threshold = L;
         flags |= RM_BIT_6; /* set --leave flag */
 
@@ -2439,7 +2440,7 @@ test_rm_tx_local_push_9(void **state) {
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
-        assert_true(rec_ctx.copy_all_threshold_fired == 0); /* copy_tail_threshold MUST NOT be triggered as copy_all_threshold is set to 0 */
+        assert_true(rec_ctx.copy_all_threshold_fired == 0);  /* copy_tail_threshold MUST NOT be triggered as copy_all_threshold is set to 0 */
         assert_true(rec_ctx.copy_tail_threshold_fired == 1);
         assert_true(rec_ctx.delta_raw_n == 1);
         assert_true(rec_ctx.rec_by_raw == f_x_sz);
@@ -2459,8 +2460,7 @@ test_rm_tx_local_push_9(void **state) {
         assert_true(f_z != NULL && "Can't open file @z");
         fd_z = fileno(f_z);
 
-        /* verify files size */
-        memset(&fs, 0, sizeof(fs)); /* get @x size */
+        memset(&fs, 0, sizeof(fs));
         if (fstat(fd_x, &fs) != 0) {
             RM_LOG_PERR("Can't fstat file [%s]", x);
             fclose(f_x);
@@ -2500,10 +2500,12 @@ test_rm_tx_local_push_9(void **state) {
         }
         if ((err = rm_file_cmp(f_x, f_z, 0, 0, f_x_sz)) != RM_ERR_OK) {
             RM_LOG_ERR("Bytes differ, err [%d]", err);
+            fclose(f_x);
+            fclose(f_z);
             assert_true(1 == 0);
         }
 
-        if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
+        if (RM_TEST_8_DELETE_FILES == 1) {
             if (f_z != NULL) {
                 fclose(f_z);
                 f_z = NULL;

@@ -138,6 +138,7 @@ main( int argc, char *argv[]) {
     size_t              copy_all_threshold = 0;
     size_t              copy_tail_threshold = 0;
     size_t              send_threshold = 0;
+    uint8_t             send_threshold_set = 0;
     struct sockaddr_in  remote_addr = {0};
     size_t              L = RM_DEFAULT_L;
 
@@ -298,6 +299,7 @@ main( int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 }
                 send_threshold = helper;
+                send_threshold_set = 1;
                 break;
 
             case '?':
@@ -352,8 +354,12 @@ main( int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     if (send_threshold == 0) {
-        fprintf(stderr, "\nSend threshold can't be 0.\nConsider send threshold of more than zero.\n");
-        exit(EXIT_FAILURE);
+        if (send_threshold_set == 1) {
+            fprintf(stderr, "\nSend threshold can't be 0.\nConsider send threshold of more than zero.\n");
+            exit(EXIT_FAILURE);
+        } else {
+            send_threshold = L;
+        }
     }
     if (push_flags & RM_BIT_5) { /* remote */
         if (y == NULL) {
