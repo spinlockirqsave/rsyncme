@@ -27,7 +27,8 @@ rsyncme_usage(const char *name) {
     fprintf(stderr, "     \t -x         : file to synchronize\n");
     fprintf(stderr, "     \t -i         : IPv4 if syncing with remote file\n");
     fprintf(stderr, "     \t -y         : reference file used for syncing (local if [ip]\n"
-                    "     \t            : was not given, remote otherwise)\n");
+                    "     \t              was not given, remote otherwise) or result file if it doesn't\n"
+                    "     \t              exist and -z is not set and --force is set\n");
     fprintf(stderr, "     \t -z         : synchronization result file name [optional]\n");
     fprintf(stderr, "     \t -a         : copy all threshold. Send file as raw bytes if it's size\n"
                     "     \t              is less or equal this threshold [optional]\n");
@@ -116,6 +117,14 @@ print_stats(struct rm_delta_reconstruct_ctx rec_ctx) {
     }
 }
 
+static void help_hint(const char *name) {
+    if (name == NULL) {
+        return;
+    }
+    fprintf(stderr, "\nTry %s --help for more information.\n", name);
+    return;
+}
+
 int
 main( int argc, char *argv[]) {
     int             c;
@@ -202,7 +211,6 @@ main( int argc, char *argv[]) {
             case 'x':
                 if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
                     fprintf(stderr, "-x name too long\n");
-                    rsyncme_usage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 strncpy(x, optarg, RM_CMD_F_LEN_MAX);
@@ -213,7 +221,6 @@ main( int argc, char *argv[]) {
             case 'y':
                 if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
                     fprintf(stderr, "-y name too long\n");
-                    rsyncme_usage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 strncpy(y, optarg, RM_CMD_F_LEN_MAX);
@@ -224,7 +231,6 @@ main( int argc, char *argv[]) {
             case 'z':
                 if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
                     fprintf(stderr, "-z name too long\n");
-                    rsyncme_usage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 strncpy(z, optarg, RM_CMD_F_LEN_MAX);
@@ -235,7 +241,6 @@ main( int argc, char *argv[]) {
             case 'i':
                 if (inet_pton(AF_INET, optarg, &remote_addr.sin_addr) == 0) {
                     fprintf(stderr, "Invalid IPv4 address\n");
-                    rsyncme_usage(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 push_flags |= RM_BIT_5; /* remote */
@@ -250,7 +255,7 @@ main( int argc, char *argv[]) {
                 if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
                     fprintf(stderr, "Invalid argument\n");
                     fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
-                    rsyncme_usage(argv[0]);
+                    help_hint(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 L = helper;
@@ -265,7 +270,7 @@ main( int argc, char *argv[]) {
                 if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
                     fprintf(stderr, "Invalid argument\n");
                     fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
-                    rsyncme_usage(argv[0]);
+                    help_hint(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 copy_all_threshold = helper;
@@ -280,7 +285,7 @@ main( int argc, char *argv[]) {
                 if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
                     fprintf(stderr, "Invalid argument\n");
                     fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
-                    rsyncme_usage(argv[0]);
+                    help_hint(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 copy_tail_threshold = helper;
@@ -295,7 +300,7 @@ main( int argc, char *argv[]) {
                 if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
                     fprintf(stderr, "Invalid argument\n");
                     fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
-                    rsyncme_usage(argv[0]);
+                    help_hint(argv[0]);
                     exit(EXIT_FAILURE);
                 }
                 send_threshold = helper;
@@ -315,7 +320,7 @@ main( int argc, char *argv[]) {
                 exit(EXIT_FAILURE);
 
             default:
-                rsyncme_usage(argv[0]);
+                help_hint(argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
@@ -325,7 +330,7 @@ main( int argc, char *argv[]) {
       }*/
     if ((argc - optind) != 1) {
         fprintf(stderr, "\nInvalid number of non-option arguments.\nThere should be 1 non-option arguments: <push|pull>\n");
-        rsyncme_usage(argv[0]);
+        help_hint(argv[0]);
         exit(EXIT_FAILURE);
     }
     if (strcmp(argv[optind], "push") == 0) {
@@ -341,12 +346,11 @@ main( int argc, char *argv[]) {
     }
     if ((push_flags & RM_BIT_1) == 0u) { /* if -x not set report error */
         fprintf(stderr, "\n-x file not set.\nWhat is the file you want to sync?\n");
-        rsyncme_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
     if ((push_flags & RM_BIT_6) && (z == NULL || (strcmp(y, z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
         fprintf(stderr, "\n--leave option set but @z name not given.\nWhat is the file name you want to use as the result of sync (must be different than @y)?\n");
-        rsyncme_usage(argv[0]);
+        help_hint(argv[0]);
         exit(EXIT_FAILURE);
     }
     if (L == 0) {
@@ -362,13 +366,19 @@ main( int argc, char *argv[]) {
         }
     }
     if (push_flags & RM_BIT_5) { /* remote */
-        if (y == NULL) {
+        if (yp == NULL) {
             strncpy(y, x, RM_CMD_F_LEN_MAX);
+            yp = &y[0];
         }
     } else { /* local */
-        if (y == NULL) {
-            fprintf(stderr, "\n-y file not set.\nWhat is the file you want to sync with?\n");
-            rsyncme_usage(argv[0]);
+        if (yp == NULL) {
+            fprintf(stderr, "\n-y file not set.\n");
+            if (push_flags & RM_BIT_4) { /* if --force set */
+                fprintf(stderr, "What is the name of result file?\n");
+            } else {
+                fprintf(stderr, "What is the file you want to sync with?\n");
+            }
+            help_hint(argv[0]);
             exit(EXIT_FAILURE);
         }
     }

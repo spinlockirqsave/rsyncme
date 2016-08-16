@@ -702,8 +702,9 @@ test_rm_tx_local_push_2(void **state) {
             }
 
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
-                if (f_y) {
+                if (f_y != NULL) {
                     fclose(f_y);
+                    f_y = NULL;
                 }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
@@ -753,34 +754,40 @@ test_rm_tx_local_push_2(void **state) {
             }
             RM_LOG_INFO("PASSED test #2: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
-            f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
-            f_y = fopen(f_y_name, "wb+");
             if (f_y == NULL) {
-                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
+                f_y = fopen(f_y_name, "wb+");
+                if (f_y == NULL) {
+                    RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                }
             }
             assert_true(f_y != NULL);
             if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
+                    f_x = NULL;
                 }
                 if (f_y != NULL) {
                     fclose(f_y);
+                    f_y = NULL;
                 }
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
             if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, 0, f_y) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 fclose(f_x);
+                f_x = NULL;
                 fclose(f_y);
+                f_y = NULL;
                 continue;
             }
         }
-        if (f_x) {
+        if (f_x != NULL) {
             fclose(f_x);
             f_x = NULL;
         }
-        if (f_y) {
+        if (f_y != NULL) {
             fclose(f_y);
             f_y = NULL;
         }
@@ -905,8 +912,14 @@ test_rm_tx_local_push_3(void **state) {
             send_threshold = L;
             flags = 0;
 
-            if (f_x != NULL) fclose(f_x);
-            if (f_y != NULL) fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(status, RM_ERR_OK);
@@ -977,6 +990,7 @@ test_rm_tx_local_push_3(void **state) {
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
                 if (f_y) {
                     fclose(f_y);
+                    f_y = NULL;
                 }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
@@ -1028,11 +1042,13 @@ test_rm_tx_local_push_3(void **state) {
             assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
             RM_LOG_INFO("PASSED test #3: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
-            f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
-            f_y = fopen(f_y_name, "wb+");
             if (f_y == NULL) {
-                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
-                if (f_x != NULL) fclose(f_x);
+                f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
+                f_y = fopen(f_y_name, "wb+");
+                if (f_y == NULL) {
+                    RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                    if (f_x != NULL) fclose(f_x);
+                }
             }
             assert_true(f_y != NULL);
             if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
@@ -1048,10 +1064,14 @@ test_rm_tx_local_push_3(void **state) {
                 continue;
             }
         }
-        if (f_x != NULL) fclose(f_x);
-        f_x = NULL;
-        if (f_y != NULL) fclose(f_y);
-        f_y = NULL;
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
         RM_LOG_INFO("PASSED test #3: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
@@ -1187,8 +1207,14 @@ test_rm_tx_local_push_4(void **state) {
             send_threshold = L;
             flags = 0;
 
-            if (f_x != NULL) fclose(f_x);
-            if (f_y != NULL) fclose(f_y);
+            if (f_x != NULL) {
+                fclose(f_x);
+                f_x = NULL;
+            }
+            if (f_y != NULL) {
+                fclose(f_y);
+                f_y = NULL;
+            }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
             status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
             assert_int_equal(status, RM_ERR_OK);
@@ -1352,11 +1378,13 @@ test_rm_tx_local_push_4(void **state) {
             assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
             RM_LOG_INFO("PASSED test #4: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
-            f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
-            f_y = fopen(f_y_name, "wb+");
             if (f_y == NULL) {
-                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
-                if (f_x != NULL) fclose(f_x);
+                f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
+                f_y = fopen(f_y_name, "wb+");
+                if (f_y == NULL) {
+                    RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                    if (f_x != NULL) fclose(f_x);
+                }
             }
             assert_true(f_y != NULL);
             if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
@@ -1378,10 +1406,14 @@ test_rm_tx_local_push_4(void **state) {
                 continue;
             }
         }
-        if (f_x != NULL) fclose(f_x);
-        f_x = NULL;
-        if (f_y != NULL) fclose(f_y);
-        f_y = NULL;
+        if (f_x != NULL) {
+            fclose(f_x);
+            f_x = NULL;
+        }
+        if (f_y != NULL) {
+            fclose(f_y);
+            f_y = NULL;
+        }
         RM_LOG_INFO("PASSED test #4: files [%s] [%s] passed delta reconstruction for all block sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 buf_x_name, f_y_name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
@@ -1675,6 +1707,7 @@ test_rm_tx_local_push_5(void **state) {
             if (RM_TEST_8_DELETE_FILES == 1) { /* and fclose/unlink/remove result file */
                 if (f_y) {
                     fclose(f_y);
+                    f_y = NULL;
                 }
                 if (unlink(f_y_name) != 0) {
                     RM_LOG_ERR("Can't unlink result file [%s]", f_y_name);
@@ -1777,10 +1810,12 @@ test_rm_tx_local_push_5(void **state) {
             assert_true(rec_ctx.rec_by_tail == 0 && rec_ctx.delta_tail_n == 0);
             RM_LOG_INFO("PASSED test #5: files [%s] [%s], block [%zu], passed delta reconstruction, files are the same", buf_x_name, f_y_name, L);
 
-            f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
-            f_y = fopen(f_y_name, "wb+");
             if (f_y == NULL) {
-                RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                f_y_name = rm_test_fnames[i]; /* recreate @y file as input to local push */
+                f_y = fopen(f_y_name, "wb+");
+                if (f_y == NULL) {
+                    RM_LOG_PERR("Can't recreate file [%s]", f_y_name);
+                }
             }
             assert_true(f_y != NULL && "Can't recreate @y file");
             if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
