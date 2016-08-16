@@ -2262,7 +2262,7 @@ test_rm_tx_local_push_8(void **state) {
     z = rm_state->f3.name;
 
     j = 0;
-    for (; j < 1; ++j) {
+    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
         L = rm_test_L_blocks[j];
         RM_LOG_INFO("Validating testing #8 of local push [copy all threshold], block size L [%zu]", L);
         RM_LOG_INFO("Testing local push #8 [copy all threshold]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
@@ -2426,7 +2426,7 @@ test_rm_tx_local_push_9(void **state) {
     z = rm_state->f3.name;
 
     j = 0;
-    for (; j < 1; ++j) {
+    for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
         L = rm_test_L_blocks[j];
         RM_LOG_INFO("Validating testing #9 of local push [copy tail threshold #1], block size L [%zu]", L);
         RM_LOG_INFO("Testing local push #9 [copy tail threshold #1]: @x size [%zu], @y size [%zu], block size L [%zu]", f_x_sz, f_y_sz, L);
