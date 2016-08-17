@@ -47,6 +47,7 @@ struct test_rm_state
     void                *buf2;
     struct rm_session   *s;
     struct test_rm_file f_z;
+    struct test_rm_file f0; /* zero sized file */
     struct test_rm_file f1, f2, f3; /* f1, f2, f3 are used as @x, @y, @z in tests >= 7 */
 };
 
@@ -124,6 +125,17 @@ test_rm_tx_local_push_11(void **state);
  * @details 0 block size */
 void
 test_rm_tx_local_push_12(void **state);
+
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is 0. */
+void
+test_rm_tx_local_push_13(void **state);
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is NOT 0. */
+void
+test_rm_tx_local_push_14(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM8_H */
