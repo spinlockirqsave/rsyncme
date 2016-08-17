@@ -190,6 +190,20 @@ test_rm_setup(void **state) {
     }
     assert_true(s != NULL);
     rm_state.s = s;
+
+    rm_get_unique_string(rm_state.f0.name);
+    f = fopen(rm_state.f0.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating zero sized file [%s]", rm_state.f0.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f0.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f0.name); 
+            exit(EXIT_FAILURE);
+        }
+    }
+    rm_state.f0.f_created = 1;
+    fclose(f);
+
     rm_get_unique_string(rm_state.f1.name);
     f = fopen(rm_state.f1.name, "rb+");
     if (f == NULL) {
@@ -207,6 +221,7 @@ test_rm_setup(void **state) {
     }
     rm_state.f1.f_created = 1;
     fclose(f);
+
     rm_get_unique_string(rm_state.f2.name);
     f = fopen(rm_state.f2.name, "rb+");
     if (f == NULL) {
@@ -224,6 +239,7 @@ test_rm_setup(void **state) {
     }
     rm_state.f2.f_created = 1;
     fclose(f);
+
     rm_get_unique_string(rm_state.f3.name);
     f = fopen(rm_state.f3.name, "rb+");
     if (f != NULL) {
@@ -261,6 +277,21 @@ test_rm_teardown(void **state) {
     free(rm_state->buf);
     free(rm_state->buf2);
     rm_session_free(rm_state->s);
+
+    if (rm_state->f0.f_created == 1) {
+        f = fopen(rm_state->f0.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open zero sized file [%s]", rm_state->f0.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s]...", rm_state->f0.name);
+            fclose(f);
+            if (unlink(rm_state->f0.name) != 0) {
+                RM_LOG_CRIT("Can't unlink zero sized file [%s]!", rm_state->f0.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
+
     if (rm_state->f1.f_created == 1) {
         f = fopen(rm_state->f1.name, "rb");
         if (f == NULL) {
@@ -274,6 +305,7 @@ test_rm_teardown(void **state) {
             }
         }
     }
+
     if (rm_state->f2.f_created == 1) {
         f = fopen(rm_state->f2.name, "rb");
         if (f == NULL) {
@@ -2856,5 +2888,81 @@ test_rm_tx_local_push_12(void **state) {
     status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 0, 0, 0, 10, flags, &rec_ctx);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #12 (zero block size, L = 0)");
+    return;
+}
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is 0. */
+void
+test_rm_tx_local_push_13(void **state) {
+    enum rm_error           status;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    FILE                    *f;
+    int                     fd;
+    rm_push_flags           flags = 0;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    assert_true(rm_state->f0.f_created == 1);
+    f = fopen(rm_state->f0.name, "rb");
+    if (f == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f0.name);
+    }
+    assert_true(f != NULL && "Can't open file @x");
+    fd = fileno(f);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_state->f0.name);
+        fclose(f);
+        assert_true(1 == 0);
+    }
+    fclose(f);
+    assert_true(fs.st_size == 0);
+    memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+
+    RM_LOG_INFO("%s", "Testing local push #13 [zero send threshold, zero sized file]");
+    status = rm_tx_local_push(rm_state->f0.name, rm_state->f2.name, rm_state->f3.name, 10, 10, 10, 0, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #13 (zero send threshold, zero sized file)");
+    return;
+}
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is NOT 0. */
+void
+test_rm_tx_local_push_14(void **state) {
+    enum rm_error           status;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    FILE                    *f;
+    int                     fd;
+    rm_push_flags           flags = 0;
+    struct rm_delta_reconstruct_ctx rec_ctx;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    assert_true(rm_state->f1.f_created == 1);
+    f = fopen(rm_state->f1.name, "rb");
+    if (f == NULL) {
+        RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
+    }
+    assert_true(f != NULL && "Can't open file @x");
+    fd = fileno(f);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_state->f1.name);
+        fclose(f);
+        assert_true(1 == 0);
+    }
+    fclose(f);
+    assert_true(fs.st_size > 0);
+    memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
+
+    RM_LOG_INFO("%s", "Testing local push #14 [zero send threshold, zero sized file]");
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 10, 10, 10, 0, flags, &rec_ctx);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #14 (zero send threshold, zero sized file)");
     return;
 }
