@@ -180,12 +180,27 @@ test_rm_setup(void **state) {
         }
         fclose(f);
     }
+
     rm_get_unique_string(rm_state.tmp_dir_name);
     if (mkdir(rm_state.tmp_dir_name, S_IRWXU | S_IRWXG | S_IROTH) != 0) {
         rm_state.tmp_dir_created = 0;
     } else {
         rm_state.tmp_dir_created = 1;
     }
+
+    rm_get_unique_string(rm_state.f0.name);
+    f = fopen(rm_state.f0.name, "rb+");
+    if (f == NULL) {
+        RM_LOG_INFO("Creating zero sized file [%s]", rm_state.f0.name); /* file doesn't exist, create */
+        f = fopen(rm_state.f0.name, "wb");
+        if (f == NULL) {
+            RM_LOG_CRIT("Can't create file [%s]!", rm_state.f0.name); 
+            exit(EXIT_FAILURE);
+        }
+    }
+    rm_state.f0_created = 1;
+    fclose(f);
+
     rm_get_unique_string(rm_state.f1.name);
     f = fopen(rm_state.f1.name, "rb+");
     if (f != NULL) {
@@ -196,6 +211,7 @@ test_rm_setup(void **state) {
             assert_true(1 == 0 && "Can't unlink!");
         }
     }
+
     rm_get_unique_string(rm_state.f2.name);
     f = fopen(rm_state.f2.name, "rb+");
     if (f != NULL) {
@@ -233,9 +249,25 @@ test_rm_teardown(void **state) {
             }
         }
     }
+
     if (rm_state->tmp_dir_created == 1) {
         rmdir(rm_state->tmp_dir_name);
     }
+
+    if (rm_state->f0_created == 1) {
+        f = fopen(rm_state->f0.name, "rb");
+        if (f == NULL) {
+            RM_LOG_ERR("Can't open zero sized file [%s]", rm_state->f0.name);	
+        } else {
+            RM_LOG_INFO("Removing file [%s]...", rm_state->f0.name);
+            fclose(f);
+            if (unlink(rm_state->f0.name) != 0) {
+                RM_LOG_CRIT("Can't unlink zero sized file [%s]!", rm_state->f0.name);
+                assert_true(1 == 0 && "Can't unlink!");
+            }
+        }
+    }
+
     if (rm_state->f1_created == 1) {
         f = fopen(rm_state->f1.name, "rb");
         if (f == NULL) {
@@ -249,6 +281,7 @@ test_rm_teardown(void **state) {
             }
         }
     }
+
     if (rm_state->f2_created == 1) {
         f = fopen(rm_state->f2.name, "rb");
         if (f == NULL) {
@@ -1184,5 +1217,40 @@ test_rm_cmd_7(void **state) {
             assert_true(1 == 0 && "Can't unlink result file!");
         }
     }
+    return;
+}
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is 0. */
+void
+test_rm_cmd_8(void **state) {
+    int                     status;
+    char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
+    FILE                    *f_x;
+    struct test_rm_state    *rm_state;
+
+    rm_state = *state;
+
+    assert_true(rm_state->f0_created == 1);
+    f_x = fopen(rm_test_fnames[RM_TEST_10_5_FILE_IDX], "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open file!");
+    }
+    fclose(f_x);
+    RM_LOG_INFO("Testing #8 (local push: zero send threshold, zero sized file), file [%s]", rm_state->f0.name);
+    snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s -s 0", rm_state->f0.name, rm_test_fnames[RM_TEST_10_5_FILE_IDX]); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+    status = system(cmd);
+    if (status == -1) {
+        RM_LOG_INFO("%s", "System call failed, skipping the test...");
+    } else {
+        if (WIFEXITED(status) == 0) {
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
+            assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+        }
+    }
+    status = WEXITSTATUS(status);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #8 (local push: zero send threshold, zero sized file)");
     return;
 }

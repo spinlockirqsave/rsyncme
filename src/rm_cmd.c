@@ -360,7 +360,7 @@ main( int argc, char *argv[]) {
     if (send_threshold == 0) {
         if (send_threshold_set == 1) {
             fprintf(stderr, "\nSend threshold can't be 0.\nConsider send threshold of more than zero.\n");
-            exit(EXIT_FAILURE);
+            return RM_ERR_BAD_CALL;
         } else {
             send_threshold = L;
         }
@@ -484,7 +484,7 @@ main( int argc, char *argv[]) {
 
     print_stats(rec_ctx);
     fprintf(stderr, "\nOK.\n");
-    return 0;
+    return RM_ERR_OK;
 
 fail:
     fprintf(stderr, "\n");

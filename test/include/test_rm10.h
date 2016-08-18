@@ -42,8 +42,9 @@ struct test_rm_file {
 struct test_rm_state
 {
     struct test_rm_file f_z;
+    struct test_rm_file f0; /* zero sized file */
     struct test_rm_file f1, f2; /* used as non-existing @x and @y */
-    uint8_t             tmp_dir_created, f1_created, f2_created;
+    uint8_t             tmp_dir_created, f0_created, f1_created, f2_created;
     char                tmp_dir_name[38]; /* used as dir for target file @z */
 };
 
@@ -104,6 +105,11 @@ test_rm_cmd_6(void **state);
  * NOTE: new file will be created */
 void
 test_rm_cmd_7(void **state);
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is 0. */
+void
+test_rm_cmd_8(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM10_H */
