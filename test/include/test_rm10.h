@@ -30,6 +30,7 @@
 #define RM_TEST_FNAMES_N            15
 #define RM_TEST_10_CMD_LEN_MAX      300
 #define RM_TEST_10_5_FILE_IDX       3u
+#define RM_TEST_10_9_FILE_IDX       4u
 
 const char* rm_test_fnames[RM_TEST_FNAMES_N];
 size_t    rm_test_fsizes[RM_TEST_FNAMES_N];
@@ -110,6 +111,11 @@ test_rm_cmd_7(void **state);
  * @details Bad request, send threshold is 0, file size is 0. */
 void
 test_rm_cmd_8(void **state);
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is NOT 0. */
+void
+test_rm_cmd_9(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM10_H */

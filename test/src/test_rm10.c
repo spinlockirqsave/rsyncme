@@ -1254,3 +1254,62 @@ test_rm_cmd_8(void **state) {
     RM_LOG_INFO("%s", "PASSED test #8 (local push: zero send threshold, zero sized file)");
     return;
 }
+
+/* @brief   Test error reporting.
+ * @details Bad request, send threshold is 0, file size is NOT 0. */
+void
+test_rm_cmd_9(void **state) {
+    int                     status;
+    char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
+    struct stat             fs;
+    int                     fd;
+    FILE                    *f;
+    struct test_rm_state    *rm_state;
+
+    rm_state = *state;
+
+    f = fopen(rm_test_fnames[RM_TEST_10_5_FILE_IDX], "rb");
+    if (f == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open file @x!");
+    }
+    assert_true(f != NULL && "Can't open file @x");
+    fd = fileno(f);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_test_fnames[RM_TEST_10_5_FILE_IDX]);
+        fclose(f);
+        assert_true(1 == 0 && "Can't fstat file @x!");
+    }
+    fclose(f);
+    assert_true(fs.st_size > 0);
+
+    f = fopen(rm_test_fnames[RM_TEST_10_9_FILE_IDX], "rb");
+    if (f == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_test_fnames[RM_TEST_10_9_FILE_IDX]);
+        assert_true(1 == 0 && "Can't open file @y!");
+    }
+    assert_true(f != NULL && "Can't open file @y");
+    fd = fileno(f);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_test_fnames[RM_TEST_10_9_FILE_IDX]);
+        fclose(f);
+        assert_true(1 == 0 && "Can't fstat file @y!");
+    }
+    fclose(f);
+    assert_true(fs.st_size > 0);
+    RM_LOG_INFO("Testing #9 (local push: zero send threshold, @x and @y size > 0), file [%s]", rm_state->f0.name);
+    snprintf(cmd, RM_TEST_10_CMD_LEN_MAX, "./rsyncme push -x %s -y %s -s 0", rm_state->f0.name, rm_test_fnames[RM_TEST_10_5_FILE_IDX]); /* execute built image of rsyncme from debug/release build folder and not from system global path */
+    status = system(cmd);
+    if (status == -1) {
+        RM_LOG_INFO("%s", "System call failed, skipping the test...");
+    } else {
+        if (WIFEXITED(status) == 0) {
+            RM_LOG_ERR("%s", "System call failed, cmd returned abnormally with error [%d]", WEXITSTATUS(status));
+            assert_true(1 == 0 && "System call failed, cmd returned abnormally");
+        }
+    }
+    status = WEXITSTATUS(status);
+    assert_int_equal(status, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #9 (local push: zero send threshold, @x and @y size > 0)");
+    return;
+}
