@@ -106,7 +106,7 @@ void
 test_rm_rolling_ch_proc_7(void **state);
 
 /* @brief   Test error reporting.
- * @details NULL request of reading out of range from file @x. */
+ * @details Bad request of reading out of range from file @x, file size is 0. */
 void
 test_rm_rolling_ch_proc_8(void **state);
 
