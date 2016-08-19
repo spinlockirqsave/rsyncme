@@ -17,6 +17,8 @@ Content
 4.1.1 -z OPTION
 4.1.2 --leave OPTION
 4.1.3 -l OPTION
+4.1.4 -t OPTION
+4.1.5 -a OPTION
 5. REMOTE SYNCHRONIZATION
 
 
@@ -89,7 +91,7 @@ pull        Set up @y as source of changes, @x as result/output.
 -a          Copy all threshold [in bytes]. The file will be sent as raw bytes
             if it's size is less than this. (If the copy tail threshold
             value is equal to this value and they are equal to file size
-            than file is sent literally).
+            than file is sent literally as well).
 -t          Copy tail threshold [in bytes]. Bytes will be sent litearally
             instead of performing rolling match algorithm
             if bytes to be processed are equal or less than this value.
@@ -119,13 +121,13 @@ and in the same location, but this can be changed with -z and/or --leave option.
 
     rsyncme push -x @x -y @y -z @z
 
-This will output new version of @y as @z, i.e. @y becomes @z.
+This will output new version of @y as @z, i.e. @y becomes @z (if @y name was different from @z name there is no file with name @y after this is done).
 
 4.1.2 --leave OPTION
 
     rsyncme push -x @x -y @y -z @z --leave
 
-will work as 2.1.2 but @y file will not be deleted nor changed.
+will work as 4.1.1 but @y file will not be deleted nor changed - it is left intact.
 
 4.1.3 -l OPTION
 
@@ -137,10 +139,42 @@ is less this value is more matches are found while simultaneously less
 this value is less space for performance improvement is left.
 Example:
 
-    rsyncme push -x @x -y @y -l 16
+    rsyncme push -x @x -y @y -l 128
 
-This will use 16 bytes as synchronization block size.
+This will use 128 bytes as synchronization block size.
 
+4.1.4 -t OPTION
+
+    rsyncme push -x @x -y @y -t number_of_bytes
+
+Copy tail threshold sets up the number of bytes at the end of file that will
+be sent literally, as a raw data, straight away - without searching for a match
+in hashtable of checksums. If there is less or equal number of bytes to process,
+copy tail threshold is fired and bytes are sent literally - rolling procedure
+is interrupted and ended. The copy tail threshold can't be 0, therefore if set
+explicitly - this must be positive value. If this threshold is less than copy
+all threshold - copy all threshold is fired and all bytes are sent literally.
+If this value is equal to copy all threshold, copy tail threshold is fired
+to the same effect - all bytes are used literally. 
+Example:
+
+    rsyncme push -x @x -y @y -t 80
+
+This will use 80 bytes as copy tail threshold.
+
+4.1.5 -a OPTION
+
+    rsyncme push -x @x -y @y -a number_of_bytes
+
+Copy all threshold sets up the trigger on the file size to be sent literally.
+If the file size is less than this value or is equal and copy tail thrreshold
+is equal to it - then whole file is sent as raw data. 
+Example:
+
+    rsyncme push -x @x -y @y -a 80
+
+This will use 80 bytes as copy all threshold. All files of sizes less than 80 bytes
+are sent straight away, skipping the rolling checksum procedure.
 
 5. REMOTE SYNCHRONIZATION
 
