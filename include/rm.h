@@ -303,7 +303,9 @@ struct rm_session;
  *          to move the checksum, starting from byte @from.
  * @param   h - hashtable of nonoverlapping checkums,
  * @param   f_x - file on which rolling is performed, must be already opened,
- * @param   delta_f - tx/reconstruct callback,
+ * @param   delta_f - tx/reconstruct callback, NOTE: this callback takes ownership
+ *          of the delta elements allocated by rolling proc - this function MUST
+ *          assert memory is freed 
  * @param   L - block size,
  * @param   from - starting point, 0 to start from beginning
  * PARAMETERS TAKEN FROM session's RECONSTRUCTION CONTEXT

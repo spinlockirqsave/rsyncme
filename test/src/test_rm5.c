@@ -1758,6 +1758,8 @@ test_rm_rolling_ch_proc_8(void **state) {
     struct rm_session_push_local *prvt;
     enum rm_error       err;
     FILE                *f_x;
+    struct stat         fs;
+    int                 fd;
     struct test_rm_state     *rm_state = *state;
 
     RM_LOG_INFO("%s", "Running test #8 (Test error reporting: zero size file)...");
@@ -1777,6 +1779,13 @@ test_rm_rolling_ch_proc_8(void **state) {
         RM_LOG_ERR("Can't open file [%s]!", rm_state->f.name);
         assert_true(1 == 0 && "Can't open @x file!");
     }
+    assert_true(f_x != NULL && "Can't open @x file!");
+    fd = fileno(f_x);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_CRIT("Can't fstat file [%s]", rm_state->f.name);
+        assert_true(1 == 0 && "Can't fstat @x file!");
+    }
+    assert_true(fs.st_size == 0);
     prvt->f_x = f_x;                        /* run on @x */
     prvt->delta_f = rm_roll_proc_cb_1;
     err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
