@@ -12,17 +12,17 @@
 
 
 const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0_ts3", "rm_f_1_ts3",
-"rm_f_2_ts3","rm_f_65_ts3", "rm_f_100_ts3", "rm_f_511_ts3", "rm_f_512_ts3",
-"rm_f_513_ts3", "rm_f_1023_ts3", "rm_f_1024_ts3", "rm_f_1025_ts3",
-"rm_f_4096_ts3", "rm_f_20100_ts3"};
+    "rm_f_2_ts3","rm_f_65_ts3", "rm_f_100_ts3", "rm_f_511_ts3", "rm_f_512_ts3",
+    "rm_f_513_ts3", "rm_f_1023_ts3", "rm_f_1024_ts3", "rm_f_1025_ts3",
+    "rm_f_4096_ts3", "rm_f_20100_ts3"};
 
 size_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 2, 65, 100, 511, 512, 513,
-						1023, 1024, 1025, 4096, 20100 };
+    1023, 1024, 1025, 4096, 20100 };
 
 size_t  rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 128, 129,
-					200, 400, 499, 500, 501, 511, 512, 513,
-					600, 800, 1000, 1100, 1123, 1124, 1125,
-					1200, 100000 };
+    200, 400, 499, 500, 501, 511, 512, 513,
+    600, 800, 1000, 1100, 1123, 1124, 1125,
+    1200, 100000 };
 
 int
 test_rm_setup(void **state) {
@@ -72,7 +72,7 @@ test_rm_setup(void **state) {
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate memory buffer of [%u] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL && "Can't allocate buffer");
     rm_state.buf = buf;
     return 0;
@@ -236,8 +236,8 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_link_2(void **state) {
                 read = fread(buf, 1, read_now, f);
                 if (read != read_now) {
                     RM_LOG_PERR("Error reading file [%s] "
-                    "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
-                    " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
+                            "(THIS IS SYSTEM ERROR NOT RELATED TO OUR METHOD"
+                            " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
                     assert_true(1 == 0 && "fread failed");
                 }
                 assert_true(pos != &l);

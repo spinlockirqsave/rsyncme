@@ -124,7 +124,7 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...) {
 }
 
 int
-rm_util_daemonize(const char *dir, int noclose, char *logname) {
+rm_util_daemonize(const char *dir, int noclose, const char *logname) {
     pid_t	pid, sid;
     int 	fd;
 
@@ -168,12 +168,9 @@ rm_util_daemonize(const char *dir, int noclose, char *logname) {
 }
 
 int
-rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t ignore_signals) {
+rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, uint8_t ignore_signals) {
     int 	fd;
 
-    if (logname == NULL) {
-        return RM_ERR_BAD_CALL;
-    }
     if (ignore_signals != 0) { /* TODO: handle signals */
         signal(SIGINT, SIG_IGN);
         signal(SIGHUP, SIG_IGN);
@@ -185,7 +182,7 @@ rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t
             return RM_ERR_CHDIR;
         }
     }
-    if (rm_util_openlogs("./log/", logname) != RM_ERR_OK) {
+    if ((logname != NULL) && (rm_util_openlogs("./log/", logname) != RM_ERR_OK)) {
         return RM_ERR_IO_ERROR;
     }
     if (noclose == 0) { /* close open descriptors */

@@ -64,14 +64,13 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...);
  *              RM_ERR_IO_ERROR - can't open logs,
  *              RM_ERR_CHDIR - can't chdir */
 int
-rm_util_daemonize(const char *dir, int noclose, char *logname) __attribute__((nonnull(3)));
+rm_util_daemonize(const char *dir, int noclose, const char *logname) __attribute__((nonnull(3)));
 
 /* @return      RM_ERR_OK - success,
- *              RM_ERR_BAD_CALL - logname is NULL,
  *              RM_ERR_CHDIR - can't chdir,
  *              RM_ERR_IO_ERROR - can't open logs */
 int
-rm_util_chdir_umask_openlog(const char *dir, int noclose, char *logname, uint8_t ignore_signals) __attribute__((nonnull(1,3)));
+rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, uint8_t ignore_signals);
 
 #ifdef DDEBUG
 #define RM_D_ERR(fmt, args...) fprintf(stderr, "DEBUG ERR: %s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)

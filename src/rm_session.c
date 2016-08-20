@@ -246,9 +246,7 @@ rm_session_delta_rx_f_local(void *arg) {
     struct twlist_head              *lh;
     size_t                          bytes_to_rx;
     struct rm_session               *s;
-    struct rm_delta_reconstruct_ctx rec_ctx = {0};  /* describes result of reconstruction,
-                                                       we will copy this to session reconstruct context
-                                                       after all is done to avoid locking on each delta element */
+    struct rm_delta_reconstruct_ctx rec_ctx = {0};  /* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
     int err;
     enum rm_delta_rx_status         status = RM_DELTA_RX_STATUS_OK;
 
@@ -299,7 +297,7 @@ rm_session_delta_rx_f_local(void *arg) {
             goto done;
         }
         /* process delta element */
-        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
+        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) { /* in case of local sync there can be only single element enqueued each time conditional variable is signalled, but in other cases it will be possible to be different most likely */
             delta_e = tw_container_of(lh, struct rm_delta_e, link);
             err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
             if (err != 0) {
@@ -325,7 +323,7 @@ done:
     assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
     rec_ctx.collisions_1st_level = s->rec_ctx.collisions_1st_level; /* tx thread might have assigned to collisions variables already and memcpy would overwrite them */
     rec_ctx.collisions_2nd_level = s->rec_ctx.collisions_2nd_level;
-    rec_ctx.copy_all_threshold_fired = s->rec_ctx.copy_all_threshold_fired; /* tx thread might have assigned to thresold_fired variables already and memcpy would overwrite them */
+    rec_ctx.copy_all_threshold_fired = s->rec_ctx.copy_all_threshold_fired; /* tx thread might have assigned to threshold_fired variables already and memcpy would overwrite them */
     rec_ctx.copy_tail_threshold_fired = s->rec_ctx.copy_tail_threshold_fired;
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;

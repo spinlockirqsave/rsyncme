@@ -214,7 +214,7 @@ test_rm_setup(void **state) {
         j = RM_TEST_5_FILE_X_SZ;
         RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_state.f1.name);
         while (j--) {
-                fputc(rand(), f);
+            fputc(rand(), f);
         }
     }
     rm_state.f1.f_created = 1;
@@ -231,7 +231,7 @@ test_rm_setup(void **state) {
         j = RM_TEST_5_FILE_Y_SZ;
         RM_LOG_INFO("Writing [%zu] random bytes to file [%s]", j, rm_state.f2.name);
         while (j--) {
-                fputc(rand(), f);
+            fputc(rand(), f);
         }
     }
     rm_state.f2.f_created = 1;
@@ -1968,7 +1968,7 @@ test_rm_rolling_ch_proc_12(void **state) {
         assert_true(1 == 0 && "Can't fstat file");
     }
     y_sz = fs.st_size;
-    
+
     j = 0;
     for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
         L = rm_test_L_blocks[j];
@@ -1979,7 +1979,7 @@ test_rm_rolling_ch_proc_12(void **state) {
         assert_int_equal(err, RM_ERR_OK);
         assert_int_equal(blocks_n_exp, blocks_n);
         rewind(f_y);
-        
+
         s = rm_state->s; /* run rolling checksum procedure */
         memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* reset reconstruction context */
         s->rec_ctx.L = L;
@@ -2106,7 +2106,7 @@ test_rm_rolling_ch_proc_13(void **state) {
         assert_true(1 == 0 && "Can't fstat file");
     }
     y_sz = fs.st_size;
-    
+
     j = 0;
     for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
         L = rm_test_L_blocks[j];
@@ -2117,7 +2117,7 @@ test_rm_rolling_ch_proc_13(void **state) {
         assert_int_equal(err, RM_ERR_OK);
         assert_int_equal(blocks_n_exp, blocks_n);
         rewind(f_y);
-        
+
         s = rm_state->s; /* run rolling checksum procedure */
         memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* reset reconstruction context */
         s->rec_ctx.L = L;
@@ -2349,7 +2349,7 @@ test_rm_rolling_ch_proc_14(void **state) {
             assert_true(hit == 1); /* there was only one delta element sent */
             assert_true(s->rec_ctx.copy_all_threshold_fired == 1);
             assert_true(s->rec_ctx.copy_tail_threshold_fired == 0);
-            
+
             RM_LOG_INFO("PASSED test #14 (copy all threshold): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                     fname, file_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
             rewind(f);
@@ -2532,7 +2532,7 @@ test_rm_rolling_ch_proc_15(void **state) {
             assert_true(hit == 1);
             assert_true(s->rec_ctx.copy_tail_threshold_fired == 1);
             assert_true(s->rec_ctx.copy_all_threshold_fired == 0);
-            
+
             RM_LOG_INFO("PASSED test #15 (copy tail threshold #1): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                     fname, file_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
             rewind(f);
@@ -2723,7 +2723,7 @@ test_rm_rolling_ch_proc_16(void **state) {
                 }
                 if (k == f_y_sz / L) {
                     hit = 1;
-                        assert_true(delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES);
+                    assert_true(delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES);
                     assert_true(delta_e->raw_bytes_n == rm_min(f_x_sz, s->rec_ctx.copy_tail_threshold));
                 } else {
                     assert_true(delta_e->type == RM_DELTA_ELEMENT_REFERENCE);
@@ -2747,7 +2747,7 @@ test_rm_rolling_ch_proc_16(void **state) {
             if (threshold < f_x_sz) {
                 assert_true(s->rec_ctx.copy_tail_threshold_fired == 1);
             }
-            
+
             RM_LOG_INFO("PASSED test #16 (copy tail threshold #2): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu], threshold [%zu]",
                     buf_x_name, f_x_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff, threshold);
             /* move file pointer back to the beginning */
@@ -2944,8 +2944,8 @@ test_rm_rolling_ch_proc_17(void **state) {
                         assert_true(1 == 0 && "Unknown delta element type!");
                 }
                 if (k == s->rec_ctx.delta_raw_n + s->rec_ctx.delta_ref_n) { /* verify that raw delta was last element */
-                        assert_true(delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES);
-                        assert_true(delta_e->raw_bytes_n == rm_min(f_x_sz, s->rec_ctx.copy_tail_threshold));
+                    assert_true(delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES);
+                    assert_true(delta_e->raw_bytes_n == rm_min(f_x_sz, s->rec_ctx.copy_tail_threshold));
                 }
                 if (delta_e->raw_bytes != NULL) {
                     free(delta_e->raw_bytes);
@@ -2961,7 +2961,7 @@ test_rm_rolling_ch_proc_17(void **state) {
             assert_true(delta_tail_n == 0);
             assert_true(rec_by_tail == 0);
             assert_true(s->rec_ctx.copy_tail_threshold_fired == 1);
-            
+
             RM_LOG_INFO("PASSED test #17 (copy tail threshold #3): file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu], threshold [%zu]",
                     buf_x_name, f_x_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff, threshold);
             /* move file pointer back to the beginning */

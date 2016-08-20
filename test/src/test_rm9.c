@@ -16,14 +16,14 @@ const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
     "rm_f_1024_ts9", "rm_f_1025_ts9", "rm_f_4096_ts9", "rm_f_7787_ts9", "rm_f_20100_ts9"};
 
 size_t rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
-                                                100, 511, 512, 513, 1023,
-                                                1024, 1025, 4096, 7787, 20100 };
+    100, 511, 512, 513, 1023,
+    1024, 1025, 4096, 7787, 20100 };
 
 size_t rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
-                    24, 32, 50, 64, 100, 127, 128, 129,
-                    130, 200, 400, 499, 500, 501, 511, 512,
-                    513, 600, 800, 1000, 1100, 1123, 1124, 1125,
-                    1200, 100000 };
+    24, 32, 50, 64, 100, 127, 128, 129,
+    130, 200, 400, 499, 500, 501, 511, 512,
+    513, 600, 800, 1000, 1100, 1123, 1124, 1125,
+    1200, 100000 };
 
 static int
 test_rm_copy_files_and_postfix(const char *postfix) {
@@ -189,7 +189,7 @@ test_rm_setup(void **state) {
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 1st memory buffer"
                 " of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
@@ -199,7 +199,7 @@ test_rm_setup(void **state) {
             fclose(f);
             f = NULL;
         }
-	}
+    }
     assert_true(buf != NULL && "Can't malloc buffer");
     rm_state.buf2 = buf;
 
@@ -210,7 +210,7 @@ test_rm_setup(void **state) {
             fclose(f);
             f = NULL;
         }
-	}
+    }
     assert_true(s != NULL && "Can't create session");
     rm_state.s = s;
     rm_get_unique_string(rm_state.unique_name);
@@ -377,37 +377,37 @@ test_rm_local_push_err_1(void **state) {
             assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-			RM_TEST_MOCK_FOPEN64 = 1;
-			will_return(__wrap_fopen64, NULL);
+            RM_TEST_MOCK_FOPEN64 = 1;
+            will_return(__wrap_fopen64, NULL);
             status = rm_tx_local_push(rm_state->unique_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-			RM_TEST_MOCK_FOPEN64 = 0;
+            RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(status, RM_ERR_OPEN_X);
 
             flags = 0; /* RM_BIT_4 (force creation) bit not set, expected RM_ERR_OPEN_Y */
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
             assert_true(f_x != NULL && "Can't open file @x");
-			RM_TEST_MOCK_FOPEN64 = 1;
-			will_return(__wrap_fopen64, f_x);
-			will_return(__wrap_fopen64, NULL);
+            RM_TEST_MOCK_FOPEN64 = 1;
+            will_return(__wrap_fopen64, f_x);
+            will_return(__wrap_fopen64, NULL);
             status = rm_tx_local_push(buf_x_name, rm_state->unique_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-			RM_TEST_MOCK_FOPEN64 = 0;
+            RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(status, RM_ERR_OPEN_Y);
             f_x = NULL;
 
             flags |= RM_BIT_4; /* RM_BIT_4 (force creation) bit set but call to fopen fails, expected RM_ERR_OPEN_Z (need to mock three calls to fopen) */
             f_x = fopen(buf_x_name, "rb");  /* open @x because local push will attempt to close it using returned pointer from mocked fopen64, fclose will SIGSEGV otherwise */
             assert_true(f_x != NULL);
-			RM_TEST_MOCK_FOPEN64 = 1;
-			will_return(__wrap_fopen64, f_x);
-			will_return(__wrap_fopen64, NULL);
-			will_return(__wrap_fopen64, NULL);
+            RM_TEST_MOCK_FOPEN64 = 1;
+            will_return(__wrap_fopen64, f_x);
+            will_return(__wrap_fopen64, NULL);
+            will_return(__wrap_fopen64, NULL);
             status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
-			RM_TEST_MOCK_FOPEN64 = 0;
+            RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(status, RM_ERR_OPEN_Z);
             f_x = NULL;
-		}
+        }
         RM_LOG_INFO("PASSED test #1 (NULL file pointers), file [%s], size [%zu]", f_y_name, f_y_sz);
-	}
+    }
     if (RM_TEST_9_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_9");
         if (err != 0) {

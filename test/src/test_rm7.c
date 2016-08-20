@@ -16,15 +16,15 @@ const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
     "rm_f_1024_ts7", "rm_f_1025_ts7", "rm_f_4096_ts7", "rm_f_7787_ts7", "rm_f_20100_ts7"};
 
 size_t	rm_test_fsizes[RM_TEST_FNAMES_N] = { 1, 2, 4, 8, 65,
-                                                100, 511, 512, 513, 1023,
-                                                1024, 1025, 4096, 7787, 20100 };
+    100, 511, 512, 513, 1023,
+    1024, 1025, 4096, 7787, 20100 };
 
 size_t
 rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
-                    24, 32, 50, 64, 100, 127, 128, 129,
-                    130, 200, 400, 499, 500, 501, 511, 512,
-                    513, 600, 800, 1000, 1100, 1123, 1124, 1125,
-                    1200, 100000 };
+    24, 32, 50, 64, 100, 127, 128, 129,
+    130, 200, 400, 499, 500, 501, 511, 512,
+    513, 600, 800, 1000, 1100, 1123, 1124, 1125,
+    1200, 100000 };
 
 static FILE*
 test_rm_fopen_file_prefixed(const char *name, const char *prefix,
@@ -195,13 +195,13 @@ test_rm_setup(void **state) {
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 1st memory buffer of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL);
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
@@ -209,7 +209,7 @@ test_rm_setup(void **state) {
     s = rm_session_create(RM_PUSH_LOCAL);
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
-	}
+    }
     assert_true(s != NULL);
     rm_state.s = s;
     return 0;
@@ -302,26 +302,26 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
     switch (err) {
         case 0: break;
         case -1:
-            RM_LOG_CRIT("%s", "NULL arguments passed to rm_rx_process_delta_element");
-            break;
+                RM_LOG_CRIT("%s", "NULL arguments passed to rm_rx_process_delta_element");
+                break;
         case -2:
-            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_REFERENCE in rm_rx_process_delta_element");
-            break;
+                RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_REFERENCE in rm_rx_process_delta_element");
+                break;
         case -3:
-            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_RAW_BYTES in rm_rx_process_delta_element");
-            break;
+                RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_RAW_BYTES in rm_rx_process_delta_element");
+                break;
         case -4:
-            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_ZERO_DIFF in rm_rx_process_delta_element");
-            break;
+                RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_ZERO_DIFF in rm_rx_process_delta_element");
+                break;
         case -5:
-            RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_TAIL in rm_rx_process_delta_element");
-            break;
+                RM_LOG_CRIT("%s", "Error reconstructing RM_DELTA_ELEMENT_TAIL in rm_rx_process_delta_element");
+                break;
         case -6:
-            RM_LOG_CRIT("%s", "Unknown delta  element type passed to rm_rx_process_delta_element");
-            break;
+                RM_LOG_CRIT("%s", "Unknown delta  element type passed to rm_rx_process_delta_element");
+                break;
         default:
-            RM_LOG_CRIT("%s", "Unknown error in rm_rx_process_delta_element");
-            return -13;
+                RM_LOG_CRIT("%s", "Unknown error in rm_rx_process_delta_element");
+                return -13;
     }
     assert_int_equal(err, 0);
 
@@ -509,7 +509,7 @@ test_rm_rx_process_delta_element_1(void **state) {
             assert_int_equal(rec_by_raw, s->rec_ctx.rec_by_raw);
             assert_int_equal(rec_by_zero_diff, s->rec_ctx.rec_by_zero_diff);
             assert_int_equal(rec_by_tail, s->rec_ctx.rec_by_tail);
-            
+
             /* verify files size */
             if (fflush(f_z->f) !=0) {
                 RM_LOG_PERR("Can't fflush file [%s]", f_z->name);
@@ -638,11 +638,11 @@ test_rm_rx_process_delta_element_1(void **state) {
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0) {
                     RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
-                        fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
+                            fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
                     RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
-                        fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
-                    }
+                            fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
+                }
             } else {
                 RM_LOG_INFO("PASSED test #1: delta reconstruction OK, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
@@ -681,19 +681,19 @@ test_rm_rx_process_delta_element_1(void **state) {
                 ++blocks_n;
             }
             assert_int_equal(blocks_n_exp, blocks_n);
-			
-			/* move file pointer back to the beginning */
-			if (f != NULL) {
+
+            /* move file pointer back to the beginning */
+            if (f != NULL) {
                 rewind(f);
             }
-		}
-		if (f!= NULL) {
+        }
+        if (f!= NULL) {
             fclose(f);
             f = NULL;
         }
         RM_LOG_INFO("PASSED test #1: files [%s] [%s] passed delta reconstruction for all blocks sizes, (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 fname, f_z->name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
     return;
 }
 
@@ -967,11 +967,11 @@ test_rm_rx_process_delta_element_2(void **state) {
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0) {
                     RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
-                        f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
+                            f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
                     RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
-                        f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
-                    }
+                            f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
+                }
             } else {
                 RM_LOG_INFO("PASSED test #2: delta reconstruction OK, files are the same, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         f_y_name, f_y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
@@ -1039,12 +1039,12 @@ test_rm_rx_process_delta_element_2(void **state) {
                 ++blocks_n;
             }
             assert_int_equal(blocks_n_exp, blocks_n);
-		}
-		fclose(f_x);
+        }
+        fclose(f_x);
         fclose(f_y);
         RM_LOG_INFO("PASSED test #2: files [%s] [%s] passed delta reconstruction for all blocks sizes, files are the same (detail cases: #1 [%zu] #2 [%zu] #3 [%zu])",
                 f_y_name, f_z->name, detail_case_1_n, detail_case_2_n, detail_case_3_n);
-	}
+    }
 
     if (RM_TEST_7_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");

@@ -11,19 +11,19 @@
 
 
 const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0_ts4", "rm_f_1_ts4",
-"rm_f_2_ts4","rm_f_65_ts4", "rm_f_100_ts4", "rm_f_511_ts4", "rm_f_512_ts4",
-"rm_f_513_ts4", "rm_f_1023_ts4", "rm_f_1024_ts4", "rm_f_1025_ts4",
-"rm_f_4096_ts4", "rm_f_20100_ts4"};
+    "rm_f_2_ts4","rm_f_65_ts4", "rm_f_100_ts4", "rm_f_511_ts4", "rm_f_512_ts4",
+    "rm_f_513_ts4", "rm_f_1023_ts4", "rm_f_1024_ts4", "rm_f_1025_ts4",
+    "rm_f_4096_ts4", "rm_f_20100_ts4"};
 
 size_t  rm_test_fsizes[RM_TEST_FNAMES_N] = { 0, 1, 2, 65, 100, 511, 512, 513,
-						1023, 1024, 1025, 4096, 20100 };
+    1023, 1024, 1025, 4096, 20100 };
 
 size_t  rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 128, 129,
-					200, 400, 499, 500, 501, 511, 512, 513,
-					600, 800, 1000, 1100, 1123, 1124, 1125,
-					1200, 100000 };
+    200, 400, 499, 500, 501, 511, 512, 513,
+    600, 800, 1000, 1100, 1123, 1124, 1125,
+    1200, 100000 };
 
-int
+    int
 test_rm_setup(void **state)
 {
     int         err;
@@ -72,19 +72,19 @@ test_rm_setup(void **state)
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 1st memory buffer of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL && "Malloc failed");
     rm_state.buf = buf;
     buf = malloc(j);
     if (buf == NULL) {
         RM_LOG_ERR("Can't allocate 2nd memory buffer of [%zu] bytes, malloc failed", j);
-	}
+    }
     assert_true(buf != NULL && "Malloc failed");
     rm_state.buf2 = buf;
     return 0;
 }
 
-int
+    int
 test_rm_teardown(void **state)
 {
     int     i;
@@ -114,60 +114,60 @@ test_rm_teardown(void **state)
 /* #1 */
 
 /* @brief   Tests number of calculated entries. */
-void
+    void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
 {
-	FILE                    *f;
-	int                     fd;
+    FILE                    *f;
+    int                     fd;
     int                     res;
-	size_t                  i, j, L, file_sz;
-	struct test_rm_state    *rm_state;
-	struct stat             fs;
-	const char              *fname;
-	size_t                  blocks_n, entries_n;
+    size_t                  i, j, L, file_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    const char              *fname;
+    size_t                  blocks_n, entries_n;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
     struct twhlist_node     *tmp;
 
-	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     twhash_init(h);
-	rm_state = *state;
-	assert_true(rm_state != NULL);
+    rm_state = *state;
+    assert_true(rm_state != NULL);
 
-	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i) { /* test on all files */
-		fname = rm_test_fnames[i];
-		f = fopen(fname, "rb");
-		if (f == NULL) {
-			RM_LOG_PERR("Can't open file [%s]", fname);
-		}
-		assert_true(f != NULL && "Can't fopen file");
-		fd = fileno(f); /* get file size */
-		if (fstat(fd, &fs) != 0) {
-			RM_LOG_PERR("Can't fstat file [%s]", fname);
-			fclose(f);
-			assert_true(1 == 0 && "Can't fstat file");
-		}
-		file_sz = fs.st_size; 
-		j = 0;
-		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
-			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
-			if (0 == L) {
-				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
-				continue;
-			}
-			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", fname, file_sz);
-				continue;
-			}
-	
-			RM_LOG_INFO("Testing of splitting file into non-overlapping blocks: file [%s], size [%zu], block size L [%zu], buffer"
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i) { /* test on all files */
+        fname = rm_test_fnames[i];
+        f = fopen(fname, "rb");
+        if (f == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", fname);
+        }
+        assert_true(f != NULL && "Can't fopen file");
+        fd = fileno(f); /* get file size */
+        if (fstat(fd, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat file [%s]", fname);
+            fclose(f);
+            assert_true(1 == 0 && "Can't fstat file");
+        }
+        file_sz = fs.st_size; 
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing of hashing of non-overlapping blocks: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
+                continue;
+            }
+            if (file_sz < 2) {
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", fname, file_sz);
+                continue;
+            }
+
+            RM_LOG_INFO("Testing of splitting file into non-overlapping blocks: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
-			blocks_n = file_sz / L + (file_sz % L ? 1 : 0); /* number of blocks */
-			res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, NULL, blocks_n, &entries_n);
+            blocks_n = file_sz / L + (file_sz % L ? 1 : 0); /* number of blocks */
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, RM_ERR_OK);
-			assert_int_equal(entries_n, blocks_n);
+            assert_int_equal(entries_n, blocks_n);
 
             blocks_n = 0;
             bkt = 0;
@@ -177,12 +177,12 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
                 ++blocks_n;
             }
             assert_int_equal(entries_n, blocks_n);
-			
-			RM_LOG_INFO("PASSED test of hashing of non-overlapping blocks, file [%s], size [%zu], L [%zu]", fname, file_sz, L);
-			rewind(f); /* move file pointer back to the beginning */
-		}
-		fclose(f);
-	}
+
+            RM_LOG_INFO("PASSED test of hashing of non-overlapping blocks, file [%s], size [%zu], L [%zu]", fname, file_sz, L);
+            rewind(f); /* move file pointer back to the beginning */
+        }
+        fclose(f);
+    }
     return;
 }
 
@@ -194,62 +194,62 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
 size_t  f_tx_ch_ch_ref_2_callback_count;
 int
 f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg_1 arg) {
-	(void) arg;
+    (void) arg;
     f_tx_ch_ch_ref_2_callback_count++;
-	return 0;
+    return 0;
 }
 /* @brief   Tests number of callback calls made. */
 void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
-	FILE                    *f;
-	int                     fd;
-	size_t                  i, j, L, file_sz;
-	struct test_rm_state    *rm_state;
-	struct stat             fs;
-	const char              *fname;
-	size_t                  blocks_n, entries_n;
+    FILE                    *f;
+    int                     fd;
+    size_t                  i, j, L, file_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    const char              *fname;
+    size_t                  blocks_n, entries_n;
     size_t                  bkt;    /* hashtable bucket index */
     const struct rm_ch_ch_ref_hlink *e;
     struct twhlist_node     *tmp;
 
-	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
     twhash_init(h);
-	rm_state = *state;
-	assert_true(rm_state != NULL);
+    rm_state = *state;
+    assert_true(rm_state != NULL);
 
-	i = 0;
-	for (; i < RM_TEST_FNAMES_N; ++i) {
-		fname = rm_test_fnames[i];
-		f = fopen(fname, "rb");
-		if (f == NULL) {
-			RM_LOG_PERR("Can't open file [%s]", fname);
-		}
-		assert_true(f != NULL && "Can't fopen file");
-		fd = fileno(f);
-		if (fstat(fd, &fs) != 0) {
-			RM_LOG_PERR("Can't fstat file [%s]", fname);
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i) {
+        fname = rm_test_fnames[i];
+        f = fopen(fname, "rb");
+        if (f == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", fname);
+        }
+        assert_true(f != NULL && "Can't fopen file");
+        fd = fileno(f);
+        if (fstat(fd, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat file [%s]", fname);
             fclose(f);
-			assert_true(1 == 0 && "Can't fstat file");
-		}
-		file_sz = fs.st_size; 
-		j = 0;
-		for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
-			L = rm_test_L_blocks[j];
-			RM_LOG_INFO("Validating number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
-			if (0 == L) {
-				RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]),  skipping file [%s]", L, 0, fname);
-				continue;
-			}
-			if (file_sz < 2) {
-				RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", fname, file_sz);
-				continue;
-			}
-	
-			RM_LOG_INFO("Testing number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref: file [%s], size [%zu], block size L [%zu], buffer"
+            assert_true(1 == 0 && "Can't fstat file");
+        }
+        file_sz = fs.st_size; 
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]),  skipping file [%s]", L, 0, fname);
+                continue;
+            }
+            if (file_sz < 2) {
+                RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", fname, file_sz);
+                continue;
+            }
+
+            RM_LOG_INFO("Testing number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
-			blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
+            blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             f_tx_ch_ch_ref_2_callback_count = 0; /* reset callback counter */
-			rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n);
+            rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n);
             assert_int_equal(f_tx_ch_ch_ref_2_callback_count, blocks_n);
 
             blocks_n = 0;
@@ -260,17 +260,17 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
                 ++blocks_n;
             }
             assert_int_equal(entries_n, blocks_n);
-			
-			RM_LOG_INFO("PASSED test of number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref, file [%s], size [%zu], L [%zu]", fname, file_sz, L);
-			rewind(f);
-		}
-		fclose(f);
-	}
+
+            RM_LOG_INFO("PASSED test of number of callback calls from rm_rx_insert_nonoverlapping_ch_ch_ref, file [%s], size [%zu], L [%zu]", fname, file_sz, L);
+            rewind(f);
+        }
+        fclose(f);
+    }
     return;
 }
 
 /* @brief   Test of checksums correctness. */
-void
+    void
 test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 {
     FILE                    *f;
@@ -344,7 +344,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                             " BEING TESTED ! [AND IT SHOULDN'T HAPPEN!]", fname);
                     assert_true(1 == 0);
                 }
-                
+
                 /* fill in reference data */
                 e_reference.data.ch_ch.f_ch = rm_fast_check_block(buf, read);   /* compute fast checksum on the block*/
                 rm_md5(buf, read, e_reference.data.ch_ch.s_ch.data);            /* compute strong checksum */
@@ -418,9 +418,9 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                 ++blocks_n;
             }
             assert_int_equal(entries_n, blocks_n);
-			rewind(f);
-		}
-		fclose(f);
-	}
+            rewind(f);
+        }
+        fclose(f);
+    }
     return;
 }

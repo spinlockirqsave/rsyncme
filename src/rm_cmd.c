@@ -400,6 +400,10 @@ main( int argc, char *argv[]) {
     } else { /* local sync */
         if ((push_flags & RM_BIT_0) == 0u) { /* local push? */
             fprintf(stderr, "\nLocal push.\n");
+            if ((res = rm_util_chdir_umask_openlog(NULL, 1, NULL, 0)) != RM_ERR_OK) { /* just set umask to -rw-r--r-- */
+                fprintf(stderr, "Error. Can't set umask\n");
+                goto fail;
+            }
             res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
             if (res != RM_ERR_OK) {
             fprintf(stderr, "\n");
