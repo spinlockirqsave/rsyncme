@@ -305,7 +305,7 @@ struct rm_session;
  * @param   f_x - file on which rolling is performed, must be already opened,
  * @param   delta_f - tx/reconstruct callback, NOTE: this callback takes ownership
  *          of the delta elements allocated by rolling proc - this function MUST
- *          assert memory is freed 
+ *          assert memory is freed. Must be non NULL. 
  * @param   L - block size,
  * @param   from - starting point, 0 to start from beginning
  * PARAMETERS TAKEN FROM session's RECONSTRUCTION CONTEXT
@@ -328,7 +328,7 @@ struct rm_session;
  *          RM_ERR_TX_ZERO_DIFF - zero difference tx failed */
 enum rm_error
 rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1)));
+        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4)));
 
 /* @brief   Start execution of @f function in new thread.
  * @details Thread is started in @detachstate with @arg argument passed to @f.

@@ -351,7 +351,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     size_t          collisions_3rd_level = 0;
     uint8_t         copy_all = 0, copy_all_threshold_fired = 0, copy_tail_threshold_fired = 0;
 
-    if (s == NULL || f_x == NULL) {
+    if ((s == NULL) || (f_x == NULL) || (delta_f == NULL)) {
         return RM_ERR_BAD_CALL;
     }
     cb_arg.s = s;                           /* setup callback argument */

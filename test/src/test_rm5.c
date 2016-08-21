@@ -3072,3 +3072,38 @@ test_rm_rolling_ch_proc_19(void **state) {
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #19 (Test error reporting: send threshold == 0, [and nonzero size file])");
 }
+
+/* @brief   Test error reporting.
+ * @details NULL delta function pointer. */
+void
+test_rm_rolling_ch_proc_20(void **state) {
+    struct rm_session   *s;
+    struct rm_session_push_local *prvt;
+    enum rm_error       err;
+    FILE                *f_x;
+    struct test_rm_state     *rm_state = *state;
+
+    RM_LOG_INFO("%s", "Running test #20 (Test error reporting: NULL delta function pointer)...");
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+
+    s = rm_state->s;
+    memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* init reconstruction context */
+    s->rec_ctx.L = 512;
+    s->rec_ctx.copy_all_threshold = 0;
+    s->rec_ctx.copy_tail_threshold = 0;
+    s->rec_ctx.send_threshold = 512;
+    prvt = s->prvt; /* set private session's arguments */
+    prvt->h = h;
+    f_x = fopen(rm_state->f.name, "rb");
+    if (f_x == NULL) {
+        RM_LOG_ERR("Can't open file [%s]!", rm_state->f.name);
+        assert_true(1 == 0 && "Can't open @x file!");
+    }
+    prvt->f_x = f_x;
+    prvt->delta_f = NULL;
+    err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    fclose(f_x);
+    assert_int_equal(err, RM_ERR_BAD_CALL);
+    RM_LOG_INFO("%s", "PASSED test #20 (Test error reporting: NULL delta function pointer)");
+}

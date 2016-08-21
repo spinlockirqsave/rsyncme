@@ -159,5 +159,10 @@ test_rm_rolling_ch_proc_18(void **state);
 void
 test_rm_rolling_ch_proc_19(void **state);
 
+/* @brief   Test error reporting.
+ * @details NULL delta function pointer. */
+void
+test_rm_rolling_ch_proc_20(void **state);
+
 
 #endif	/* RSYNCME_TEST_RM5_H */
