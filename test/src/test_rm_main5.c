@@ -34,7 +34,8 @@ int main(void)
         cmocka_unit_test(test_rm_rolling_ch_proc_17),
         cmocka_unit_test(test_rm_rolling_ch_proc_18),
         cmocka_unit_test(test_rm_rolling_ch_proc_19),
-        cmocka_unit_test(test_rm_rolling_ch_proc_20)
+        cmocka_unit_test(test_rm_rolling_ch_proc_20),
+        cmocka_unit_test(test_rm_rolling_ch_proc_21)
     };
     return cmocka_run_group_tests(tests,
 		test_rm_setup, test_rm_teardown);

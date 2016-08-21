@@ -125,27 +125,27 @@ test_rm_rolling_ch_proc_10(void **state);
 void
 test_rm_rolling_ch_proc_11(void **state);
 
-/* @brief   Test send threshold. */
+/* @brief   Test send threshold #1. */
 void
 test_rm_rolling_ch_proc_12(void **state);
 
-/* @brief   Test send threshold #2 (send threshold = L + 1)*/
+/* @brief   Test send threshold #2 (send threshold = L + 1). */
 void
 test_rm_rolling_ch_proc_13(void **state);
 
-/* @brief   Test copy all threshold. (ZERO DIFF expected) */
+/* @brief   Test copy all threshold. (ZERO DIFF expected). */
 void
 test_rm_rolling_ch_proc_14(void **state);
 
-/* @brief   Test copy tail threshold (#1). (ZERO DIFF expected) */
+/* @brief   Test copy tail threshold (#1). (ZERO DIFF expected). */
 void
 test_rm_rolling_ch_proc_15(void **state);
 
-/* @brief   Test copy tail threshold (#2) file size % L. (RAW element at the tail expected) */
+/* @brief   Test copy tail threshold (#2) file size % L. (RAW element at the tail expected). */
 void
 test_rm_rolling_ch_proc_16(void **state);
 
-/* @brief   Test copy tail threshold(#3) file size % L - 1. (RAW element at the tail expected) */
+/* @brief   Test copy tail threshold(#3) file size % L - 1. (RAW element at the tail expected). */
 void
 test_rm_rolling_ch_proc_17(void **state);
 
@@ -163,6 +163,11 @@ test_rm_rolling_ch_proc_19(void **state);
  * @details NULL delta function pointer. */
 void
 test_rm_rolling_ch_proc_20(void **state);
+
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
+ *          when hashtable pointer is NULL. */
+void
+test_rm_rolling_ch_proc_21(void **state);
 
 
 #endif	/* RSYNCME_TEST_RM5_H */

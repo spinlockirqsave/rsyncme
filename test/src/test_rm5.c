@@ -386,12 +386,12 @@ test_rm_rolling_ch_proc_1(void **state) {
         j = 0;
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
-            RM_LOG_INFO("Validating testing #1 of rolling checksum, file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Validating testing #1 (file has no changes) of rolling checksum, file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
             if (0 == L) {
                 RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
                 continue;
             }
-            RM_LOG_INFO("Testing rolling checksum procedure #1: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            RM_LOG_INFO("Testing rolling checksum procedure #1 (file has no changes): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 
             f_y = f; /* reference file exists, split it and calc checksums */
             f_x = f;
@@ -509,14 +509,14 @@ test_rm_rolling_ch_proc_1(void **state) {
 
             if (delta_tail_n == 0) {
                 if (delta_zero_diff_n > 0) {
-                    RM_LOG_INFO("PASSED test #1: correct number of bytes sent in delta elements, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
+                    RM_LOG_INFO("PASSED test #1 (file has no changes): correct number of bytes sent in delta elements, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA ZERO DIFF [%zu] bytes [%zu]",
                             fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_zero_diff_n, rec_by_zero_diff);
                 } else {
-                    RM_LOG_INFO("PASSED test #1: correct number of bytes sent in delta elements, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
+                    RM_LOG_INFO("PASSED test #1 (file hs no changes): correct number of bytes sent in delta elements, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
                             fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
                 }
             } else {
-                RM_LOG_INFO("PASSED test #1: correct number of bytes sent in delta elements, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
+                RM_LOG_INFO("PASSED test #1 (file has no changes): correct number of bytes sent in delta elements, file [%s], size [%zu], L [%zu], blocks [%zu], DELTA REF [%zu] bytes [%zu] (DELTA_TAIL [%zu] bytes [%zu]), DELTA RAW [%zu] bytes [%zu]",
                         fname, y_sz, L, blocks_n, delta_ref_n, rec_by_ref, delta_tail_n, rec_by_tail, delta_raw_n, rec_by_raw);
             }
             rewind(f);
@@ -531,8 +531,9 @@ test_rm_rolling_ch_proc_1(void **state) {
             rewind(f);
         }
         fclose(f);
-        RM_LOG_INFO("PASSED test #1 detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]", fname, y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
+        RM_LOG_INFO("PASSED test #1 (file has no changes) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]", fname, y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
+    RM_LOG_INFO("%s", "PASSED test #1 (file has no changes)");
     return;
 }
 
@@ -783,6 +784,7 @@ test_rm_rolling_ch_proc_2(void **state) {
         RM_LOG_INFO("PASSED test #2 (first byte changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
+    RM_LOG_INFO("%s", "PASSED test #2 (first byte changed)");
 
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_2");
@@ -1037,6 +1039,7 @@ test_rm_rolling_ch_proc_3(void **state) {
         RM_LOG_INFO("PASSED test #3 (last byte changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
+    RM_LOG_INFO("%s", "PASSED test #3 (last byte changed)");
 
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_3");
@@ -1342,6 +1345,7 @@ test_rm_rolling_ch_proc_4(void **state) {
         RM_LOG_INFO("PASSED test #4 (2 bytes changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
+    RM_LOG_INFO("%s", "PASSED test #4 (2 bytes changed)");
 
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_4");
@@ -1685,6 +1689,7 @@ test_rm_rolling_ch_proc_5(void **state) {
         RM_LOG_INFO("PASSED test #5 (3 bytes changed) detail cases, file [%s], size [%zu], detail case #1 [%zu] #2 [%zu] #3 [%zu]",
                 f_y_name, f_y_sz, detail_case_1_n, detail_case_2_n, detail_case_3_n);
     }
+    RM_LOG_INFO("%s", "PASSED test #5 (3 bytes changed)");
 
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_5");
@@ -2768,6 +2773,7 @@ test_rm_rolling_ch_proc_16(void **state) {
         fclose(f_y);
     }
     RM_LOG_INFO("%s", "PASSED test #16 (copy tail threshold #2)");
+
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_16");
         if (err != 0) {
@@ -2982,6 +2988,7 @@ test_rm_rolling_ch_proc_17(void **state) {
         fclose(f_y);
     }
     RM_LOG_INFO("%s", "PASSED test #17 (copy tail threshold #3)");
+
     if (RM_TEST_5_DELETE_FILES == 1) {
         err = test_rm_delete_copies_of_files_postfixed("_test_17");
         if (err != 0) {
@@ -3106,4 +3113,132 @@ test_rm_rolling_ch_proc_20(void **state) {
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #20 (Test error reporting: NULL delta function pointer)");
+}
+
+/* @brief   Test if number of bytes enqueued as delta elements is correct,
+ *          when hashtable pointer is NULL. */
+void
+test_rm_rolling_ch_proc_21(void **state) {
+    FILE                    *f, *f_x;
+    int                     fd;
+    int                     err;
+    size_t                  i, j, L, file_sz;
+    struct test_rm_state    *rm_state;
+    struct stat             fs;
+    const char              *fname;
+    struct rm_session       *s;
+    struct rm_session_push_local    *prvt;
+
+    /* delta queue's content verification */
+    const twfifo_queue          *q;             /* produced queue of delta elements */
+    const struct rm_delta_e     *delta_e;       /* iterator over delta elements */
+    struct twlist_head          *lh;
+    size_t                      rec_by_ref, rec_by_raw, delta_ref_n, delta_raw_n,
+                                rec_by_tail, delta_tail_n, rec_by_zero_diff, delta_zero_diff_n;
+
+    rm_state = *state;
+    assert_true(rm_state != NULL);
+
+    /* test on all files */
+    i = 0;
+    for (; i < RM_TEST_FNAMES_N; ++i) {
+        fname = rm_test_fnames[i];
+        f = fopen(fname, "rb");
+        if (f == NULL) {
+            RM_LOG_PERR("Can't open file [%s]", fname);
+        }
+        assert_true(f != NULL && "Can't fopen file");
+        fd = fileno(f);
+        if (fstat(fd, &fs) != 0) {
+            RM_LOG_PERR("Can't fstat file [%s]", fname);
+            fclose(f);
+            assert_true(1 == 0 && "Can't fstat file");
+        }
+        file_sz = fs.st_size; 
+        j = 0;
+        for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
+            L = rm_test_L_blocks[j];
+            RM_LOG_INFO("Validating testing #21 of rolling checksum, file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+            if (0 == L) {
+                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
+                continue;
+            }
+            RM_LOG_INFO("Testing rolling checksum procedure #1: file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
+
+            f_x = f;
+            s = rm_state->s; /* run rolling checksum procedure */
+            memset(&s->rec_ctx, 0, sizeof(struct rm_delta_reconstruct_ctx)); /* init reconstruction context */
+            s->rec_ctx.L = L;
+            s->rec_ctx.copy_all_threshold = 0;
+            s->rec_ctx.copy_tail_threshold = 0;
+            s->rec_ctx.send_threshold = L;
+            prvt = s->prvt;
+            prvt->h = NULL;
+            prvt->f_x = f_x;                        /* run on same file */
+            prvt->delta_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, NULL, prvt->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            assert_int_equal(err, RM_ERR_OK);
+
+            q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
+            assert_true(q != NULL);
+
+            rec_by_ref = rec_by_raw = 0;
+            delta_ref_n = delta_raw_n = 0;
+            rec_by_tail = delta_tail_n = 0;
+            rec_by_zero_diff = delta_zero_diff_n = 0;
+            for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {    /* dequeue, so can free later */
+                delta_e = tw_container_of(lh, struct rm_delta_e, link);
+                switch (delta_e->type) {
+                    case RM_DELTA_ELEMENT_REFERENCE:
+                        rec_by_ref += L;
+                        ++delta_ref_n;
+                        break;
+                    case RM_DELTA_ELEMENT_RAW_BYTES:
+                        rec_by_raw += delta_e->raw_bytes_n;
+                        ++delta_raw_n;
+                        break;
+                    case RM_DELTA_ELEMENT_ZERO_DIFF:
+                        rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched
+                                                               (whole file) so we can nevertheless check at receiver that is correct */
+                        ++delta_ref_n;
+
+                        rec_by_zero_diff += delta_e->raw_bytes_n;
+                        ++delta_zero_diff_n;
+                        break;
+                    case RM_DELTA_ELEMENT_TAIL:
+                        rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched
+                                                               (that tail) so we can nevertheless check at receiver there is no error */
+                        ++delta_ref_n;
+
+                        rec_by_tail += delta_e->raw_bytes_n;
+                        ++delta_tail_n;
+                        break;
+                    default:
+                        RM_LOG_ERR("%s", "Unknown delta element type!");
+                        assert_true(1 == 0 && "Unknown delta element type!");
+                }
+                if (delta_e->raw_bytes != NULL) {
+                    free(delta_e->raw_bytes);
+                }
+                free((void*) delta_e);  /* free delta element */
+            }
+
+            /* general tests */
+            assert_int_equal(rec_by_raw, file_sz);
+            assert_int_equal(rec_by_ref, 0);
+            assert_true(delta_tail_n == 0);
+            assert_true(delta_zero_diff_n == 0);
+            /* detail tests */
+            assert_true(s->rec_ctx.copy_all_threshold_fired == 1);
+            assert_true(delta_raw_n == 1);
+
+            RM_LOG_INFO("PASSED test #21 (NULL hashtable pointer): correct number of bytes sent in delta elements, file [%s], size [%zu], DELTA REF [%zu] bytes [%zu], DELTA RAW [%zu] bytes [%zu]",
+                    fname, file_sz, delta_ref_n, rec_by_ref, delta_raw_n, rec_by_raw);
+            rewind(f);
+        }
+        fclose(f);
+        RM_LOG_INFO("PASSED test #21 (NULL hashtable pointer), file [%s], size [%zu]", fname, file_sz);
+    }
+    RM_LOG_INFO("%s", "PASSED test #21 (NULL hashtable pointer)");
+    return;
 }
