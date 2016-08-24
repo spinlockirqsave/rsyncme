@@ -1,7 +1,7 @@
 /* @file        test_rm5.c
  * @brief       Test suite #5.
  * @details     Test of rm_rolling_ch_proc.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
+ * @author      Piotr Gregor <piotrgregor at rsyncme.org>
  * @version     0.1.2
  * @date        06 May 2016 04:00 PM
  * @copyright   LGPLv2.1 */
@@ -375,11 +375,6 @@ test_rm_rolling_ch_proc_1(void **state) {
             assert_true(1 == 0 && "Can't fstat file");
         }
         file_sz = fs.st_size; 
-        if (file_sz < 2) {
-            RM_LOG_INFO("File [%s] size [%zu] is too small for this test, skipping", fname, file_sz);
-            fclose(f);
-            continue;
-        }
         detail_case_1_n = 0;
         detail_case_2_n = 0;
         detail_case_3_n = 0;
@@ -387,10 +382,6 @@ test_rm_rolling_ch_proc_1(void **state) {
         for (; j < RM_TEST_L_BLOCKS_SIZE; ++j) {
             L = rm_test_L_blocks[j];
             RM_LOG_INFO("Validating testing #1 (file has no changes) of rolling checksum, file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
-            if (0 == L) {
-                RM_LOG_INFO("Block size [%zu] is too small for this test (should be > [%zu]), skipping file [%s]", L, 0, fname);
-                continue;
-            }
             RM_LOG_INFO("Testing rolling checksum procedure #1 (file has no changes): file [%s], size [%zu], block size L [%zu]", fname, file_sz, L);
 
             f_y = f; /* reference file exists, split it and calc checksums */
@@ -398,9 +389,18 @@ test_rm_rolling_ch_proc_1(void **state) {
             y_sz = fs.st_size;
             y = fname;
 
-            blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+            if (L != 0) {
+                blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+            } else {
+                blocks_n_exp = 0;
+            }
             err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            if (L == 0) {
+                assert_int_equal(err, RM_ERR_BAD_CALL);
+                continue;
+            }
             assert_int_equal(err, RM_ERR_OK);
+
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
 
@@ -415,6 +415,10 @@ test_rm_rolling_ch_proc_1(void **state) {
             prvt->f_x = f_x;                        /* run on same file */
             prvt->delta_f = rm_roll_proc_cb_1;
             err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            if (file_sz == 0) {
+                assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
+                continue;
+            }
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1930,7 +1934,7 @@ test_rm_rolling_ch_proc_12(void **state) {
     FILE                    *f_x, *f_y;
     int                     fd;
     int                     err;
-    size_t                  j, L, y_sz;
+    size_t                  j, L, x_sz, y_sz;
     struct test_rm_state    *rm_state;
     struct stat             fs;
     const char              *y;
@@ -1960,6 +1964,13 @@ test_rm_rolling_ch_proc_12(void **state) {
         RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
     }
     assert_true(f_x != NULL && "Can't fopen file");
+    fd = fileno(f_x);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_state->f1.name);
+        fclose(f_x);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    x_sz = fs.st_size;
     f_y = fopen(rm_state->f2.name, "rb");
     if (f_y == NULL) {
         RM_LOG_PERR("Can't open file [%s]", rm_state->f2.name);
@@ -1979,8 +1990,16 @@ test_rm_rolling_ch_proc_12(void **state) {
         L = rm_test_L_blocks[j];
         send_threshold = L;
         RM_LOG_INFO("Testing (send threshold #1) #12: block size [%zu], send threshold [%zu]", L, send_threshold);
-        blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        if (L == 0) {
+            blocks_n_exp = 0;
+        } else {
+            blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        }
         err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        if (L == 0) {
+            assert_int_equal(err, RM_ERR_BAD_CALL);
+            continue;
+        }
         assert_int_equal(err, RM_ERR_OK);
         assert_int_equal(blocks_n_exp, blocks_n);
         rewind(f_y);
@@ -1996,6 +2015,10 @@ test_rm_rolling_ch_proc_12(void **state) {
         prvt->f_x = f_x;
         prvt->delta_f = rm_roll_proc_cb_1;
         err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
+        if (x_sz == 0) {
+            assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
+            continue;
+        }
         assert_int_equal(err, RM_ERR_OK);
 
         q = &prvt->tx_delta_e_queue; /* check delta elements */
@@ -2068,7 +2091,7 @@ test_rm_rolling_ch_proc_13(void **state) {
     FILE                    *f_x, *f_y;
     int                     fd;
     int                     err;
-    size_t                  j, L, y_sz;
+    size_t                  j, L, x_sz, y_sz;
     struct test_rm_state    *rm_state;
     struct stat             fs;
     const char              *y;
@@ -2098,6 +2121,13 @@ test_rm_rolling_ch_proc_13(void **state) {
         RM_LOG_PERR("Can't open file [%s]", rm_state->f1.name);
     }
     assert_true(f_x != NULL && "Can't fopen file");
+    fd = fileno(f_x);
+    if (fstat(fd, &fs) != 0) {
+        RM_LOG_PERR("Can't fstat file [%s]", rm_state->f1.name);
+        fclose(f_x);
+        assert_true(1 == 0 && "Can't fstat file");
+    }
+    x_sz = fs.st_size;
     f_y = fopen(rm_state->f2.name, "rb");
     if (f_y == NULL) {
         RM_LOG_PERR("Can't open file [%s]", rm_state->f2.name);
@@ -2117,8 +2147,16 @@ test_rm_rolling_ch_proc_13(void **state) {
         L = rm_test_L_blocks[j];
         send_threshold = L + 1;
         RM_LOG_INFO("Testing (send threshold #2) #13: block size [%zu], send threshold [%zu]", L, send_threshold);
-        blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        if (L == 0) {
+            blocks_n_exp = 0;
+        } else {
+            blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
+        }
         err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        if (L == 0) {
+            assert_int_equal(err, RM_ERR_BAD_CALL);
+            continue;
+        }
         assert_int_equal(err, RM_ERR_OK);
         assert_int_equal(blocks_n_exp, blocks_n);
         rewind(f_y);
@@ -2134,6 +2172,10 @@ test_rm_rolling_ch_proc_13(void **state) {
         prvt->f_x = f_x;
         prvt->delta_f = rm_roll_proc_cb_1;
         err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
+        if (x_sz == 0) {
+            assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
+            continue;
+        }
         assert_int_equal(err, RM_ERR_OK);
 
         q = &prvt->tx_delta_e_queue; /* check delta elements */

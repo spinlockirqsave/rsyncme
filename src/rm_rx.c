@@ -61,9 +61,6 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
     unsigned char	    *buf;
     struct f_tx_ch_ch_ref_arg_1 arg;
 
-    assert(f != NULL);
-    assert(fname != NULL);
-    assert(L > 0);
     if (f == NULL || fname == NULL || L == 0) {
         return RM_ERR_BAD_CALL;
     }
