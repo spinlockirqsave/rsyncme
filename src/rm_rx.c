@@ -54,15 +54,17 @@ int
 rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist_head *h, size_t L,
         int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) {
     int                 fd, res;
+    enum rm_error       err;
     struct stat         fs;
     uint32_t	        file_sz, read_left, read_now, read;
-    size_t              entries_n;
+    size_t              entries_n = 0;
     struct rm_ch_ch_ref_hlink	*e;
     unsigned char	    *buf;
     struct f_tx_ch_ch_ref_arg_1 arg;
 
     if (f == NULL || fname == NULL || L == 0) {
-        return RM_ERR_BAD_CALL;
+        err = RM_ERR_BAD_CALL;
+        goto done;
     }
 
     entries_n = 0;
@@ -71,11 +73,13 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
     res = fstat(fd, &fs);
     if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
-        return RM_ERR_FSTAT;
+        err = RM_ERR_FSTAT;
+        goto done;
     }
     file_sz = fs.st_size;
 
     if (file_sz == 0) {
+        err = RM_ERR_OK;
         goto done;
     }
 
@@ -84,7 +88,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
     buf = malloc(read_now);
     if (buf == NULL) {
         RM_LOG_ERR("Malloc failed, L [%u], read_now [%u]", L, read_now);
-        return RM_ERR_MEM;
+        err = RM_ERR_MEM;
+        goto done;
     }
 
     do {
@@ -92,13 +97,15 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
         if (read != read_now) {
             RM_LOG_PERR("Error reading file [%s]", fname);
             free(buf);
-            return RM_ERR_READ;
+            err = RM_ERR_READ;
+            goto done;
         }
         e = malloc(sizeof (*e)); /* alloc new table entry */
         if (e == NULL)	 {
             RM_LOG_PERR("%s", "Can't allocate table entry, malloc failed");
             free(buf);
-            return RM_ERR_MEM;
+            err = RM_ERR_MEM;
+            goto done;
         }
 
         e->data.ch_ch.f_ch = rm_fast_check_block(buf, read); /* compute checksums */
@@ -117,7 +124,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
             arg.s = NULL;
             if (f_tx_ch_ch_ref(arg) != RM_ERR_OK) {
                 free(buf);
-                return RM_ERR_TX;
+                err = RM_ERR_TX;
+                goto done;
             }
         }
         read_left -= read;
@@ -125,12 +133,13 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
     } while (read_now > 0 && entries_n < limit);
 
     free(buf);
+    err = RM_ERR_OK;
 
 done:
     if (blocks_n != NULL)
         *blocks_n = entries_n;
 
-    return	RM_ERR_OK;
+    return err;
 }
 
 int
