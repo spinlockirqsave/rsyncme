@@ -26,9 +26,9 @@
 
 
 #define RM_TEST_5_DELETE_FILES      1	/* 0 no, 1 yes */
-#define RM_TEST_L_BLOCKS_SIZE       34
+#define RM_TEST_L_BLOCKS_SIZE       35
 #define RM_TEST_L_MAX               1024UL
-#define RM_TEST_FNAMES_N            15
+#define RM_TEST_FNAMES_N            17
 #define RM_TEST_5_9_FILE_IDX        3
 #define RM_TEST_5_FILE_X_SZ         200
 #define RM_TEST_5_FILE_Y_SZ         300
