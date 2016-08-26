@@ -294,7 +294,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
 int
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
 
-typedef int (rm_delta_f)(void*);
+typedef enum rm_error (rm_delta_f)(void*);
 
 struct rm_session;
 

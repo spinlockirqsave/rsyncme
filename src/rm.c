@@ -293,7 +293,8 @@ rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_
 }
 
 /* If there are raw bytes to tx copy them here! */
-static int
+/* NOTE: this is static function, it's body must be copied to test suite 5 for testing */
+static enum rm_error
 rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
         size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n) {
     struct rm_delta_e           *delta_e;
@@ -308,10 +309,11 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
     delta_e->type = type;
     delta_e->ref = ref;
     if (type == RM_DELTA_ELEMENT_RAW_BYTES) {
-        delta_e->raw_bytes = raw_bytes;   /* take ownership and cleanup in callback! */
-        if (delta_e->raw_bytes == NULL) {   /* TODO Add tests for this execution path! */
+        if (raw_bytes == NULL) {   /* TODO Add tests for this execution path! */
+            free(delta_e);
             return RM_ERR_IO_ERROR;
         }
+        delta_e->raw_bytes = raw_bytes;   /* take ownership and cleanup in callback! */
     } else {
         delta_e->raw_bytes = NULL;
     }
@@ -590,7 +592,7 @@ fail:
     return RM_ERR_FAIL;
 }
 
-int
+enum rm_error
 rm_roll_proc_cb_1(void *arg) {
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
     const struct rm_session         *s;

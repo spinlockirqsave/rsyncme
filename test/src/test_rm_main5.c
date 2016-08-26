@@ -15,6 +15,7 @@
 int main(void)
 {
     const struct CMUnitTest tests[] = {
+	    cmocka_unit_test(test_rm_rolling_ch_proc_tx_1),
 	    cmocka_unit_test(test_rm_rolling_ch_proc_1),
 	    cmocka_unit_test(test_rm_rolling_ch_proc_2),
 	    cmocka_unit_test(test_rm_rolling_ch_proc_3),

@@ -317,6 +317,52 @@ test_rm_teardown(void **state) {
     return 0;
 }
 
+/* NOTE: copied from rm.c */
+static enum rm_error
+rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
+        size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n) {
+    struct rm_delta_e           *delta_e;
+
+    if ((cb_arg == NULL) || (delta_f == NULL)) {
+        return RM_ERR_BAD_CALL;
+    }
+    delta_e = malloc(sizeof(*delta_e));
+    if (delta_e == NULL) {
+        return RM_ERR_MEM;
+    }
+    delta_e->type = type;
+    delta_e->ref = ref;
+    if (type == RM_DELTA_ELEMENT_RAW_BYTES) {
+        if (raw_bytes == NULL) {   /* TODO Add tests for this execution path! */
+            free(delta_e);
+            return RM_ERR_IO_ERROR;
+        }
+        delta_e->raw_bytes = raw_bytes;   /* take ownership and cleanup in callback! */
+    } else {
+        delta_e->raw_bytes = NULL;
+    }
+    delta_e->raw_bytes_n = raw_bytes_n;
+    TWINIT_LIST_HEAD(&delta_e->link);
+    cb_arg->delta_e = delta_e;                  /* tx, signal delta_rx_tid, etc */
+    delta_f(cb_arg);                            /* TX, enqueue delta */
+
+    return RM_ERR_OK;
+}
+
+/* @brief   Test rm_rolling_ch_proc_tx error reporting against NULL callback argument. */
+void
+test_rm_rolling_ch_proc_tx_1(void **state) {
+    enum rm_error err;
+    rm_delta_f *delta_f = rm_roll_proc_cb_1;
+    enum RM_DELTA_ELEMENT_TYPE type = RM_DELTA_ELEMENT_REFERENCE;
+    size_t ref = 0, raw_bytes_n = 77;
+    unsigned char uc, *raw_bytes = &uc;
+
+    (void) state;
+    err = rm_rolling_ch_proc_tx(NULL, delta_f, type, ref, raw_bytes, raw_bytes_n);
+    assert_int_equal(err, RM_ERR_BAD_CALL);
+}
+
 static void
 test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
     RM_LOG_CRIT("rec_ctx dump:\nmethod [%zu], rec_by_ref [%zu], rec_by_raw [%zu], delta_ref_n [%zu], delta_raw_n [%zu], "

@@ -246,7 +246,7 @@ test_rm_teardown(void **state) {
  *          when x file is same as y (file has no changes). */
 
 /* @brief   Testing callback that calls rm_rx_process_delta_element */    
-static int
+static enum rm_error
 test_rm_roll_proc_cb_delta_element_call(void *arg) {
     int err;
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */

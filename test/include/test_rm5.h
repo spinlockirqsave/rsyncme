@@ -1,7 +1,7 @@
 /*
  * @file        test_rm5.h
  * @brief       Test suite #5.
- * @details     Test of rm_rolling_ch_proc.
+ * @details     Test of rm_rolling_ch_proc and rm_rolling_ch_proc_tx.
  * @author      Piotr Gregor <piotrek.gregor at gmail.com>
  * @version     0.1.2
  * @date        06 May 2016 04:00 PM
@@ -69,6 +69,10 @@ test_rm_teardown(void **state);
 int
 rm_random_file(char *name, size_t len);
 
+
+/* @brief   Test rm_rolling_ch_proc_tx error reporting against NULL callback argument. */
+void
+test_rm_rolling_ch_proc_tx_1(void **state);
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x file is same as y (file has no changes). */
