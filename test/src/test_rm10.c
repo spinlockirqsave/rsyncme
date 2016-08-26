@@ -886,7 +886,7 @@ test_rm_cmd_4(void **state) {
     char                    cmd[RM_TEST_10_CMD_LEN_MAX];        /* command to execute in shell */
     const char              *f_y_name; /* @y name */
     unsigned char           cx, cy, cz;
-    FILE                    *f_copy, *f_x, *f_y, *f_z;
+    FILE                    *f_x, *f_y, *f_z;
     int                     fd_x, fd_y, fd_z;
     size_t                  i, j, k, L, f_x_sz, f_y_sz, f_z_sz;
     struct stat             fs;
@@ -901,7 +901,6 @@ test_rm_cmd_4(void **state) {
 
     f_x = NULL;
     f_y = NULL;
-    f_copy = NULL;
 
     strncpy(buf_z_name, rm_state.tmp_dir_name, RM_UNIQUE_STRING_LEN);
     strncpy(buf_z_name + RM_UNIQUE_STRING_LEN - 1, "/", 1);
@@ -935,13 +934,12 @@ test_rm_cmd_4(void **state) {
         strncpy(buf_x_name, f_y_name, RM_FILE_LEN_MAX);
         strncpy(buf_x_name + strlen(buf_x_name), "_test_4", 49);
         buf_x_name[RM_FILE_LEN_MAX + 49] = '\0';
-        f_copy = fopen(buf_x_name, "rb+");
-        if (f_copy == NULL) {
+        f_x = fopen(buf_x_name, "rb+");
+        if (f_x == NULL) {
             RM_LOG_PERR("Can't open file [%s]", buf_x_name);
             if (f_y != NULL) fclose(f_y);
         }
-        assert_true(f_copy != NULL && "Can't open copy");
-        f_x = f_copy;
+        assert_true(f_x != NULL && "Can't open copy");
         fd_x = fileno(f_x);
         memset(&fs, 0, sizeof(fs));
         if (fstat(fd_x, &fs) != 0) {    /* get @x size */
@@ -1056,10 +1054,16 @@ test_rm_cmd_4(void **state) {
                     assert_true(1 == 0 && "ERROR reading byte in file @z!");
                 }
                 if (cx != cz) {
+                    fclose(f_x);
+                    fclose(f_y);
+                    fclose(f_z);
                     RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cz [%zu]\n", k, cx, cz);
                 }
                 assert_true(cx == cz && "Bytes differ!");
                 if (cx != cy) {
+                    fclose(f_x);
+                    fclose(f_y);
+                    fclose(f_z);
                     RM_LOG_CRIT("Bytes [%zu] differ: cx [%zu], cy [%zu]\n", k, cx, cy);
                 }
                 assert_true(cx == cy && "Bytes differ!");
@@ -1070,14 +1074,23 @@ test_rm_cmd_4(void **state) {
                 assert_true(1 == 0 && "Files differ!");
             }
             if (err != RM_ERR_OK) {
+                fclose(f_x);
+                fclose(f_y);
+                fclose(f_z);
                 RM_LOG_ERR("File cmp function failed, err [%d]", err);
                 assert_true(1 == 0 && "Files cmp function failed!");
             }
             if ((err = rm_file_cmp(f_x, f_y, 0, 0, f_x_sz)) != 0) {
+                fclose(f_x);
+                fclose(f_y);
+                fclose(f_z);
                 RM_LOG_ERR("Files differ err [%d]", err);
                 assert_true(1 == 0 && "Files differ!");
             }
             if (err != RM_ERR_OK) {
+                fclose(f_x);
+                fclose(f_y);
+                fclose(f_z);
                 RM_LOG_ERR("File cmp function failed, err [%d]", err);
                 assert_true(1 == 0 && "Files cmp function failed!");
             }
