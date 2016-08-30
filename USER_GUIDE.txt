@@ -10,7 +10,9 @@ USAGE OF rsyncme
 
 Content
 1. OVERVIEW
-2. EXAMPLE
+2. EXAMPLES
+2.1 Basic example
+2.2 More advanced example
 3. OPTIONS
 4. LOCAL SYNCHRONIZATION
 4.1 OPTIONS
@@ -44,7 +46,9 @@ be the name of target (so -y file will be changed) or output may be written
 to a new file and -y file deleted or left intact.
 
 
-2. EXAMPLE
+2. EXAMPLES
+
+2.1 Basic example
 
 Let us assume two files, calc1.ods and calc2.ods are present in ~/Documents
 directory and you made some changes to calc1.ods (a value of single cell
@@ -72,6 +76,32 @@ no sending over ethernet if it was remote sync). As a result 7040 bytes from new
 version of file would be used literally, avoiding copying of 8704 bytes,
 which would be copied at the other end of the link from referenced old version
 of file, if it was remote sync.
+
+2.2 More advanced example
+
+Let us synchronize just changed version of file with its previous version, leaving
+both files unchanged and producing result in new file. Moreover let us drive the algorithm
+by setting limit on size of file - all files with size more than this will be simply copied,
+skipping the procedure which searches for similar blocks in files. There will be also a limit
+on the final segment in file set - if searching procedure is used and less (or equal) than
+this limit bytes have left to process they are simply copied, terminating the searching
+procedure. The last parameter we set is the maximum size of each package containing bytes
+that didn't match. 
+
+    rsyncme push -x current.ods -y previous.ods -z new.ods --l -a 5120 -t 512 -s 128
+
+    Local push.
+
+    method : DELTA_RECONSTRUCTION (block [512])
+    bytes : [5197154] (by raw [3717474], by refs [1479680])
+    deltas : [32155] (raw [29265], refs [2890])
+    collisions : 1st [287171], 2nd [78], 3rd [0]
+    time : real [1.146892]s, cpu [1.304541]s
+    bandwidth : [4.531511]MB/s
+
+    copy tail : fired
+
+    OK.
 
 
 3. OPTIONS
