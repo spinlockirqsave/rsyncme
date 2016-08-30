@@ -355,11 +355,24 @@ test_rm_rolling_ch_proc_tx_1(void **state) {
     enum rm_error err;
     rm_delta_f *delta_f = rm_roll_proc_cb_1;
     enum RM_DELTA_ELEMENT_TYPE type = RM_DELTA_ELEMENT_REFERENCE;
-    size_t ref = 0, raw_bytes_n = 77;
+    size_t ref = 0, raw_bytes_n = 1;
     unsigned char uc, *raw_bytes = &uc;
 
     (void) state;
     err = rm_rolling_ch_proc_tx(NULL, delta_f, type, ref, raw_bytes, raw_bytes_n);
+    assert_int_equal(err, RM_ERR_BAD_CALL);
+}
+/* @brief   Test rm_rolling_ch_proc_tx error reporting against NULL delta function argument. */
+void
+test_rm_rolling_ch_proc_tx_2(void **state) {
+    enum rm_error err;
+    struct rm_roll_proc_cb_arg cb_arg;
+    enum RM_DELTA_ELEMENT_TYPE type = RM_DELTA_ELEMENT_REFERENCE;
+    size_t ref = 0, raw_bytes_n = 1;
+    unsigned char uc, *raw_bytes = &uc;
+
+    (void) state;
+    err = rm_rolling_ch_proc_tx(&cb_arg, NULL, type, ref, raw_bytes, raw_bytes_n);
     assert_int_equal(err, RM_ERR_BAD_CALL);
 }
 
