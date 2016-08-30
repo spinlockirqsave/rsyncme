@@ -78,6 +78,10 @@ test_rm_rolling_ch_proc_tx_1(void **state);
 void
 test_rm_rolling_ch_proc_tx_2(void **state);
 
+/* @brief   Test rm_rolling_ch_proc_tx error reporting against RM_DELTA_ELEMENT_RAW_BYTES and NULL raw bytes pointer. */
+void
+test_rm_rolling_ch_proc_tx_3(void **state);
+
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x file is same as y (file has no changes). */
 void
