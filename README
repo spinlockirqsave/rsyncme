@@ -27,7 +27,12 @@ for efficient file synchronization.
 
 2. DOWNLOAD
 
-git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+Git repository:
+    git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+Binary packages:
+    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=downloads
+Versions:
+    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=tags
 
 
 

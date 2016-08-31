@@ -48,14 +48,14 @@ rsyncme_usage(const char *name) {
     fprintf(stderr, "     \t If no option is specified, --help is assumed.\n");
 
     fprintf(stderr, "\nExamples:\n");
-    fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22 -y /tmp/bar.tar\n"
+    fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar\n"
             "		This will sync local /tmp/foo.tar with remote\n"
             "		file /tmp/bar.tar (remote becomes same as local is).\n");
-    fprintf(stderr, "	rsyncme push -x foo.txt -i 245.298.125.22 -y bar.txt -l 2048\n"
+    fprintf(stderr, "	rsyncme push -x foo.txt -i 245.218.125.22 -y bar.txt -l 2048\n"
             "		This will sync local foo.txt with remote\n"
             "		file bar.txt (remote becomes same as local is) using\n"
             "		increased block size - good for big files.\n");
-    fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.298.125.22\n"
+    fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22\n"
             "		This will sync local /tmp/foo.tar with remote\n"
             "		file with same name (remote becomes same as local is).\n");
     fprintf(stderr, "	rsyncme push -x foo.tar -y bar.tar\n"
@@ -344,14 +344,26 @@ main( int argc, char *argv[]) {
         rsyncme_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
-    if ((push_flags & RM_BIT_1) == 0u) { /* if -x not set report error */
-        fprintf(stderr, "\n-x file not set.\nWhat is the file you want to sync?\n");
-        exit(EXIT_FAILURE);
-    }
-    if ((push_flags & RM_BIT_6) && (z == NULL || (strcmp(y, z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
-        fprintf(stderr, "\n--leave option set but @z name not given.\nWhat is the file name you want to use as the result of sync (must be different than @y)?\n");
-        help_hint(argv[0]);
-        exit(EXIT_FAILURE);
+    if ((push_flags & RM_BIT_0) == 0u) { /* push request? */
+        if ((push_flags & RM_BIT_1) == 0u) { /* if -x not set report error */
+            fprintf(stderr, "\n-x file not set.\nWhat is the file you want to sync?\n");
+            exit(EXIT_FAILURE);
+        }
+        if ((push_flags & RM_BIT_6) && (z == NULL || (strcmp(y, z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
+            fprintf(stderr, "\n--leave option set but @z name not given.\nWhat is the file name you want to use as the result of sync (must be different than @y)?\n");
+            help_hint(argv[0]);
+            exit(EXIT_FAILURE);
+        }
+    } else { /* pull */
+        if ((push_flags & RM_BIT_2) == 0u) { /* if -y not set report error */
+            fprintf(stderr, "\n-y file not set.\nWhat is the file you want to sync?\n");
+            exit(EXIT_FAILURE);
+        }
+        if ((push_flags & RM_BIT_6) && (z == NULL || (strcmp(x, z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @x - error */
+            fprintf(stderr, "\n--leave option set but @z name not given.\nWhat is the file name you want to use as the result of sync (must be different than @x)?\n");
+            help_hint(argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     if (L == 0) {
         fprintf(stderr, "\nBlock size can't be 0.\nConsider block size of more than zero.\n");
@@ -371,15 +383,28 @@ main( int argc, char *argv[]) {
             yp = &y[0];
         }
     } else { /* local */
-        if (yp == NULL) {
-            fprintf(stderr, "\n-y file not set.\n");
-            if (push_flags & RM_BIT_4) { /* if --force set */
-                fprintf(stderr, "What is the name of result file?\n");
-            } else {
-                fprintf(stderr, "What is the file you want to sync with?\n");
+        if ((push_flags & RM_BIT_0) == 0u) { /* push request? */
+            if (yp == NULL) {
+                fprintf(stderr, "\n-y file not set.\n");
+                if (push_flags & RM_BIT_4) { /* if --force set */
+                    fprintf(stderr, "What is the name of result file?\n");
+                } else {
+                    fprintf(stderr, "What is the file you want to sync with?\n");
+                }
+                help_hint(argv[0]);
+                exit(EXIT_FAILURE);
             }
-            help_hint(argv[0]);
-            exit(EXIT_FAILURE);
+        } else { /* local pull */
+            if (xp == NULL) {
+                fprintf(stderr, "\n-x file not set.\n");
+                if (push_flags & RM_BIT_4) { /* if --force set */
+                    fprintf(stderr, "What is the name of result file?\n");
+                } else {
+                    fprintf(stderr, "What is the file you want to sync with?\n");
+                }
+                help_hint(argv[0]);
+                exit(EXIT_FAILURE);
+            }
         }
     }
     if (L <= sizeof(struct rm_ch_ch)) { /* warn there is no performance benefit in using rsyncme when block size is less than checksums overhead (apart from nonuniform distribution of byte stream transmitted) */
@@ -398,12 +423,12 @@ main( int argc, char *argv[]) {
         }
 
     } else { /* local sync */
+        if ((res = rm_util_chdir_umask_openlog(NULL, 1, NULL, 0)) != RM_ERR_OK) { /* just set umask to -rw-r--r-- */
+            fprintf(stderr, "Error. Can't set umask\n");
+            goto fail;
+        }
         if ((push_flags & RM_BIT_0) == 0u) { /* local push? */
             fprintf(stderr, "\nLocal push.\n");
-            if ((res = rm_util_chdir_umask_openlog(NULL, 1, NULL, 0)) != RM_ERR_OK) { /* just set umask to -rw-r--r-- */
-                fprintf(stderr, "Error. Can't set umask\n");
-                goto fail;
-            }
             res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
             if (res != RM_ERR_OK) {
             fprintf(stderr, "\n");
@@ -483,6 +508,83 @@ main( int argc, char *argv[]) {
             }
         } else { /* local pull request */
             fprintf(stderr, "\nLocal pull.\n");
+            res = rm_tx_local_push(yp, xp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+            if (res != RM_ERR_OK) {
+            fprintf(stderr, "\n");
+                switch (res) {
+                    case RM_ERR_OPEN_X:
+                        fprintf(stderr, "Error. @y [%s] doesn't exist\n", y);
+                        goto fail;
+                    case RM_ERR_OPEN_Y:
+                        fprintf(stderr, "Error. @x [%s] doesn't exist and --force flag is not set. What file should I use?\nPlease "
+                                "check that @x file exists or add --force flag to force creation of target file if it doesn't exist.\n", x);
+                        goto fail;
+                    case RM_ERR_OPEN_Z:
+                        fprintf(stderr, "Error. @z [%s] can't be opened\n", (z != NULL ? z : x));
+                        goto fail;
+                    case RM_ERR_COPY_BUFFERED:
+                        fprintf(stderr, "Error. Copy buffered failed\n");
+                        goto fail;
+                    case RM_ERR_FSTAT_X:
+                        fprintf(stderr, "Error. Couldn't stat @y [%s]\n", y);
+                        goto fail;
+                    case RM_ERR_FSTAT_Y:
+                        fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
+                        goto fail;
+                    case RM_ERR_FSTAT_Z:
+                        fprintf(stderr, "Error. Couldn't stat @z [%s]\n", z);
+                        goto fail;
+                    case RM_ERR_OPEN_TMP:
+                        fprintf(stderr, "Error. Temporary @z can't be opened\n");
+                        goto fail;
+                    case RM_ERR_CREATE_SESSION:
+                        fprintf(stderr, "Error. Session failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta tx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta rx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD:
+                        fprintf(stderr, "Error. Delta tx thread failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD:
+                        fprintf(stderr, "Error. Delta rx thread failed\n");
+                        goto fail;
+                    case RM_ERR_FILE_SIZE:
+                        fprintf(stderr, "Error. Bad size of result file\n");
+                        goto fail;
+                    case RM_ERR_FILE_SIZE_REC_MISMATCH:
+                        fprintf(stderr, "Error. Bad size of result file (reconstruction error)\n");
+                        goto fail;
+                    case RM_ERR_UNLINK_Y:
+                        fprintf(stderr, "Error. Cannot unlink @x\n");
+                        goto fail;
+                    case RM_ERR_RENAME_TMP_Y:
+                        fprintf(stderr, "Error. Cannot rename temporary file to @x\n");
+                        goto fail;
+                    case RM_ERR_RENAME_TMP_Z:
+                        fprintf(stderr, "Error. Cannot rename temporary file to @z\n");
+                        goto fail;
+                    case RM_ERR_MEM:
+                        fprintf(stderr, "Error. Not enough memory\n");
+                        exit(EXIT_FAILURE);
+                    case RM_ERR_CHDIR:
+                        y_copy = strdup(x);
+                        if (y_copy == NULL) {
+                            fprintf(stderr, "Error. Not enough memory\n");
+                            exit(EXIT_FAILURE);
+                        }
+                        fprintf(stderr, "Error. Cannot change directory to [%s]\n", dirname(y_copy));
+                        free(y_copy);
+                        goto fail;
+                    case RM_ERR_BAD_CALL:
+                    default:
+                        fprintf(stderr, "\nInternal error.\n");
+                        return -1;
+                }
+            }
         }
     }
 
