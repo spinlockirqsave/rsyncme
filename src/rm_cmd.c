@@ -414,11 +414,11 @@ main( int argc, char *argv[]) {
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
         if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
             fprintf(stderr, "\nRemote push.\n");
-            res = rm_tx_remote_push(xp, yp, &remote_addr, L);
+            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &remote_addr);
             if (res < 0) {
                 /* TODO */
             }
-        } else { /* local pull request */
+        } else { /* remote pull request */
             fprintf(stderr, "\nRemote pull.\n");
         }
 

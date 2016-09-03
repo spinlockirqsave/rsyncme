@@ -45,7 +45,9 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 
 /* Initialize PUSH, ask for nonoverlapping checksums, send delta vector. */
 int
-rm_tx_remote_push(const char *x, const char *y, struct sockaddr_in *remote_addr, size_t L);
+rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
+        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
+        struct rm_delta_reconstruct_ctx *rec_ctx, struct sockaddr_in *remote_addr);
 
 
 #endif	/* RSYNCME_TX_H */

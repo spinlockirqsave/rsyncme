@@ -52,20 +52,10 @@ struct rsyncme;
 int
 rm_do_msg_push_rx(struct rsyncme* rm, unsigned char *buf);
 
-/* @brief       Makes outgoing rsync push request.
- * @details     Used by rsyncme executable. */
-int
-rm_do_msg_push_tx(struct rsyncme* rm, unsigned char *buf);
-
 /* @brief       Handles incoming rsync pull request in new sesion.
  * @details     Daemon's message. */
 int
 rm_do_msg_pull_rx(struct rsyncme* rm, unsigned char *buf);
-
-/* @brief       Makes outgoing rsync pull request.
- * @details     Used by rsyncme executable. */
-int
-rm_do_msg_pull_tx(struct rsyncme* rm, unsigned char *buf);
 
 
 #endif  /* RSYNCME_DO_MSG_H */

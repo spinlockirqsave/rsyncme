@@ -30,53 +30,9 @@ struct rm_session
     double                  clk_cputime_start, clk_cputime_stop;
 };
 
-/* Receiver of file (delta vector) */
-struct rm_session_push_rx
-{
-    int fd;                                     /* socket handle */
-	pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
-	pthread_t               delta_rx_tid;       /* receiver of delta elements */
-    FILE                    *f_y;               /* reference file */              
-    FILE                    *f_z;               /* result file */              
-    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
-    twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */
-    pthread_mutex_t rx_delta_e_queue_mutex;
-    pthread_cond_t  rx_delta_e_queue_signal;    /* signalled by receiving proc when
-                                                   delta elements are received on the socket */
-};
-
-/* Transmitter of file (delta vector) */
-struct rm_session_push_tx
-{
-    int fd;                                     /* socket handle */
-	pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
-    int                     delta_rx_status;
-	pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
-    int                     delta_tx_status;
-    struct twhlist_head     *h;                 /* nonoverlapping checkums */
-    FILE                    *f_x;               /* file on which rolling is performed */              
-    twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
-    pthread_mutex_t tx_delta_e_queue_mutex;
-    pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
-                                                   new delta element has been produced */
-    rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
-/*    size_t                  copy_all_threshold;
-    size_t                  copy_tail_threshold;
-    size_t                  send_threshold; */
-};
-
-/* Receiver of file (delta vector) */
-struct rm_session_pull_rx
-{
-    int     fd; /* socket handle */
-	pthread_t               ch_ch_tid;
-	pthread_t               delta_tid;
-};
-
 /* Transmitter/receiver, local. */
 struct rm_session_push_local
 {
-    int fd;                                     /* socket handle */
     pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
     enum rm_delta_tx_status delta_tx_status;
     struct twhlist_head     *h;                 /* nonoverlapping checkums */
@@ -88,13 +44,43 @@ struct rm_session_push_local
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
     size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
-    pthread_t               delta_rx_tid;       /* consumer (of delta elements, reconstruction function) */
+    pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
     enum rm_delta_rx_status delta_rx_status;
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
     rm_delta_f              *delta_rx_f;        /* delta rx callback (dequeues delta elements and does data reconstruction) */
-/*    size_t                  copy_all_threshold;
-    size_t                  copy_tail_threshold;
-    size_t                  send_threshold; */
+};
+
+/* Receiver of file (delta vector) */
+struct rm_session_push_rx
+{
+    int fd;                                     /* socket handle */
+	pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
+	pthread_t               delta_rx_tid;       /* receiver of delta elements */
+    FILE                    *f_y;               /* reference file */              
+    FILE                    *f_z;               /* result file */              
+    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
+    twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */
+    pthread_mutex_t rx_delta_e_queue_mutex;
+    pthread_cond_t  rx_delta_e_queue_signal;    /* signaled by receiving proc when
+                                                   delta elements are received on the socket */
+};
+
+/* Transmitter of file (delta vector) */
+struct rm_session_push_tx
+{
+    struct rm_session_push_local session_local; /* delta producer and delta transmitter threads */
+    int fd;                                     /* socket handle */
+	pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
+    int                     ch_ch_rx_status;
+    pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex shared with ch_ch_rx thread */
+};
+
+/* Receiver of file (delta vector) */
+struct rm_session_pull_rx
+{
+    int     fd; /* socket handle */
+	pthread_t               ch_ch_tid;
+	pthread_t               delta_tid;
 };
 
 void

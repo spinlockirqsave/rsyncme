@@ -318,10 +318,19 @@ err_exit:
 }
 
 int
-rm_tx_remote_push(const char *x, const char *y, struct sockaddr_in *remote_addr, size_t L) {
+rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
+        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
+        struct rm_delta_reconstruct_ctx *rec_ctx, struct sockaddr_in *remote_addr) {
     (void) x;
     (void) y;
+    (void) z;
     (void) remote_addr;
     (void) L;
+    (void) copy_all_threshold;
+    (void) copy_tail_threshold;
+    (void) send_threshold;
+    (void) flags;
+    (void) rec_ctx;
+    (void) remote_addr;
 	return RM_ERR_OK;
 }

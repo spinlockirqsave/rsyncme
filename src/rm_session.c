@@ -23,31 +23,6 @@ rm_session_push_rx_init(struct rm_session_push_rx *prvt) {
 }
 
 void
-rm_session_push_tx_init(struct rm_session_push_tx *prvt) {
-    if (prvt == NULL) {
-        return;
-    }
-    memset(prvt, 0, sizeof(*prvt));
-    TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
-    pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
-    pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
-    return;
-}
-/* frees private session, DON'T TOUCH private session after this returns */ 
-void
-rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
-    if (prvt == NULL) {
-        return;
-    }
-    /* queue of delta elements MUST be empty now */
-    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
-    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
-    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
-    free(prvt);
-    return;
-}
-
-void
 rm_session_push_local_init(struct rm_session_push_local *prvt) {
     if (prvt == NULL) {
         return;
@@ -58,6 +33,15 @@ rm_session_push_local_init(struct rm_session_push_local *prvt) {
     pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
     return;
 }
+
+static void
+rm_session_push_local_deinit(struct rm_session_push_local *prvt) {
+    /* queue of delta elements MUST be empty now */
+    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
+    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
+    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
+}
+
 /* frees private session, DON'T TOUCH private session after this returns */ 
 void
 rm_session_push_local_free(struct rm_session_push_local *prvt) {
@@ -65,9 +49,30 @@ rm_session_push_local_free(struct rm_session_push_local *prvt) {
         return;
     }
     /* queue of delta elements MUST be empty now */
-    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
-    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
-    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
+    rm_session_push_local_deinit(prvt);
+    free(prvt);
+    return;
+}
+
+void
+rm_session_push_tx_init(struct rm_session_push_tx *prvt) {
+    if (prvt == NULL) {
+        return;
+    }
+    memset(prvt, 0, sizeof(*prvt));
+    rm_session_push_local_init(&prvt->session_local);
+    pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);
+    return;
+}
+
+/* frees private session, DON'T TOUCH private session after this returns */ 
+void
+rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
+    if (prvt == NULL) {
+        return;
+    }
+    rm_session_push_local_deinit(&prvt->session_local);
+    pthread_mutex_destroy(&prvt->ch_ch_hash_mutex);
     free(prvt);
     return;
 }
@@ -215,9 +220,9 @@ rm_session_delta_tx_f(void *arg) {
             if (prvt_tx == NULL) {
                 goto exit;
             }
-            h       = prvt_tx->h;
-            f_x     = prvt_tx->f_x;
-            delta_f = prvt_tx->delta_f;
+            h       = prvt_tx->session_local.h;
+            f_x     = prvt_tx->session_local.f_x;
+            delta_f = prvt_tx->session_local.delta_f;
             break;
 
         default:
@@ -228,7 +233,11 @@ rm_session_delta_tx_f(void *arg) {
         status = RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
     }
     pthread_mutex_lock(&s->session_mutex);
-    prvt_local->delta_tx_status = status;
+    if (t == RM_PUSH_LOCAL) {
+        prvt_local->delta_tx_status = status;
+    } else {
+        prvt_tx->session_local.delta_tx_status = status; /* remote push, local session part */
+    }
     pthread_mutex_unlock(&s->session_mutex);
 
 exit:
