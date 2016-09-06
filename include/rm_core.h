@@ -1,13 +1,12 @@
 /* @file        rm_core.h
  * @brief       Daemon's start up.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author	    Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        02 Jan 2016 02:50 PM
  * @copyright   LGPLv2.1 */
 
 
-#ifndef MPEU_CORE_H
-#define MPEU_CORE_H
+#ifndef RSYNCME_CORE_H
+#define RSYNCME_CORE_H
 
 
 #include "rm_defs.h"
@@ -17,6 +16,7 @@
 #include "twhash.h"
 #include "rm_session.h"
 #include "rm_serialize.h"
+#include "rm_wq.h"
 
 #include <arpa/inet.h>
 
@@ -33,6 +33,8 @@ struct rsyncme
 	uint32_t		L;  /* block size, for a given L the worst case byte overhead of rsyncme is (s_f + s_s) * n/L
                          * where s_f is size of fast signature, s_s is strong signature size, n is the number of bytes in file */
 	uint32_t		M;	/* modulus in fast checksum computation, 2^16 is good choice for simplicity and speed */
+
+    struct rm_workqueue     wq;
 };
 
 /* @brief  Helper struct to pass connection settings into TCP events thread. */
