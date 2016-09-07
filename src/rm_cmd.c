@@ -1,7 +1,6 @@
 /* @file        rm_cmd.c
  * @brief       Commandline tool for sending requests to rsyncme daemon.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        05 Jan 2016 11:15 PM
  * @copyright   LGPLv2.1 */
 

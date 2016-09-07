@@ -1,7 +1,6 @@
 /* @file        rm_tcp.c
  * @brief       TCP handling.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        18 Apr 2016 00:45 AM
  * @copyright   LGPLv2.1 */
 
@@ -67,20 +66,115 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e) {
 }
 
 int
-rm_set_socket_blocking_mode(int fd, uint8_t on) {
-       if (fd < 0 || on > 1) {
-           return -1;
-       }
+rm_tcp_set_socket_blocking_mode(int fd, uint8_t on) {
+    if (fd < 0 || on > 1) {
+        return -1;
+    }
 
 #ifdef WIN32
-       unsigned long mode = 1 - on;
-       return ioctlsocket(fd, FIONBIO, &mode);
+    unsigned long mode = 1 - on;
+    return ioctlsocket(fd, FIONBIO, &mode);
 #else
-       int flags = fcntl(fd, F_GETFL, 0);
-       if (flags < 0) {
-           return -2;
-       }
-       flags = on ? (flags &~ O_NONBLOCK) : (flags | O_NONBLOCK);
-       return fcntl(fd, F_SETFL, flags);
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        return -2;
+    }
+    flags = on ? (flags &~ O_NONBLOCK) : (flags | O_NONBLOCK);
+    return fcntl(fd, F_SETFL, flags);
 #endif
+}
+
+/* @brief   Resolve host names.
+ * @details Return 0 on success or EAI_* errcode to be used with gai_strerror(). */
+static int
+rm_core_resolve_host(const char *host, unsigned int port, struct addrinfo *hints, struct addrinfo **res) {
+    char strport[32];
+    snprintf(strport, sizeof strport, "%u", port);
+    return getaddrinfo(host, strport, hints, res);
+}
+
+int
+rm_core_connect(const char *host, uint16_t port, int domain, int type) {
+    int             err, fd;
+    struct addrinfo hints, *res, *ressave;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = domain;
+    hints.ai_socktype = type;
+    hints.ai_flags = 0;
+#if HAVE_DECL_AI_ADDRCONFIG
+    hints.ai_flags |= AI_ADDRCONFIG;
+#endif
+#if HAVE_DECL_AI_V4MAPPED
+    hints.ai_flags |= AI_V4MAPPED;
+#endif
+    hints.ai_protocol = 0; 
+
+    err = rm_core_resolve_host(host, port, &hints, &res);
+    if (err != 0) {
+        return err;     /* use gai_strerror(n) to get error string */
+    }
+
+    ressave = res;
+    do {
+        fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (fd < 0) {
+            continue;
+        }
+        if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
+            break;      /* success */
+        }
+        close(fd);
+    } while ((res = res->ai_next) != NULL);
+
+    if (res == NULL) { /* errno set from final connect() */
+        freeaddrinfo(ressave);
+        return -1;
+    }
+
+    freeaddrinfo(ressave);
+    return fd;
+}
+
+int
+rm_tcp_connect(const char *host, uint16_t port, int domain) {
+    int             err, fd;
+    struct addrinfo hints, *res, *ressave;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = domain;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+#if HAVE_DECL_AI_ADDRCONFIG
+    hints.ai_flags |= AI_ADDRCONFIG;
+#endif
+#if HAVE_DECL_AI_V4MAPPED
+    hints.ai_flags |= AI_V4MAPPED;
+#endif
+    hints.ai_protocol = 0; 
+
+    err = rm_core_resolve_host(host, port, &hints, &res);
+    if (err != 0) {
+        return err;     /* use gai_strerror(n) to get error string */
+    }
+
+    ressave = res;
+    do {
+        fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (fd < 0) {
+            continue;
+        }
+        if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
+            break;      /* success */
+        }
+        close(fd);
+    } while ((res = res->ai_next) != NULL);
+
+    if (res == NULL) { /* errno set from final connect() */
+        freeaddrinfo(ressave);
+        return -1;
+    }
+
+    freeaddrinfo(ressave);
+    return fd;
 }

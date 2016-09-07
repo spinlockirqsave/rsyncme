@@ -1,8 +1,7 @@
 /*
  * @file        rm_session.c
  * @brief       Rsync session.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        02 Nov 2016 04:08 PM
  * @copyright   LGPLv2.1
  */
@@ -202,6 +201,8 @@ rm_session_delta_tx_f(void *arg) {
     s = (struct rm_session*) arg;
     assert(s != NULL);
 
+    pthread_mutex_lock(&s->session_mutex);
+    f_x     = s->f_x;
     t = s->type;
     switch (t) {
         case RM_PUSH_LOCAL:
@@ -211,7 +212,6 @@ rm_session_delta_tx_f(void *arg) {
                 goto exit;
             }
             h       = prvt_local->h;
-            f_x     = prvt_local->f_x;
             delta_f = prvt_local->delta_f;
             break;
 
@@ -221,13 +221,13 @@ rm_session_delta_tx_f(void *arg) {
                 goto exit;
             }
             h       = prvt_tx->session_local.h;
-            f_x     = prvt_tx->session_local.f_x;
             delta_f = prvt_tx->session_local.delta_f;
             break;
 
         default:
             goto exit;
     }
+    pthread_mutex_unlock(&s->session_mutex);
     err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0); /* 1. run rolling checksum procedure */
     if (err != RM_ERR_OK) {
         status = RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
@@ -238,9 +238,9 @@ rm_session_delta_tx_f(void *arg) {
     } else {
         prvt_tx->session_local.delta_tx_status = status; /* remote push, local session part */
     }
-    pthread_mutex_unlock(&s->session_mutex);
 
 exit:
+    pthread_mutex_unlock(&s->session_mutex);
     return NULL; /* this thread must be created in joinable state */
 }
 
@@ -281,9 +281,9 @@ rm_session_delta_rx_f_local(void *arg) {
     }
     assert(prvt_local != NULL);
 
-    bytes_to_rx = prvt_local->f_x_sz;
-    f_y         = prvt_local->f_y;
-    f_z         = prvt_local->f_z;
+    bytes_to_rx = s->f_x_sz;
+    f_y         = s->f_y;
+    f_z         = s->f_z;
     rec_ctx.L = s->rec_ctx.L; /* init reconstruction context */
     pthread_mutex_unlock(&s->session_mutex);
 
@@ -297,7 +297,7 @@ rm_session_delta_rx_f_local(void *arg) {
         goto done;
     }
 
-    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex); /* TODO sleep on delta queue and reconstruct element once awoken */
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex); /* sleep on delta queue and reconstruct element once awoken */
     q = &prvt_local->tx_delta_e_queue;
 
     while (bytes_to_rx > 0) {
@@ -306,7 +306,7 @@ rm_session_delta_rx_f_local(void *arg) {
             goto done;
         }
         /* process delta element */
-        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) { /* in case of local sync there can be only single element enqueued each time conditional variable is signalled, but in other cases it will be possible to be different most likely */
+        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) { /* in case of local sync there can be only single element enqueued each time conditional variable is signaled, but in other cases it will be possible to be different most likely */
             delta_e = tw_container_of(lh, struct rm_delta_e, link);
             err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
             if (err != 0) {
@@ -328,7 +328,7 @@ rm_session_delta_rx_f_local(void *arg) {
 
 done:
     pthread_mutex_lock(&s->session_mutex);
-    assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == prvt_local->f_x_sz);
+    assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == s->f_x_sz);
     assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
     rec_ctx.collisions_1st_level = s->rec_ctx.collisions_1st_level; /* tx thread might have assigned to collisions variables already and memcpy would overwrite them */
     rec_ctx.collisions_2nd_level = s->rec_ctx.collisions_2nd_level;
