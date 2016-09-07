@@ -1,8 +1,7 @@
 /*
  * @file        rm_session.c
  * @brief       Rsync session.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        02 Nov 2016 04:08 PM
  * @copyright   LGPLv2.1
  */

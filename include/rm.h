@@ -3,8 +3,7 @@
  *              as described in Tridgell A., "Efficient Algorithms
  *              for Sorting and Synchronization", 1999.
  * @details     Common definitions used by sender and receiver.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        1 Jan 2016 07:50 PM
  * @copyright   LGPLv2.1 */
 

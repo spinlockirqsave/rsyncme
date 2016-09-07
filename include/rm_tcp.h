@@ -1,11 +1,8 @@
-/*
- * @file        rm_tcp.h
+/* @file        rm_tcp.h
  * @brief       Send data over TCP.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        18 Apr 2016 00:45 AM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_TCP_H
@@ -16,6 +13,7 @@
 #include "rm_serialize.h"
 
 #include <fcntl.h>
+#include <netdb.h>
 
 
 struct rm_ch_ch_ref;
@@ -34,7 +32,13 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e);
  *              and socket becomes nonblocking, if @on == 1 socket blocking
  *              mode is turned on */
 int
-rm_set_socket_blocking_mode(int fd, uint8_t on);
+rm_tcp_set_socket_blocking_mode(int fd, uint8_t on);
+
+int
+rm_core_connect(const char *host, uint16_t port, int domain, int type);
+
+int
+rm_tcp_connect(const char *host, uint16_t port, int domain);
 
 
 #endif  /* RSYNCME_TCP_H */
