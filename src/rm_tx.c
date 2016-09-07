@@ -152,11 +152,11 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     s->rec_ctx.send_threshold = send_threshold;
     prvt = s->prvt; /* setup private session's arguments */
     prvt->h = h;
-    prvt->f_x = f_x;
-    prvt->f_y = f_y;
-    prvt->f_z = f_z;
+    s->f_x = f_x;
+    s->f_y = f_y;
+    s->f_z = f_z;
     prvt->delta_f = rm_roll_proc_cb_1;
-    prvt->f_x_sz = x_sz;
+    s->f_x_sz = x_sz;
  
     err = rm_launch_thread(&prvt->delta_tx_tid, rm_session_delta_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx delta vec thread (enqueue delta elements and signal to delta_rx_tid thread */
     if (err != RM_ERR_OK) {

@@ -22,6 +22,11 @@ struct rm_session
 	uint32_t                session_id;
 	pthread_mutex_t         session_mutex;
 
+    FILE                    *f_x;               /* file on which rolling is performed */              
+    FILE                    *f_y;               /* reference file */              
+    FILE                    *f_z;               /* result file */              
+    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
+
     enum rm_session_type    type;
     struct rm_delta_reconstruct_ctx rec_ctx;
     void                    *prvt;
@@ -35,14 +40,10 @@ struct rm_session_push_local
     pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
     enum rm_delta_tx_status delta_tx_status;
     struct twhlist_head     *h;                 /* nonoverlapping checkums */
-    FILE                    *f_x;               /* file on which rolling is performed */              
-    FILE                    *f_y;               /* reference file */              
-    FILE                    *f_z;               /* result file */              
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
     pthread_cond_t  tx_delta_e_queue_signal;    /* signaled by rolling proc when
                                                    new delta element has been produced */
-    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
     pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
     enum rm_delta_rx_status delta_rx_status;
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
