@@ -18,7 +18,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     FILE        *f_z = NULL;   /* result (with same name as @y) */
     int         fd_x, fd_y, fd_z;
     uint8_t     reference_file_exist = 0;
-    struct      stat	fs;
+    struct stat fs;
     size_t      x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
     size_t                          bkt;    /* hashtable deletion */
     const struct rm_ch_ch_ref_hlink *e;
@@ -67,8 +67,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
         cwd = NULL;*/
         return RM_ERR_OPEN_X;
     }
-	/* get input file size */
-    fd_x = fileno(f_x);
+    fd_x = fileno(f_x);     /* get input file size */
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_x, &fs) != 0) {
         err = RM_ERR_FSTAT_X;
@@ -123,15 +122,6 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     }
     /* @y exists and is opened for reading  (f_y != NULL), reference_file_exist == 1 */
     /* Do NOT fclose(f_y); as it must be opened in session rx for reading */
-
-	/* get input file size */
-    fd_x = fileno(f_x);
-    memset(&fs, 0, sizeof(fs));
-    if (fstat(fd_x, &fs) != 0) {
-        err = RM_ERR_FSTAT_X;
-        goto err_exit;
-    }
-    x_sz = fs.st_size;
 
     rm_get_unique_string(f_z_name);
     f_z = fopen(f_z_name, "wb+");  /* and open @f_z for reading and writing in @z path */
@@ -319,7 +309,15 @@ err_exit:
 int
 rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
-        struct rm_delta_reconstruct_ctx *rec_ctx, struct sockaddr_in *remote_addr) {
+        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, struct sockaddr_in *remote_addr) {
+    enum rm_error  err = RM_ERR_OK;
+    FILE        *f_x = NULL;   /* original file, to be synced into @y */
+    int         fd_x;
+    struct stat fs;
+    size_t      x_sz;
+    struct rm_session               *s = NULL;
+    struct rm_session_push_tx       *prvt = NULL;
+
     (void) x;
     (void) y;
     (void) z;
@@ -331,5 +329,54 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     (void) flags;
     (void) rec_ctx;
     (void) remote_addr;
+
+    if ((x == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
+        return RM_ERR_BAD_CALL;
+    }
+
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    twhash_init(h);
+
+    f_x = fopen(x, "rb");
+    if (f_x == NULL) {
+        return RM_ERR_OPEN_X;
+    }
+    fd_x = fileno(f_x);     /* get input file size */
+    memset(&fs, 0, sizeof(fs));
+    if (fstat(fd_x, &fs) != 0) {
+        err = RM_ERR_FSTAT_X;
+        goto err_exit;
+    }
+    x_sz = fs.st_size;
+    if (x_sz == 0) {
+        return RM_ERR_X_ZERO_SIZE;
+    }
+
+    s = rm_session_create(RM_PUSH_LOCAL);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+    if (s == NULL) {
+        err = RM_ERR_CREATE_SESSION;
+        goto err_exit;
+    }
+
+    prvt = s->prvt;
+    err = rm_tcp_connect(&prvt->fd, addr, 7018, AF_INET);
+    if (err != 0) {
+        /* TODO handle */
+    }
+
+    rm_session_free(s);
+    s = NULL;
+
 	return RM_ERR_OK;
+
+err_exit:
+    if (f_x != NULL) {
+        fclose(f_x);
+        f_x = NULL;
+    }
+    if (s != NULL) {
+        rm_session_free(s);
+        s = NULL;
+    }
+    return err;
 }

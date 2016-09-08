@@ -147,6 +147,7 @@ main( int argc, char *argv[]) {
     size_t              copy_tail_threshold = 0;
     size_t              send_threshold = 0;
     uint8_t             send_threshold_set = 0;
+    const char          *addr = NULL;
     struct sockaddr_in  remote_addr = {0};
     size_t              L = RM_DEFAULT_L;
 
@@ -242,6 +243,7 @@ main( int argc, char *argv[]) {
                     fprintf(stderr, "Invalid IPv4 address\n");
                     exit(EXIT_FAILURE);
                 }
+                addr = optarg;
                 push_flags |= RM_BIT_5; /* remote */
                 break;
 
@@ -413,7 +415,7 @@ main( int argc, char *argv[]) {
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
         if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
             fprintf(stderr, "\nRemote push.\n");
-            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &remote_addr);
+            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, &remote_addr);
             if (res < 0) {
                 /* TODO */
             }

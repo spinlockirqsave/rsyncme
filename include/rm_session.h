@@ -69,7 +69,7 @@ struct rm_session_push_rx
 struct rm_session_push_tx
 {
     struct rm_session_push_local session_local; /* delta producer and delta transmitter threads */
-    int fd;                                     /* socket handle */
+    int fd;                                     /* handle to the TCP connection */ 
 	pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
     int                     ch_ch_rx_status;
     pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex shared with ch_ch_rx thread */

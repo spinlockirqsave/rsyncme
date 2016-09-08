@@ -94,8 +94,8 @@ rm_core_resolve_host(const char *host, unsigned int port, struct addrinfo *hints
 }
 
 int
-rm_core_connect(const char *host, uint16_t port, int domain, int type) {
-    int             err, fd;
+rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type) {
+    int             err;
     struct addrinfo hints, *res, *ressave;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -117,14 +117,14 @@ rm_core_connect(const char *host, uint16_t port, int domain, int type) {
 
     ressave = res;
     do {
-        fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-        if (fd < 0) {
+        *fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (*fd < 0) {
             continue;
         }
-        if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
+        if (connect(*fd, res->ai_addr, res->ai_addrlen) == 0) {
             break;      /* success */
         }
-        close(fd);
+        close(*fd);
     } while ((res = res->ai_next) != NULL);
 
     if (res == NULL) { /* errno set from final connect() */
@@ -133,12 +133,12 @@ rm_core_connect(const char *host, uint16_t port, int domain, int type) {
     }
 
     freeaddrinfo(ressave);
-    return fd;
+    return 0;
 }
 
 int
-rm_tcp_connect(const char *host, uint16_t port, int domain) {
-    int             err, fd;
+rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain) {
+    int             err;
     struct addrinfo hints, *res, *ressave;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -160,14 +160,14 @@ rm_tcp_connect(const char *host, uint16_t port, int domain) {
 
     ressave = res;
     do {
-        fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-        if (fd < 0) {
+        *fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (*fd < 0) {
             continue;
         }
-        if (connect(fd, res->ai_addr, res->ai_addrlen) == 0) {
+        if (connect(*fd, res->ai_addr, res->ai_addrlen) == 0) {
             break;      /* success */
         }
-        close(fd);
+        close(*fd);
     } while ((res = res->ai_next) != NULL);
 
     if (res == NULL) { /* errno set from final connect() */
@@ -176,5 +176,5 @@ rm_tcp_connect(const char *host, uint16_t port, int domain) {
     }
 
     freeaddrinfo(ressave);
-    return fd;
+    return 0;
 }
