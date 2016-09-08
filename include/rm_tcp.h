@@ -35,10 +35,10 @@ int
 rm_tcp_set_socket_blocking_mode(int fd, uint8_t on);
 
 int
-rm_core_connect(const char *host, uint16_t port, int domain, int type);
+rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type);
 
 int
-rm_tcp_connect(const char *host, uint16_t port, int domain);
+rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain);
 
 
 #endif  /* RSYNCME_TCP_H */
