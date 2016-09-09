@@ -34,11 +34,11 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e);
 int
 rm_tcp_set_socket_blocking_mode(int fd, uint8_t on);
 
-int
-rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type);
+enum rm_error
+rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, const char **err_str) __attribute__((nonnull(1,2,6)));
 
-int
-rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain);
+enum rm_error
+rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char **err_str) __attribute__((nonnull(1,2,5)));
 
 
 #endif  /* RSYNCME_TCP_H */

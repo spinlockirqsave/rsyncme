@@ -147,7 +147,7 @@ main( int argc, char *argv[]) {
     size_t              copy_tail_threshold = 0;
     size_t              send_threshold = 0;
     uint8_t             send_threshold_set = 0;
-    const char          *addr = NULL;
+    const char          *addr = NULL, *err_str = NULL;
     struct sockaddr_in  remote_addr = {0};
     size_t              L = RM_DEFAULT_L;
 
@@ -415,9 +415,56 @@ main( int argc, char *argv[]) {
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
         if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
             fprintf(stderr, "\nRemote push.\n");
-            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, &remote_addr);
-            if (res < 0) {
-                /* TODO */
+            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, &remote_addr, &err_str);
+            if (res != RM_ERR_OK) {
+            fprintf(stderr, "\n");
+                switch (res) {
+                    case RM_ERR_OPEN_X:
+                        fprintf(stderr, "Error. @x [%s] doesn't exist\n", x);
+                        goto fail;
+                    case RM_ERR_FSTAT_X:
+                        fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
+                        goto fail;
+                    case RM_ERR_X_ZERO_SIZE:
+                        fprintf(stderr, "Error. @x [%s] size is zero\n", x);
+                        goto fail;
+                    case RM_ERR_CREATE_SESSION:
+                        fprintf(stderr, "Error. Session failed\n");
+                        goto fail;
+                    case RM_ERR_GETADDRINFO:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. can't get server address, [%s]\n", err_str);
+                        } else {
+                            fprintf(stderr, "Error. can't get server address\n");
+                        }
+                        goto fail;
+                    case RM_ERR_CONNECT:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Can't connect to remote server, [%s]\n", err_str);
+                        } else {
+                            fprintf(stderr, "Error. Can't connect to remote server\n");
+                        }
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta tx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta rx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD:
+                        fprintf(stderr, "Error. Delta tx thread failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD:
+                        fprintf(stderr, "Error. Delta rx thread failed\n");
+                        goto fail;
+                    case RM_ERR_MEM:
+                        fprintf(stderr, "Error. Not enough memory\n");
+                        exit(EXIT_FAILURE);
+                    case RM_ERR_BAD_CALL:
+                    default:
+                        fprintf(stderr, "\nInternal error.\n");
+                        return -1;
+                }
             }
         } else { /* remote pull request */
             fprintf(stderr, "\nRemote pull.\n");
