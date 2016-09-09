@@ -23,28 +23,30 @@ rsyncme_usage(const char *name) {
         return;
     }
     fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4 [-p port]]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
-    fprintf(stderr, "      \t             [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
-    fprintf(stderr, "     \t -x         : file to synchronize\n");
-    fprintf(stderr, "     \t -i         : remote address (IP or domain name) if syncing with remote peer\n");
-    fprintf(stderr, "     \t -p         : remote port if syncing with remote peer\n");
-    fprintf(stderr, "     \t -y         : reference file used for syncing (local if [ip]\n"
-                    "     \t              was not given, remote otherwise) or result file if it doesn't\n"
-                    "     \t              exist and -z is not set and --force is set\n");
-    fprintf(stderr, "     \t -z         : synchronization result file name [optional]\n");
-    fprintf(stderr, "     \t -a         : copy all threshold. Send file as raw bytes if it's size\n"
-                    "     \t              is less or equal this threshold [optional]\n");
-    fprintf(stderr, "     \t -t         : copy tail threshold. Send remaining bytes as raw elements\n"
-                    "     \t              instead of performing rolling match algorithm if the number\n"
-                    "     \t              of bytes to process is less or equal this threshold [optional]\n");
-    fprintf(stderr, "     \t -s         : send threshold. Raw bytes are not sent until\n"
-                    "     \t              that many bytes have been accumulated. Default value used\n"
-                    "     \t              is equal to size of the block\n");
-    fprintf(stderr, "     \t -l         : block size in bytes, if it is not given then\n"
-                    "     \t              default value of 512 bytes is used\n");
-    fprintf(stderr, "     \t --force    : force creation of @y if it doesn't exist\n");
-    fprintf(stderr, "     \t --leave    : leave @y after @z has been reconstructed\n");
-    fprintf(stderr, "     \t --help     : display this help and exit\n");
-    fprintf(stderr, "     \t --version  : output version information and exit\n");
+    fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
+    fprintf(stderr, "     \t -x           : file to synchronize\n");
+    fprintf(stderr, "     \t -i           : remote address (IP or domain name) if syncing with remote peer\n");
+    fprintf(stderr, "     \t -p           : remote port if syncing with remote peer\n");
+    fprintf(stderr, "     \t -y           : reference file used for syncing (local if [ip]\n"
+                    "     \t                was not given, remote otherwise) or result file if it doesn't\n"
+                    "     \t                exist and -z is not set and --force is set\n");
+    fprintf(stderr, "     \t -z           : synchronization result file name [optional]\n");
+    fprintf(stderr, "     \t -a           : copy all threshold. Send file as raw bytes if it's size\n"
+                    "     \t                is less or equal this threshold [optional]\n");
+    fprintf(stderr, "     \t -t           : copy tail threshold. Send remaining bytes as raw elements\n"
+                    "     \t                instead of performing rolling match algorithm if the number\n"
+                    "     \t                of bytes to process is less or equal this threshold [optional]\n");
+    fprintf(stderr, "     \t -s           : send threshold. Raw bytes are not sent until\n"
+                    "     \t                that many bytes have been accumulated. Default value used\n"
+                    "     \t                is equal to size of the block\n");
+    fprintf(stderr, "     \t -l           : block size in bytes, if it is not given then\n"
+                    "     \t                default value of 512 bytes is used\n");
+    fprintf(stderr, "     \t --force      : force creation of @y if it doesn't exist\n");
+    fprintf(stderr, "     \t --leave      : leave @y after @z has been reconstructed\n");
+    fprintf(stderr, "     \t --timeout_s  : seconds part of timeout limit on connect\n");
+    fprintf(stderr, "     \t --timeout_us : microseconds part of timeout limit on connect\n");
+    fprintf(stderr, "     \t --help       : display this help and exit\n");
+    fprintf(stderr, "     \t --version    : output version information and exit\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "     \t If no option is specified, --help is assumed.\n");
 
@@ -152,6 +154,7 @@ main( int argc, char *argv[]) {
     const char          *addr = NULL, *err_str = NULL;
     uint16_t            port = RM_DEFAULT_PORT;
     size_t              L = RM_DEFAULT_L;
+    uint16_t            timeout_s = 0, timeout_us = 0;
 
     if (argc < 2) {
         rsyncme_usage(argv[0]);
@@ -167,6 +170,8 @@ main( int argc, char *argv[]) {
         { "leave", no_argument, 0, 4 },
         { "help", no_argument, 0, 5 },
         { "version", no_argument, 0, 6 },
+        { "timeout_s", required_argument, 0, 7 },
+        { "timeout_us", required_argument, 0, 8 },
         { 0 }
     };
 
@@ -208,6 +213,36 @@ main( int argc, char *argv[]) {
             case 6:
                 fprintf(stderr, "\nversion [%s]\n", RM_VERSION); /* --version */
                 exit(EXIT_SUCCESS);
+                break;
+
+            case 7:
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > 0x10000 - 1) {
+                    rsyncme_range_error(c, helper);
+                    exit(EXIT_FAILURE);
+                }
+                if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                timeout_s = helper;
+                break;
+
+            case 8:
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > 0x10000 - 1) {
+                    rsyncme_range_error(c, helper);
+                    exit(EXIT_FAILURE);
+                }
+                if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                timeout_us = helper;
                 break;
 
             case 'x':
@@ -391,6 +426,9 @@ main( int argc, char *argv[]) {
             send_threshold = L;
         }
     }
+    if ((timeout_s == 0) && (timeout_us == 0)) {
+        timeout_s = 10;
+    }
     if (push_flags & RM_BIT_5) { /* remote */
         if (yp == NULL) {
             strncpy(y, x, RM_CMD_F_LEN_MAX);
@@ -428,7 +466,7 @@ main( int argc, char *argv[]) {
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
         if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
             fprintf(stderr, "\nRemote push.\n");
-            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, &err_str);
+            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, timeout_s, timeout_us, &err_str);
             if (res != RM_ERR_OK) {
             fprintf(stderr, "\n");
                 switch (res) {

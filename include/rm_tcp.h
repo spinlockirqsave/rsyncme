@@ -40,5 +40,11 @@ rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, 
 enum rm_error
 rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char **err_str) __attribute__((nonnull(1,2,5)));
 
+enum rm_error
+rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t timeout_s, uint16_t timeout_us) __attribute__ ((nonnull(2)));
+
+enum rm_error
+rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) __attribute__((nonnull(1,2,7)));
+
 
 #endif  /* RSYNCME_TCP_H */

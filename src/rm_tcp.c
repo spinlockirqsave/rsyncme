@@ -182,3 +182,73 @@ rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char 
     freeaddrinfo(ressave);
     return RM_ERR_OK;
 }
+
+enum rm_error
+rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t timeout_s, uint16_t timeout_us) {
+    fd_set          fdset;
+    struct timeval  tv;
+    socklen_t       len;
+
+    fcntl(fd, F_SETFL, O_NONBLOCK);
+    connect(fd, res->ai_addr, res->ai_addrlen);
+
+    FD_ZERO(&fdset);
+    FD_SET(fd, &fdset);
+    tv.tv_sec = timeout_s;      /* set timeout in seconds */
+    tv.tv_usec = timeout_us;    /* microseconds */
+
+    if (select(fd + 1, NULL, &fdset, NULL, &tv) == 1) {
+        int so_error;
+        len = sizeof so_error;
+        getsockopt(fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
+        if (so_error == 0) {
+            return RM_ERR_OK;
+        }
+    }
+    return RM_ERR_CONNECT;
+}
+
+enum rm_error
+rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
+    int             err;
+    struct addrinfo hints, *res, *ressave;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = domain;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = 0;
+#if HAVE_DECL_AI_ADDRCONFIG
+    hints.ai_flags |= AI_ADDRCONFIG;
+#endif
+#if HAVE_DECL_AI_V4MAPPED
+    hints.ai_flags |= AI_V4MAPPED;
+#endif
+    hints.ai_protocol = 0; 
+
+    err = rm_core_resolve_host(host, port, &hints, &res);
+    if (err != 0) {
+        *err_str = gai_strerror(err);
+        return RM_ERR_GETADDRINFO;  /* use gai_strerror(n) to get error string */
+    }
+
+    ressave = res;
+    do {
+        *fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (*fd < 0) {
+            continue;
+        }
+        if (rm_tcp_connect_nonblock_timeout_once(*fd, res, timeout_s, timeout_us) == RM_ERR_OK) {
+            break;      /* success */
+        }
+        close(*fd);
+    } while ((res = res->ai_next) != NULL);
+
+    if (res == NULL) { /* errno set from final connect() */
+        *err_str = strerror(errno);
+        freeaddrinfo(ressave);
+        return RM_ERR_CONNECT;
+    }
+
+    freeaddrinfo(ressave);
+    return RM_ERR_OK;
+}
