@@ -75,7 +75,7 @@
 
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
-#define RM_FILE_LEN_MAX             150         /* max len of names of @x, @y files */
+#define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files */
 
 #define RM_ADLER32_MODULUS          65521L      /* biggest prime int less than 2^16 */
 #define RM_FASTCHECK_MODULUS        65536L      /* 2^16, this makes rolling calculation possible */
@@ -101,7 +101,6 @@
 #define RM_L1_CACHE_RECOMMENDED     8192        /* buffer size, so that it should fit into
                                                  * L1 cache on most architectures */
 #define RM_WORKERS_N                8u          /* default number of workers for main work queue */
-#define RM_DEFAULT_PORT             5048u       /* default daemon's port */
 
 #define rm_container_of(ptr, type, member) __extension__({  \
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \

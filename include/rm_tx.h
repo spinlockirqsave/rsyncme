@@ -46,7 +46,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 int
 rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
-        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, struct sockaddr_in *remote_addr, const char **err_str) __attribute__ ((nonnull(1,2,9,10,11,12)));
+        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, const char **err_str) __attribute__ ((nonnull(1,2,9,10,12)));
 
 
 #endif	/* RSYNCME_TX_H */

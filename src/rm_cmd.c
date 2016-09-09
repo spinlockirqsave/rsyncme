@@ -6,6 +6,7 @@
 
 
 #include "rm_defs.h"
+#include "rm_config.h"
 #include "rm_tx.h"
 
 
@@ -21,10 +22,11 @@ rsyncme_usage(const char *name) {
     if (name == NULL) {
         return;
     }
-    fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
+    fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4 [-p port]]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
     fprintf(stderr, "      \t             [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
     fprintf(stderr, "     \t -x         : file to synchronize\n");
-    fprintf(stderr, "     \t -i         : IPv4 if syncing with remote file\n");
+    fprintf(stderr, "     \t -i         : remote address (IP or domain name) if syncing with remote peer\n");
+    fprintf(stderr, "     \t -p         : remote port if syncing with remote peer\n");
     fprintf(stderr, "     \t -y         : reference file used for syncing (local if [ip]\n"
                     "     \t              was not given, remote otherwise) or result file if it doesn't\n"
                     "     \t              exist and -z is not set and --force is set\n");
@@ -148,7 +150,7 @@ main( int argc, char *argv[]) {
     size_t              send_threshold = 0;
     uint8_t             send_threshold_set = 0;
     const char          *addr = NULL, *err_str = NULL;
-    struct sockaddr_in  remote_addr = {0};
+    uint16_t            port = RM_DEFAULT_PORT;
     size_t              L = RM_DEFAULT_L;
 
     if (argc < 2) {
@@ -168,7 +170,7 @@ main( int argc, char *argv[]) {
         { 0 }
     };
 
-    while ((c = getopt_long(argc, argv, "x:y:z:i:l:a:t:s:", long_options, &option_index)) != -1) { /* parse optional command line arguments */
+    while ((c = getopt_long(argc, argv, "x:y:z:i:p:l:a:t:s:", long_options, &option_index)) != -1) { /* parse optional command line arguments */
         switch (c) {
 
             case 0:
@@ -239,12 +241,23 @@ main( int argc, char *argv[]) {
                 break;
 
             case 'i':
-                if (inet_pton(AF_INET, optarg, &remote_addr.sin_addr) == 0) {
-                    fprintf(stderr, "Invalid IPv4 address\n");
-                    exit(EXIT_FAILURE);
-                }
                 addr = optarg;
                 push_flags |= RM_BIT_5; /* remote */
+                break;
+
+            case 'p':
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > 0x10000 - 1) {
+                    rsyncme_range_error(c, helper);
+                    exit(EXIT_FAILURE);
+                }
+                if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                port = helper;
                 break;
 
             case 'l':
@@ -415,7 +428,7 @@ main( int argc, char *argv[]) {
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
         if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
             fprintf(stderr, "\nRemote push.\n");
-            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, &remote_addr, &err_str);
+            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, &err_str);
             if (res != RM_ERR_OK) {
             fprintf(stderr, "\n");
                 switch (res) {
@@ -440,9 +453,9 @@ main( int argc, char *argv[]) {
                         goto fail;
                     case RM_ERR_CONNECT:
                         if (err_str != NULL) {
-                            fprintf(stderr, "Error. Can't connect to remote server, [%s]\n", err_str);
+                            fprintf(stderr, "Error. Can't connect to [%s] on port [%u], [%s]\n", addr, port, err_str);
                         } else {
-                            fprintf(stderr, "Error. Can't connect to remote server\n");
+                            fprintf(stderr, "Error. Can't connect to [%s] on port [%u]\n", addr, port);
                         }
                         goto fail;
                     case RM_ERR_DELTA_TX_THREAD_LAUNCH:

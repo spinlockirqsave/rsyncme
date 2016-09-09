@@ -309,7 +309,7 @@ err_exit:
 int
 rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
-        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, struct sockaddr_in *remote_addr, const char **err_str) {
+        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, const char **err_str) {
     enum rm_error  err = RM_ERR_OK;
     FILE        *f_x = NULL;   /* original file, to be synced into @y */
     int         fd_x;
@@ -318,17 +318,11 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     struct rm_session               *s = NULL;
     struct rm_session_push_tx       *prvt = NULL;
 
-    (void) x;
     (void) y;
     (void) z;
-    (void) remote_addr;
-    (void) L;
     (void) copy_all_threshold;
     (void) copy_tail_threshold;
-    (void) send_threshold;
     (void) flags;
-    (void) rec_ctx;
-    (void) remote_addr;
 
     if ((x == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
         return RM_ERR_BAD_CALL;
@@ -341,7 +335,7 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     if (f_x == NULL) {
         return RM_ERR_OPEN_X;
     }
-    fd_x = fileno(f_x);     /* get input file size */
+    fd_x = fileno(f_x); /* get input file size */
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_x, &fs) != 0) {
         err = RM_ERR_FSTAT_X;
@@ -352,14 +346,14 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
         return RM_ERR_X_ZERO_SIZE;
     }
 
-    s = rm_session_create(RM_PUSH_LOCAL);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+    s = rm_session_create(RM_PUSH_TX);  /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
     if (s == NULL) {
         err = RM_ERR_CREATE_SESSION;
         goto err_exit;
     }
 
     prvt = s->prvt;
-    err = rm_tcp_connect(&prvt->fd, addr, RM_DEFAULT_PORT, AF_INET, err_str);
+    err = rm_tcp_connect(&prvt->fd, addr, port, AF_INET, err_str);
     if (err != RM_ERR_OK) {
         goto err_exit;
     }
