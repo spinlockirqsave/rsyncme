@@ -309,7 +309,7 @@ err_exit:
 int
 rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
-        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, struct sockaddr_in *remote_addr) {
+        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, struct sockaddr_in *remote_addr, const char **err_str) {
     enum rm_error  err = RM_ERR_OK;
     FILE        *f_x = NULL;   /* original file, to be synced into @y */
     int         fd_x;
@@ -359,9 +359,9 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     }
 
     prvt = s->prvt;
-    err = rm_tcp_connect(&prvt->fd, addr, 7018, AF_INET);
-    if (err != 0) {
-        /* TODO handle */
+    err = rm_tcp_connect(&prvt->fd, addr, RM_DEFAULT_PORT, AF_INET, err_str);
+    if (err != RM_ERR_OK) {
+        goto err_exit;
     }
 
     rm_session_free(s);

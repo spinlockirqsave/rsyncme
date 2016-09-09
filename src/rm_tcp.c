@@ -93,8 +93,8 @@ rm_core_resolve_host(const char *host, unsigned int port, struct addrinfo *hints
     return getaddrinfo(host, strport, hints, res);
 }
 
-int
-rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type) {
+enum rm_error
+rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, const char **err_str) {
     int             err;
     struct addrinfo hints, *res, *ressave;
 
@@ -112,7 +112,8 @@ rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type) 
 
     err = rm_core_resolve_host(host, port, &hints, &res);
     if (err != 0) {
-        return err;     /* use gai_strerror(n) to get error string */
+        *err_str = gai_strerror(err);
+        return RM_ERR_GETADDRINFO;  /* use gai_strerror(n) to get error string */
     }
 
     ressave = res;
@@ -128,16 +129,17 @@ rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type) 
     } while ((res = res->ai_next) != NULL);
 
     if (res == NULL) { /* errno set from final connect() */
+        *err_str = strerror(errno);
         freeaddrinfo(ressave);
-        return -1;
+        return RM_ERR_CONNECT;
     }
 
     freeaddrinfo(ressave);
-    return 0;
+    return RM_ERR_OK;
 }
 
-int
-rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain) {
+enum rm_error
+rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char **err_str) {
     int             err;
     struct addrinfo hints, *res, *ressave;
 
@@ -155,7 +157,8 @@ rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain) {
 
     err = rm_core_resolve_host(host, port, &hints, &res);
     if (err != 0) {
-        return err;     /* use gai_strerror(n) to get error string */
+        *err_str = gai_strerror(err);
+        return RM_ERR_GETADDRINFO;  /* use gai_strerror(n) to get error string */
     }
 
     ressave = res;
@@ -171,10 +174,11 @@ rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain) {
     } while ((res = res->ai_next) != NULL);
 
     if (res == NULL) { /* errno set from final connect() */
+        *err_str = strerror(errno);
         freeaddrinfo(ressave);
-        return -1;
+        return RM_ERR_CONNECT;
     }
 
     freeaddrinfo(ressave);
-    return 0;
+    return RM_ERR_OK;
 }
