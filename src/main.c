@@ -17,8 +17,8 @@
 int
 main(void) {
     struct rsyncme  rm;
-    int             read_n;
-    unsigned char   buf[RM_TCP_MSG_MAX_LEN];
+    int             read_n, read_now, to_read;
+    unsigned char   *buf = NULL, *hdr = NULL, *body_raw = NULL;
     int             listenfd, connfd;
     int             err, errsv;
     struct sockaddr_in      srv_addr_in;
@@ -38,6 +38,8 @@ main(void) {
     struct sockaddr_in6     *cli_addr_in6 = NULL;
     socklen_t               cli_len;
     uint16_t                cli_port;
+    enum rm_pt_type         pt;
+    void*                   work;
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
@@ -161,14 +163,23 @@ main(void) {
             }
         }
 
-        if (rm_core_authenticate(cli_addr_in) == -1) {
+        if (rm_core_authenticate(cli_addr_in) != RM_ERR_OK) {
             RM_LOG_ERR("%s", "Authentication failed.\n");
             close(connfd);
             continue;
         }
 
-        memset(&buf, 0, sizeof buf);
-        read_n = read(connfd, &buf, RM_TCP_MSG_MAX_LEN);
+        to_read = sizeof(struct rm_msg_hdr);
+        read_n = 0;
+        read_now = 0;
+        buf = malloc(to_read);
+        if (buf == NULL) {
+            RM_LOG_CRIT("%s", "Couldn't allocate message header. Not enough memory");
+            continue;
+        }
+        while ((read_n < to_read) && ((read_now = read(connfd, &buf[read_n], to_read - read_n)) > 0)) {
+            read_n += read_now;
+        } 
         if (read_n == 0) {
             if (peer_addr_str != NULL) {
                 RM_LOG_INFO("Closing conenction in passive mode, peer [%s] port [%u]", peer_addr_str, peer_port);
@@ -178,7 +189,7 @@ main(void) {
             close(connfd);
             continue;
         }
-        if (read_n == -1) {
+        if (read_n < 0) {
             RM_LOG_PERR("%s", "Read failed on TCP control socket");
             switch (read_n) {
                 case EAGAIN:
@@ -208,18 +219,40 @@ main(void) {
             }
             exit(EXIT_FAILURE);
         }
+        err = rm_core_tcp_msg_hdr_validate(buf, read_n);    /* validate the potential header of the message: check hash and pt, read_n can't be < 0 in call to validate */
+        if (err != RM_ERR_OK) {
+            RM_LOG_ERR("%s", "TCP control socket: bad message");
+            switch (err) {
 
-        err = rm_core_tcp_msg_validate(buf, read_n);    /* validate the message: check hash token */
-        if (err < 0) {
-            RM_LOG_ERR("%s", "TCP control socket: unknown message");
+                case RM_ERR_FAIL:
+                    RM_LOG_ERR("%s", "Invalid hash");
+                    break;
+
+                case RM_ERR_MSG_PT_UNKNOWN:
+                    RM_LOG_ERR("%s", "Unknown message type");
+                    break;
+
+                default:
+                    RM_LOG_ERR("%s", "Unknown error");
+                    break;
+            }
             continue;
         }
+        hdr = buf;
 
-        switch (err) { /* message OK, process it */
-            case RM_MSG_PUSH:
-                pthread_mutex_lock(&rm.mutex);
-                rm_do_msg_push_rx(&rm, buf);
-                pthread_mutex_unlock(&rm.mutex);
+        pt = rm_get_msg_hdr_pt(buf);
+
+        switch (pt) { /* message OK, process it */
+            case RM_PT_MSG_PUSH:
+                work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, &rm, hdr, body_raw, rm_do_msg_push_rx);
+                if (work == NULL) {
+                    RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
+                    continue;
+                }
+                rm_wq_queue_work(&rm.wq, work); 
+                //pthread_mutex_lock(&rm.mutex);
+                //rm_do_msg_push_rx(&);
+                //pthread_mutex_unlock(&rm.mutex);
                 break;
 
                 /*			case RM_MSG_PUSH_OUT:
@@ -228,7 +261,7 @@ main(void) {
                             "make outgoing requests");
                             break;
                             */
-            case RM_MSG_PULL:
+            case RM_PT_MSG_PULL:
                 pthread_mutex_lock(&rm.mutex);
                 rm_do_msg_pull_rx(&rm, buf);
                 pthread_mutex_unlock(&rm.mutex);
@@ -240,7 +273,7 @@ main(void) {
                             "make outgoing requests");
                             break;
                             */
-            case RM_MSG_BYE:
+            case RM_PT_MSG_BYE:
                 break;
 
             default:

@@ -15,6 +15,12 @@
 #include "twlist.h"
 
 
+enum rm_work_type {
+    RM_WORK_PROCESS_MSG_PUSH,
+    RM_WORK_PROCESS_MSG_PULL,
+    RM_WORK_PROCESS_MSG_BYE
+};
+
 struct rm_worker {              /* thread wrapper */
     uint8_t         idx;        /* index in workqueue table */
     pthread_t       tid;
@@ -46,8 +52,11 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name);
 
 struct rm_work {
     struct twlist_head  link;
-    void                *data;
-    void (*f)(void*);
+    enum rm_work_type   task;
+    struct rsyncme*     rm;
+    unsigned char*      hdr;
+    unsigned char*      body_raw;
+    void* (*f)(void*);
 };
 
 #define RM_WORK_INITIALIZER(n, d, f) {      \
@@ -58,6 +67,15 @@ struct rm_work {
 
 #define DECLARE_WORK(n, d, f) \
     struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
+
+struct rm_work*
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*));
+
+struct rm_work*
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*));
+
+void
+rm_work_free(struct rm_work* work);
 
 void
 rm_wq_queue_work(struct rm_workqueue *q, struct rm_work* work);
