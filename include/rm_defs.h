@@ -67,12 +67,6 @@
 #define RM_BIT_7	(1u << 7)
 
 #define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end */
-
-/* TCP messages */
-#define RM_MSG_PUSH                 2           /* rsync push */
-#define RM_MSG_PULL                 3           /* rsync pull */
-#define RM_MSG_BYE                  255         /* close the controlling connection */
-
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
 #define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files */
@@ -95,6 +89,7 @@
 #define RM_CH_CH_REF_SIZE (RM_CH_CH_SIZE + \
         (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
 #define RM_NANOSEC_PER_SEC          1000000000U
+#define RM_CORE_HASH_CHALLENGE_BITS 32u
 
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */
@@ -190,7 +185,8 @@ enum rm_error {
     RM_ERR_WORKQUEUE_CREATE = 58,
     RM_ERR_GETADDRINFO = 59,
     RM_ERR_CONNECT_TIMEOUT = 60,
-    RM_ERR_UNKNOWN_ERROR = 61
+    RM_ERR_MSG_PT_UNKNOWN = 61,
+    RM_ERR_UNKNOWN_ERROR = 62
 };
 
 enum rm_io_direction {
@@ -198,7 +194,17 @@ enum rm_io_direction {
     RM_WRITE
 };
 
+enum rm_pt_type {
+    RM_PT_MSG_PUSH,
+    RM_PT_MSG_PULL,
+    RM_PT_MSG_BYE
+};
+
 /* prototypes */
+
+struct rsyncme;
+struct rm_msg_hdr;
+
 char *strdup(const char *s);
 
 

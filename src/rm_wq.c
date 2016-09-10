@@ -23,7 +23,7 @@ rm_wq_worker_f(void *arg) {
         for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
             work = tw_container_of(lh, struct rm_work, link);
             pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
-            work->f(work->data);
+            work->f(&work);
             pthread_mutex_lock(&w->mutex);
         }
         pthread_cond_wait(&w->signal, &w->mutex);
@@ -138,6 +138,37 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name) {
         }
     }
     return wq;
+}
+
+struct rm_work*
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*)) {
+    TWINIT_LIST_HEAD(&work->link);
+    work->task = task;
+    work->rm = rm;
+    work->hdr = hdr;
+    work->body_raw = body_raw;
+    work->f = f;
+    return work;
+}
+
+struct rm_work*
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*)) {
+    struct rm_work* work = malloc(sizeof(*work));
+    if (work == NULL) {
+        return NULL;
+    }
+    return rm_work_init(work, task, rm, hdr, body_raw, f);
+}
+
+void
+rm_work_free(struct rm_work* work) {
+    if (work->hdr != NULL) {
+        free(work->hdr);
+    }
+    if (work->body_raw != NULL) {
+        free(work->body_raw);
+    }
+    free(work);
 }
 
 /*  @brief  Work dispatcher (round-robin). */

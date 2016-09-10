@@ -1,10 +1,8 @@
-/*
- * @file        rm_util.h
+/* @file        rm_util.h
  * @brief       Utilities, log.
- * @author	    Piotr Gregor <piotrgregor@rsyncme.org>
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        04 Jan 2016 08:08 PM
- * @copyright   LGPLv2.1
- */
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_UTIL_H

@@ -318,6 +318,8 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     struct rm_session               *s = NULL;
     struct rm_session_push_tx       *prvt = NULL;
 
+    struct rm_msg_push msg;
+
     (void) y;
     (void) z;
     (void) copy_all_threshold;
@@ -358,10 +360,36 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
         goto err_exit;
     }
 
+    memset(&msg, 0, sizeof msg);
+    if (rm_msg_push_init(&msg) != RM_ERR_OK) {
+        return RM_ERR_MEM;
+    }
+    msg.hdr->pt = RM_PT_MSG_PUSH;
+    msg.hdr->flags = flags;
+    msg.L = L;
+
+    msg.x_sz = strlen(x) + 1;
+    strcpy(msg.x, x); /* commandline tool will not pass here string longer than RM_FILE_LEN_MAX which is also the size of file name buffers in msg push */
+    if (y != NULL) {
+        msg.y_sz = strlen(y) + 1;
+        strcpy(msg.y, y); /* copies the string including the NULL terminator */
+    } else {
+        msg.y_sz = 0;
+    }
+    if (z != NULL) {
+        msg.z_sz = strlen(z) + 1;
+        strcpy(msg.z, z);
+    } else {
+        msg.z_sz = 0;
+    }
+    msg.hdr->len = rm_calc_msg_len(&msg);
+
+    msg.hdr->hash = rm_core_hdr_hash(msg.hdr);
+
     rm_session_free(s);
     s = NULL;
 
-	return RM_ERR_OK;
+    return RM_ERR_OK;
 
 err_exit:
     if (f_x != NULL) {

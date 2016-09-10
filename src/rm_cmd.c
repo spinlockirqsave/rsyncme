@@ -15,8 +15,6 @@
 #include <getopt.h>
 
 
-#define RM_CMD_F_LEN_MAX 100
-
 static void
 rsyncme_usage(const char *name) {
     if (name == NULL) {
@@ -132,9 +130,9 @@ int
 main( int argc, char *argv[]) {
     int             c;
     enum rm_error   res;
-    char	x[RM_CMD_F_LEN_MAX] = {0};
-    char	y[RM_CMD_F_LEN_MAX] = {0};
-    char	z[RM_CMD_F_LEN_MAX] = {0};
+    char	x[RM_FILE_LEN_MAX] = {0};
+    char	y[RM_FILE_LEN_MAX] = {0};
+    char	z[RM_FILE_LEN_MAX] = {0};
     char    *xp = NULL, *yp = NULL, *zp = NULL;
     rm_push_flags   push_flags = 0;      /* bits    meaning
                                           * 0		cmd (0 RM_MSG_PUSH, 1 RM_MSG_PULL)
@@ -246,31 +244,31 @@ main( int argc, char *argv[]) {
                 break;
 
             case 'x':
-                if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
+                if (strlen(optarg) > RM_FILE_LEN_MAX - 1) {
                     fprintf(stderr, "-x name too long\n");
                     exit(EXIT_FAILURE);
                 }
-                strncpy(x, optarg, RM_CMD_F_LEN_MAX);
+                strncpy(x, optarg, RM_FILE_LEN_MAX);
                 push_flags |= RM_BIT_1;
                 xp = &x[0];
                 break;
 
             case 'y':
-                if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
+                if (strlen(optarg) > RM_FILE_LEN_MAX - 1) {
                     fprintf(stderr, "-y name too long\n");
                     exit(EXIT_FAILURE);
                 }
-                strncpy(y, optarg, RM_CMD_F_LEN_MAX);
+                strncpy(y, optarg, RM_FILE_LEN_MAX);
                 push_flags |= RM_BIT_2;
                 yp = &y[0];
                 break;
 
             case 'z':
-                if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
+                if (strlen(optarg) > RM_FILE_LEN_MAX - 1) {
                     fprintf(stderr, "-z name too long\n");
                     exit(EXIT_FAILURE);
                 }
-                strncpy(z, optarg, RM_CMD_F_LEN_MAX);
+                strncpy(z, optarg, RM_FILE_LEN_MAX);
                 push_flags |= RM_BIT_3;
                 zp = &z[0];
                 break;
@@ -431,7 +429,7 @@ main( int argc, char *argv[]) {
     }
     if (push_flags & RM_BIT_5) { /* remote */
         if (yp == NULL) {
-            strncpy(y, x, RM_CMD_F_LEN_MAX);
+            strncpy(y, x, RM_FILE_LEN_MAX);
             yp = &y[0];
         }
     } else { /* local */
