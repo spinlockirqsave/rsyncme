@@ -3,4 +3,4 @@
 	url = https://github.com/spinlockirqsave/twlist.git
 [submodule "wiki"]
 	path = wiki
-	url = https://piotrgregor@bitbucket.org/piotrgregor/rsyncme.git/wiki
+	url = https://piotrgregor@bitbucket.org/rsyncmedev/rsyncme.git/wiki
