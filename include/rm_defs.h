@@ -189,8 +189,13 @@ enum rm_error {
     RM_ERR_LAUNCH_WORKER = 57,
     RM_ERR_WORKQUEUE_CREATE = 58,
     RM_ERR_GETADDRINFO = 59,
-    RM_ERR_CONNECT = 60,
+    RM_ERR_CONNECT_TIMEOUT = 60,
     RM_ERR_UNKNOWN_ERROR = 61
+};
+
+enum rm_io_direction {
+    RM_READ,
+    RM_WRITE
 };
 
 /* prototypes */

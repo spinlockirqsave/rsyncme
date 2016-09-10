@@ -1,8 +1,7 @@
 /*
  * @file        rm_do_msg.c
  * @brief       Execute TCP messages.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author	    Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        02 Nov 2016 04:29 PM
  * @copyright   LGPLv2.1
  */

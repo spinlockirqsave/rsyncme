@@ -58,6 +58,8 @@ main(void) {
     }
     if (rm.wq.workers_active_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
         RM_LOG_WARN("Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
+    } else {
+        RM_LOG_INFO("Main work queue started with [%u] worker threads", rm.wq.workers_n);
     }
     listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 

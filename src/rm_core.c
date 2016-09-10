@@ -105,3 +105,27 @@ rm_core_tcp_msg_validate(unsigned char *buf, int read_n) {
     }
     return pt;
 }
+
+int
+rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s, uint16_t timeout_us) {
+    fd_set fdset;
+    struct timeval tv;
+
+    tv.tv_sec = timeout_s;
+    tv.tv_usec = timeout_us;
+
+    FD_ZERO(&fdset);
+    FD_SET(fd, &fdset);
+
+    switch (io_direction) {
+
+        case RM_READ:
+            return select(fd + 1, &fdset, NULL, NULL, &tv);
+
+        case RM_WRITE:
+            return select(fd + 1, NULL, &fdset, NULL, &tv);
+
+        default:
+            return -1;
+    }
+}

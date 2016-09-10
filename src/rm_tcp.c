@@ -131,7 +131,7 @@ rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, 
     if (res == NULL) { /* errno set from final connect() */
         *err_str = strerror(errno);
         freeaddrinfo(ressave);
-        return RM_ERR_CONNECT;
+        return RM_ERR_FAIL;
     }
 
     freeaddrinfo(ressave);
@@ -176,7 +176,7 @@ rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char 
     if (res == NULL) { /* errno set from final connect() */
         *err_str = strerror(errno);
         freeaddrinfo(ressave);
-        return RM_ERR_CONNECT;
+        return RM_ERR_FAIL;
     }
 
     freeaddrinfo(ressave);
@@ -185,32 +185,42 @@ rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char 
 
 enum rm_error
 rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t timeout_s, uint16_t timeout_us) {
-    fd_set          fdset;
-    struct timeval  tv;
+    int             err, fd_err;
     socklen_t       len;
 
-    fcntl(fd, F_SETFL, O_NONBLOCK);
-    connect(fd, res->ai_addr, res->ai_addrlen);
+    rm_tcp_set_socket_blocking_mode(fd, 0);
 
-    FD_ZERO(&fdset);
-    FD_SET(fd, &fdset);
-    tv.tv_sec = timeout_s;      /* set timeout in seconds */
-    tv.tv_usec = timeout_us;    /* microseconds */
-
-    if (select(fd + 1, NULL, &fdset, NULL, &tv) == 1) {
-        int so_error;
-        len = sizeof so_error;
-        getsockopt(fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
-        if (so_error == 0) {
-            return RM_ERR_OK;
-        }
+    err = connect(fd, res->ai_addr, res->ai_addrlen);
+    if (err == 0) {
+        return RM_ERR_OK;
+    } else if ((errno != EINPROGRESS) && (errno != EINTR)) {
+        return RM_ERR_FAIL;
     }
-    return RM_ERR_CONNECT;
+
+    err = rm_core_select(fd, RM_WRITE, timeout_s, timeout_us);
+    if (err == -1) {
+        err = RM_ERR_FAIL;
+        goto exit;
+    } else if (err > 0) {
+        len = sizeof fd_err;
+        getsockopt(fd, SOL_SOCKET, SO_ERROR, &fd_err, &len);
+        if (fd_err == 0) {
+            err = RM_ERR_OK;
+        } else {
+            err = RM_ERR_FAIL;
+        }
+    } else {
+        err = RM_ERR_CONNECT_TIMEOUT;
+    }
+
+exit:
+    rm_tcp_set_socket_blocking_mode(fd, 1);
+    return err;
 }
 
 enum rm_error
 rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
-    int             err;
+    int             err, errsave = RM_ERR_FAIL;
     struct addrinfo hints, *res, *ressave;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -237,18 +247,22 @@ rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int do
         if (*fd < 0) {
             continue;
         }
-        if (rm_tcp_connect_nonblock_timeout_once(*fd, res, timeout_s, timeout_us) == RM_ERR_OK) {
-            break;      /* success */
+        err = rm_tcp_connect_nonblock_timeout_once(*fd, res, timeout_s, timeout_us);
+        if (err == RM_ERR_OK) {
+            errsave = RM_ERR_OK;
+            break;
+        } else if (err == RM_ERR_CONNECT_TIMEOUT) {
+            errsave = RM_ERR_CONNECT_TIMEOUT;
+        } else {
+            errsave = RM_ERR_FAIL;
         }
         close(*fd);
     } while ((res = res->ai_next) != NULL);
 
-    if (res == NULL) { /* errno set from final connect() */
+    if ((res == NULL) && (errno != EINPROGRESS)) {
         *err_str = strerror(errno);
-        freeaddrinfo(ressave);
-        return RM_ERR_CONNECT;
     }
 
     freeaddrinfo(ressave);
-    return RM_ERR_OK;
+    return errsave;
 }

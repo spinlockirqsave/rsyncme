@@ -10,6 +10,7 @@
 
 
 #include "rm_defs.h"
+#include "rm_core.h"
 #include "rm_serialize.h"
 
 #include <fcntl.h>
@@ -17,6 +18,7 @@
 
 
 struct rm_ch_ch_ref;
+
 
 ssize_t
 rm_tcp_rx(int fd, void *buf, size_t bytes_n);
