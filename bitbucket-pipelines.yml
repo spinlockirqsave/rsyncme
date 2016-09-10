@@ -12,6 +12,7 @@ pipelines:
           - apt-get --force-yes --yes install cmake
           - rm -rf rsyncme
           - git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+          - git checkout $BUILD_BRANCH
           - cd rsyncme/src
           - cd ../ && bash ./pip_install_deps.sh cmocka && cd src
           - make

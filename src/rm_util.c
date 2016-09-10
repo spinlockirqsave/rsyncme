@@ -63,7 +63,6 @@ rm_util_openlogs(const char *dir, const char *name) {
     }
     fclose(stream);
     if (freopen(full_path, "w", stdout) == NULL) { /* redirect stdout */
-        perror("rsyncme");
         err = RM_ERR_FREOPEN_STDOUT;
         goto fail;
     }

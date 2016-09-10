@@ -41,7 +41,7 @@ struct rm_session_push_local
     FILE                    *f_z;               /* result file */              
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
-    pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
+    pthread_cond_t  tx_delta_e_queue_signal;    /* signaled by rolling proc when
                                                    new delta element has been produced */
     size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
     pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
