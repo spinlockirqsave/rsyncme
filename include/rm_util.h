@@ -1,8 +1,7 @@
 /*
  * @file        rm_util.h
  * @brief       Utilities, log.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author	    Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        04 Jan 2016 08:08 PM
  * @copyright   LGPLv2.1
  */
@@ -107,11 +106,11 @@ rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, u
 */
 
 /* log */
-#define RM_LOG_ERR(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s(): " fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define RM_LOG_PERR(fmt, ...) rm_util_log_perr(stderr, "%s\t%s:%d:%s(): " fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define RM_LOG_INFO(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s(): " fmt, "INFO", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define RM_LOG_WARN(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s(): " fmt, "WARN", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define RM_LOG_CRIT(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s(): " fmt, "CRIT", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define RM_LOG_ERR(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define RM_LOG_PERR(fmt, ...) rm_util_log_perr(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define RM_LOG_INFO(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "INFO", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define RM_LOG_WARN(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "WARN", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define RM_LOG_CRIT(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "CRIT", __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 #ifdef DDEBUG
     #define RM_DEBUG_LOG_ERR(fmt, ...) RM_LOG_ERR(fmt, ...)

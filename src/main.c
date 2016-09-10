@@ -19,11 +19,25 @@ main(void) {
     struct rsyncme  rm;
     int             read_n;
     unsigned char   buf[RM_TCP_MSG_MAX_LEN];
+    int             listenfd, connfd;
+    int             err, errsv;
+    struct sockaddr_in      srv_addr_in;
 
-    int                 listenfd, connfd;
-    socklen_t           cli_len;
-    struct sockaddr_in  cli_addr, server_addr;
-    int                 err, errsv;
+    char                    peer_addr_buf[INET6_ADDRSTRLEN];
+    const char              *peer_addr_str = NULL;
+    struct sockaddr_storage peer_addr;
+    struct sockaddr_in      *peer_addr_in = NULL;
+    struct sockaddr_in6     *peer_addr_in6 = NULL;
+    socklen_t               peer_len;
+    uint16_t                peer_port;
+
+    char                    cli_addr_buf[INET6_ADDRSTRLEN];
+    const char              *cli_addr_str = NULL;
+    struct sockaddr_storage cli_addr;
+    struct sockaddr_in      *cli_addr_in = NULL;
+    struct sockaddr_in6     *cli_addr_in6 = NULL;
+    socklen_t               cli_len;
+    uint16_t                cli_port;
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
@@ -42,16 +56,17 @@ main(void) {
         RM_LOG_ERR("%s", "Couldn't start main work queue");
         exit(EXIT_FAILURE);
     }
-    if (rm.wq.workers_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
+    if (rm.wq.workers_active_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
         RM_LOG_WARN("Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
-        exit(EXIT_FAILURE);
+    } else {
+        RM_LOG_INFO("Main work queue started with [%u] worker threads", rm.wq.workers_n);
     }
     listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family      = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port        = htons(RM_SERVER_PORT);
+    memset(&srv_addr_in, 0, sizeof(srv_addr_in));
+    srv_addr_in.sin_family      = AF_INET;
+    srv_addr_in.sin_addr.s_addr = htonl(INADDR_ANY);
+    srv_addr_in.sin_port        = htons(RM_DEFAULT_PORT);
 
     int reuseaddr_on = 1;
     err = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on, sizeof(reuseaddr_on));
@@ -59,7 +74,7 @@ main(void) {
         RM_LOG_ERR("%s", "Setting of SO_REUSEADDR on server's managing socket failed");
     }
 
-    err = bind(listenfd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    err = bind(listenfd, (struct sockaddr*)&srv_addr_in, sizeof(srv_addr_in));
     if (err < 0) {
         RM_LOG_PERR("%s", "Bind of server's port to managing socket failed");
         exit(EXIT_FAILURE);
@@ -104,14 +119,65 @@ main(void) {
                 exit(EXIT_FAILURE);
             }
         }
+        cli_len = sizeof(cli_addr);
+        getsockname(connfd, (struct sockaddr*)&cli_addr, &cli_len); /* get our side of TCP connection */
+        if (cli_addr.ss_family == AF_INET) {
+            cli_addr_in = (struct sockaddr_in*)&cli_addr;
+            cli_addr_str = inet_ntop(AF_INET, &cli_addr_in->sin_addr, cli_addr_buf, sizeof cli_addr_buf);
+            cli_port = ntohs(cli_addr_in->sin_port);
+        } else { /* AF_INET6 */
+            cli_addr_in6 = (struct sockaddr_in6*)&cli_addr;
+            cli_addr_str = inet_ntop(AF_INET6, &cli_addr_in6->sin6_addr, cli_addr_buf, sizeof cli_addr_buf);
+            cli_port = ntohs(cli_addr_in6->sin6_port);
+        }
+        if (cli_addr_str == NULL) {
+            RM_LOG_ERR("Can't convert binary host address to presentation format, [%s]", strerror(errno));
+        }
+        peer_len = sizeof peer_addr;
+        getpeername(connfd, (struct sockaddr*)&peer_addr, &peer_len);   /* get their's side of TCP connection */
+        if (peer_addr.ss_family == AF_INET) {
+            peer_addr_in = (struct sockaddr_in*)&peer_addr;
+            peer_addr_str = inet_ntop(AF_INET, &peer_addr_in->sin_addr, peer_addr_buf, peer_len);
+            peer_port = ntohs(peer_addr_in->sin_port);
+        } else { /* AF_INET6 */
+            peer_addr_in6 = (struct sockaddr_in6*)&cli_addr;
+            peer_addr_str = inet_ntop(AF_INET6, &peer_addr_in6->sin6_addr, peer_addr_buf, sizeof peer_addr_buf);
+            peer_port = ntohs(peer_addr_in6->sin6_port);
+        }
+        if (peer_addr_str == NULL) {
+            RM_LOG_ERR("Can't convert binary peer's address to presentation format, [%s]", strerror(errno));
+        }
+        if (peer_addr_str == NULL) {
+            if (cli_addr_str == NULL) {
+                RM_LOG_INFO("Incoming connection, port [%u], handled on local port [%u]", peer_port, cli_port);
+            } else {
+                RM_LOG_INFO("Incoming connection, port [%u], handled on local interface [%s] port [%u]", peer_port, cli_addr_str, cli_port);
+            }
+        } else {
+            if (cli_addr_str == NULL) {
+                RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local port [%u]", peer_addr_str, peer_port, cli_port);
+            } else {
+                RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local interface [%s] port [%u]", peer_addr_str, peer_port, cli_addr_str, cli_port);
+            }
+        }
 
-        if (rm_core_authenticate(&cli_addr) == -1) {
+        if (rm_core_authenticate(cli_addr_in) == -1) {
             RM_LOG_ERR("%s", "Authentication failed.\n");
-            exit(EXIT_FAILURE);
+            close(connfd);
+            continue;
         }
 
         memset(&buf, 0, sizeof buf);
         read_n = read(connfd, &buf, RM_TCP_MSG_MAX_LEN);
+        if (read_n == 0) {
+            if (peer_addr_str != NULL) {
+                RM_LOG_INFO("Closing conenction in passive mode, peer [%s] port [%u]", peer_addr_str, peer_port);
+            } else {
+                RM_LOG_INFO("Closing connection in passive mode, peer port [%u]", peer_port);
+            }
+            close(connfd);
+            continue;
+        }
         if (read_n == -1) {
             RM_LOG_PERR("%s", "Read failed on TCP control socket");
             switch (read_n) {
@@ -145,7 +211,7 @@ main(void) {
 
         err = rm_core_tcp_msg_validate(buf, read_n);    /* validate the message: check hash token */
         if (err < 0) {
-            RM_LOG_ERR("%s", "TCP control socket: not a valid rsyncme message");
+            RM_LOG_ERR("%s", "TCP control socket: unknown message");
             continue;
         }
 

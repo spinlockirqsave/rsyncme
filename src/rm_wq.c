@@ -24,8 +24,8 @@ rm_wq_worker_f(void *arg) {
             work = tw_container_of(lh, struct rm_work, link);
             pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
             work->f(work->data);
+            pthread_mutex_lock(&w->mutex);
         }
-        pthread_mutex_lock(&w->mutex);
         pthread_cond_wait(&w->signal, &w->mutex);
     }
     pthread_mutex_unlock(&w->mutex);
@@ -61,6 +61,7 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
     if (wq->workers == NULL) {
         return RM_ERR_MEM;
     }
+    wq->workers_n = workers_n;
 
     if (workers_n > 0) {
         wq->workers_active_n = 0;
@@ -83,7 +84,7 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
     wq->name = strdup(name);
     wq->running = 1;
     wq->next_worker_idx_to_use = 0;
-    if (wq->workers_n > 0) { /* if we have at least one worker thread then queue creation was successful */
+    if (wq->workers_active_n > 0) { /* if we have at least one worker thread then queue creation was successful */
         return RM_ERR_OK;
     } else {
         return RM_ERR_WORKQUEUE_CREATE;

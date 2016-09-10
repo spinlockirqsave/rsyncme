@@ -1,12 +1,12 @@
 /* @file        rm_cmd.c
  * @brief       Commandline tool for sending requests to rsyncme daemon.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        05 Jan 2016 11:15 PM
  * @copyright   LGPLv2.1 */
 
 
 #include "rm_defs.h"
+#include "rm_config.h"
 #include "rm_tx.h"
 
 
@@ -22,28 +22,31 @@ rsyncme_usage(const char *name) {
     if (name == NULL) {
         return;
     }
-    fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
-    fprintf(stderr, "      \t             [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
-    fprintf(stderr, "     \t -x         : file to synchronize\n");
-    fprintf(stderr, "     \t -i         : IPv4 if syncing with remote file\n");
-    fprintf(stderr, "     \t -y         : reference file used for syncing (local if [ip]\n"
-                    "     \t              was not given, remote otherwise) or result file if it doesn't\n"
-                    "     \t              exist and -z is not set and --force is set\n");
-    fprintf(stderr, "     \t -z         : synchronization result file name [optional]\n");
-    fprintf(stderr, "     \t -a         : copy all threshold. Send file as raw bytes if it's size\n"
-                    "     \t              is less or equal this threshold [optional]\n");
-    fprintf(stderr, "     \t -t         : copy tail threshold. Send remaining bytes as raw elements\n"
-                    "     \t              instead of performing rolling match algorithm if the number\n"
-                    "     \t              of bytes to process is less or equal this threshold [optional]\n");
-    fprintf(stderr, "     \t -s         : send threshold. Raw bytes are not sent until\n"
-                    "     \t              that many bytes have been accumulated. Default value used\n"
-                    "     \t              is equal to size of the block\n");
-    fprintf(stderr, "     \t -l         : block size in bytes, if it is not given then\n"
-                    "     \t              default value of 512 bytes is used\n");
-    fprintf(stderr, "     \t --force    : force creation of @y if it doesn't exist\n");
-    fprintf(stderr, "     \t --leave    : leave @y after @z has been reconstructed\n");
-    fprintf(stderr, "     \t --help     : display this help and exit\n");
-    fprintf(stderr, "     \t --version  : output version information and exit\n");
+    fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4 [-p port]]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
+    fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
+    fprintf(stderr, "     \t -x           : file to synchronize\n");
+    fprintf(stderr, "     \t -i           : remote address (IP or domain name) if syncing with remote peer\n");
+    fprintf(stderr, "     \t -p           : remote port if syncing with remote peer\n");
+    fprintf(stderr, "     \t -y           : reference file used for syncing (local if [ip]\n"
+                    "     \t                was not given, remote otherwise) or result file if it doesn't\n"
+                    "     \t                exist and -z is not set and --force is set\n");
+    fprintf(stderr, "     \t -z           : synchronization result file name [optional]\n");
+    fprintf(stderr, "     \t -a           : copy all threshold. Send file as raw bytes if it's size\n"
+                    "     \t                is less or equal this threshold [optional]\n");
+    fprintf(stderr, "     \t -t           : copy tail threshold. Send remaining bytes as raw elements\n"
+                    "     \t                instead of performing rolling match algorithm if the number\n"
+                    "     \t                of bytes to process is less or equal this threshold [optional]\n");
+    fprintf(stderr, "     \t -s           : send threshold. Raw bytes are not sent until\n"
+                    "     \t                that many bytes have been accumulated. Default value used\n"
+                    "     \t                is equal to size of the block\n");
+    fprintf(stderr, "     \t -l           : block size in bytes, if it is not given then\n"
+                    "     \t                default value of 512 bytes is used\n");
+    fprintf(stderr, "     \t --force      : force creation of @y if it doesn't exist\n");
+    fprintf(stderr, "     \t --leave      : leave @y after @z has been reconstructed\n");
+    fprintf(stderr, "     \t --timeout_s  : seconds part of timeout limit on connect\n");
+    fprintf(stderr, "     \t --timeout_us : microseconds part of timeout limit on connect\n");
+    fprintf(stderr, "     \t --help       : display this help and exit\n");
+    fprintf(stderr, "     \t --version    : output version information and exit\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "     \t If no option is specified, --help is assumed.\n");
 
@@ -148,8 +151,10 @@ main( int argc, char *argv[]) {
     size_t              copy_tail_threshold = 0;
     size_t              send_threshold = 0;
     uint8_t             send_threshold_set = 0;
-    struct sockaddr_in  remote_addr = {0};
+    const char          *addr = NULL, *err_str = NULL;
+    uint16_t            port = RM_DEFAULT_PORT;
     size_t              L = RM_DEFAULT_L;
+    uint16_t            timeout_s = 0, timeout_us = 0;
 
     if (argc < 2) {
         rsyncme_usage(argv[0]);
@@ -165,10 +170,12 @@ main( int argc, char *argv[]) {
         { "leave", no_argument, 0, 4 },
         { "help", no_argument, 0, 5 },
         { "version", no_argument, 0, 6 },
+        { "timeout_s", required_argument, 0, 7 },
+        { "timeout_us", required_argument, 0, 8 },
         { 0 }
     };
 
-    while ((c = getopt_long(argc, argv, "x:y:z:i:l:a:t:s:", long_options, &option_index)) != -1) { /* parse optional command line arguments */
+    while ((c = getopt_long(argc, argv, "x:y:z:i:p:l:a:t:s:", long_options, &option_index)) != -1) { /* parse optional command line arguments */
         switch (c) {
 
             case 0:
@@ -208,6 +215,36 @@ main( int argc, char *argv[]) {
                 exit(EXIT_SUCCESS);
                 break;
 
+            case 7:
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > 0x10000 - 1) {
+                    rsyncme_range_error(c, helper);
+                    exit(EXIT_FAILURE);
+                }
+                if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                timeout_s = helper;
+                break;
+
+            case 8:
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > 0x10000 - 1) {
+                    rsyncme_range_error(c, helper);
+                    exit(EXIT_FAILURE);
+                }
+                if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                timeout_us = helper;
+                break;
+
             case 'x':
                 if (strlen(optarg) > RM_CMD_F_LEN_MAX - 1) {
                     fprintf(stderr, "-x name too long\n");
@@ -239,11 +276,23 @@ main( int argc, char *argv[]) {
                 break;
 
             case 'i':
-                if (inet_pton(AF_INET, optarg, &remote_addr.sin_addr) == 0) {
-                    fprintf(stderr, "Invalid IPv4 address\n");
+                addr = optarg;
+                push_flags |= RM_BIT_5; /* remote */
+                break;
+
+            case 'p':
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > 0x10000 - 1) {
+                    rsyncme_range_error(c, helper);
                     exit(EXIT_FAILURE);
                 }
-                push_flags |= RM_BIT_5; /* remote */
+                if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                port = helper;
                 break;
 
             case 'l':
@@ -377,6 +426,9 @@ main( int argc, char *argv[]) {
             send_threshold = L;
         }
     }
+    if ((timeout_s == 0) && (timeout_us == 0)) {
+        timeout_s = 10;
+    }
     if (push_flags & RM_BIT_5) { /* remote */
         if (yp == NULL) {
             strncpy(y, x, RM_CMD_F_LEN_MAX);
@@ -414,9 +466,56 @@ main( int argc, char *argv[]) {
     if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
         if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
             fprintf(stderr, "\nRemote push.\n");
-            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &remote_addr);
-            if (res < 0) {
-                /* TODO */
+            res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, timeout_s, timeout_us, &err_str);
+            if (res != RM_ERR_OK) {
+            fprintf(stderr, "\n");
+                switch (res) {
+                    case RM_ERR_OPEN_X:
+                        fprintf(stderr, "Error. @x [%s] doesn't exist\n", x);
+                        goto fail;
+                    case RM_ERR_FSTAT_X:
+                        fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
+                        goto fail;
+                    case RM_ERR_X_ZERO_SIZE:
+                        fprintf(stderr, "Error. @x [%s] size is zero\n", x);
+                        goto fail;
+                    case RM_ERR_CREATE_SESSION:
+                        fprintf(stderr, "Error. Session failed\n");
+                        goto fail;
+                    case RM_ERR_GETADDRINFO:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. can't get server address, [%s]\n", err_str);
+                        } else {
+                            fprintf(stderr, "Error. can't get server address\n");
+                        }
+                        goto fail;
+                    case RM_ERR_CONNECT_TIMEOUT:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta tx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Delta rx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_TX_THREAD:
+                        fprintf(stderr, "Error. Delta tx thread failed\n");
+                        goto fail;
+                    case RM_ERR_DELTA_RX_THREAD:
+                        fprintf(stderr, "Error. Delta rx thread failed\n");
+                        goto fail;
+                    case RM_ERR_MEM:
+                        fprintf(stderr, "Error. Not enough memory\n");
+                        exit(EXIT_FAILURE);
+                    case RM_ERR_BAD_CALL:
+                    default:
+                        fprintf(stderr, "\nInternal error.\n");
+                        return -1;
+                }
             }
         } else { /* remote pull request */
             fprintf(stderr, "\nRemote pull.\n");

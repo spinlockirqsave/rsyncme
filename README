@@ -28,11 +28,11 @@ for efficient file synchronization.
 2. DOWNLOAD
 
 Git repository:
-    git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+    git clone --recursive https://bitbucket.org/rsyncmedev/rsyncme.git
 Binary packages:
-    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=downloads
+    https://bitbucket.org/rsyncmedev/rsyncme/downloads?tab=downloads
 Versions:
-    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=tags
+    https://bitbucket.org/rsyncmedev/rsyncme/downloads?tab=tags
 
 
 
@@ -207,6 +207,6 @@ E.g:
 
 
 Website:        http://rsyncme.org
-Development:    https://bitbucket.org/piotrgregor/rsyncme
+Development:    https://bitbucket.org/rsyncmedev/rsyncme
 Mirror:         https://github.com/spinlockirqsave/rsyncme
 Contact:        info@rsyncme.org

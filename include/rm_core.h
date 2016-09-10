@@ -78,6 +78,9 @@ rm_core_authenticate(struct sockaddr_in *cli_addr);
 int
 rm_core_tcp_msg_validate(unsigned char *buf, int read_n);
 
+int
+rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s, uint16_t timeout_us);
+
 
 #endif  /* RSYNCME_CORE_H */
 

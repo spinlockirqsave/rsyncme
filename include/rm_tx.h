@@ -1,9 +1,8 @@
-/* @file       rm_tx.h
- * @brief      Definitions used by rsync transmitter (A).
- * @author     Piotr Gregor <piotrek.gregor at gmail.com>
- * @version    0.1.2
- * @date       2 Jan 2016 11:18 AM
- * @copyright  LGPLv2.1 */
+/* @file        rm_tx.h
+ * @brief       Definitions used by rsync transmitter (A).
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
+ * @date        2 Jan 2016 11:18 AM
+ * @copyright   LGPLv2.1 */
 
 
 #ifndef RSYNCME_TX_H
@@ -41,13 +40,13 @@
  *          -7 buffered copy failed */
 enum rm_error
 rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
-        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) __attribute__ ((nonnull(1,2)));
+        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) __attribute__ ((nonnull(1,2,9)));
 
 /* Initialize PUSH, ask for nonoverlapping checksums, send delta vector. */
 int
 rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
-        struct rm_delta_reconstruct_ctx *rec_ctx, struct sockaddr_in *remote_addr);
+        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) __attribute__ ((nonnull(1,2,9,10,14)));
 
 
 #endif	/* RSYNCME_TX_H */
