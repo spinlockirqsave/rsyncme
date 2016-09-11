@@ -25,10 +25,10 @@
 
 struct rm_msg_hdr
 {
-	uint32_t	hash;                           /* security token   */
-	uint8_t		pt;                             /* payload type     */
+    uint32_t	hash;                           /* security token   */
+    uint8_t		pt;                             /* payload type     */
     uint8_t     flags;                          /* push fags        */
-	uint16_t    len;                            /* message length   */
+    uint16_t    len;                            /* message length   */
 };
 
 struct rm_msg_push
@@ -36,18 +36,18 @@ struct rm_msg_push
     struct rm_msg_hdr	*hdr;                   /* header, MUST be first */
     size_t              L;                      /* block size   */
     uint16_t            x_sz;                   /* size of string including terminating NULL byte '\0' */
-    char			    x[RM_FILE_LEN_MAX];     /* x file name  */
+    char                x[RM_FILE_LEN_MAX];     /* x file name  */
     uint16_t            y_sz;                   /* size of string including terminating NULL byte '\0' */
-    char		    	y[RM_FILE_LEN_MAX];     /* y file name  */
+    char                y[RM_FILE_LEN_MAX];     /* y file name  */
     uint16_t            z_sz;                   /* size of string including terminating NULL byte '\0' */
-    char			    z[RM_FILE_LEN_MAX];     /* z file name  */
+    char                z[RM_FILE_LEN_MAX];     /* z file name  */
 };
 
 struct rm_msg_pull
 {
     struct rm_msg_hdr	*hdr;                   /* header, MUST be first */
     size_t              L;                      /* block size   */
-    uint32_t		    ch_ch_n;                /* number of elements in the ch_ch list,
+    uint32_t            ch_ch_n;                /* number of elements in the ch_ch list,
                                                    that follows this msg, ch_ch elements
                                                    are being sent in chunks while computing
                                                    hashes on file */
