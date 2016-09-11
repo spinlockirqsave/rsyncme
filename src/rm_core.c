@@ -65,7 +65,7 @@ rm_core_session_stop(struct rm_session *s) {
     return 0;
 }
 
-int
+enum rm_error
 rm_core_authenticate(struct sockaddr_in *cli_addr) {
     char a[INET_ADDRSTRLEN];
     /* IPv4
@@ -74,34 +74,78 @@ rm_core_authenticate(struct sockaddr_in *cli_addr) {
      * cli_port = ntohs(cli_addr.sin_port); */
     inet_ntop(AF_INET, &cli_addr->sin_addr, a, INET_ADDRSTRLEN);
     if (strcmp(a, RM_IP_AUTH) != 0) {
-        return -1;
+        return RM_ERR_FAIL;
     }
-    return 0;
+    return RM_ERR_OK;
+}
+
+uint32_t
+rm_core_hdr_hash(struct rm_msg_hdr *hdr) {
+    return twhash_32(((hdr->pt << 24) | (hdr->flags << 16) | hdr->len), RM_CORE_HASH_CHALLENGE_BITS);
+}
+
+enum rm_error
+rm_core_validate_hash(unsigned char *buf) {
+    uint32_t    hash, challenge;
+    uint8_t     pt, flags;
+    uint16_t    len;
+
+    hash = rm_get_msg_hdr_hash(buf);
+    pt = rm_get_msg_hdr_pt(buf);
+    flags = rm_get_msg_hdr_flags(buf);
+    len = rm_get_msg_hdr_len(buf);
+
+    challenge = twhash_32(((pt << 24) | (flags << 16) | len), RM_CORE_HASH_CHALLENGE_BITS);
+    if (hash != challenge) {
+        return RM_ERR_FAIL;
+    }
+    return RM_ERR_OK;
+}
+
+enum rm_error
+rm_core_tcp_msg_valid_pt(unsigned char* buf) {
+    uint8_t pt = rm_get_msg_hdr_pt(buf);
+    if (pt == RM_PT_MSG_PUSH || pt == RM_PT_MSG_PULL || pt == RM_PT_MSG_BYE) {
+        return RM_ERR_OK;
+    }
+    return RM_ERR_FAIL;
+}
+
+enum rm_error
+rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) {
+    if ((size_t)read_n < sizeof(struct rm_msg_hdr)) {
+        return RM_ERR_FAIL;
+    }
+    if (rm_core_validate_hash(buf) != RM_ERR_OK) {
+        return RM_ERR_FAIL;
+    }
+    if (rm_core_tcp_msg_valid_pt(buf) != RM_ERR_OK) {
+        return RM_ERR_MSG_PT_UNKNOWN;
+    }
+    /* TODO validate all fields */
+    return RM_ERR_OK;
 }
 
 int
-rm_core_tcp_msg_valid_pt(uint8_t pt) {
-    return (pt == RM_MSG_PUSH || pt == RM_MSG_PULL ||
-            pt == RM_MSG_BYE);
-}
+rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s, uint16_t timeout_us) {
+    fd_set fdset;
+    struct timeval tv;
 
-int
-rm_core_tcp_msg_validate(unsigned char *buf, int read_n) {
-    uint32_t	hash;
-    uint8_t		pt;
+    tv.tv_sec = timeout_s;
+    tv.tv_usec = timeout_us;
 
-    assert(buf != NULL && read_n >= 0);
-    if (read_n == 0) {
-        rm_perr_abort("TCP message size is 0");
+    FD_ZERO(&fdset);
+    FD_SET(fd, &fdset);
+
+    switch (io_direction) {
+
+        case RM_READ:
+            return select(fd + 1, &fdset, NULL, NULL, &tv);
+
+        case RM_WRITE:
+            return select(fd + 1, NULL, &fdset, NULL, &tv);
+
+        default:
+            return -1;
     }
-    hash = RM_MSG_HDR_HASH(buf); /* validate hash */
-    if (hash != RM_CORE_HASH_OK) {
-        RM_LOG_ERR("%s", "incorrect hash");
-        return -1;
-    }
-    pt = rm_msg_hdr_pt(buf);
-    if (rm_core_tcp_msg_valid_pt(pt) == 0) {
-        return -1;
-    }
-    return pt;
 }

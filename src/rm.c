@@ -3,8 +3,7 @@
  *              as described in Tridgell A., "Efficient Algorithms
  *              for Sorting and Synchronization", 1999.
  * @details     Common definitions used by sender and receiver.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        1 Jan 2016 07:50 PM
  * @copyright   LGPLv2.1v2.1 */
 
@@ -192,7 +191,7 @@ rm_md5(const unsigned char *data, size_t len,
     md5_final(&ctx, res);
 }
 
-int
+enum rm_error
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     size_t read, read_exp;
     char buf[RM_L1_CACHE_RECOMMENDED];
@@ -221,7 +220,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     return RM_ERR_TOO_MUCH_REQUESTED;
 }
 
-int
+enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     size_t read = 0, read_exp;
 
@@ -262,7 +261,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
     return fwrite(buf, size, items_n, f);
 }
 
-int
+enum rm_error
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset) {
     size_t read, read_exp;
     size_t offset;
