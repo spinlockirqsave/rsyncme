@@ -10,14 +10,20 @@
 #include "twlist.h"
 
 
-int
+enum rm_error
 rm_core_init(struct rsyncme *rm) {
     assert(rm != NULL);
     memset(rm, 0, sizeof *rm);
     twhash_init(rm->sessions);
     TWINIT_LIST_HEAD(&rm->sessions_list);
     rm->state = RM_CORE_ST_INITIALIZED;
-    return 0;
+
+    RM_LOG_INFO("%s", "Starting main work queue");
+
+    if (rm_wq_workqueue_init(&rm->wq, RM_WORKERS_N, "main_queue") != RM_ERR_OK) {   /* TODO CPU checking, choose optimal number of threads */
+        return RM_ERR_WORKQUEUE_CREATE;
+    }
+    return RM_ERR_OK;
 }
 
 struct rm_session *
@@ -148,4 +154,32 @@ rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s, ui
         default:
             return -1;
     }
+}
+
+enum rm_error
+rm_core_tcp_msg_assemble(int fd, enum rm_pt_type pt, void **body_raw, size_t bytes_n) {
+    enum rm_error err;
+
+    switch (pt) {
+        case RM_PT_MSG_PUSH:
+        case RM_PT_MSG_PULL:
+            *body_raw = malloc(bytes_n);
+            if (*body_raw != NULL) {
+                return RM_ERR_MEM;
+            }
+            err = rm_tcp_read(fd, *body_raw, bytes_n);
+            if (err != RM_ERR_OK) {
+                free(*body_raw);
+                *body_raw = NULL;
+                return RM_ERR_READ;
+            }
+            break;
+
+        case RM_PT_MSG_BYE:
+            break;
+
+        default:
+            break;
+    }
+    return RM_ERR_OK;
 }

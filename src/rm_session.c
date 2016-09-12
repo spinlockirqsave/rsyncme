@@ -86,6 +86,8 @@ rm_session_create(enum rm_session_type t) {
         return NULL;
     }
     memset(s, 0, sizeof(*s));
+    TWINIT_HLIST_NODE(&s->hlink);
+    TWINIT_LIST_HEAD(&s->link);
     s->type = t;
     pthread_mutex_init(&s->session_mutex, NULL);
 

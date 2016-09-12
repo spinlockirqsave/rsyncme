@@ -28,6 +28,9 @@ rm_serialize_u32(unsigned char *buf, uint32_t v) __attribute__ ((nonnull(1)));
 unsigned char *
 rm_serialize_size_t(unsigned char *buf, size_t v) __attribute__ ((nonnull(1)));
 
+unsigned char*
+rm_serialize_string(unsigned char *buf, const char *src, size_t bytes_n) __attribute__ ((nonnull(1,2)));
+
 unsigned char *
 rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) __attribute__ ((nonnull(1,2)));
 

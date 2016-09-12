@@ -266,3 +266,38 @@ rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int do
     freeaddrinfo(ressave);
     return errsave;
 }
+
+enum rm_error
+rm_tcp_read(int fd, void *dst, size_t bytes_n) {
+    ssize_t         read_n = 0;
+    unsigned char   *buf = dst;
+
+    while (bytes_n > 0) {
+        read_n = read(fd, buf, bytes_n);
+        if (read_n == 0) {
+            return RM_ERR_EOF;
+        }
+        if (read_n < 0) {
+            return RM_ERR_READ;
+        }
+        buf += read_n;
+        bytes_n -= read_n;
+    }
+    return RM_ERR_OK;
+}
+
+enum rm_error
+rm_tcp_write(int fd, const void *src, size_t bytes_n) {
+    ssize_t         written = 0;
+    const unsigned char *buf = src;
+
+    while (bytes_n > 0) {
+        written = write(fd, buf, bytes_n);
+        if (written < 0) {
+            return RM_ERR_WRITE;
+        }
+        buf += written;
+        bytes_n -= written;
+    }
+    return RM_ERR_OK;
+}

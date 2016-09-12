@@ -48,5 +48,11 @@ rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t time
 enum rm_error
 rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) __attribute__((nonnull(1,2,7)));
 
+enum rm_error
+rm_tcp_read(int fd, void *dst, size_t bytes_n);
+
+enum rm_error
+rm_tcp_write(int fd, const void *src, size_t bytes_n);
+
 
 #endif  /* RSYNCME_TCP_H */

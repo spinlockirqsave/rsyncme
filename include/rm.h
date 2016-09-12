@@ -257,7 +257,7 @@ rm_md5(const unsigned char *data, size_t len, unsigned char res[16]);
  *          RM_ERR_FEOF: eof set on @x,
  *          RM_ERR_FERROR: ferror set on either @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
-int
+enum rm_error
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
 
 /* @brief   Copy @bytes_n bytes from @x starting at @offset
@@ -268,7 +268,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
  *          RM_ERR_FSEEK: fseek failed,
  *          RM_ERR_FERROR: ferror set on @x,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
-int
+enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 
 /* @brief   Read @items_n blocks of @size bytes each from stream @f
@@ -290,7 +290,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
  *          RM_ERR_FEOF: eof set on @x,
  *          RM_ERR_FERROR: error set on @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
-int
+enum rm_error
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
 
 typedef enum rm_error (rm_delta_f)(void*);

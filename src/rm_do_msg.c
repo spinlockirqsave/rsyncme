@@ -20,15 +20,23 @@ rm_msg_push_init(struct rm_msg_push *msg) {
     return RM_ERR_OK;
 }
 
+void
+rm_msg_push_free(struct rm_msg_push *msg) {
+    free(msg->hdr);
+    free(msg);
+}
+
 void*
 rm_do_msg_push_rx(void* arg) {
-	int                         err;
-	struct rm_session	        *s;
+    int                         err;
+    struct rm_session	        *s;
     struct rm_session_push_rx   *prvt;
+    struct rm_msg_hdr           *hdr;
     rm_push_flags               flags;
 
     struct rm_work* work = (struct rm_work*) arg;
-    flags = rm_get_msg_hdr_flags(work->hdr);
+    hdr = work->hdr;
+    flags = hdr->flags;
     (void)flags;
 
     /* L = 0;   TODO get L from message */
@@ -38,25 +46,25 @@ rm_do_msg_push_rx(void* arg) {
         return NULL;
     }
     prvt = (struct rm_session_push_rx*) s->prvt;
-	
-	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx_ch_ch and rx delta threads, save pids in session object */
-	if (err != RM_ERR_OK)
+
+    err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx_ch_ch and rx delta threads, save pids in session object */
+    if (err != RM_ERR_OK)
         goto fail;
 
-	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE); /* start rx delta thread */
-	if (err != RM_ERR_OK)
+    err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE); /* start rx delta thread */
+    if (err != RM_ERR_OK)
         goto fail;
     return NULL;
 
 fail:
-	if (s != NULL)
-		rm_session_free(s);
-	return NULL;
+    if (s != NULL)
+        rm_session_free(s);
+    return NULL;
 }
 
 int
 rm_do_msg_pull_tx(struct rsyncme *rm, unsigned char *buf) {
-	struct rm_session           *s;
+    struct rm_session           *s;
     struct rm_session_pull_tx   *prvt;
 
     (void) buf;
@@ -73,7 +81,7 @@ rm_do_msg_pull_tx(struct rsyncme *rm, unsigned char *buf) {
 
 int
 rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
-	struct rm_session           *s;
+    struct rm_session           *s;
     struct rm_session_pull_rx   *prvt;
 
     (void) buf;

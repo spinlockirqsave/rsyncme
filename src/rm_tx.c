@@ -318,7 +318,8 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     struct rm_session               *s = NULL;
     struct rm_session_push_tx       *prvt = NULL;
 
-    struct rm_msg_push msg;
+    struct rm_msg_push  msg;
+    unsigned char       *msg_raw = NULL;
 
     (void) y;
     (void) z;
@@ -383,11 +384,27 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
         msg.z_sz = 0;
     }
     msg.hdr->len = rm_calc_msg_len(&msg);
-
     msg.hdr->hash = rm_core_hdr_hash(msg.hdr);
+
+    /* TODO malloc raw buffer for push message */
+    msg_raw = malloc(msg.hdr->len);
+    if (msg_raw == NULL) {
+        return RM_ERR_TOO_MUCH_REQUESTED;
+    }
+    /* TODO add serialization of all fields of push message */
+    rm_serialize_msg_push(msg_raw, &msg);
+    err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);
+    if (err != RM_ERR_OK) {
+        return RM_ERR_WRITE;
+    }
+
 
     rm_session_free(s);
     s = NULL;
+    free(msg_raw);
+    msg_raw = NULL;
+    free(msg.hdr);
+    msg.hdr = NULL;
 
     return RM_ERR_OK;
 
@@ -399,6 +416,14 @@ err_exit:
     if (s != NULL) {
         rm_session_free(s);
         s = NULL;
+    }
+    if (msg_raw != NULL) {
+        free(msg_raw);
+        msg_raw = NULL;
+    }
+    if (msg.hdr != NULL) {
+        free(msg.hdr);
+        msg.hdr = NULL;
     }
     return err;
 }
