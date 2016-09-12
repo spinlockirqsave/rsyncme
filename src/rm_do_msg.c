@@ -31,10 +31,12 @@ rm_do_msg_push_rx(void* arg) {
     int                         err;
     struct rm_session	        *s;
     struct rm_session_push_rx   *prvt;
+    struct rm_msg_hdr           *hdr;
     rm_push_flags               flags;
 
     struct rm_work* work = (struct rm_work*) arg;
-    flags = rm_get_msg_hdr_flags(work->hdr);
+    hdr = work->hdr;
+    flags = hdr->flags;
     (void)flags;
 
     /* L = 0;   TODO get L from message */

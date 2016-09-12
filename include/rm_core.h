@@ -93,6 +93,9 @@ rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) __attribute__ ((non
 int
 rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s, uint16_t timeout_us);
 
+enum rm_error
+rm_core_tcp_msg_assemble(int fd, enum rm_pt_type pt, void **body_raw, size_t bytes_n);
+
 
 #endif  /* RSYNCME_CORE_H */
 

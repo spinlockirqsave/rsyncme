@@ -142,7 +142,7 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name) {
 }
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*)) {
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg_hdr* hdr, unsigned char* body_raw, void*(*f)(void*)) {
     TWINIT_LIST_HEAD(&work->link);
     work->task = task;
     work->rm = rm;
@@ -153,7 +153,7 @@ rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, u
 }
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*)) {
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg_hdr* hdr, unsigned char* body_raw, void*(*f)(void*)) {
     struct rm_work* work = malloc(sizeof(*work));
     if (work == NULL) {
         return NULL;

@@ -14,15 +14,12 @@
 #include "rm_wq.h"
 
 
-int
-main(void) {
-    struct rsyncme  rm;
-    int             read_n, read_now, to_read;
-    unsigned char   *buf = NULL, *hdr = NULL, *body_raw = NULL;
-    int             listenfd, connfd;
-    int             err, errsv;
-    struct sockaddr_in      srv_addr_in;
-
+static void
+do_it_all(int fd, struct rsyncme* rm) {
+    int                     to_read;
+    unsigned char           *buf = NULL, *body_raw = NULL;
+    struct rm_msg_hdr       *hdr = NULL;
+    int                     err;
     char                    peer_addr_buf[INET6_ADDRSTRLEN];
     const char              *peer_addr_str = NULL;
     struct sockaddr_storage peer_addr;
@@ -40,6 +37,152 @@ main(void) {
     uint16_t                cli_port;
     enum rm_pt_type         pt;
     void*                   work;
+
+    cli_len = sizeof(cli_addr);
+    getsockname(fd, (struct sockaddr*)&cli_addr, &cli_len); /* get our side of TCP connection */
+    if (cli_addr.ss_family == AF_INET) {
+        cli_addr_in = (struct sockaddr_in*)&cli_addr;
+        cli_addr_str = inet_ntop(AF_INET, &cli_addr_in->sin_addr, cli_addr_buf, sizeof cli_addr_buf);
+        cli_port = ntohs(cli_addr_in->sin_port);
+    } else { /* AF_INET6 */
+        cli_addr_in6 = (struct sockaddr_in6*)&cli_addr;
+        cli_addr_str = inet_ntop(AF_INET6, &cli_addr_in6->sin6_addr, cli_addr_buf, sizeof cli_addr_buf);
+        cli_port = ntohs(cli_addr_in6->sin6_port);
+    }
+    if (cli_addr_str == NULL) {
+        RM_LOG_ERR("Can't convert binary host address to presentation format, [%s]", strerror(errno));
+    }
+    peer_len = sizeof peer_addr;
+    getpeername(fd, (struct sockaddr*)&peer_addr, &peer_len);   /* get their's side of TCP connection */
+    if (peer_addr.ss_family == AF_INET) {
+        peer_addr_in = (struct sockaddr_in*)&peer_addr;
+        peer_addr_str = inet_ntop(AF_INET, &peer_addr_in->sin_addr, peer_addr_buf, peer_len);
+        peer_port = ntohs(peer_addr_in->sin_port);
+    } else { /* AF_INET6 */
+        peer_addr_in6 = (struct sockaddr_in6*)&cli_addr;
+        peer_addr_str = inet_ntop(AF_INET6, &peer_addr_in6->sin6_addr, peer_addr_buf, sizeof peer_addr_buf);
+        peer_port = ntohs(peer_addr_in6->sin6_port);
+    }
+    if (peer_addr_str == NULL) {
+        RM_LOG_ERR("Can't convert binary peer's address to presentation format, [%s]", strerror(errno));
+    }
+    if (peer_addr_str == NULL) {
+        if (cli_addr_str == NULL) {
+            RM_LOG_INFO("Incoming connection, port [%u], handled on local port [%u]", peer_port, cli_port);
+        } else {
+            RM_LOG_INFO("Incoming connection, port [%u], handled on local interface [%s] port [%u]", peer_port, cli_addr_str, cli_port);
+        }
+    } else {
+        if (cli_addr_str == NULL) {
+            RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local port [%u]", peer_addr_str, peer_port, cli_port);
+        } else {
+            RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local interface [%s] port [%u]", peer_addr_str, peer_port, cli_addr_str, cli_port);
+        }
+    }
+
+    if (rm_core_authenticate(cli_addr_in) != RM_ERR_OK) {
+        RM_LOG_ERR("%s", "Authentication failed.\n");
+        goto err_exit;
+    }
+
+    hdr = malloc(sizeof(*hdr));
+    if (hdr == NULL) {
+        RM_LOG_CRIT("%s", "Couldn't allocate message header. Not enough memory");
+        goto err_exit;
+    }
+    to_read = rm_calc_msg_hdr_len(hdr);
+    buf = malloc(to_read); /* buffer for incoming message header */
+    if (buf == NULL) {
+        RM_LOG_CRIT("%s", "Couldn't allocate buffer for the message header. Not enough memory");
+        goto err_exit;
+    }
+
+    err = rm_tcp_read(fd, buf, to_read);    /* wait for incoming header */
+    if (err == RM_ERR_EOF) {
+        if (peer_addr_str != NULL) {
+            RM_LOG_INFO("Closing conenction in passive mode, peer [%s] port [%u]", peer_addr_str, peer_port);
+        } else {
+            RM_LOG_INFO("Closing connection in passive mode, peer port [%u]", peer_port);
+        }
+        goto err_exit;
+    }
+    if (err == RM_ERR_READ) {
+        RM_LOG_PERR("%s", "Read failed on TCP control socket");
+        goto err_exit;
+    }
+    err = rm_core_tcp_msg_hdr_validate(buf, to_read);   /* validate the potential header of the message: check hash and pt, read_n can't be < 0 in call to validate */
+    if (err != RM_ERR_OK) {
+        RM_LOG_ERR("%s", "TCP control socket: bad message");
+        switch (err) {
+
+            case RM_ERR_FAIL:
+                RM_LOG_ERR("%s", "Invalid hash");
+                break;
+
+            case RM_ERR_MSG_PT_UNKNOWN:
+                RM_LOG_ERR("%s", "Unknown message type");
+                break;
+
+            default:
+                RM_LOG_ERR("%s", "Unknown error");
+                break;
+        }
+        goto err_exit;
+    }
+
+    rm_deserialize_msg_hdr(buf, hdr);   /* buffer is indeed the header of our message */
+    free(buf);
+    buf = NULL;
+
+    pt = rm_get_msg_hdr_pt(buf);
+    to_read = rm_get_msg_hdr_len((unsigned char*) hdr) - rm_calc_msg_hdr_len(hdr);
+
+    err = rm_core_tcp_msg_assemble(fd, pt, (void*)&body_raw, to_read);
+    if (err != RM_ERR_OK) { /* TODO handle properly */
+        goto err_exit;
+    }
+
+    switch (pt) { /* message OK, process it */
+        case RM_PT_MSG_PUSH:
+            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, hdr, body_raw, rm_do_msg_push_rx);
+            if (work == NULL) {
+                RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
+                goto err_exit;
+            }
+            rm_wq_queue_work(&rm->wq, work); 
+            break;
+
+        case RM_PT_MSG_PULL:
+            break;
+
+        case RM_PT_MSG_BYE:
+            break;
+
+        default:
+            RM_LOG_ERR("%s", "Unknown TCP message type, this can't happen");
+            goto err_exit;
+    }
+
+err_exit:
+        if (hdr != NULL) {
+            free(hdr);
+            hdr = NULL;
+        }
+        if (body_raw != NULL) {
+            free(body_raw);
+            body_raw = NULL;
+        }
+        close(fd);
+}
+
+int
+main(void) {
+    struct rsyncme  rm;
+    int             listenfd, connfd;
+    int             err, errsv;
+    struct sockaddr_in      srv_addr_in;
+    struct sockaddr_storage cli_addr;
+    socklen_t               cli_len;
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
@@ -117,171 +260,14 @@ main(void) {
         if ((connfd = accept(listenfd, (struct sockaddr*)&cli_addr, &cli_len)) < 0) {
             errsv = errno;
             if (errsv == EINTR) {
+                RM_LOG_PERR("%s", "Accept interrupted");
                 continue;
             } else {
-                RM_LOG_PERR("%s", "Accept error.");
-                exit(EXIT_FAILURE);
+                RM_LOG_PERR("%s", "Accept error");
+                continue;
             }
         }
-        cli_len = sizeof(cli_addr);
-        getsockname(connfd, (struct sockaddr*)&cli_addr, &cli_len); /* get our side of TCP connection */
-        if (cli_addr.ss_family == AF_INET) {
-            cli_addr_in = (struct sockaddr_in*)&cli_addr;
-            cli_addr_str = inet_ntop(AF_INET, &cli_addr_in->sin_addr, cli_addr_buf, sizeof cli_addr_buf);
-            cli_port = ntohs(cli_addr_in->sin_port);
-        } else { /* AF_INET6 */
-            cli_addr_in6 = (struct sockaddr_in6*)&cli_addr;
-            cli_addr_str = inet_ntop(AF_INET6, &cli_addr_in6->sin6_addr, cli_addr_buf, sizeof cli_addr_buf);
-            cli_port = ntohs(cli_addr_in6->sin6_port);
-        }
-        if (cli_addr_str == NULL) {
-            RM_LOG_ERR("Can't convert binary host address to presentation format, [%s]", strerror(errno));
-        }
-        peer_len = sizeof peer_addr;
-        getpeername(connfd, (struct sockaddr*)&peer_addr, &peer_len);   /* get their's side of TCP connection */
-        if (peer_addr.ss_family == AF_INET) {
-            peer_addr_in = (struct sockaddr_in*)&peer_addr;
-            peer_addr_str = inet_ntop(AF_INET, &peer_addr_in->sin_addr, peer_addr_buf, peer_len);
-            peer_port = ntohs(peer_addr_in->sin_port);
-        } else { /* AF_INET6 */
-            peer_addr_in6 = (struct sockaddr_in6*)&cli_addr;
-            peer_addr_str = inet_ntop(AF_INET6, &peer_addr_in6->sin6_addr, peer_addr_buf, sizeof peer_addr_buf);
-            peer_port = ntohs(peer_addr_in6->sin6_port);
-        }
-        if (peer_addr_str == NULL) {
-            RM_LOG_ERR("Can't convert binary peer's address to presentation format, [%s]", strerror(errno));
-        }
-        if (peer_addr_str == NULL) {
-            if (cli_addr_str == NULL) {
-                RM_LOG_INFO("Incoming connection, port [%u], handled on local port [%u]", peer_port, cli_port);
-            } else {
-                RM_LOG_INFO("Incoming connection, port [%u], handled on local interface [%s] port [%u]", peer_port, cli_addr_str, cli_port);
-            }
-        } else {
-            if (cli_addr_str == NULL) {
-                RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local port [%u]", peer_addr_str, peer_port, cli_port);
-            } else {
-                RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local interface [%s] port [%u]", peer_addr_str, peer_port, cli_addr_str, cli_port);
-            }
-        }
-
-        if (rm_core_authenticate(cli_addr_in) != RM_ERR_OK) {
-            RM_LOG_ERR("%s", "Authentication failed.\n");
-            close(connfd);
-            continue;
-        }
-
-        to_read = sizeof(struct rm_msg_hdr);
-        read_n = 0;
-        read_now = 0;
-        buf = malloc(to_read);
-        if (buf == NULL) {
-            RM_LOG_CRIT("%s", "Couldn't allocate message header. Not enough memory");
-            continue;
-        }
-        while ((read_n < to_read) && ((read_now = read(connfd, &buf[read_n], to_read - read_n)) > 0)) {
-            read_n += read_now;
-        } 
-        if (read_n == 0) {
-            if (peer_addr_str != NULL) {
-                RM_LOG_INFO("Closing conenction in passive mode, peer [%s] port [%u]", peer_addr_str, peer_port);
-            } else {
-                RM_LOG_INFO("Closing connection in passive mode, peer port [%u]", peer_port);
-            }
-            close(connfd);
-            continue;
-        }
-        if (read_n < 0) {
-            RM_LOG_PERR("%s", "Read failed on TCP control socket");
-            switch (read_n) {
-                case EAGAIN:
-                    RM_LOG_ERR("%s", "Nonblocking I/O requested on TCP control socket");
-                    break;
-                case EINTR:
-                    RM_LOG_ERR("%s", "TCP control socket: interrupted");
-                    continue;
-                case EBADF:
-                    RM_LOG_ERR("%s", "TCP control socket passed is not a valid descriptor or nor open for reading");
-                    break;
-                case EFAULT:
-                    RM_LOG_ERR("%s", "TCP control socket: buffer is outside accessible address space");
-                    break;
-                case EINVAL:
-                    RM_LOG_ERR("%s", "TCP control socket: unsuitable for reading or wrong buffer len");
-                    break;
-                case EIO:
-                    RM_LOG_ERR("%s", "TCP control socket: I/O error");
-                    break;
-                case EISDIR:
-                    RM_LOG_ERR("%s", "TCP control socket: socket descriptor refers to directory");
-                    break;
-                default:
-                    RM_LOG_ERR("%s", "Unknown error on TCP control socket");
-                    break;
-            }
-            exit(EXIT_FAILURE);
-        }
-        err = rm_core_tcp_msg_hdr_validate(buf, read_n);    /* validate the potential header of the message: check hash and pt, read_n can't be < 0 in call to validate */
-        if (err != RM_ERR_OK) {
-            RM_LOG_ERR("%s", "TCP control socket: bad message");
-            switch (err) {
-
-                case RM_ERR_FAIL:
-                    RM_LOG_ERR("%s", "Invalid hash");
-                    break;
-
-                case RM_ERR_MSG_PT_UNKNOWN:
-                    RM_LOG_ERR("%s", "Unknown message type");
-                    break;
-
-                default:
-                    RM_LOG_ERR("%s", "Unknown error");
-                    break;
-            }
-            continue;
-        }
-        hdr = buf;
-
-        pt = rm_get_msg_hdr_pt(buf);
-
-        switch (pt) { /* message OK, process it */
-            case RM_PT_MSG_PUSH:
-                work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, &rm, hdr, body_raw, rm_do_msg_push_rx);
-                if (work == NULL) {
-                    RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
-                    continue;
-                }
-                rm_wq_queue_work(&rm.wq, work); 
-                //pthread_mutex_lock(&rm.mutex);
-                //rm_do_msg_push_rx(&);
-                //pthread_mutex_unlock(&rm.mutex);
-                break;
-
-                /*			case RM_MSG_PUSH_OUT:
-                            RM_LOG_ERR("Push outbound message sent to daemon "
-                            "process, (please use rsyncme program to "
-                            "make outgoing requests");
-                            break;
-                            */
-            case RM_PT_MSG_PULL:
-                pthread_mutex_lock(&rm.mutex);
-                rm_do_msg_pull_rx(&rm, buf);
-                pthread_mutex_unlock(&rm.mutex);
-                break;
-
-                /*			case RM_MSG_PULL_OUT:
-                            RM_LOG_ERR("Pull outbound message sent to daemon "
-                            "process, (please use rsyncme program to "
-                            "make outgoing requests");
-                            break;
-                            */
-            case RM_PT_MSG_BYE:
-                break;
-
-            default:
-                RM_LOG_ERR("%s", "Unknown TCP message type, this can't happen");
-                exit(EXIT_FAILURE);
-        }
+        do_it_all(connfd, &rm);
         /* continue to listen for the next message */
     }
 
