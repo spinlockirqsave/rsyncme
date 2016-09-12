@@ -58,6 +58,12 @@ rm_serialize_size_t(unsigned char *buf, size_t v) {
     }
 }
 
+unsigned char*
+rm_serialize_string(unsigned char *buf, const char *src, size_t bytes_n) {
+    memcpy(buf, src, bytes_n);
+    return (buf + bytes_n);
+}
+
 unsigned char *
 rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) {
     buf = rm_serialize_u32(buf, h->hash);
@@ -71,6 +77,12 @@ unsigned char *
 rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) {
     buf = rm_serialize_msg_hdr(buf, m->hdr);
     buf = rm_serialize_u32(buf, m->L);
+    buf = rm_serialize_u16(buf, m->x_sz);
+    buf = rm_serialize_string(buf, m->x, m->x_sz);
+    buf = rm_serialize_u16(buf, m->y_sz);
+    buf = rm_serialize_string(buf, m->y, m->y_sz);
+    buf = rm_serialize_u16(buf, m->z_sz);
+    buf = rm_serialize_string(buf, m->z, m->z_sz);
     return buf;
 }
 
