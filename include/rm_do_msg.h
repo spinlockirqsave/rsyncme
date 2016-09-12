@@ -54,7 +54,10 @@ struct rm_msg_pull
 };
 
 enum rm_error
-rm_msg_push_init(struct rm_msg_push *msg);
+rm_msg_push_init(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
+
+void
+rm_msg_push_free(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 
 /* @brief       Handles incoming rsync push request in new sesion.
  * @details     Starts ch_ch_tx and delta_rx threads. Used by daemon. */

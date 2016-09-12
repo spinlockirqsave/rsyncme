@@ -401,6 +401,10 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
 
     rm_session_free(s);
     s = NULL;
+    free(msg_raw);
+    msg_raw = NULL;
+    free(msg.hdr);
+    msg.hdr = NULL;
 
     return RM_ERR_OK;
 
@@ -412,6 +416,14 @@ err_exit:
     if (s != NULL) {
         rm_session_free(s);
         s = NULL;
+    }
+    if (msg_raw != NULL) {
+        free(msg_raw);
+        msg_raw = NULL;
+    }
+    if (msg.hdr != NULL) {
+        free(msg.hdr);
+        msg.hdr = NULL;
     }
     return err;
 }

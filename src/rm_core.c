@@ -10,14 +10,20 @@
 #include "twlist.h"
 
 
-int
+enum rm_error
 rm_core_init(struct rsyncme *rm) {
     assert(rm != NULL);
     memset(rm, 0, sizeof *rm);
     twhash_init(rm->sessions);
     TWINIT_LIST_HEAD(&rm->sessions_list);
     rm->state = RM_CORE_ST_INITIALIZED;
-    return 0;
+
+    RM_LOG_INFO("%s", "Starting main work queue");
+
+    if (rm_wq_workqueue_init(&rm->wq, RM_WORKERS_N, "main_queue") != RM_ERR_OK) {   /* TODO CPU checking, choose optimal number of threads */
+        return RM_ERR_WORKQUEUE_CREATE;
+    }
+    return RM_ERR_OK;
 }
 
 struct rm_session *

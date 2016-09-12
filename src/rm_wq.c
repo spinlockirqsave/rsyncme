@@ -83,7 +83,8 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
 
     wq->name = strdup(name);
     wq->running = 1;
-    wq->next_worker_idx_to_use = 0;
+
+    wq->next_worker_idx_to_use = (first_active_set == 1 ? wq->first_active_worker_idx : 0);
     if (wq->workers_active_n > 0) { /* if we have at least one worker thread then queue creation was successful */
         return RM_ERR_OK;
     } else {

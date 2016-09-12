@@ -20,6 +20,12 @@ rm_msg_push_init(struct rm_msg_push *msg) {
     return RM_ERR_OK;
 }
 
+void
+rm_msg_push_free(struct rm_msg_push *msg) {
+    free(msg->hdr);
+    free(msg);
+}
+
 void*
 rm_do_msg_push_rx(void* arg) {
     int                         err;

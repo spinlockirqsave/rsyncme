@@ -52,17 +52,6 @@ main(void) {
             exit(EXIT_FAILURE);
         }
     }
-    RM_LOG_INFO("%s", "Starting main work queue");
-
-    if (rm_wq_workqueue_init(&rm.wq, RM_WORKERS_N, "main_queue") != RM_ERR_OK) {   /* TODO CPU checking, choose optimal number of threads */
-        RM_LOG_ERR("%s", "Couldn't start main work queue");
-        exit(EXIT_FAILURE);
-    }
-    if (rm.wq.workers_active_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
-        RM_LOG_WARN("Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
-    } else {
-        RM_LOG_INFO("Main work queue started with [%u] worker threads", rm.wq.workers_n);
-    }
     listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     memset(&srv_addr_in, 0, sizeof(srv_addr_in));
@@ -83,9 +72,22 @@ main(void) {
     }
 
     err = rm_core_init(&rm);
-    if (err < 0) {
-        RM_LOG_PERR("%s", "Can't initialize the engine");
+    if (err != RM_ERR_OK) {
+        RM_LOG_CRIT("%s", "Can't initialize the engine");
+        switch (err) {
+
+            case RM_ERR_WORKQUEUE_CREATE:
+                RM_LOG_ERR("%s", "Couldn't start main work queue");
+                break;
+            default:
+                break;
+        }
         exit(EXIT_FAILURE);
+    }
+    if (rm.wq.workers_active_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
+        RM_LOG_WARN("Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
+    } else {
+        RM_LOG_INFO("Main work queue started with [%u] worker threads", rm.wq.workers_n);
     }
 
     err = listen(listenfd, RM_SERVER_LISTENQ);
