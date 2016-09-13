@@ -83,7 +83,8 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
 
     wq->name = strdup(name);
     wq->running = 1;
-    wq->next_worker_idx_to_use = 0;
+
+    wq->next_worker_idx_to_use = (first_active_set == 1 ? wq->first_active_worker_idx : 0);
     if (wq->workers_active_n > 0) { /* if we have at least one worker thread then queue creation was successful */
         return RM_ERR_OK;
     } else {
@@ -141,7 +142,7 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name) {
 }
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*)) {
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg_hdr* hdr, unsigned char* body_raw, void*(*f)(void*)) {
     TWINIT_LIST_HEAD(&work->link);
     work->task = task;
     work->rm = rm;
@@ -152,7 +153,7 @@ rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, u
 }
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, unsigned char* hdr, unsigned char* body_raw, void*(*f)(void*)) {
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg_hdr* hdr, unsigned char* body_raw, void*(*f)(void*)) {
     struct rm_work* work = malloc(sizeof(*work));
     if (work == NULL) {
         return NULL;

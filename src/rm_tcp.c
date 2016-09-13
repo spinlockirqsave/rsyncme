@@ -274,6 +274,9 @@ rm_tcp_read(int fd, void *dst, size_t bytes_n) {
 
     while (bytes_n > 0) {
         read_n = read(fd, buf, bytes_n);
+        if (read_n == 0) {
+            return RM_ERR_EOF;
+        }
         if (read_n < 0) {
             return RM_ERR_READ;
         }

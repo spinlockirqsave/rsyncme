@@ -20,15 +20,23 @@ rm_msg_push_init(struct rm_msg_push *msg) {
     return RM_ERR_OK;
 }
 
+void
+rm_msg_push_free(struct rm_msg_push *msg) {
+    free(msg->hdr);
+    free(msg);
+}
+
 void*
 rm_do_msg_push_rx(void* arg) {
     int                         err;
     struct rm_session	        *s;
     struct rm_session_push_rx   *prvt;
+    struct rm_msg_hdr           *hdr;
     rm_push_flags               flags;
 
     struct rm_work* work = (struct rm_work*) arg;
-    flags = rm_get_msg_hdr_flags(work->hdr);
+    hdr = work->hdr;
+    flags = hdr->flags;
     (void)flags;
 
     /* L = 0;   TODO get L from message */
