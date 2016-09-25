@@ -164,7 +164,7 @@ rm_core_tcp_msg_assemble(int fd, enum rm_pt_type pt, void **body_raw, size_t byt
         case RM_PT_MSG_PUSH:
         case RM_PT_MSG_PULL:
             *body_raw = malloc(bytes_n);
-            if (*body_raw != NULL) {
+            if (*body_raw == NULL) {
                 return RM_ERR_MEM;
             }
             err = rm_tcp_read(fd, *body_raw, bytes_n);

@@ -134,8 +134,8 @@ do_it_all(int fd, struct rsyncme* rm) {
     free(buf);
     buf = NULL;
 
-    pt = rm_get_msg_hdr_pt(buf);
-    to_read = rm_get_msg_hdr_len((unsigned char*) hdr) - rm_calc_msg_hdr_len(hdr);
+    pt = hdr->pt;
+    to_read = hdr->len - rm_calc_msg_hdr_len(hdr);
 
     err = rm_core_tcp_msg_assemble(fd, pt, (void*)&body_raw, to_read);
     if (err != RM_ERR_OK) { /* TODO handle properly */
