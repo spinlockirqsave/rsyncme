@@ -10,7 +10,6 @@
 
 
 #include "rm_defs.h"
-#include "rm_session.h"
 
 
 #define RM_MSG_HDR_HASH_OFFSET  0u
@@ -29,6 +28,11 @@ struct rm_msg_hdr
     uint8_t		pt;                             /* payload type     */
     uint8_t     flags;                          /* push fags        */
     uint16_t    len;                            /* message length   */
+};
+
+struct rm_msg {                                 /* base type for derivation of messages */
+    struct rm_msg_hdr   *hdr;
+    void                *body;
 };
 
 struct rm_msg_push

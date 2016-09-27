@@ -30,9 +30,9 @@ struct rsyncme
     struct twlist_head      sessions_list;
     uint32_t                sessions_n;
 
-	uint32_t		L;  /* block size, for a given L the worst case byte overhead of rsyncme is (s_f + s_s) * n/L
+    uint32_t		L;  /* block size, for a given L the worst case byte overhead of rsyncme is (s_f + s_s) * n/L
                          * where s_f is size of fast signature, s_s is strong signature size, n is the number of bytes in file */
-	uint32_t		M;	/* modulus in fast checksum computation, 2^16 is good choice for simplicity and speed */
+    uint32_t		M;	/* modulus in fast checksum computation, 2^16 is good choice for simplicity and speed */
 
     struct rm_workqueue     wq;
 };
@@ -40,18 +40,18 @@ struct rsyncme
 /* @brief  Helper struct to pass connection settings into TCP events thread. */
 struct rm_core_con_data
 {
-        struct rsyncme	*rm;
-        int             connfd;
+    struct rsyncme	*rm;
+    int             connfd;
 };
 
 /* @brief      TCP connection description stored by rsyncme in the connections list.
  * @details    Might be a member of a single list at a time. */
 struct rm_core_con
 {
-        struct twlist_head      link;
-        int                     connfd;
-        pthread_t               tid;
-        /* probably some additional data, e.g. start time */
+    struct twlist_head      link;
+    int                     connfd;
+    pthread_t               tid;
+    /* probably some additional data, e.g. start time */
 };
 
 /* @brief   Initialize daemon. */
