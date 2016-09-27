@@ -120,7 +120,7 @@ enum rm_session_type
     RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
     RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
     RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
-    RM_PULL_TX     /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
+    RM_PULL_TX      /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
 };
 
 enum rm_error {
@@ -205,6 +205,9 @@ enum rm_pt_type {
 
 struct rsyncme;
 struct rm_msg_hdr;
+struct rm_msg;
+struct rm_msg_push;
+struct rm_msg_pull;
 
 char *strdup(const char *s);
 

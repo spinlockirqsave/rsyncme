@@ -26,6 +26,9 @@ unsigned char *
 rm_serialize_u32(unsigned char *buf, uint32_t v) __attribute__ ((nonnull(1)));
 
 unsigned char *
+rm_serialize_u64(unsigned char *buf, uint64_t v) __attribute__ ((nonnull(1)));
+
+unsigned char *
 rm_serialize_size_t(unsigned char *buf, size_t v) __attribute__ ((nonnull(1)));
 
 unsigned char*
@@ -66,10 +69,25 @@ unsigned char*
 rm_deserialize_u32(unsigned char *buf, uint32_t *v) __attribute__ ((nonnull(1,2)));
 
 unsigned char *
+rm_deserialize_u64(unsigned char *buf, uint64_t *v) __attribute__ ((nonnull(1,2)));
+
+unsigned char *
+rm_deserialize_size_t(unsigned char *buf, size_t *v) __attribute__ ((nonnull(1,2)));
+
+unsigned char*
+rm_deserialize_string(unsigned char *buf, char *dst, size_t bytes_n) __attribute__ ((nonnull(1,2)));
+
+unsigned char *
 rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) __attribute__ ((nonnull(1,2)));
 
 unsigned char *
-rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
+rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
+
+unsigned char *
+rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_hdr *hdr, struct rm_msg_push **m)__attribute__ ((nonnull(1,2,3)));
+
+struct rm_msg*
+rm_deserialize_msg(enum rm_pt_type pt, struct rm_msg_hdr *hdr, unsigned char *body_raw) __attribute__ ((nonnull(2,3)));
 
 
 #endif	/* RSYNCME_SERIALIZE_H */

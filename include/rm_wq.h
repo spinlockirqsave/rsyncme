@@ -11,6 +11,7 @@
 
 #include "rm.h"
 #include "rm_error.h"
+#include "rm_do_msg.h"
 
 #include "twlist.h"
 
@@ -53,9 +54,8 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name);
 struct rm_work {
     struct twlist_head  link;
     enum rm_work_type   task;
-    struct rsyncme*     rm;
-    struct rm_msg_hdr   *hdr;
-    unsigned char       *body_raw;
+    struct rsyncme      *rm;
+    struct rm_msg       *msg;               /* message handle */
     void* (*f)(void*);
 };
 
@@ -69,10 +69,10 @@ struct rm_work {
     struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg_hdr* hdr, unsigned char* body_raw, void*(*f)(void*));
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*));
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg_hdr* hdr, unsigned char* body_raw, void*(*f)(void*));
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*));
 
 void
 rm_work_free(struct rm_work* work);

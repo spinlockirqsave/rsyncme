@@ -19,6 +19,7 @@ do_it_all(int fd, struct rsyncme* rm) {
     int                     to_read;
     unsigned char           *buf = NULL, *body_raw = NULL;
     struct rm_msg_hdr       *hdr = NULL;
+    struct rm_msg           *msg = NULL;
     int                     err;
     char                    peer_addr_buf[INET6_ADDRSTRLEN];
     const char              *peer_addr_str = NULL;
@@ -36,7 +37,7 @@ do_it_all(int fd, struct rsyncme* rm) {
     socklen_t               cli_len;
     uint16_t                cli_port;
     enum rm_pt_type         pt;
-    void*                   work;
+    void                    *work = NULL;
 
     cli_len = sizeof(cli_addr);
     getsockname(fd, (struct sockaddr*)&cli_addr, &cli_len); /* get our side of TCP connection */
@@ -141,10 +142,15 @@ do_it_all(int fd, struct rsyncme* rm) {
     if (err != RM_ERR_OK) { /* TODO handle properly */
         goto err_exit;
     }
+    msg = rm_deserialize_msg(pt, hdr, body_raw);
+    if (msg == NULL) {
+        RM_LOG_CRIT("%s", "Error deserializing message. Not enough memory");
+        goto err_exit;
+    }
 
     switch (pt) { /* message OK, process it */
         case RM_PT_MSG_PUSH:
-            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, hdr, body_raw, rm_do_msg_push_rx);
+            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, rm_do_msg_push_rx);
             if (work == NULL) {
                 RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
                 goto err_exit;
@@ -171,6 +177,10 @@ err_exit:
         if (body_raw != NULL) {
             free(body_raw);
             body_raw = NULL;
+        }
+        if (msg != NULL) {
+            free(msg);
+            msg = NULL;
         }
         close(fd);
 }

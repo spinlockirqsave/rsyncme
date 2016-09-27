@@ -31,11 +31,13 @@ rm_do_msg_push_rx(void* arg) {
     int                         err;
     struct rm_session	        *s;
     struct rm_session_push_rx   *prvt;
+    struct rm_msg_push          *msg_push;
     struct rm_msg_hdr           *hdr;
     rm_push_flags               flags;
 
     struct rm_work* work = (struct rm_work*) arg;
-    hdr = work->hdr;
+    msg_push = (struct rm_msg_push*) work->msg;
+    hdr = msg_push->hdr;
     flags = hdr->flags;
     (void)flags;
 
