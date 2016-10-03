@@ -19,8 +19,8 @@ struct rm_session
 	struct twhlist_node     hlink;  /* hashtable handle */
 	struct twlist_head      link;   /* list handle */
 
-	uint32_t                session_id;
-	pthread_mutex_t         session_mutex;
+	unsigned char           id[RM_UUID_LEN];
+	pthread_mutex_t         mutex;
 
     FILE                    *f_x;               /* file on which rolling is performed */              
     FILE                    *f_y;               /* reference file */              

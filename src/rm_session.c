@@ -80,6 +80,7 @@ rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
 struct rm_session *
 rm_session_create(enum rm_session_type t) {
     struct rm_session   *s;
+    uuid_t              uuid;
 
     s = malloc(sizeof *s);
     if (s == NULL) {
@@ -89,7 +90,7 @@ rm_session_create(enum rm_session_type t) {
     TWINIT_HLIST_NODE(&s->hlink);
     TWINIT_LIST_HEAD(&s->link);
     s->type = t;
-    pthread_mutex_init(&s->session_mutex, NULL);
+    pthread_mutex_init(&s->mutex, NULL);
 
     switch (t) {
         case RM_PUSH_RX:
@@ -123,13 +124,15 @@ rm_session_create(enum rm_session_type t) {
     }
     clock_gettime(CLOCK_REALTIME, &s->clk_realtime_start);
     s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
+    uuid_generate(uuid);
+    memcpy(&s->id, &uuid, rm_min(sizeof(uuid_t), RM_UUID_LEN));
     return s;
 
 fail:
     if (s->prvt) {
         free(s->prvt);
     }
-    pthread_mutex_destroy(&s->session_mutex);
+    pthread_mutex_destroy(&s->mutex);
     free(s);
     return NULL;
 }
@@ -139,7 +142,7 @@ rm_session_free(struct rm_session *s) {
     enum rm_session_type    t;
 
     assert(s != NULL);
-    pthread_mutex_destroy(&s->session_mutex);
+    pthread_mutex_destroy(&s->mutex);
     t = s->type;
     if (s->prvt == NULL) {
         goto end;
@@ -159,7 +162,6 @@ rm_session_free(struct rm_session *s) {
             assert(0 == 1 && "WTF Unknown prvt type!\n");
     }
 end:
-    pthread_mutex_destroy(&s->session_mutex);
     free(s);
     return;
 }
@@ -203,7 +205,7 @@ rm_session_delta_tx_f(void *arg) {
     s = (struct rm_session*) arg;
     assert(s != NULL);
 
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     f_x     = s->f_x;
     t = s->type;
     switch (t) {
@@ -229,12 +231,12 @@ rm_session_delta_tx_f(void *arg) {
         default:
             goto exit;
     }
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
     err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0); /* 1. run rolling checksum procedure */
     if (err != RM_ERR_OK) {
         status = RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
     }
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     if (t == RM_PUSH_LOCAL) {
         prvt_local->delta_tx_status = status;
     } else {
@@ -242,7 +244,7 @@ rm_session_delta_tx_f(void *arg) {
     }
 
 exit:
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
     return NULL; /* this thread must be created in joinable state */
 }
 
@@ -269,15 +271,15 @@ rm_session_delta_rx_f_local(void *arg) {
     assert(s != NULL);
     memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
 
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     if (s->type != RM_PUSH_LOCAL) {
-        pthread_mutex_unlock(&s->session_mutex);
+        pthread_mutex_unlock(&s->mutex);
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     prvt_local = s->prvt;
     if (prvt_local == NULL) {
-        pthread_mutex_unlock(&s->session_mutex);
+        pthread_mutex_unlock(&s->mutex);
         status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
@@ -287,7 +289,7 @@ rm_session_delta_rx_f_local(void *arg) {
     f_y         = s->f_y;
     f_z         = s->f_z;
     rec_ctx.L = s->rec_ctx.L; /* init reconstruction context */
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
 
     assert(f_y != NULL);
     assert(f_z != NULL);
@@ -329,7 +331,7 @@ rm_session_delta_rx_f_local(void *arg) {
     pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
 
 done:
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == s->f_x_sz);
     assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
     rec_ctx.collisions_1st_level = s->rec_ctx.collisions_1st_level; /* tx thread might have assigned to collisions variables already and memcpy would overwrite them */
@@ -338,13 +340,13 @@ done:
     rec_ctx.copy_tail_threshold_fired = s->rec_ctx.copy_tail_threshold_fired;
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
     prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
     return NULL; /* this thread must be created in joinable state */
 
 err_exit:
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     prvt_local->delta_rx_status = status;
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
     return NULL; /* this thread must be created in joinable state */
 }
 
@@ -374,10 +376,10 @@ rm_session_delta_rx_f_remote(void *arg) {
     }
     assert(prvt_rx != NULL);
 
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     bytes_to_rx = prvt_rx->f_x_sz;
     /* f_y         = prvt_rx->f_y; */
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
 
     if (bytes_to_rx == 0) {
         goto done;

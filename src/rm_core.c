@@ -27,17 +27,18 @@ rm_core_init(struct rsyncme *rm) {
 }
 
 struct rm_session *
-rm_core_session_find(struct rsyncme *rm,
-        uint32_t session_id) {
+rm_core_session_find(struct rsyncme *rm, unsigned char session_id[RM_UUID_LEN]) {
     struct rm_session	*s;
-    uint32_t                h;
+    uint32_t            h;
+    uint16_t            key;
 
     assert(rm != NULL);
     pthread_mutex_lock(&rm->mutex);
-    h = twhash_min(session_id, RM_SESSION_HASH_BITS);
+    memcpy(&key, session_id, rm_min(RM_UUID_LEN, sizeof(key)));
+    h = twhash_min(key, RM_SESSION_HASH_BITS);
     twhlist_for_each_entry(s, &rm->sessions[h], hlink) {
-        if (s->session_id == session_id) {
-            pthread_mutex_lock(&s->session_mutex);
+        if (memcmp(&s->id, session_id, RM_UUID_LEN) == 0) {
+            pthread_mutex_lock(&s->mutex);
             return s;
         }
     }
@@ -47,6 +48,7 @@ rm_core_session_find(struct rsyncme *rm,
 
 struct rm_session *
 rm_core_session_add(struct rsyncme *rm, enum rm_session_type type) {
+    uint16_t            key;
     struct rm_session	*s = NULL;
     assert(rm != NULL);
 
@@ -55,9 +57,9 @@ rm_core_session_add(struct rsyncme *rm, enum rm_session_type type) {
         return NULL;
     }
     pthread_mutex_lock(&rm->mutex);
-    s->session_id = rm->sessions_n + 1; /* create SID */
     twlist_add(&rm->sessions_list, &s->link);
-    twhash_add(rm->sessions, &s->hlink, s->session_id);
+    memcpy(&key, s->id, rm_min(RM_UUID_LEN, sizeof(key)));
+    twhash_add(rm->sessions, &s->hlink, key);
     rm->sessions_n++;
     pthread_mutex_unlock(&rm->mutex);
     return s;

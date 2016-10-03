@@ -507,13 +507,13 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         } /* match */
     } while (send_left > 0);
     
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
     s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
     s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
 
     if (raw_bytes != NULL) {
         free(raw_bytes);
@@ -524,13 +524,13 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     return RM_ERR_OK;
 
 copy_tail:
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
     s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
     s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
 
     if ((copy_all == 0) && (copy_tail_threshold_fired == 1)) { /* if copy tail but not all */
         if (match == 0) {
