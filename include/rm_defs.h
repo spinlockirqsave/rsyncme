@@ -66,7 +66,7 @@
 #define RM_BIT_6	(1u << 6)
 #define RM_BIT_7	(1u << 7)
 
-#define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end */
+#define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end, MUST be longer than sizeof(uuid_t)! */
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
 #define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files */

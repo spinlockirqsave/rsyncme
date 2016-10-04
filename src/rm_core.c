@@ -46,23 +46,19 @@ rm_core_session_find(struct rsyncme *rm, unsigned char session_id[RM_UUID_LEN]) 
     return NULL;
 }
 
-struct rm_session *
-rm_core_session_add(struct rsyncme *rm, enum rm_session_type type) {
+void
+rm_core_session_add(struct rsyncme *rm, struct rm_session *s) {
     uint16_t            key;
-    struct rm_session	*s = NULL;
     assert(rm != NULL);
+    assert(s != NULL);
 
-    s = rm_session_create(type);
-    if (s == NULL) {
-        return NULL;
-    }
     pthread_mutex_lock(&rm->mutex);
     twlist_add(&rm->sessions_list, &s->link);
     memcpy(&key, s->id, rm_min(RM_UUID_LEN, sizeof(key)));
     twhash_add(rm->sessions, &s->hlink, key);
     rm->sessions_n++;
     pthread_mutex_unlock(&rm->mutex);
-    return s;
+    return;
 }
 
 int

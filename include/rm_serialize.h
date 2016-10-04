@@ -32,7 +32,10 @@ unsigned char *
 rm_serialize_size_t(unsigned char *buf, size_t v) __attribute__ ((nonnull(1)));
 
 unsigned char*
-rm_serialize_string(unsigned char *buf, const char *src, size_t bytes_n) __attribute__ ((nonnull(1,2)));
+rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n) __attribute__ ((nonnull(1,2)));
+
+unsigned char*
+rm_serialize_mem(void *buf, const void *src, size_t bytes_n) __attribute__ ((nonnull(1,2)));
 
 unsigned char *
 rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) __attribute__ ((nonnull(1,2)));
@@ -75,7 +78,10 @@ unsigned char *
 rm_deserialize_size_t(unsigned char *buf, size_t *v) __attribute__ ((nonnull(1,2)));
 
 unsigned char*
-rm_deserialize_string(unsigned char *buf, char *dst, size_t bytes_n) __attribute__ ((nonnull(1,2)));
+rm_deserialize_string(const void *buf, char *dst, size_t bytes_n) __attribute__ ((nonnull(1,2)));
+
+unsigned char*
+rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n) __attribute__ ((nonnull(1,2)));
 
 unsigned char *
 rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) __attribute__ ((nonnull(1,2)));

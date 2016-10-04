@@ -1,7 +1,6 @@
 /*  @file       rm_config.h
  *  @brief      Configuration.
- *  @author     Piotr Gregor <piotrek.gregor@gmail.com>
- *  @version    0.1.2
+ *  @author     Piotr Gregor <piotrgregor@rsyncme.org>
  *  @date       02 Jan 2016 02:38 PM
  *  @copyright  LGPLv2.1 */
 

@@ -16,11 +16,14 @@
 #include "twlist.h"
 
 
+/* Keep in sync with rm_work_type_str */
 enum rm_work_type {
-    RM_WORK_PROCESS_MSG_PUSH,
-    RM_WORK_PROCESS_MSG_PULL,
-    RM_WORK_PROCESS_MSG_BYE
+    RM_WORK_PROCESS_MSG_PUSH = 0,
+    RM_WORK_PROCESS_MSG_PULL = 1,
+    RM_WORK_PROCESS_MSG_BYE = 2,
+    RM_WORK_PROCESS_N
 };
+const char *rm_work_type_str[RM_WORK_PROCESS_N + 1];
 
 struct rm_worker {              /* thread wrapper */
     uint8_t         idx;        /* index in workqueue table */

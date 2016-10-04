@@ -367,6 +367,7 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     }
     msg.hdr->pt = RM_PT_MSG_PUSH;
     msg.hdr->flags = flags;
+    memcpy(msg.ssid, s->id, RM_UUID_LEN);
     msg.L = L;
 
     msg.x_sz = strlen(x) + 1;

@@ -8,10 +8,17 @@
 #include "rm_wq.h"
 
 
+const char * rm_work_type_str[] = {
+    [RM_WORK_PROCESS_MSG_PUSH] = "RM_WORK_PROCESS_MSG_PUSH",
+    [RM_WORK_PROCESS_MSG_PULL] = "RM_WORK_PROCESS_MSG_PULL",
+    [RM_WORK_PROCESS_MSG_BYE] = "RM_WORK_PROCESS_MSG_BYE",
+    0
+};
+
 static void*
 rm_wq_worker_f(void *arg) {
     twfifo_queue            *q;
-    const struct rm_work    *work;     /* iterator over enqueued work elements */
+    struct rm_work          *work;     /* iterator over enqueued work elements */
     struct twlist_head      *lh;
 
     struct rm_worker *w = (struct rm_worker*) arg;
@@ -23,7 +30,7 @@ rm_wq_worker_f(void *arg) {
         for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
             work = tw_container_of(lh, struct rm_work, link);
             pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
-            work->f(&work);
+            work->f(work);
             pthread_mutex_lock(&w->mutex);
         }
         pthread_cond_wait(&w->signal, &w->mutex);

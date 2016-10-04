@@ -38,6 +38,7 @@ struct rm_msg {                                 /* base type for derivation of m
 struct rm_msg_push
 {
     struct rm_msg_hdr	*hdr;                   /* header, MUST be first */
+    unsigned char       ssid[16];               /* transmitter's session id */
     size_t              L;                      /* block size   */
     uint16_t            x_sz;                   /* size of string including terminating NULL byte '\0' */
     char                x[RM_FILE_LEN_MAX];     /* x file name  */
@@ -73,8 +74,8 @@ rm_do_msg_push_rx(void* arg) __attribute__ ((nonnull(1)));
 int
 rm_do_msg_pull_rx(struct rsyncme* rm, unsigned char *buf) __attribute__ ((nonnull(1,2)));
 
-uint16_t
-rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr);
+/* @brief       Return the size of the header. */
+uint16_t rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr);
 
 /* @brief       Return length of message including header, appropriate to put into hdr->len field */
 uint16_t

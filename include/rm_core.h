@@ -61,10 +61,9 @@ rm_core_init(struct rsyncme *rm);
 /* @return  Pointer to locked session if found (session_mutex locked), NULL otherwise */
 struct rm_session* rm_core_session_find(struct rsyncme *rm, unsigned char session_id[RM_UUID_LEN]);
 
-/* @brief   Creates and adds new sesion into table.
- * @details Generates SID. */
-struct rm_session*
-rm_core_session_add(struct rsyncme *rm, enum rm_session_type type);
+/* @brief   Adds new sesion into table and list. */
+void
+rm_core_session_add(struct rsyncme *rm, struct rm_session *s) __attribute__ ((nonnull(1,2)));
 
 /* @brief   Shut down. */
 int
