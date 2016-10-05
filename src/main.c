@@ -81,7 +81,7 @@ do_it_all(int fd, struct rsyncme* rm) {
         }
     }
 
-    if (rm_core_authenticate(cli_addr_in) != RM_ERR_OK) {
+    if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
         RM_LOG_ERR("%s", "Authentication failed.\n");
         goto err_exit;
     }
