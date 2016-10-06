@@ -69,7 +69,7 @@
 #define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end, MUST be longer than sizeof(uuid_t)! */
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
-#define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files */
+#define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files, MUST be > RM_UNIQUE_STRING_LEN */
 #define RM_UUID_LEN                 16u         /* as uuid_t on Debian */
 
 #define RM_ADLER32_MODULUS          65521L      /* biggest prime int less than 2^16 */
@@ -189,7 +189,12 @@ enum rm_error {
     RM_ERR_MSG_PT_UNKNOWN = 61,
     RM_ERR_EOF = 62,
     RM_ERR_CH_CH_TX_THREAD = 63,
-    RM_ERR_UNKNOWN_ERROR = 64
+    RM_ERR_Y_NULL = 64,
+    RM_ERR_Y_Z_SYNC = 65,
+    RM_ERR_BLOCK_SIZE = 66,
+    RM_ERR_RESULT_F_NAME = 67,
+    RM_ERR_Y_FOPEN = 68,
+    RM_ERR_UNKNOWN_ERROR = 69
 };
 
 enum rm_io_direction {

@@ -76,17 +76,66 @@ rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
     return;
 }
 
-enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, const struct rm_msg_push *m) {
-    /* TODO assign pointer, validate whether request can be axecuted */
-    /*s->f_x = fopen(m->x;
-    s->f_y = m->y;
-    s->f_z = m->z; */
-    rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
-    return RM_ERR_FAIL;
+enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, struct rm_msg_push *m) {
+    if (m->L == 0) {                                                                    /* L can't be 0 */
+        return RM_ERR_BLOCK_SIZE;
+    }
+    if (m->x_sz == 0) {                                                                 /* @x not set */
+        return RM_ERR_X_ZERO_SIZE;
+    }
+
+    switch (s->type) {
+
+        case RM_PUSH_RX:                                                                /* validate remote PUSH RX */
+            s->f_x = NULL;
+            if ((m->hdr->flags & RM_BIT_6) && (m->z_sz == 0 || (strcmp(m->y, m->z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
+                return RM_ERR_Y_Z_SYNC;
+            }
+            if (m->y_sz == 0) {
+                return RM_ERR_Y_NULL;                                                   /* error: what is the name of the result file? OR error: what is the name of the file you want to sync with? */
+            }
+            s->f_y = fopen(m->y, "rb");                                                 /* open and split into nonoverlapping checksums */ 
+            if (s->f_y == NULL) {
+                if (m->hdr->flags & RM_BIT_4) {                                              /* force creation if @y doesn't exist? */
+                    if (m->z_sz != 0) {                                                 /* use different name? */
+                        s->f_z = fopen(m->z, "w+b");
+                    } else {
+                        s->f_z = fopen(m->y, "w+b");
+                    }
+                    if (s->f_z == NULL) {
+                        return RM_ERR_OPEN_Z;
+                    }
+                    goto ok;                                                            /* @y is NULL though */
+                } else {
+                    return RM_ERR_Y_FOPEN;                                              /* couldn't open @y */
+                }
+            }
+            rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
+            return RM_ERR_OK;
+
+        case RM_PULL_RX:                                                                /* validate remote PULL RX */
+            rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
+            return RM_ERR_OK;
+
+        default:                                                                        /* TX and everything else */
+            return RM_ERR_FAIL;
+    }
+
+ok:
+    if (s->f_z == NULL) {
+        if (m->z_sz == 0) {
+            rm_get_unique_string(m->z);
+        }
+        s->f_z = fopen(m->z, "wb+");                                                    /* and open @f_z for reading and writing */
+        if (s->f_z == NULL) {
+            return RM_ERR_OPEN_TMP;
+        }
+    }
+    return RM_ERR_OK;
 }
 
 enum rm_error rm_session_assign_from_msg_pull(struct rm_session *s, const struct rm_msg_pull *m) {
-    /* TODO assign pointer, validate whether request can be axecuted */
+    /* TODO assign pointer, validate whether request can be executed */
     /*s->f_x = fopen(m->x;
     s->f_y = m->y;
     s->f_z = m->z; */

@@ -100,8 +100,8 @@ rm_session_push_local_init(struct rm_session_push_local *prvt);
 void
 rm_session_push_local_free(struct rm_session_push_local *prvt);
 
-enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, const struct rm_msg_push *m) __attribute__((nonnull(1,2)));
-enum rm_error rm_session_assign_validate_from_msg_pull(struct rm_session *s, const struct rm_msg_pull *m) __attribute__((nonnull(1,2)));
+enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, struct rm_msg_push *m) __attribute__((nonnull(1,2)));
+enum rm_error rm_session_assign_validate_from_msg_pull(struct rm_session *s, struct rm_msg_pull *m) __attribute__((nonnull(1,2)));
 
 /* @brief   Creates new session. */
 struct rm_session *
