@@ -76,6 +76,24 @@ rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
     return;
 }
 
+enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, const struct rm_msg_push *m) {
+    /* TODO assign pointer, validate whether request can be axecuted */
+    /*s->f_x = fopen(m->x;
+    s->f_y = m->y;
+    s->f_z = m->z; */
+    rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
+    return RM_ERR_FAIL;
+}
+
+enum rm_error rm_session_assign_from_msg_pull(struct rm_session *s, const struct rm_msg_pull *m) {
+    /* TODO assign pointer, validate whether request can be axecuted */
+    /*s->f_x = fopen(m->x;
+    s->f_y = m->y;
+    s->f_z = m->z; */
+    rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
+    return RM_ERR_FAIL;
+}
+
 /* TODO: generate GUID here */
 struct rm_session *
 rm_session_create(enum rm_session_type t) {
@@ -200,7 +218,7 @@ rm_session_delta_tx_f(void *arg) {
     struct rm_session_push_local    *prvt_local;
     struct rm_session_push_tx       *prvt_tx;
     int                     err;
-    enum rm_delta_tx_status status = RM_DELTA_TX_STATUS_OK;
+    enum rm_tx_status       status = RM_TX_STATUS_OK;
 
     s = (struct rm_session*) arg;
     assert(s != NULL);
@@ -234,7 +252,7 @@ rm_session_delta_tx_f(void *arg) {
     pthread_mutex_unlock(&s->mutex);
     err = rm_rolling_ch_proc(s, h, f_x, delta_f, 0); /* 1. run rolling checksum procedure */
     if (err != RM_ERR_OK) {
-        status = RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
+        status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
     }
     pthread_mutex_lock(&s->mutex);
     if (t == RM_PUSH_LOCAL) {
@@ -261,11 +279,11 @@ rm_session_delta_rx_f_local(void *arg) {
     struct rm_session               *s;
     struct rm_delta_reconstruct_ctx rec_ctx = {0};  /* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
     int err;
-    enum rm_delta_rx_status         status = RM_DELTA_RX_STATUS_OK;
+    enum rm_rx_status               status = RM_RX_STATUS_OK;
 
     s = (struct rm_session*) arg;
     if (s == NULL) {
-        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     assert(s != NULL);
@@ -274,13 +292,13 @@ rm_session_delta_rx_f_local(void *arg) {
     pthread_mutex_lock(&s->mutex);
     if (s->type != RM_PUSH_LOCAL) {
         pthread_mutex_unlock(&s->mutex);
-        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     prvt_local = s->prvt;
     if (prvt_local == NULL) {
         pthread_mutex_unlock(&s->mutex);
-        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     assert(prvt_local != NULL);
@@ -294,7 +312,7 @@ rm_session_delta_rx_f_local(void *arg) {
     assert(f_y != NULL);
     assert(f_z != NULL);
     if (f_y == NULL || f_z == NULL) {
-        status = RM_DELTA_RX_STATUS_INTERNAL_ERR;
+        status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
     if (bytes_to_rx == 0) {
@@ -315,7 +333,7 @@ rm_session_delta_rx_f_local(void *arg) {
             err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
             if (err != 0) {
                 pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
-                status = RM_DELTA_RX_STATUS_DELTA_PROC_FAIL;
+                status = RM_RX_STATUS_DELTA_PROC_FAIL;
                 goto err_exit;
             }
             bytes_to_rx -= delta_e->raw_bytes_n;
@@ -339,7 +357,7 @@ done:
     rec_ctx.copy_all_threshold_fired = s->rec_ctx.copy_all_threshold_fired; /* tx thread might have assigned to threshold_fired variables already and memcpy would overwrite them */
     rec_ctx.copy_tail_threshold_fired = s->rec_ctx.copy_tail_threshold_fired;
     memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
-    prvt_local->delta_rx_status = RM_DELTA_RX_STATUS_OK;
+    prvt_local->delta_rx_status = RM_RX_STATUS_OK;
     pthread_mutex_unlock(&s->mutex);
     return NULL; /* this thread must be created in joinable state */
 
@@ -377,7 +395,7 @@ rm_session_delta_rx_f_remote(void *arg) {
     assert(prvt_rx != NULL);
 
     pthread_mutex_lock(&s->mutex);
-    bytes_to_rx = prvt_rx->f_x_sz;
+    bytes_to_rx = s->f_x_sz;
     /* f_y         = prvt_rx->f_y; */
     pthread_mutex_unlock(&s->mutex);
 

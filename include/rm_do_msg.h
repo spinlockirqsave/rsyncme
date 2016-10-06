@@ -48,14 +48,22 @@ struct rm_msg_push
     char                z[RM_FILE_LEN_MAX];     /* z file name  */
 };
 
+/* transmitter sends PULL(x,y) -> this means receiver does PUSH(y,x) */
 struct rm_msg_pull
 {
     struct rm_msg_hdr	*hdr;                   /* header, MUST be first */
+    unsigned char       ssid[16];               /* transmitter's session id */
     size_t              L;                      /* block size   */
     uint32_t            ch_ch_n;                /* number of elements in the ch_ch list,
                                                    that follows this msg, ch_ch elements
                                                    are being sent in chunks while computing
                                                    hashes on file */
+    uint16_t            x_sz;                   /* size of string including terminating NULL byte '\0' */
+    char                x[RM_FILE_LEN_MAX];     /* x file name  */
+    uint16_t            y_sz;                   /* size of string including terminating NULL byte '\0' */
+    char                y[RM_FILE_LEN_MAX];     /* y file name  */
+    uint16_t            z_sz;                   /* size of string including terminating NULL byte '\0' */
+    char                z[RM_FILE_LEN_MAX];     /* z file name  */
 };
 
 enum rm_error

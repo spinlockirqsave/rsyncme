@@ -160,10 +160,10 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
     }
     pthread_join(prvt->delta_tx_tid, NULL);
     pthread_join(prvt->delta_rx_tid, NULL);
-    if (prvt->delta_tx_status != RM_DELTA_TX_STATUS_OK) {
+    if (prvt->delta_tx_status != RM_TX_STATUS_OK) {
         err = RM_ERR_DELTA_TX_THREAD;
     }
-    if (prvt->delta_rx_status != RM_DELTA_RX_STATUS_OK) {
+    if (prvt->delta_rx_status != RM_RX_STATUS_OK) {
         err = RM_ERR_DELTA_RX_THREAD;
     }
 

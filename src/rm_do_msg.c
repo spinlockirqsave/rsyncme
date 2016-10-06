@@ -28,7 +28,7 @@ rm_msg_push_free(struct rm_msg_push *msg) {
 
 void*
 rm_do_msg_push_rx(void* arg) {
-    int                         err;
+    enum rm_error               err;
     struct rm_session	        *s = NULL;
     struct rm_session_push_rx   *prvt = NULL;
     struct rm_msg_push          *msg_push = NULL;
@@ -52,16 +52,35 @@ rm_do_msg_push_rx(void* arg) {
     RM_LOG_INFO("[%s] [1]: their ssid [%s] -> our ssid [%s]", rm_work_type_str[work->task], ssid1, ssid2);
     RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], ssid1, ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, hdr->flags);
 
-    rm_core_session_add(work->rm, s); /* insert session into gloval table and list */
+    err = rm_session_assign_validate_from_msg_push(s, msg_push);
+    if (err != RM_ERR_OK) {
+        goto fail;
+    }
+
+    rm_core_session_add(work->rm, s); /* insert session into global table and list */
+    RM_LOG_INFO("[%s] [3]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
+
     prvt = (struct rm_session_push_rx*) s->prvt;
 
     err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx_ch_ch and rx delta threads, save pids in session object */
-    if (err != RM_ERR_OK)
+    if (err != RM_ERR_OK) {
         goto fail;
+    }
 
     err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE); /* start rx delta thread */
-    if (err != RM_ERR_OK)
+    if (err != RM_ERR_OK) {
         goto fail;
+    }
+
+    pthread_join(prvt->ch_ch_tx_tid, NULL);
+    pthread_join(prvt->delta_rx_tid, NULL);
+    if (prvt->ch_ch_tx_status != RM_TX_STATUS_OK) {
+        err = RM_ERR_CH_CH_TX_THREAD;
+    }
+    if (prvt->delta_rx_status != RM_RX_STATUS_OK) {
+        err = RM_ERR_DELTA_RX_THREAD;
+    }
+
     rm_msg_push_free(msg_push);
     if (s != NULL) {
         rm_session_free(s);

@@ -188,7 +188,8 @@ enum rm_error {
     RM_ERR_CONNECT_TIMEOUT = 60,
     RM_ERR_MSG_PT_UNKNOWN = 61,
     RM_ERR_EOF = 62,
-    RM_ERR_UNKNOWN_ERROR = 63
+    RM_ERR_CH_CH_TX_THREAD = 63,
+    RM_ERR_UNKNOWN_ERROR = 64
 };
 
 enum rm_io_direction {

@@ -20,6 +20,7 @@ struct rm_session
 	struct twlist_head      link;   /* list handle */
 
 	unsigned char           id[RM_UUID_LEN];
+    uint16_t                hash;
 	pthread_mutex_t         mutex;
 
     FILE                    *f_x;               /* file on which rolling is performed */              
@@ -38,14 +39,14 @@ struct rm_session
 struct rm_session_push_local
 {
     pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
-    enum rm_delta_tx_status delta_tx_status;
+    enum rm_tx_status       delta_tx_status;
     struct twhlist_head     *h;                 /* nonoverlapping checkums */
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
     pthread_cond_t  tx_delta_e_queue_signal;    /* signaled by rolling proc when
                                                    new delta element has been produced */
     pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
-    enum rm_delta_rx_status delta_rx_status;
+    enum rm_rx_status       delta_rx_status;
     rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
     rm_delta_f              *delta_rx_f;        /* delta rx callback (dequeues delta elements and does data reconstruction) */
 };
@@ -55,14 +56,15 @@ struct rm_session_push_rx
 {
     int fd;                                     /* socket handle */
 	pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
+    enum rm_tx_status       ch_ch_tx_status;
+
 	pthread_t               delta_rx_tid;       /* receiver of delta elements */
-    FILE                    *f_y;               /* reference file */              
-    FILE                    *f_z;               /* result file */              
-    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
+    enum rm_rx_status       delta_rx_status;
     twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */
     pthread_mutex_t rx_delta_e_queue_mutex;
     pthread_cond_t  rx_delta_e_queue_signal;    /* signaled by receiving proc when
                                                    delta elements are received on the socket */
+    struct rm_msg_push      *msg_push;          /* keeps pointer to MSG_PUSH message that describes incomig synchronization request */
 };
 
 /* Transmitter of file (delta vector) */
@@ -97,6 +99,9 @@ rm_session_push_local_init(struct rm_session_push_local *prvt);
  *          session after this returns */ 
 void
 rm_session_push_local_free(struct rm_session_push_local *prvt);
+
+enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, const struct rm_msg_push *m) __attribute__((nonnull(1,2)));
+enum rm_error rm_session_assign_validate_from_msg_pull(struct rm_session *s, const struct rm_msg_pull *m) __attribute__((nonnull(1,2)));
 
 /* @brief   Creates new session. */
 struct rm_session *

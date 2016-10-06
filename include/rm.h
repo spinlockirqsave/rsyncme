@@ -142,16 +142,16 @@ struct rm_delta_e
     size_t                      raw_bytes_n;
     struct twlist_head          link;           /* to link me in list/stack/queue */
 };
-enum rm_delta_tx_status
+enum rm_tx_status
 {
-    RM_DELTA_TX_STATUS_OK               = 0,    /* WANTED */
-    RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL  = 1   /* error in rolling checksum procedure */
+    RM_TX_STATUS_OK                 = 0,    /* WANTED */
+    RM_TX_STATUS_ROLLING_PROC_FAIL  = 1     /* error in rolling checksum procedure */
 };
-enum rm_delta_rx_status
+enum rm_rx_status
 {
-    RM_DELTA_RX_STATUS_OK               = 0,    /* most wanted */
-    RM_DELTA_RX_STATUS_INTERNAL_ERR     = 1,    /* bad call, NULL session, prvt session or file pointers */
-    RM_DELTA_RX_STATUS_DELTA_PROC_FAIL  = 2     /* error processing delta element */
+    RM_RX_STATUS_OK                 = 0,    /* most wanted */
+    RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
+    RM_RX_STATUS_DELTA_PROC_FAIL    = 2     /* error processing delta element */
 };
 enum rm_reconstruct_method
 {
@@ -176,7 +176,7 @@ struct rm_delta_reconstruct_ctx
     size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
 };
 
-/* @brief   Calculate similar to adler32 fast checkum on a given
+/* @brief   Calculate similar to adler32 fast checksum on a given
  *          file block of size @len starting from @data.
  * @details Adler checksum uses prime number 65521 as modulus.
  *          This allows for better strength than if 2^16 was used
@@ -187,7 +187,7 @@ struct rm_delta_reconstruct_ctx
 uint32_t
 rm_fast_check_block(const unsigned char *data, size_t len);
 
-/* @brief   Calculate adler32 checkum on a given file block
+/* @brief   Calculate adler32 checksum on a given file block
  *          of size @len starting from @data.
  * @details Adler checksum uses prime number 65521 as modulus.
  *          This allows for better strength than if 2^16 was used
@@ -237,13 +237,13 @@ rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 uint32_t
 rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, size_t L);
 
-/* @brief   Calculate rolling checkum on a given file block
+/* @brief   Calculate rolling checksum on a given file block
  *          of size @len starting from @data, modulo @M.
  * @details @M MUST be less than 2^16, 0x10000 */
 uint32_t
 rm_rolling_ch(const unsigned char *data, size_t len, uint32_t M); 
 
-/* @brief   Calculate strong checkum on a given file block
+/* @brief   Calculate strong checksum on a given file block
  *          of size @len starting from @data.
  * @details Implemented reusing Brad Conte's MD5 code from his
  *          crypto-algorithms repo (see include/md5.h). */
@@ -333,7 +333,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
  * @details Thread is started in @detachstate with @arg argument passed to @f.
  * return   RM_ERR_OK - sccess,
  *          RM_ERR_FAIL - error initializing thread's environment */
-int
+enum rm_error
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
 
 

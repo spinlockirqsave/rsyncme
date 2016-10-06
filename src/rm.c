@@ -567,7 +567,7 @@ copy_tail:
     return RM_ERR_OK;
 }
 
-int
+enum rm_error
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
     int                 err;
     pthread_attr_t      attr;
