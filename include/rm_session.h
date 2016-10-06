@@ -20,7 +20,7 @@ struct rm_session
 	struct twlist_head      link;   /* list handle */
 
 	unsigned char           id[RM_UUID_LEN];
-    uint16_t                hash;
+    struct rm_md5           hash;
 	pthread_mutex_t         mutex;
 
     FILE                    *f_x;               /* file on which rolling is performed */              
