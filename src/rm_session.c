@@ -107,7 +107,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
                     }
                     goto ok;                                                            /* @y is NULL though */
                 } else {
-                    return RM_ERR_Y_FOPEN;                                              /* couldn't open @y */
+                    return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
                 }
             }
             rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);

@@ -81,6 +81,7 @@ rm_do_msg_push_rx(void* arg) {
         err = RM_ERR_DELTA_RX_THREAD;
     }
 
+    RM_LOG_INFO("[%s] [4]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
     rm_msg_push_free(msg_push);
     if (s != NULL) {
         rm_session_free(s);
@@ -88,6 +89,18 @@ rm_do_msg_push_rx(void* arg) {
     return NULL;
 
 fail:
+    switch (err) {
+
+        case RM_ERR_Y_Z_SYNC:
+        case RM_ERR_Y_NULL:
+        case RM_ERR_OPEN_Z:
+        case RM_ERR_OPEN_Y:
+        case RM_ERR_OPEN_TMP:
+            /* TODO send tcp response with error code */
+
+        default:
+            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u]", rm_work_type_str[work->task], ssid1, ssid2, err);
+    }
     if (s != NULL) {
         rm_session_free(s);
     }

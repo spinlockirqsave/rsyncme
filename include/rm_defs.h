@@ -193,7 +193,6 @@ enum rm_error {
     RM_ERR_Y_Z_SYNC = 65,
     RM_ERR_BLOCK_SIZE = 66,
     RM_ERR_RESULT_F_NAME = 67,
-    RM_ERR_Y_FOPEN = 68,
     RM_ERR_UNKNOWN_ERROR = 69
 };
 
