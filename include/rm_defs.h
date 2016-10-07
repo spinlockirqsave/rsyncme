@@ -51,6 +51,7 @@
 #include <libgen.h>             /* dirname */
 #include <uuid/uuid.h>
 #include <sys/time.h>
+#include <limits.h>				/* UINT_MAX, ULONG_MAX */
 
 
 #include "twlist.h"
