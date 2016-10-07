@@ -3,8 +3,7 @@
  *              as described in Tridgell A., "Efficient Algorithms
  *              for Sorting and Synchronization", 1999.
  * @details     Common definitions used by sender and receiver.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        1 Jan 2016 07:50 PM
  * @copyright   LGPLv2.1v2.1 */
 
@@ -192,7 +191,7 @@ rm_md5(const unsigned char *data, size_t len,
     md5_final(&ctx, res);
 }
 
-int
+enum rm_error
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     size_t read, read_exp;
     char buf[RM_L1_CACHE_RECOMMENDED];
@@ -221,7 +220,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n) {
     return RM_ERR_TOO_MUCH_REQUESTED;
 }
 
-int
+enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     size_t read = 0, read_exp;
 
@@ -262,7 +261,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
     return fwrite(buf, size, items_n, f);
 }
 
-int
+enum rm_error
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset) {
     size_t read, read_exp;
     size_t offset;
@@ -508,13 +507,13 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
         } /* match */
     } while (send_left > 0);
     
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
     s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
     s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
 
     if (raw_bytes != NULL) {
         free(raw_bytes);
@@ -525,13 +524,13 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     return RM_ERR_OK;
 
 copy_tail:
-    pthread_mutex_lock(&s->session_mutex);
+    pthread_mutex_lock(&s->mutex);
     s->rec_ctx.collisions_1st_level = collisions_1st_level;
     s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
     s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
     s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
     s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
-    pthread_mutex_unlock(&s->session_mutex);
+    pthread_mutex_unlock(&s->mutex);
 
     if ((copy_all == 0) && (copy_tail_threshold_fired == 1)) { /* if copy tail but not all */
         if (match == 0) {
@@ -568,7 +567,7 @@ copy_tail:
     return RM_ERR_OK;
 }
 
-int
+enum rm_error
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
     int                 err;
     pthread_attr_t      attr;

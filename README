@@ -1,7 +1,6 @@
 /*@file         README
-* @brief        Project description.
-* @author       Piotr Gregor <piotrek.gregor at gmail.com>
-* @version      0.1.2
+* @brief        Introduction.
+* @author       Piotr Gregor <piotrgregor@rsyncme.org>
 * @date         24 Jan 2016 06:16 PM
 * @copyright    LGPLv2.1 */
 
@@ -20,19 +19,20 @@ Content
 
 1. OVERVIEW
 
-A simple implementation of rsync algorithm
-for efficient file synchronization.
+Software for efficient synchronization of remote data over TCP connection
+without sending of redundant data, utilizing custom synchronization algorithm
+based on a well known rsync algorithm.
 
 
 
 2. DOWNLOAD
 
 Git repository:
-    git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+    git clone --recursive https://bitbucket.org/rsyncmedev/rsyncme.git
 Binary packages:
-    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=downloads
+    https://bitbucket.org/rsyncmedev/rsyncme/downloads?tab=downloads
 Versions:
-    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=tags
+    https://bitbucket.org/rsyncmedev/rsyncme/downloads?tab=tags
 
 
 
@@ -207,6 +207,6 @@ E.g:
 
 
 Website:        http://rsyncme.org
-Development:    https://bitbucket.org/piotrgregor/rsyncme
+Development:    https://bitbucket.org/rsyncmedev/rsyncme
 Mirror:         https://github.com/spinlockirqsave/rsyncme
 Contact:        info@rsyncme.org
