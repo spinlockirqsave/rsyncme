@@ -12,6 +12,7 @@
 #include "rm_signal.h"
 #include "rm_util.h"
 #include "rm_wq.h"
+#include "rm_daemon.h"
 
 
 static void
@@ -194,12 +195,12 @@ err_exit:
 
 int
 main(void) {
-    struct rsyncme  rm;
     int             listenfd, connfd;
     int             err, errsv;
     struct sockaddr_in      srv_addr_in;
     struct sockaddr_storage cli_addr;
     socklen_t               cli_len;
+    struct sigaction        sa;
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
@@ -256,22 +257,25 @@ main(void) {
         RM_LOG_PERR("%s", "TCP listen on server's port failed");
         switch(errsv) {
             case EADDRINUSE:
-                RM_LOG_ERR("%s", "Another socket is already "
-                        "listening on the same port");
+                RM_LOG_ERR("%s", "Another socket is already listening on the same port");
             case EBADF:
                 RM_LOG_ERR("%s", "Not a valid descriptor");
             case ENOTSOCK:
                 RM_LOG_ERR("%s", "Not a socket");
             case EOPNOTSUPP:
-                RM_LOG_ERR("%s", "The socket is not of a type that"
-                        "supports the listen() call");
+                RM_LOG_ERR("%s", "The socket is not of a type that supports the listen() call");
             default:
                 RM_LOG_ERR("%s", "Unknown error");
         }
         exit(EXIT_FAILURE);
     }
 
-    signal(SIGINT, rm_sigint_h);
+    sa.sa_handler = rm_daemon_sigint_handler;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGINT, &sa, NULL) != 0) {
+        RM_LOG_PERR("%s", "Coudn't set signal handler for SIGINT");
+    }
     while(rm.state != RM_CORE_ST_SHUT_DOWN) {
         cli_len = sizeof(cli_addr);
         if ((connfd = accept(listenfd, (struct sockaddr*)&cli_addr, &cli_len)) < 0) {

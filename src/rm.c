@@ -245,6 +245,8 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n) {
     return RM_ERR_TOO_MUCH_REQUESTED;
 }
 
+/* @details This method can't be used with file locking because of internal buffering
+ *          made by buffered I/O library, read() system call should be used instead. */
 size_t
 rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f) {
     if (fseek(f, offset, SEEK_SET) != 0) {
@@ -253,6 +255,8 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f) {
     return fread(buf, size, items_n, f);
 }
 
+/* @details This method can't be used with file locking because of internal buffering
+ *          made by buffered I/O library, write() system call should be used instead. */
 size_t
 rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f) {
     if (fseek(f, offset, SEEK_SET) != 0) {
