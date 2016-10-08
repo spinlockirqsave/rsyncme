@@ -1,7 +1,6 @@
 /* @file      rm_signal.h
  * @brief     Signal handlers.
- * @author    Piotr Gregor <piotrek.gregor@gmail.com>
- * @version   0.1.2
+ * @author    Piotr Gregor <piotrgregor@rsyncme>
  * @date      02 Nov 2016 02:42 PM
  * @copyright LGPLv2.1 */
 
@@ -10,8 +9,7 @@
 #define RSYNCME_SIGNAL_H
 
 
-#include "rm_core.h"
-
+#include "rm.h"
 
 #include <signal.h>
 

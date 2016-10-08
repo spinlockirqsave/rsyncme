@@ -75,6 +75,7 @@
 
 
 #include "rm_defs.h"
+#include "rm_error.h"
 #include "md5.h"
 
 
@@ -269,14 +270,19 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
 enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 
-/* @brief   Read @items_n blocks of @size bytes each from stream @f
- *          at offset @offset.
+/* @brief   Read @items_n blocks of @size bytes each from stream @f at offset @offset.
+ * @details This method can't be used with file locking because of internal buffering
+ *          made by buffered I/O library, read() system call should be used instead.
  * @return  As fread, on success the number of blocks (each of @size size)
- *          read by fread. This number equals the number of bytes only when @size
- *          is sizeof(char).*/
+ *          read by fread. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
 rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
 
+/* @brief   Write @items_n blocks of @size bytes each from stream @f at offset @offset.
+ * @details This method can't be used with file locking because of internal buffering
+ *          made by buffered I/O library, write() system call should be used instead.
+ * @return  As fwrite, on success the number of blocks (each of @size size)
+ *          written by fwrite. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
 rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
 
@@ -374,5 +380,6 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
  * @details Uses uuid generation support, the character array must be at least 37 bytes. */
 void
 rm_get_unique_string(char name[RM_UNIQUE_STRING_LEN]);
+
 
 #endif	/* RSYNCME_H */

@@ -110,7 +110,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
                     return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
                 }
             }
-            rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
+            rm_md5((unsigned char*) m->y, m->y_sz, s->hash.data);
             return RM_ERR_OK;
 
         case RM_PULL_RX:                                                                /* validate remote PULL RX */
