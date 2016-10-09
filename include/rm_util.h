@@ -107,6 +107,7 @@ rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, u
 #define RM_LOG_ERR(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define RM_LOG_PERR(fmt, ...) rm_util_log_perr(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define RM_LOG_INFO(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "INFO", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define RM_LOG_ALERT(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ALERT", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define RM_LOG_WARN(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "WARN", __FILE__, __LINE__, __func__, __VA_ARGS__)
 #define RM_LOG_CRIT(fmt, ...) rm_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "CRIT", __FILE__, __LINE__, __func__, __VA_ARGS__)
 
@@ -114,12 +115,14 @@ rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, u
     #define RM_DEBUG_LOG_ERR(fmt, ...) RM_LOG_ERR(fmt, ...)
     #define RM_DEBUG_LOG_PERR(fmt, ...) RM_LOG_PERR(fmt, ...)
     #define RM_DEBUG_LOG_INFO(fmt, ...) RM_LOG_INFO(fmt, ...)
+    #define RM_DEBUG_LOG_ALERT(fmt, ...) RM_LOG_ALERT(fmt, ...)
     #define RM_DEBUG_LOG_WARN(fmt, ...) RM_LOG_WARN(fmt, ...)
     #define RM_DEBUG_LOG_CRIT(fmt, ...) RM_LOG_CRIT(fmt, ...)
 #else
     #define RM_DEBUG_LOG_ERR(fmt, ...) do {} while (0)
     #define RM_DEBUG_LOG_PERR(fmt, ...) do {} while (0)
     #define RM_DEBUG_LOG_INFO(fmt, ...) do {} while (0)
+    #define RM_DEBUG_LOG_ALERT(fmt, ...) do {} while (0)
     #define RM_DEBUG_LOG_WARN(fmt, ...) do {} while (0)
     #define RM_DEBUG_LOG_CRIT(fmt, ...) do {} while (0)
 #endif
