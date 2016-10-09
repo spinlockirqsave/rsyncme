@@ -10,7 +10,6 @@
 #include "twlist.h"
 
 
-
 enum rm_error
 rm_core_init(struct rsyncme *rm) {
     assert(rm != NULL);
@@ -49,16 +48,13 @@ rm_core_session_find(struct rsyncme *rm, unsigned char session_id[RM_UUID_LEN]) 
 
 void
 rm_core_session_add(struct rsyncme *rm, struct rm_session *s) {
-    uint64_t key;
-
     assert(rm != NULL);
     assert(s != NULL);
 
     pthread_mutex_lock(&rm->mutex);
     twlist_add(&rm->sessions_list, &s->link);
 
-    memcpy(&key, s->hash.data, rm_min(sizeof(key), sizeof(s->hash.data)));
-    twhash_add(rm->sessions, &s->hlink, key);
+    twhash_add(rm->sessions, &s->hlink, (uint64_t)s->hash.data);
     rm->sessions_n++;
     pthread_mutex_unlock(&rm->mutex);
     return;

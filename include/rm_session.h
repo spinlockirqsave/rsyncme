@@ -16,12 +16,12 @@
 
 struct rm_session
 {
-	struct twhlist_node     hlink;  /* hashtable handle */
-	struct twlist_head      link;   /* list handle */
+    struct twhlist_node     hlink;  /* hashtable handle */
+    struct twlist_head      link;   /* list handle */
 
-	unsigned char           id[RM_UUID_LEN];
+    unsigned char           id[RM_UUID_LEN];
     struct rm_md5           hash;
-	pthread_mutex_t         mutex;
+    pthread_mutex_t         mutex;
 
     FILE                    *f_x;               /* file on which rolling is performed */              
     FILE                    *f_y;               /* reference file */              
@@ -55,10 +55,10 @@ struct rm_session_push_local
 struct rm_session_push_rx
 {
     int fd;                                     /* socket handle */
-	pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
+    pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
     enum rm_tx_status       ch_ch_tx_status;
 
-	pthread_t               delta_rx_tid;       /* receiver of delta elements */
+    pthread_t               delta_rx_tid;       /* receiver of delta elements */
     enum rm_rx_status       delta_rx_status;
     twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */
     pthread_mutex_t rx_delta_e_queue_mutex;
@@ -72,7 +72,7 @@ struct rm_session_push_tx
 {
     struct rm_session_push_local session_local; /* delta producer and delta transmitter threads */
     int fd;                                     /* handle to the TCP connection */ 
-	pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
+    pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
     int                     ch_ch_rx_status;
     pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex shared with ch_ch_rx thread */
 };
@@ -81,8 +81,8 @@ struct rm_session_push_tx
 struct rm_session_pull_rx
 {
     int     fd; /* socket handle */
-	pthread_t               ch_ch_tid;
-	pthread_t               delta_tid;
+    pthread_t               ch_ch_tid;
+    pthread_t               delta_tid;
 };
 
 void

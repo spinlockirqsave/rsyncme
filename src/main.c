@@ -83,7 +83,7 @@ do_it_all(int fd, struct rsyncme* rm) {
     }
 
     if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
-        RM_LOG_ERR("%s", "Authentication failed.\n");
+        RM_LOG_ALERT("%s", "Authentication failed.\n");
         goto err_exit;
     }
 
@@ -274,7 +274,7 @@ main(void) {
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIGINT, &sa, NULL) != 0) {
-        RM_LOG_PERR("%s", "Coudn't set signal handler for SIGINT");
+        RM_LOG_PERR("%s", "Couldn't set signal handler for SIGINT");
     }
     while(rm.state != RM_CORE_ST_SHUT_DOWN) {
         cli_len = sizeof(cli_addr);

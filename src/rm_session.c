@@ -137,8 +137,8 @@ ok:
 enum rm_error rm_session_assign_from_msg_pull(struct rm_session *s, const struct rm_msg_pull *m) {
     /* TODO assign pointer, validate whether request can be executed */
     /*s->f_x = fopen(m->x;
-    s->f_y = m->y;
-    s->f_z = m->z; */
+      s->f_y = m->y;
+      s->f_z = m->z; */
     rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
     return RM_ERR_FAIL;
 }
