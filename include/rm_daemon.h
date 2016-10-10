@@ -18,7 +18,8 @@
 struct rsyncme  rm;
 
 
-void rm_daemon_sigint_handler(int signo);
+static void rm_daemon_sigint_handler(int signo);
+static void rm_daemon_sigtstp_handler(int signo);
 
 
 #endif  /* RSYNCME_DAEMON_H */
