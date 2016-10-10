@@ -12,15 +12,15 @@ DEBUGOUTPUTDIR = ../build/debug
 RELEASEOUTPUTDIR = ../build/release
 TESTOUTPUTDIR = ../test/build/release
 TESTOUTPUTDIR_D = ../test/build/debug
-SOURCES = main.c rm_daemon.c rm_wq.c rm.c rm_tcp.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c rm_session.c rm_signal.c rm_serialize.c rm_util.c md5.c
+SOURCES = rm_daemon.c rm_wq.c rm.c rm_tcp.c rm_rx.c rm_tx.c rm_error.c rm_core.c rm_do_msg.c rm_session.c rm_signal.c rm_serialize.c rm_util.c md5.c
 #TESTSOURCES = ../test/src/test_rsyncme.c
 INCLUDES = -I. -I../include -I../include/twlist/include
 _OBJECTS = $(SOURCES:.c=.o)
 _TESTOBJECTS = $(TESTSOURCES:.c=.o)
 DEBUGOBJECTS = $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
 RELEASEOBJECTS = $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
-DEBUGOBJECTS_NO_MAIN = $(filter-out $(DEBUGOUTPUTDIR)/main.o, $(DEBUGOBJECTS))
-RELEASEOBJECTS_NO_MAIN = $(filter-out $(RELEASEOUTPUTDIR)/main.o, $(RELEASEOBJECTS))
+DEBUGOBJECTS_NO_MAIN = $(filter-out $(DEBUGOUTPUTDIR)/rm_daemon.o, $(DEBUGOBJECTS))
+RELEASEOBJECTS_NO_MAIN = $(filter-out $(RELEASEOUTPUTDIR)/rm_daemon.o, $(RELEASEOBJECTS))
 #TESTOBJECTS = $(patsubst %,$(TESTOUTPUTDIR)/%,$(_TESTOBJECTS))
 #TESTOBJECTS_D = $(patsubst %,$(TESTOUTPUTDIR_D)/%,$(_TESTOBJECTS))
 DEBUGTARGET = ../build/debug/rsyncme_d
