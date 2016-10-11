@@ -25,6 +25,8 @@ struct rsyncme
 {
     pthread_mutex_t         mutex; 
     int                     state;
+    uint8_t                 signal_pending; /* only daemon thread accesses this */
+    int                     signo;          /* only daemon thread accesses this */
 
     TWDECLARE_HASHTABLE(sessions, RM_SESSION_HASH_BITS);
     struct twlist_head      sessions_list;
