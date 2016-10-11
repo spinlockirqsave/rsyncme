@@ -22,10 +22,8 @@ static void rm_daemon_sigint_handler(int signo) {
     if (signo != SIGINT) {
         return;
     }
-    fprintf(stderr, "\n\n==Received SIGINT==\n\nState:\n");
-    fprintf(stderr, "workers_n                             \t[%u]\n", rm.wq.workers_n);
-    fprintf(stderr, "workers_active_n                      \t[%u]\n", rm.wq.workers_active_n);
-    fprintf(stderr, "\n\n");
+    rm.signo = SIGINT;
+    rm.signal_pending = 1;
     return;
 }
 
@@ -33,9 +31,36 @@ static void rm_daemon_sigtstp_handler(int signo) {
     if (signo != SIGTSTP) {
         return;
     }
-    fprintf(stderr, "\n\n==Received SIGTSTP==\n\nQuiting...\n");
-    rm.state = RM_CORE_ST_SHUT_DOWN;
-    fprintf(stderr, "\n\n");
+    rm.signo = SIGTSTP;
+    rm.signal_pending = 1;
+    return;
+}
+
+static void rm_daemon_signal_handler(int signo) {
+    switch (signo) {
+        case SIGINT:
+            fprintf(stderr, "\n\n==Received SIGINT==\n\nState:\n");
+            pthread_mutex_lock(&rm.mutex);
+            fprintf(stderr, "workers_n                             \t[%u]\n", rm.wq.workers_n);
+            fprintf(stderr, "workers_active_n                      \t[%u]\n", rm.wq.workers_active_n);
+            pthread_mutex_unlock(&rm.mutex);
+            fprintf(stderr, "\n\n");
+            break;
+
+        case SIGTSTP:
+            fprintf(stderr, "\n\n==Received SIGTSTP==\n\nQuiting...\n");
+            pthread_mutex_lock(&rm.mutex);
+            rm.state = RM_CORE_ST_SHUT_DOWN;
+            pthread_mutex_unlock(&rm.mutex);
+            fprintf(stderr, "\n\n");
+            break;
+
+        default:
+            break;
+    }
+    rm.signo = 0;
+    rm.signal_pending = 0;
+    fflush(stderr);
     return;
 }
 
@@ -312,6 +337,9 @@ main(void) {
             errsv = errno;
             if (errsv == EINTR) {
                 RM_LOG_PERR("%s", "Accept interrupted");
+                if (rm.signal_pending == 1) {
+                    rm_daemon_signal_handler(rm.signo);
+                }
                 continue;
             } else {
                 RM_LOG_PERR("%s", "Accept error");
