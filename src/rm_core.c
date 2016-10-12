@@ -10,8 +10,7 @@
 #include "twlist.h"
 
 
-enum rm_error
-rm_core_init(struct rsyncme *rm) {
+enum rm_error rm_core_init(struct rsyncme *rm) {
     assert(rm != NULL);
     memset(rm, 0, sizeof *rm);
     twhash_init(rm->sessions);
@@ -22,6 +21,21 @@ rm_core_init(struct rsyncme *rm) {
 
     if (rm_wq_workqueue_init(&rm->wq, RM_WORKERS_N, "main_queue") != RM_ERR_OK) {   /* TODO CPU checking, choose optimal number of threads */
         return RM_ERR_WORKQUEUE_CREATE;
+    }
+    return RM_ERR_OK;
+}
+
+enum rm_error rm_core_deinit(struct rsyncme *rm) {
+    /* TODO clean (rm->sessions) */
+    /* TODO clean &rm->sessions_list */
+
+    RM_LOG_INFO("%s", "Stopping main work queue");
+
+    if (rm_wq_workqueue_stop(&rm->wq) != RM_ERR_OK) {
+        return RM_ERR_WORKQUEUE_STOP;
+    }
+    if (rm_wq_workqueue_deinit(&rm->wq) != RM_ERR_OK) {
+        return RM_ERR_MEM;
     }
     return RM_ERR_OK;
 }

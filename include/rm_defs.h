@@ -51,7 +51,6 @@
 #include <libgen.h>             /* dirname */
 #include <uuid/uuid.h>
 #include <sys/time.h>
-#include <limits.h>				/* UINT_MAX, ULONG_MAX */
 
 
 #include "twlist.h"
@@ -185,16 +184,18 @@ enum rm_error {
     RM_ERR_QUEUE_NOT_EMPTY = 56,
     RM_ERR_LAUNCH_WORKER = 57,
     RM_ERR_WORKQUEUE_CREATE = 58,
-    RM_ERR_GETADDRINFO = 59,
-    RM_ERR_CONNECT_TIMEOUT = 60,
-    RM_ERR_MSG_PT_UNKNOWN = 61,
-    RM_ERR_EOF = 62,
-    RM_ERR_CH_CH_TX_THREAD = 63,
-    RM_ERR_Y_NULL = 64,
-    RM_ERR_Y_Z_SYNC = 65,
-    RM_ERR_BLOCK_SIZE = 66,
-    RM_ERR_RESULT_F_NAME = 67,
-    RM_ERR_UNKNOWN_ERROR = 69
+    RM_ERR_WORKQUEUE_STOP = 59,
+    RM_ERR_GETADDRINFO = 60,
+    RM_ERR_CONNECT_TIMEOUT = 61,
+    RM_ERR_MSG_PT_UNKNOWN = 62,
+    RM_ERR_EOF = 63,
+    RM_ERR_CH_CH_TX_THREAD = 64,
+    RM_ERR_Y_NULL = 65,
+    RM_ERR_Y_Z_SYNC = 66,
+    RM_ERR_BLOCK_SIZE = 67,
+    RM_ERR_RESULT_F_NAME = 68,
+    RM_ERR_BUSY = 69,
+    RM_ERR_UNKNOWN_ERROR = 70
 };
 
 enum rm_io_direction {

@@ -250,6 +250,7 @@ main(void) {
     struct sockaddr_storage cli_addr;
     socklen_t               cli_len;
     struct sigaction        sa;
+    enum rm_error           status;
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
@@ -281,10 +282,10 @@ main(void) {
         exit(EXIT_FAILURE);
     }
 
-    err = rm_core_init(&rm);
-    if (err != RM_ERR_OK) {
+    status = rm_core_init(&rm);
+    if (status != RM_ERR_OK) {
         RM_LOG_CRIT("%s", "Can't initialize the engine");
-        switch (err) {
+        switch (status) {
 
             case RM_ERR_WORKQUEUE_CREATE:
                 RM_LOG_ERR("%s", "Couldn't start main work queue");
@@ -347,9 +348,25 @@ main(void) {
             }
         }
         do_it_all(connfd, &rm);
-        /* continue to listen for the next message */
     }
 
     RM_LOG_INFO("%s", "Shutting down");
+
+    pthread_mutex_lock(&rm.mutex);
+    status = rm_core_deinit(&rm);
+    pthread_mutex_unlock(&rm.mutex);
+    if (status != RM_ERR_OK) {
+        switch (status) {
+            case RM_ERR_WORKQUEUE_STOP:
+                RM_LOG_ERR("%s", "Error stopping main workqueue");
+                break;
+            case RM_ERR_MEM:
+                RM_LOG_ERR("%s", "Error deinitializing main workqueue");
+                break;
+            default:
+                break;
+        }
+    }
+
     return 0;
 }
