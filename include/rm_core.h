@@ -57,8 +57,8 @@ struct rm_core_con
 };
 
 /* @brief   Initialize daemon. */
-enum rm_error
-rm_core_init(struct rsyncme *rm);
+enum rm_error rm_core_init(struct rsyncme *rm);
+enum rm_error rm_core_deinit(struct rsyncme *rm);
 
 /* @return  Pointer to locked session if found (session_mutex locked), NULL otherwise */
 struct rm_session* rm_core_session_find(struct rsyncme *rm, unsigned char session_id[RM_UUID_LEN]);

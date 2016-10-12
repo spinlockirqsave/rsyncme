@@ -48,11 +48,13 @@ struct rm_workqueue {
 /* @brief   Start the worker threads.
  * @details After this returns the @workers_n variable in workqueue is set to the numbers of successfuly created
  *          and now running threads. It isn't neccessary the same number that has been passed to this function. */
-enum rm_error
-rm_wq_workqueue_init(struct rm_workqueue *q, uint32_t workers_n, const char *name);
+enum rm_error rm_wq_workqueue_init(struct rm_workqueue *q, uint32_t workers_n, const char *name);
+enum rm_error rm_wq_workqueue_deinit(struct rm_workqueue *wq);
 
-struct rm_workqueue*
-rm_wq_workqueue_create(uint32_t workers_n, const char *name);
+/* queue MUST be empty now */
+void rm_wq_workqueue_free(struct rm_workqueue *wq);
+struct rm_workqueue* rm_wq_workqueue_create(uint32_t workers_n, const char *name);
+enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq);
 
 struct rm_work {
     struct twlist_head  link;
