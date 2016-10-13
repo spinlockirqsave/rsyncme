@@ -10,51 +10,32 @@
 #include "rm_session.h"
 
 
-void
-rm_session_push_rx_init(struct rm_session_push_rx *prvt) {
-    if (prvt == NULL) {
-        return;
-    }
-    TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
-    pthread_mutex_init(&prvt->rx_delta_e_queue_mutex, NULL);
-    pthread_cond_init(&prvt->rx_delta_e_queue_signal, NULL);
-    return;
-}
-
-void
-rm_session_push_local_init(struct rm_session_push_local *prvt) {
+void rm_session_push_rx_init(struct rm_session_push_rx *prvt) {
     if (prvt == NULL) {
         return;
     }
     memset(prvt, 0, sizeof(*prvt));
-    TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
-    pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
-    pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
+    TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
+    pthread_mutex_init(&prvt->rx_delta_e_queue_mutex, NULL);
+    pthread_cond_init(&prvt->rx_delta_e_queue_signal, NULL);
+    prvt->msg_push = NULL;
     return;
 }
 
-static void
-rm_session_push_local_deinit(struct rm_session_push_local *prvt) {
-    /* queue of delta elements MUST be empty now */
-    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
-    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
-    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
-}
-
-/* frees private session, DON'T TOUCH private session after this returns */ 
-void
-rm_session_push_local_free(struct rm_session_push_local *prvt) {
+void rm_session_push_rx_free(struct rm_session_push_rx *prvt) {
     if (prvt == NULL) {
         return;
     }
-    /* queue of delta elements MUST be empty now */
-    rm_session_push_local_deinit(prvt);
+    pthread_mutex_destroy(&prvt->rx_delta_e_queue_mutex);
+    pthread_cond_destroy(&prvt->rx_delta_e_queue_signal);
+    if (prvt->msg_push != NULL) {
+        rm_msg_push_free(prvt->msg_push);
+    }
     free(prvt);
     return;
 }
 
-void
-rm_session_push_tx_init(struct rm_session_push_tx *prvt) {
+void rm_session_push_tx_init(struct rm_session_push_tx *prvt) {
     if (prvt == NULL) {
         return;
     }
@@ -65,13 +46,41 @@ rm_session_push_tx_init(struct rm_session_push_tx *prvt) {
 }
 
 /* frees private session, DON'T TOUCH private session after this returns */ 
-void
-rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
+void rm_session_push_tx_free(struct rm_session_push_tx *prvt) {
     if (prvt == NULL) {
         return;
     }
     rm_session_push_local_deinit(&prvt->session_local);
     pthread_mutex_destroy(&prvt->ch_ch_hash_mutex);
+    free(prvt);
+    return;
+}
+
+void rm_session_push_local_init(struct rm_session_push_local *prvt) {
+    if (prvt == NULL) {
+        return;
+    }
+    memset(prvt, 0, sizeof(*prvt));
+    TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
+    pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
+    pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
+    return;
+}
+
+static void rm_session_push_local_deinit(struct rm_session_push_local *prvt) {
+    /* queue of delta elements MUST be empty now */
+    assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
+    pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
+    pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
+}
+
+/* frees private session, DON'T TOUCH private session after this returns */ 
+void rm_session_push_local_free(struct rm_session_push_local *prvt) {
+    if (prvt == NULL) {
+        return;
+    }
+    /* queue of delta elements MUST be empty now */
+    rm_session_push_local_deinit(prvt);
     free(prvt);
     return;
 }
@@ -165,6 +174,7 @@ rm_session_create(enum rm_session_type t) {
             if (s->prvt == NULL) {
                 goto fail;
             }
+            rm_session_push_rx_init(s->prvt);
             break;
         case RM_PULL_RX:
             s->prvt = malloc(sizeof(struct rm_session_pull_rx));
@@ -216,6 +226,7 @@ rm_session_free(struct rm_session *s) {
     }
     switch (t) {
         case RM_PUSH_RX:
+            rm_session_push_rx_free(s->prvt);
             break;
         case RM_PULL_RX:
             break;
