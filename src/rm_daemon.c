@@ -357,6 +357,12 @@ main(void) {
     pthread_mutex_unlock(&rm.mutex);
     if (status != RM_ERR_OK) {
         switch (status) {
+            case RM_ERR_BUSY:
+                RM_LOG_ERR("%s", "Sessions hashtable not empty");
+                break;
+            case RM_ERR_FAIL:
+                RM_LOG_ERR("%s", "Sessions list not empty");
+                break;
             case RM_ERR_WORKQUEUE_STOP:
                 RM_LOG_ERR("%s", "Error stopping main workqueue");
                 break;

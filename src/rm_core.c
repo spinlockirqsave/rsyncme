@@ -26,8 +26,12 @@ enum rm_error rm_core_init(struct rsyncme *rm) {
 }
 
 enum rm_error rm_core_deinit(struct rsyncme *rm) {
-    /* TODO clean (rm->sessions) */
-    /* TODO clean &rm->sessions_list */
+    if (twhash_empty(rm->sessions) != 0) {
+        return RM_ERR_BUSY;
+    }
+    if (twlist_empty(&rm->sessions_list) != 1) {
+        return RM_ERR_FAIL;
+    }
 
     RM_LOG_INFO("%s", "Stopping main work queue");
 
