@@ -1,7 +1,6 @@
 /*@file         README
-* @brief        Project description.
-* @author       Piotr Gregor <piotrek.gregor at gmail.com>
-* @version      0.1.2
+* @brief        Introduction.
+* @author       Piotr Gregor <piotrgregor@rsyncme.org>
 * @date         24 Jan 2016 06:16 PM
 * @copyright    LGPLv2.1 */
 
@@ -20,8 +19,9 @@ Content
 
 1. OVERVIEW
 
-A simple implementation of rsync algorithm
-for efficient file synchronization.
+Software for efficient synchronization of remote data over TCP connection
+without sending of redundant data, utilizing custom synchronization algorithm
+based on a well known rsync algorithm.
 
 
 
