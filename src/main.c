@@ -1,7 +1,6 @@
 /* @file        main.c
  * @brief       Server start up.
- * @author      Piotr Gregor piotrek.gregor at gmail.com
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        02 Jan 2015 02:35 PM
  * @copyright   LGPLv2.1 */
 
@@ -12,6 +11,7 @@
 #include "rm_config.h"
 #include "rm_signal.h"
 #include "rm_util.h"
+#include "rm_wq.h"
 
 
 int
@@ -36,7 +36,16 @@ main(void) {
             exit(EXIT_FAILURE);
         }
     }
-    RM_LOG_INFO("%s", "Starting");
+    RM_LOG_INFO("%s", "Starting main work queue");
+
+    if (rm_wq_workqueue_init(&rm.wq, RM_WORKERS_N, "main_queue") != RM_ERR_OK) {   /* TODO CPU checking, choose optimal number of threads */
+        RM_LOG_ERR("%s", "Couldn't start main work queue");
+        exit(EXIT_FAILURE);
+    }
+    if (rm.wq.workers_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
+        RM_LOG_WARN("Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
+        exit(EXIT_FAILURE);
+    }
     listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     memset(&server_addr, 0, sizeof(server_addr));
