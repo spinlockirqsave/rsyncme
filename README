@@ -1,7 +1,6 @@
 /*@file         README
-* @brief        Project description.
-* @author       Piotr Gregor <piotrek.gregor at gmail.com>
-* @version      0.1.2
+* @brief        Introduction.
+* @author       Piotr Gregor <piotrgregor@rsyncme.org>
 * @date         24 Jan 2016 06:16 PM
 * @copyright    LGPLv2.1 */
 
@@ -20,19 +19,20 @@ Content
 
 1. OVERVIEW
 
-A simple implementation of rsync algorithm
-for efficient file synchronization.
+Software for efficient synchronization of remote data over TCP connection
+without sending of redundant data, utilizing custom synchronization algorithm
+based on a well known rsync algorithm.
 
 
 
 2. DOWNLOAD
 
 Git repository:
-    git clone --recursive https://bitbucket.org/piotrgregor/rsyncme.git
+    git clone --recursive https://bitbucket.org/rsyncmedev/rsyncme.git
 Binary packages:
-    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=downloads
+    https://bitbucket.org/rsyncmedev/rsyncme/downloads?tab=downloads
 Versions:
-    https://bitbucket.org/piotrgregor/rsyncme/downloads?tab=tags
+    https://bitbucket.org/rsyncmedev/rsyncme/downloads?tab=tags
 
 
 
@@ -84,6 +84,9 @@ at this moment. Linux Debian is suggested.
 All sources depend on libuuid, so please be sure it is installed on your system
 or install it using our script (this will install cmocka support too, which is required
 if you wish to run tests).
+Our code depends on twlist from Piotr Gregor's github repository, so be sure you did
+git checkout with --recursive option:
+    git clone --recursive https://bitbucket.org/rsyncmedev/rsyncme.git
 
 4.1.1 Installing libuuid:
 
@@ -112,13 +115,13 @@ following below instructions or run our install_deps.sh script).
             1. Download https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
             2. Follow instructions from INSTALL file
 
-4.2 Default release build:
+4.2 Default release build (be sure you did git checkout with --recursive option):
 
     cd src
     make    (will build everything [apart from tests] in release mode,
             same as "make all" and "make release")
 
-4.3 Default debug build:
+4.3 Default debug build (be sure you did git checkout with --recursive option):
 
     cd src
     make debug
@@ -207,6 +210,6 @@ E.g:
 
 
 Website:        http://rsyncme.org
-Development:    https://bitbucket.org/piotrgregor/rsyncme
+Development:    https://bitbucket.org/rsyncmedev/rsyncme
 Mirror:         https://github.com/spinlockirqsave/rsyncme
 Contact:        info@rsyncme.org
