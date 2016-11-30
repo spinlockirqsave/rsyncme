@@ -44,7 +44,7 @@ dir=$1						# dir is the name of a new folder when to download cmocka
 if [ $dir ]; then				# dir must be passed to this script
   echo "--> creating directory ["$dir"]"
 else
-    echo "--> please specify the directory to create"
+    echo "--> please specify the directory for cmocka"
     exit 1
 fi
 
