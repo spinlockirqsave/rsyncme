@@ -297,7 +297,7 @@ rm_session_delta_rx_f_local(void *arg) {
         goto done;
     }
 
-    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex); /* TODO sleep on delta queue and reconstruct element once awoken */
+    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex); /* sleep on delta queue and reconstruct element once awoken */
     q = &prvt_local->tx_delta_e_queue;
 
     while (bytes_to_rx > 0) {
@@ -306,7 +306,7 @@ rm_session_delta_rx_f_local(void *arg) {
             goto done;
         }
         /* process delta element */
-        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) { /* in case of local sync there can be only single element enqueued each time conditional variable is signalled, but in other cases it will be possible to be different most likely */
+        for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) { /* in case of local sync there can be only single element enqueued each time conditional variable is signaled, but in other cases it will be possible to be different most likely */
             delta_e = tw_container_of(lh, struct rm_delta_e, link);
             err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
             if (err != 0) {

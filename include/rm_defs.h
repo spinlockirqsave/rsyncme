@@ -101,6 +101,7 @@
 #define RM_DEFAULT_L                512         /* default block size in bytes */
 #define RM_L1_CACHE_RECOMMENDED     8192        /* buffer size, so that it should fit into
                                                  * L1 cache on most architectures */
+#define RM_WORKERS_N                8u          /* default number of workers for main work queue */
 
 #define rm_container_of(ptr, type, member) __extension__({  \
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
@@ -185,7 +186,9 @@ enum rm_error {
     RM_ERR_FORK = 53,
     RM_ERR_ARG = 54,
     RM_ERR_QUEUE_NOT_EMPTY = 55,
-    RM_ERR_UNKNOWN_ERROR = 56
+    RM_ERR_LAUNCH_WORKER = 56,
+    RM_ERR_WORKQUEUE_CREATE = 57,
+    RM_ERR_UNKNOWN_ERROR = 58
 };
 
 /* prototypes */
