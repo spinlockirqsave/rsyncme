@@ -57,13 +57,13 @@ rm_serialize_size_t(unsigned char *buf, size_t v) {
         buf = rm_serialize_u32(buf, v);
         return buf;
     } else if (sizeof(size_t) == 8) {
-        buf[0] = (v >> (24 + 32)) & 0xFF;
-        buf[1] = (v >> (16 + 32)) & 0xFF;
-        buf[2] = (v >> (8 + 32)) & 0xFF;
-        buf[3] = (v >> 32) & 0xFF;
-        buf[4] = (v >> 24) & 0xFF;
-        buf[5] = (v >> 16) & 0xFF;
-        buf[6] = (v >> 8) & 0xFF;
+        buf[0] = ((uint64_t)v >> (24 + 32)) & 0xFF;
+        buf[1] = ((uint64_t)v >> (16 + 32)) & 0xFF;
+        buf[2] = ((uint64_t)v >> (8 + 32)) & 0xFF;
+        buf[3] = ((uint64_t)v >> 32) & 0xFF;
+        buf[4] = ((uint64_t)v >> 24) & 0xFF;
+        buf[5] = ((uint64_t)v >> 16) & 0xFF;
+        buf[6] = ((uint64_t)v >> 8) & 0xFF;
         buf[7] = v & 0xFF;
         return buf + 8;
     } else {
@@ -171,13 +171,13 @@ rm_deserialize_u32(unsigned char *buf, uint32_t *v) {
 unsigned char *
 rm_deserialize_u64(unsigned char *buf, uint64_t *v) {
     *v = 0;
-    *v =  ((size_t)*(buf + 0) << (24 + 32));
-    *v += ((size_t)*(buf + 1) << (16 + 32));
-    *v += ((size_t)*(buf + 2) << (8 + 32));
-    *v += ((size_t)*(buf + 3) << 32);
-    *v += ((size_t)*(buf + 4) << 24);
-    *v += ((size_t)*(buf + 5) << 16);
-    *v += ((size_t)*(buf + 6) << 8);
+    *v =  ((uint64_t)*(buf + 0) << (24 + 32));
+    *v += ((uint64_t)*(buf + 1) << (16 + 32));
+    *v += ((uint64_t)*(buf + 2) << (8 + 32));
+    *v += ((uint64_t)*(buf + 3) << 32);
+    *v += ((uint64_t)*(buf + 4) << 24);
+    *v += ((uint64_t)*(buf + 5) << 16);
+    *v += ((uint64_t)*(buf + 6) << 8);
     *v += *(buf + 7);
     return buf + 8;
 }
@@ -189,13 +189,13 @@ rm_deserialize_size_t(unsigned char *buf, size_t *v) {
         return buf;
     } else if (sizeof(size_t) == 8) {
         *v = 0;
-        *v =  ((size_t)*(buf + 0) << (24 + 32));
-        *v += ((size_t)*(buf + 1) << (16 + 32));
-        *v += ((size_t)*(buf + 2) << (8 + 32));
-        *v += ((size_t)*(buf + 3) << 32);
-        *v += ((size_t)*(buf + 4) << 24);
-        *v += ((size_t)*(buf + 5) << 16);
-        *v += ((size_t)*(buf + 6) << 8);
+        *v =  ((uint64_t)*(buf + 0) << (24 + 32));
+        *v += ((uint64_t)*(buf + 1) << (16 + 32));
+        *v += ((uint64_t)*(buf + 2) << (8 + 32));
+        *v += ((uint64_t)*(buf + 3) << 32);
+        *v += ((uint64_t)*(buf + 4) << 24);
+        *v += ((uint64_t)*(buf + 5) << 16);
+        *v += ((uint64_t)*(buf + 6) << 8);
         *v += *(buf + 7);
         return buf + 8;
     } else {
@@ -234,7 +234,7 @@ rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) {
 unsigned char *
 rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) {
     buf = rm_deserialize_mem(buf, (char*)m->ssid, sizeof(m->ssid));
-    buf = rm_deserialize_u64(buf, &m->L);
+    buf = rm_deserialize_u64(buf, (uint64_t*)&m->L);
     buf = rm_deserialize_u16(buf, &m->x_sz);
     if (m->x_sz > 0) {
         buf =rm_deserialize_string(buf, m->x, rm_min(m->x_sz, sizeof(m->x)));

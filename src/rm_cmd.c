@@ -143,7 +143,7 @@ main( int argc, char *argv[]) {
                                           * 5		ip
                                           * 6       delete @y after @z has been reconstructed (or created) */
     char                *pCh, *y_copy;
-    unsigned long       helper;
+    unsigned long long  helper;
     struct rm_delta_reconstruct_ctx rec_ctx = {0};
     size_t              copy_all_threshold = 0;
     size_t              copy_tail_threshold = 0;
