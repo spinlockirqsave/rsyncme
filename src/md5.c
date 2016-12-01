@@ -12,6 +12,7 @@
 /*************************** HEADER FILES ***************************/
 #include <stdlib.h>
 #include <memory.h>
+#include <stdint.h>
 #include "md5.h"
 
 /****************************** MACROS ******************************/
@@ -172,10 +173,10 @@ void md5_final(MD5_CTX *ctx, BYTE hash[])
 	ctx->data[57] = ctx->bitlen >> 8;
 	ctx->data[58] = ctx->bitlen >> 16;
 	ctx->data[59] = ctx->bitlen >> 24;
-	ctx->data[60] = ctx->bitlen >> 32;
-	ctx->data[61] = ctx->bitlen >> 40;
-	ctx->data[62] = ctx->bitlen >> 48;
-	ctx->data[63] = ctx->bitlen >> 56;
+	ctx->data[60] = (uint64_t)ctx->bitlen >> 32;
+	ctx->data[61] = (uint64_t)ctx->bitlen >> 40;
+	ctx->data[62] = (uint64_t)ctx->bitlen >> 48;
+	ctx->data[63] = (uint64_t)ctx->bitlen >> 56;
 	md5_transform(ctx, ctx->data);
 
 	/* Since this implementation uses little endian byte ordering and MD uses big endian,

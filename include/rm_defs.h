@@ -1,7 +1,6 @@
 /* @file        rm_defs.h
  * @brief       Basic includes and definitions.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        2 Jan 2016 11:29 AM
  * @copyright	LGPLv2.1 */
 
@@ -67,16 +66,11 @@
 #define RM_BIT_6	(1u << 6)
 #define RM_BIT_7	(1u << 7)
 
-#define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end */
-
-/* TCP messages */
-#define RM_MSG_PUSH                 2           /* rsync push */
-#define RM_MSG_PULL                 3           /* rsync pull */
-#define RM_MSG_BYE                  255         /* close the controlling connection */
-
+#define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end, MUST be longer than sizeof(uuid_t)! */
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
-#define RM_FILE_LEN_MAX             150         /* max len of names of @x, @y files */
+#define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files, MUST be > RM_UNIQUE_STRING_LEN */
+#define RM_UUID_LEN                 16u         /* as uuid_t on Debian */
 
 #define RM_ADLER32_MODULUS          65521L      /* biggest prime int less than 2^16 */
 #define RM_FASTCHECK_MODULUS        65536L      /* 2^16, this makes rolling calculation possible */
@@ -96,6 +90,7 @@
 #define RM_CH_CH_REF_SIZE (RM_CH_CH_SIZE + \
         (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
 #define RM_NANOSEC_PER_SEC          1000000000U
+#define RM_CORE_HASH_CHALLENGE_BITS 32u
 
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */
@@ -126,7 +121,7 @@ enum rm_session_type
     RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
     RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
     RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
-    RM_PULL_TX     /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
+    RM_PULL_TX      /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
 };
 
 enum rm_error {
@@ -154,44 +149,74 @@ enum rm_error {
     RM_ERR_NONOVERLAPPING_INSERT = 21,
     RM_ERR_COPY_BUFFERED = 22,
     RM_ERR_COPY_BUFFERED_2 = 23,
-    RM_ERR_COPY_OFFSET = 24,
-    RM_ERR_ROLLING_CHECKSUM = 25,
-    RM_ERR_RECONSTRUCTION = 26,
-    RM_ERR_CREATE_SESSION = 27,
-    RM_ERR_DELTA_TX_THREAD_LAUNCH = 28,
-    RM_ERR_DELTA_RX_THREAD_LAUNCH = 29,
-    RM_ERR_DELTA_TX_THREAD = 30,
-    RM_ERR_DELTA_RX_THREAD = 31,
-    RM_ERR_FILE_SIZE = 32,
-    RM_ERR_FILE_SIZE_REC_MISMATCH = 33,
-    RM_ERR_UNLINK_Y = 34,
-    RM_ERR_RENAME_TMP_Y = 35,
-    RM_ERR_RENAME_TMP_Z = 36,
-    RM_ERR_MEM = 37,
-    RM_ERR_CHDIR = 38,
-    RM_ERR_GETCWD = 39,
-    RM_ERR_TOO_MUCH_REQUESTED = 40,
-    RM_ERR_FERROR = 41,
-    RM_ERR_FEOF = 42,
-    RM_ERR_FSEEK = 43,
-    RM_ERR_RX = 44,
-    RM_ERR_TX = 45,
-    RM_ERR_TX_RAW = 46,
-    RM_ERR_TX_ZERO_DIFF = 47,
-    RM_ERR_TX_TAIL = 48,
-    RM_ERR_TX_REF = 49,
-    RM_ERR_FILE = 50,
-    RM_ERR_DIR = 51,
-    RM_ERR_SETSID = 52,
-    RM_ERR_FORK = 53,
-    RM_ERR_ARG = 54,
-    RM_ERR_QUEUE_NOT_EMPTY = 55,
-    RM_ERR_LAUNCH_WORKER = 56,
-    RM_ERR_WORKQUEUE_CREATE = 57,
-    RM_ERR_UNKNOWN_ERROR = 58
+    RM_ERR_X_ZERO_SIZE = 24,
+    RM_ERR_COPY_OFFSET = 25,
+    RM_ERR_ROLLING_CHECKSUM = 26,
+    RM_ERR_RECONSTRUCTION = 27,
+    RM_ERR_CREATE_SESSION = 28,
+    RM_ERR_DELTA_TX_THREAD_LAUNCH = 29,
+    RM_ERR_DELTA_RX_THREAD_LAUNCH = 30,
+    RM_ERR_DELTA_TX_THREAD = 31,
+    RM_ERR_DELTA_RX_THREAD = 32,
+    RM_ERR_FILE_SIZE = 33,
+    RM_ERR_FILE_SIZE_REC_MISMATCH = 34,
+    RM_ERR_UNLINK_Y = 35,
+    RM_ERR_RENAME_TMP_Y = 36,
+    RM_ERR_RENAME_TMP_Z = 37,
+    RM_ERR_MEM = 38,
+    RM_ERR_CHDIR = 39,
+    RM_ERR_GETCWD = 40,
+    RM_ERR_TOO_MUCH_REQUESTED = 41,
+    RM_ERR_FERROR = 42,
+    RM_ERR_FEOF = 43,
+    RM_ERR_FSEEK = 44,
+    RM_ERR_RX = 45,
+    RM_ERR_TX = 46,
+    RM_ERR_TX_RAW = 47,
+    RM_ERR_TX_ZERO_DIFF = 48,
+    RM_ERR_TX_TAIL = 49,
+    RM_ERR_TX_REF = 50,
+    RM_ERR_FILE = 51,
+    RM_ERR_DIR = 52,
+    RM_ERR_SETSID = 53,
+    RM_ERR_FORK = 54,
+    RM_ERR_ARG = 55,
+    RM_ERR_QUEUE_NOT_EMPTY = 56,
+    RM_ERR_LAUNCH_WORKER = 57,
+    RM_ERR_WORKQUEUE_CREATE = 58,
+    RM_ERR_WORKQUEUE_STOP = 59,
+    RM_ERR_GETADDRINFO = 60,
+    RM_ERR_CONNECT_TIMEOUT = 61,
+    RM_ERR_MSG_PT_UNKNOWN = 62,
+    RM_ERR_EOF = 63,
+    RM_ERR_CH_CH_TX_THREAD = 64,
+    RM_ERR_Y_NULL = 65,
+    RM_ERR_Y_Z_SYNC = 66,
+    RM_ERR_BLOCK_SIZE = 67,
+    RM_ERR_RESULT_F_NAME = 68,
+    RM_ERR_BUSY = 69,
+    RM_ERR_UNKNOWN_ERROR = 70
+};
+
+enum rm_io_direction {
+    RM_READ,
+    RM_WRITE
+};
+
+enum rm_pt_type {
+    RM_PT_MSG_PUSH,
+    RM_PT_MSG_PULL,
+    RM_PT_MSG_BYE
 };
 
 /* prototypes */
+
+struct rsyncme;
+struct rm_msg_hdr;
+struct rm_msg;
+struct rm_msg_push;
+struct rm_msg_pull;
+
 char *strdup(const char *s);
 
 

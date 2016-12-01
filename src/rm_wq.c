@@ -8,10 +8,17 @@
 #include "rm_wq.h"
 
 
+const char * rm_work_type_str[] = {
+    [RM_WORK_PROCESS_MSG_PUSH] = "RM_WORK_PROCESS_MSG_PUSH",
+    [RM_WORK_PROCESS_MSG_PULL] = "RM_WORK_PROCESS_MSG_PULL",
+    [RM_WORK_PROCESS_MSG_BYE] = "RM_WORK_PROCESS_MSG_BYE",
+    0
+};
+
 static void*
 rm_wq_worker_f(void *arg) {
     twfifo_queue            *q;
-    const struct rm_work    *work;     /* iterator over enqueued work elements */
+    struct rm_work          *work;     /* iterator over enqueued work elements */
     struct twlist_head      *lh;
 
     struct rm_worker *w = (struct rm_worker*) arg;
@@ -23,9 +30,9 @@ rm_wq_worker_f(void *arg) {
         for (twfifo_dequeue(q, lh); lh != NULL; twfifo_dequeue(q, lh)) {
             work = tw_container_of(lh, struct rm_work, link);
             pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
-            work->f(work->data);
+            work->f(work);
+            pthread_mutex_lock(&w->mutex);
         }
-        pthread_mutex_lock(&w->mutex);
         pthread_cond_wait(&w->signal, &w->mutex);
     }
     pthread_mutex_unlock(&w->mutex);
@@ -41,14 +48,15 @@ rm_wq_worker_init(struct rm_worker *w, struct rm_workqueue *wq) {
     pthread_cond_init(&w->signal, NULL);
 }
 
-static void
-rm_wq_worker_deinit(struct rm_worker *w) {
+static enum rm_error rm_wq_worker_deinit(struct rm_worker *w) {
     assert(twlist_empty(&w->queue) != 0 && "Queue NOT EMPTY!\n");
     if (twlist_empty(&w->queue) == 0) {
         RM_LOG_CRIT("QUEUE NOT EMPTY, worker [%u]", w->idx);
+        return RM_ERR_BUSY;
     }
     pthread_mutex_destroy(&w->mutex);
     pthread_cond_destroy(&w->signal);
+    return RM_ERR_OK;
 }
 
 enum rm_error
@@ -61,6 +69,7 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
     if (wq->workers == NULL) {
         return RM_ERR_MEM;
     }
+    wq->workers_n = workers_n;
 
     if (workers_n > 0) {
         wq->workers_active_n = 0;
@@ -82,16 +91,16 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
 
     wq->name = strdup(name);
     wq->running = 1;
-    wq->next_worker_idx_to_use = 0;
-    if (wq->workers_n > 0) { /* if we have at least one worker thread then queue creation was successful */
+
+    wq->next_worker_idx_to_use = (first_active_set == 1 ? wq->first_active_worker_idx : 0);
+    if (wq->workers_active_n > 0) { /* if we have at least one worker thread then queue creation was successful */
         return RM_ERR_OK;
     } else {
         return RM_ERR_WORKQUEUE_CREATE;
     }
 }
 
-static void
-rm_wq_workqueue_deinit(struct rm_workqueue *wq) {
+enum rm_error rm_wq_workqueue_deinit(struct rm_workqueue *wq) {
     struct rm_worker    *w;
     uint32_t            workers_n = wq->workers_n;
 
@@ -99,14 +108,15 @@ rm_wq_workqueue_deinit(struct rm_workqueue *wq) {
     while (workers_n) {
         --workers_n;
         w = &wq->workers[workers_n];
-        rm_wq_worker_deinit(w);
+        if (rm_wq_worker_deinit(w) != RM_ERR_OK) {
+            return RM_ERR_FAIL;
+        }
     }
     free(wq->workers);
+    return RM_ERR_OK;
 }
 
-void
-rm_wq_workqueue_free(struct rm_workqueue *wq) {
-    /* queue MUST be empty now */
+void rm_wq_workqueue_free(struct rm_workqueue *wq) {                /* queue MUST be empty now */
     rm_wq_workqueue_deinit(wq);
     free(wq);
     return;
@@ -137,6 +147,66 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name) {
         }
     }
     return wq;
+}
+
+enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq) {
+    struct rm_worker    *w;
+    uint8_t             workers_n = 0;
+    enum rm_error       err = RM_ERR_OK;
+
+    workers_n = wq->workers_n;
+    if ((workers_n > 0) && (wq->workers_active_n > 0)) {
+        while (workers_n) {
+            --workers_n;
+            w = &wq->workers[workers_n];
+            pthread_mutex_lock(&w->mutex);                                      /* lock worker thread */
+            if (w->active == 1) {
+                w->active = 0;                                                  /* tell the worker to stop */
+                pthread_cond_signal(&w->signal);                                /* signal the worker */
+                pthread_mutex_unlock(&w->mutex);                                /* let worker exit */
+                wq->workers_active_n--;                                         /* decrease the number of active/running workers */
+                if (pthread_join(w->tid, NULL) != RM_ERR_OK) {                  /* join worker thread */
+                    err = RM_ERR_FAIL;
+                }
+            } else {
+                pthread_mutex_unlock(&w->mutex);
+            }
+        }
+    }
+    return err;
+}
+
+struct rm_work*
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*)) {
+    TWINIT_LIST_HEAD(&work->link);
+    work->task = task;
+    work->rm = rm;
+    work->msg = msg;
+    work->f = f;
+    return work;
+}
+
+struct rm_work*
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*)) {
+    struct rm_work* work = malloc(sizeof(*work));
+    if (work == NULL) {
+        return NULL;
+    }
+    return rm_work_init(work, task, rm, msg, f);
+}
+
+void
+rm_work_free(struct rm_work* work) {
+    if (work->msg != NULL) {
+        if (work->msg->hdr != NULL) {
+            free(work->msg->hdr);
+        }
+        if (work->msg->body != NULL) {
+            free(work->msg->body);
+        }
+    }
+    free(work->msg);
+    free(work);
 }
 
 /*  @brief  Work dispatcher (round-robin). */
