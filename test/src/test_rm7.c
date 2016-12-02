@@ -33,7 +33,7 @@ test_rm_fopen_file_prefixed(const char *name, const char *prefix,
         return NULL;
     }
     strncpy(f_z->name, prefix, 49);
-    snprintf(f_z->name + strlen(f_z->name), 50, "%lu", L);
+    snprintf(f_z->name + strlen(f_z->name), 50, "%zu", L);
     strncpy(f_z->name + strlen(f_z->name), name, RM_FILE_LEN_MAX);
     f_z->name[RM_FILE_LEN_MAX + 99] = '\0';
     return f_z->f = fopen(f_z->name, mode);
