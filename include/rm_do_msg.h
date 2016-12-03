@@ -26,13 +26,17 @@ struct rm_msg_hdr
 {
     uint32_t	hash;                           /* security token   */
     uint8_t		pt;                             /* payload type     */
-    uint8_t     flags;                          /* push fags        */
+    uint8_t     flags;                          /* push flags        */
     uint16_t    len;                            /* message length   */
 };
 
 struct rm_msg {                                 /* base type for derivation of messages */
     struct rm_msg_hdr   *hdr;
     void                *body;
+};
+
+struct rm_msg_ack {
+    struct rm_msg_hdr   *hdr;                   /* pt = rm_pt_type (*_ACK), flags = status (enum rm_error) */
 };
 
 struct rm_msg_push

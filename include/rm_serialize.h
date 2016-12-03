@@ -44,6 +44,9 @@ unsigned char *
 rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
 
 unsigned char *
+rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) __attribute__ ((nonnull(1,2)));
+
+unsigned char *
 rm_serialize_msg_pull(unsigned char *buf, struct rm_msg_pull *m) __attribute__ ((nonnull(1,2)));
 
 

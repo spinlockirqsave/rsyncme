@@ -1,8 +1,8 @@
-/* @file	    rm_core.c
- * @brief	    Daemon's start up.
- * @author	    Piotr Gregor <piotrgregor@rsyncme.org>
- * @date	    02 Jan 2016 02:50 PM
- * @copyright	LGPLv2.1 */
+/* @file        rm_core.c
+ * @brief       Daemon's start up.
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
+ * @date        02 Jan 2016 02:50 PM
+ * @copyright   LGPLv2.1 */
 
 
 #include "rm_core.h"

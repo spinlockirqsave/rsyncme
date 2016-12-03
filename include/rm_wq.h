@@ -61,6 +61,7 @@ struct rm_work {
     enum rm_work_type   task;
     struct rsyncme      *rm;
     struct rm_msg       *msg;               /* message handle */
+    int                 fd;                 /* socket */
     void* (*f)(void*);
 };
 
@@ -74,10 +75,10 @@ struct rm_work {
     struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*));
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*));
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*));
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*));
 
 void
 rm_work_free(struct rm_work* work);

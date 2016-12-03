@@ -28,31 +28,32 @@ rm_msg_push_free(struct rm_msg_push *msg) {
 
 void*
 rm_do_msg_push_rx(void* arg) {
-    enum rm_error               err;
+    enum rm_error               err = RM_ERR_OK;
     struct rm_session	        *s = NULL;
     struct rm_session_push_rx   *prvt = NULL;
     struct rm_msg_push          *msg_push = NULL;
-    struct rm_msg_hdr           *hdr = NULL;
-    rm_push_flags               flags;
     char                        ssid1[RM_UNIQUE_STRING_LEN];
     char                        ssid2[RM_UNIQUE_STRING_LEN];
 
     struct rm_work* work = (struct rm_work*) arg;
     msg_push = (struct rm_msg_push*) work->msg;
-    hdr = msg_push->hdr;
-    flags = hdr->flags;
-    (void)flags;
 
     s = rm_session_create(RM_PUSH_RX);
     if (s == NULL) {
+        /* TODO send ack with error: temporary unavailable, try again ? */
         return NULL;
     }
     uuid_unparse(msg_push->ssid, ssid1);
     uuid_unparse(s->id, ssid2);
     RM_LOG_INFO("[%s] [1]: their ssid [%s] -> our ssid [%s]", rm_work_type_str[work->task], ssid1, ssid2);
-    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], ssid1, ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, hdr->flags);
 
     err = rm_session_assign_validate_from_msg_push(s, msg_push);
+    if (err != RM_ERR_OK) {
+        goto fail;
+    }
+    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], ssid1, ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
+    /* send ACK OK */
+    err = rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK);
     if (err != RM_ERR_OK) {
         goto fail;
     }
@@ -97,6 +98,13 @@ fail:
         case RM_ERR_OPEN_Y:
         case RM_ERR_OPEN_TMP:
             /* TODO send tcp response with error code */
+            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u]", rm_work_type_str[work->task], ssid1, ssid2, err);
+            break;
+
+        case RM_ERR_WRITE:
+            /* error sending RM_MSG_PUSH_ACK */
+            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : error sending push ack", rm_work_type_str[work->task], ssid1, ssid2, err);
+            break;
 
         default:
             RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u]", rm_work_type_str[work->task], ssid1, ssid2, err);
@@ -174,6 +182,11 @@ rm_calc_msg_len(void *arg) {
             break;
 
         case RM_PT_MSG_BYE:     /* TODO */
+            break;
+
+        case RM_PT_MSG_PUSH_ACK:
+        case RM_PT_MSG_PULL_ACK:
+            len = rm_calc_msg_hdr_len(msg->hdr);
             break;
 
         default:

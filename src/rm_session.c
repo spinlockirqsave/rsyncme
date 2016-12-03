@@ -103,9 +103,9 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
             if (m->y_sz == 0) {
                 return RM_ERR_Y_NULL;                                                   /* error: what is the name of the result file? OR error: what is the name of the file you want to sync with? */
             }
-            s->f_y = fopen(m->y, "rb");                                                 /* open and split into nonoverlapping checksums */ 
+            s->f_y = fopen(m->y, "rb");                                                 /* try to open */ 
             if (s->f_y == NULL) {
-                if (m->hdr->flags & RM_BIT_4) {                                              /* force creation if @y doesn't exist? */
+                if (m->hdr->flags & RM_BIT_4) {                                         /* force creation if @y doesn't exist? */
                     if (m->z_sz != 0) {                                                 /* use different name? */
                         s->f_z = fopen(m->z, "w+b");
                     } else {

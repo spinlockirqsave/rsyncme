@@ -114,6 +114,12 @@ rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) {
 }
 
 unsigned char *
+rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) {
+    buf = rm_serialize_msg_hdr(buf, m->hdr);
+    return buf;
+}
+
+unsigned char *
 rm_serialize_msg_pull(unsigned char *buf, struct rm_msg_pull *m) {
     buf = rm_serialize_msg_hdr(buf, m->hdr);
     buf = rm_serialize_u32(buf, m->L);

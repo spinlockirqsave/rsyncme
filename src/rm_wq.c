@@ -1,8 +1,8 @@
-/* @file	    rm_wq.c
- * @brief	    Workqueue.
- * @author	    Piotr Gregor <piotrgregor@rsyncme.org>
- * @date	    02 Jan 2016 02:50 PM
- * @copyright	LGPLv2.1 */
+/* @file        rm_wq.c
+ * @brief       Workqueue.
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
+ * @date        02 Jan 2016 02:50 PM
+ * @copyright   LGPLv2.1 */
 
 
 #include "rm_wq.h"
@@ -177,22 +177,23 @@ enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq) {
 }
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*)) {
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*)) {
     TWINIT_LIST_HEAD(&work->link);
     work->task = task;
     work->rm = rm;
     work->msg = msg;
+    work->fd = fd;
     work->f = f;
     return work;
 }
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, void*(*f)(void*)) {
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*)) {
     struct rm_work* work = malloc(sizeof(*work));
     if (work == NULL) {
         return NULL;
     }
-    return rm_work_init(work, task, rm, msg, f);
+    return rm_work_init(work, task, rm, msg, fd, f);
 }
 
 void
