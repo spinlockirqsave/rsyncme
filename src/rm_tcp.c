@@ -65,6 +65,21 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e) {
     return 0;
 }
 
+enum rm_error
+rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status) {
+    struct rm_msg_hdr   hdr = {0};
+    struct rm_msg_ack   ack = {0};
+    struct rm_msg_ack   raw_msg_ack = {0};
+
+    hdr.pt = pt;
+    hdr.flags = status;
+    hdr.len = rm_calc_msg_len(&hdr);
+    hdr.hash = rm_core_hdr_hash(&hdr);
+    ack.hdr = &hdr;
+    rm_serialize_msg_ack((unsigned char*)&raw_msg_ack, &ack);
+    return rm_tcp_write(fd, &raw_msg_ack, hdr.len);
+}
+
 int
 rm_tcp_set_socket_blocking_mode(int fd, uint8_t on) {
     if (fd < 0 || on > 1) {

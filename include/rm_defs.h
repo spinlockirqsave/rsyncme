@@ -196,6 +196,7 @@ enum rm_error {
     RM_ERR_RESULT_F_NAME = 68,
     RM_ERR_BUSY = 69,
     RM_ERR_UNKNOWN_ERROR = 70
+    /* max number of error limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 
 enum rm_io_direction {
@@ -205,7 +206,9 @@ enum rm_io_direction {
 
 enum rm_pt_type {
     RM_PT_MSG_PUSH,
+    RM_PT_MSG_PUSH_ACK,
     RM_PT_MSG_PULL,
+    RM_PT_MSG_PULL_ACK,
     RM_PT_MSG_BYE
 };
 
