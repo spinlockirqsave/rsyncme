@@ -41,6 +41,7 @@ rm_do_msg_push_rx(void* arg) {
     s = rm_session_create(RM_PUSH_RX);
     if (s == NULL) {
         /* TODO send ack with error: temporary unavailable, try again ? */
+        close(work->fd);
         return NULL;
     }
     uuid_unparse(msg_push->ssid, ssid1);
@@ -195,4 +196,11 @@ rm_calc_msg_len(void *arg) {
             return 0;
     }
     return len;
+}
+
+void
+rm_msg_push_dtor(void *arg) {
+    struct rm_work *work = (struct rm_work*) arg;
+    close(work->fd);
+    rm_work_free(work);                     /* free the memory allocated for message and work itself */
 }

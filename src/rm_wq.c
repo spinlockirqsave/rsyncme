@@ -15,15 +15,31 @@ const char * rm_work_type_str[] = {
     0
 };
 
+static void
+rm_wq_call_sync_dtor(struct rm_work *work) {
+    switch (work->task)
+    {
+        case RM_WORK_PROCESS_MSG_PUSH:
+            work->f_dtor(work);                 /* must at least free the memory allocated for the message and work struct itself, may close the TCP socket, etc... */
+            work = NULL;
+            break;
+
+        case RM_WORK_PROCESS_MSG_PULL:
+        case RM_WORK_PROCESS_MSG_BYE:
+        default:
+            break;                              /* do not call destructor for these types synchronously */
+    }
+}
+
 static void*
 rm_wq_worker_f(void *arg) {
     twfifo_queue            *q;
-    struct rm_work          *work;     /* iterator over enqueued work elements */
+    struct rm_work          *work;              /* iterator over enqueued work elements */
     struct twlist_head      *lh;
 
     struct rm_worker *w = (struct rm_worker*) arg;
 
-    pthread_mutex_lock(&w->mutex);   /* sleep on the queue and process queued work element once awoken */
+    pthread_mutex_lock(&w->mutex);              /* sleep on the queue and process queued work element once awoken */
     q = &w->queue;
 
     while (w->active == 1) {
@@ -31,6 +47,7 @@ rm_wq_worker_f(void *arg) {
             work = tw_container_of(lh, struct rm_work, link);
             pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
             work->f(work);
+            rm_wq_call_sync_dtor(work);         /* process destructors for synchronous jobs */
             pthread_mutex_lock(&w->mutex);
         }
         pthread_cond_wait(&w->signal, &w->mutex);
@@ -177,23 +194,24 @@ enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq) {
 }
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*)) {
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*)) {
     TWINIT_LIST_HEAD(&work->link);
     work->task = task;
     work->rm = rm;
     work->msg = msg;
     work->fd = fd;
     work->f = f;
+    work->f_dtor = f_dtor;
     return work;
 }
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*)) {
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*)) {
     struct rm_work* work = malloc(sizeof(*work));
     if (work == NULL) {
         return NULL;
     }
-    return rm_work_init(work, task, rm, msg, fd, f);
+    return rm_work_init(work, task, rm, msg, fd, f, f_dtor);
 }
 
 void

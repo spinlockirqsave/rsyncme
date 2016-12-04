@@ -16,6 +16,11 @@
 #include "twlist.h"
 
 
+enum rm_work_sync_async_type {
+    RM_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
+    RM_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
+};
+
 /* Keep in sync with rm_work_type_str */
 enum rm_work_type {
     RM_WORK_PROCESS_MSG_PUSH = 0,
@@ -62,7 +67,8 @@ struct rm_work {
     struct rsyncme      *rm;
     struct rm_msg       *msg;               /* message handle */
     int                 fd;                 /* socket */
-    void* (*f)(void*);
+    void* (*f)(void*);                      /* processing */
+    void (*f_dtor)(void*);                  /* destructor */
 };
 
 #define RM_WORK_INITIALIZER(n, d, f) {      \
@@ -75,10 +81,10 @@ struct rm_work {
     struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
 
 struct rm_work*
-rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*));
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));
 
 struct rm_work*
-rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*));
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));
 
 void
 rm_work_free(struct rm_work* work);

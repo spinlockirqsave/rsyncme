@@ -200,7 +200,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 
     switch (pt) { /* message OK, process it */
         case RM_PT_MSG_PUSH:
-            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, fd, rm_do_msg_push_rx); /* worker takes ownerhip of memory allocated for msg (including hdr) */
+            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, fd, rm_do_msg_push_rx, rm_msg_push_dtor); /* worker takes ownerhip of TCP socket and memory allocated for msg (including hdr) */
             if (work == NULL) {
                 RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
                 goto err_exit;
@@ -223,7 +223,6 @@ do_it_all(int fd, struct rsyncme* rm) {
         free(body_raw);
         body_raw = NULL;
     }
-    close(fd);
     return;
 
 err_exit:
@@ -239,7 +238,6 @@ err_exit:
         free(msg);
         msg = NULL;
     }
-    close(fd);
 }
 
 int

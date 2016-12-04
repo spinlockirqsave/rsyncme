@@ -10,6 +10,7 @@
 
 
 #include "rm_defs.h"
+#include "rm_wq.h"
 
 
 #define RM_MSG_HDR_HASH_OFFSET  0u
@@ -92,6 +93,12 @@ uint16_t rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr);
 /* @brief       Return length of message including header, appropriate to put into hdr->len field */
 uint16_t
 rm_calc_msg_len(void *arg);
+
+
+/* destructors */
+
+void
+rm_msg_push_dtor(void *arg);
 
 #endif  /* RSYNCME_DO_MSG_H */
 
