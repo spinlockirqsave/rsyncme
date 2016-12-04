@@ -156,25 +156,27 @@ rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr) {
 
 uint16_t
 rm_calc_msg_len(void *arg) {
-    struct rm_msg_push  *msg = (struct rm_msg_push*) arg;
+    struct rm_msg_push  *msg_push;
+    struct rm_msg       *msg = (struct rm_msg*) arg;
     uint16_t            len = 0;
 
     switch (msg->hdr->pt) {
 
         case RM_PT_MSG_PUSH:
-            len = rm_calc_msg_hdr_len(msg->hdr);
+            msg_push = (struct rm_msg_push*) arg;
+            len = rm_calc_msg_hdr_len(msg_push->hdr);
             len += 16;                      /* ssid */
             len += 8;                       /* L    */
-            len += (2 + msg->x_sz);
-            if (msg->y_sz > 0) {
-                len += (2 + msg->y_sz);     /* size fields are the length of the string including NULL terminating byte  */
+            len += (2 + msg_push->x_sz);
+            if (msg_push->y_sz > 0) {
+                len += (2 + msg_push->y_sz);    /* size fields are the length of the string including NULL terminating byte  */
             } else {
-                len += 2;                   /* only file length field */
+                len += 2;                       /* only file length field */
             }
-            if (msg->z_sz > 0) {
-                len += (2 + msg->z_sz);     /* size fields are the length of the string including NULL terminating byte  */
+            if (msg_push->z_sz > 0) {
+                len += (2 + msg_push->z_sz);    /* size fields are the length of the string including NULL terminating byte  */
             } else {
-                len += 2;                   /* only file length field */
+                len += 2;                       /* only file length field */
             }
             break;
 

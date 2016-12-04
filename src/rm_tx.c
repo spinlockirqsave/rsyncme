@@ -318,7 +318,7 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     struct rm_session               *s = NULL;
     struct rm_session_push_tx       *prvt = NULL;
 
-    struct rm_msg_push  msg;
+    struct rm_msg_push  msg = {0};
     unsigned char       *msg_raw = NULL;
 
     (void) y;
