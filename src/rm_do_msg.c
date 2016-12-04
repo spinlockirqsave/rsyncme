@@ -84,7 +84,6 @@ rm_do_msg_push_rx(void* arg) {
     }
 
     RM_LOG_INFO("[%s] [4]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
-    rm_msg_push_free(msg_push);
     if (s != NULL) {
         rm_session_free(s);
     }
@@ -202,5 +201,7 @@ void
 rm_msg_push_dtor(void *arg) {
     struct rm_work *work = (struct rm_work*) arg;
     close(work->fd);
+    rm_msg_push_free((struct rm_msg_push*) work->msg);
+    work->msg = NULL;
     rm_work_free(work);                     /* free the memory allocated for message and work itself */
 }

@@ -78,7 +78,12 @@ void
 rm_msg_push_free(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 
 /* @brief       Handles incoming rsync push request in new sesion.
- * @details     Starts ch_ch_tx and delta_rx threads. Used by daemon. */
+ * @details     Work struct callback for RM_WORK_PROCESS_MSG_PUSH.
+ *              Starts ch_ch_tx and delta_rx threads.
+ *              Used by daemon.
+ *              The session is created and freed in this callback.
+ *              The work dctor is not called in this function
+ *              but as synchronous dctor by worker thread. */
 void*
 rm_do_msg_push_rx(void* arg) __attribute__ ((nonnull(1)));
 

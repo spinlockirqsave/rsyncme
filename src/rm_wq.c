@@ -217,14 +217,8 @@ rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, i
 void
 rm_work_free(struct rm_work* work) {
     if (work->msg != NULL) {
-        if (work->msg->hdr != NULL) {
-            free(work->msg->hdr);
-        }
-        if (work->msg->body != NULL) {
-            free(work->msg->body);
-        }
+        free(work->msg);
     }
-    free(work->msg);
     free(work);
 }
 
