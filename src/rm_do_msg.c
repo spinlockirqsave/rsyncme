@@ -157,7 +157,7 @@ rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr) {
 uint16_t
 rm_calc_msg_len(void *arg) {
     struct rm_msg_push  *msg_push;
-    struct rm_msg       *msg = (struct rm_msg*) arg;
+    struct rm_msg       *msg = (struct rm_msg*) &arg;
     uint16_t            len = 0;
 
     switch (msg->hdr->pt) {
