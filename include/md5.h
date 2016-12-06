@@ -22,7 +22,7 @@ typedef unsigned int  WORD;             /* 32-bit word, change to "long" for 16-
 typedef struct {
    BYTE data[64];
    WORD datalen;
-   unsigned long int bitlen;
+   uint64_t bitlen;
    WORD state[4];
 } MD5_CTX;
 

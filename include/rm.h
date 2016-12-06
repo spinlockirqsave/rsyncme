@@ -3,8 +3,7 @@
  *              as described in Tridgell A., "Efficient Algorithms
  *              for Sorting and Synchronization", 1999.
  * @details     Common definitions used by sender and receiver.
- * @author      Piotr Gregor <piotrek.gregor at gmail.com>
- * @version     0.1.2
+ * @author      Piotr Gregor <piotrgregor@rsyncme.org>
  * @date        1 Jan 2016 07:50 PM
  * @copyright   LGPLv2.1 */
 
@@ -76,6 +75,7 @@
 
 
 #include "rm_defs.h"
+#include "rm_error.h"
 #include "md5.h"
 
 
@@ -88,10 +88,8 @@ struct rm_md5
 /* @brief   Checksum checksum struct. */
 struct rm_ch_ch
 {
-    uint32_t        f_ch;   /*Fast and very cheap
-                             * 32-bit rolling checksum,
-                             * MUST be very cheap to compute
-                             * at every byte offset */
+    uint32_t        f_ch;   /* Fast and cheap 32-bit rolling checksum,
+                             * MUST be cheap to compute at every byte offset */
     struct rm_md5   s_ch;   /* Strong and computationally expensive 128-bit checksum,
                              * MUST have a very low probability of collision.
                              * This is computed only when fast & cheap checksum matches
@@ -143,16 +141,16 @@ struct rm_delta_e
     size_t                      raw_bytes_n;
     struct twlist_head          link;           /* to link me in list/stack/queue */
 };
-enum rm_delta_tx_status
+enum rm_tx_status
 {
-    RM_DELTA_TX_STATUS_OK               = 0,    /* WANTED */
-    RM_DELTA_TX_STATUS_ROLLING_PROC_FAIL  = 1   /* error in rolling checksum procedure */
+    RM_TX_STATUS_OK                 = 0,    /* WANTED */
+    RM_TX_STATUS_ROLLING_PROC_FAIL  = 1     /* error in rolling checksum procedure */
 };
-enum rm_delta_rx_status
+enum rm_rx_status
 {
-    RM_DELTA_RX_STATUS_OK               = 0,    /* most wanted */
-    RM_DELTA_RX_STATUS_INTERNAL_ERR     = 1,    /* bad call, NULL session, prvt session or file pointers */
-    RM_DELTA_RX_STATUS_DELTA_PROC_FAIL  = 2     /* error processing delta element */
+    RM_RX_STATUS_OK                 = 0,    /* most wanted */
+    RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
+    RM_RX_STATUS_DELTA_PROC_FAIL    = 2     /* error processing delta element */
 };
 enum rm_reconstruct_method
 {
@@ -177,7 +175,7 @@ struct rm_delta_reconstruct_ctx
     size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
 };
 
-/* @brief   Calculate similar to adler32 fast checkum on a given
+/* @brief   Calculate similar to adler32 fast checksum on a given
  *          file block of size @len starting from @data.
  * @details Adler checksum uses prime number 65521 as modulus.
  *          This allows for better strength than if 2^16 was used
@@ -188,7 +186,7 @@ struct rm_delta_reconstruct_ctx
 uint32_t
 rm_fast_check_block(const unsigned char *data, size_t len);
 
-/* @brief   Calculate adler32 checkum on a given file block
+/* @brief   Calculate adler32 checksum on a given file block
  *          of size @len starting from @data.
  * @details Adler checksum uses prime number 65521 as modulus.
  *          This allows for better strength than if 2^16 was used
@@ -238,13 +236,13 @@ rm_fast_check_roll(uint32_t adler, unsigned char a_k,
 uint32_t
 rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, size_t L);
 
-/* @brief   Calculate rolling checkum on a given file block
+/* @brief   Calculate rolling checksum on a given file block
  *          of size @len starting from @data, modulo @M.
  * @details @M MUST be less than 2^16, 0x10000 */
 uint32_t
 rm_rolling_ch(const unsigned char *data, size_t len, uint32_t M); 
 
-/* @brief   Calculate strong checkum on a given file block
+/* @brief   Calculate strong checksum on a given file block
  *          of size @len starting from @data.
  * @details Implemented reusing Brad Conte's MD5 code from his
  *          crypto-algorithms repo (see include/md5.h). */
@@ -258,7 +256,7 @@ rm_md5(const unsigned char *data, size_t len, unsigned char res[16]);
  *          RM_ERR_FEOF: eof set on @x,
  *          RM_ERR_FERROR: ferror set on either @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
-int
+enum rm_error
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
 
 /* @brief   Copy @bytes_n bytes from @x starting at @offset
@@ -269,17 +267,22 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
  *          RM_ERR_FSEEK: fseek failed,
  *          RM_ERR_FERROR: ferror set on @x,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
-int
+enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
 
-/* @brief   Read @items_n blocks of @size bytes each from stream @f
- *          at offset @offset.
+/* @brief   Read @items_n blocks of @size bytes each from stream @f at offset @offset.
+ * @details This method can't be used with file locking because of internal buffering
+ *          made by buffered I/O library, read() system call should be used instead.
  * @return  As fread, on success the number of blocks (each of @size size)
- *          read by fread. This number equals the number of bytes only when @size
- *          is sizeof(char).*/
+ *          read by fread. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
 rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
 
+/* @brief   Write @items_n blocks of @size bytes each from stream @f at offset @offset.
+ * @details This method can't be used with file locking because of internal buffering
+ *          made by buffered I/O library, write() system call should be used instead.
+ * @return  As fwrite, on success the number of blocks (each of @size size)
+ *          written by fwrite. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
 rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
 
@@ -291,7 +294,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
  *          RM_ERR_FEOF: eof set on @x,
  *          RM_ERR_FERROR: error set on @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
-int
+enum rm_error
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
 
 typedef enum rm_error (rm_delta_f)(void*);
@@ -334,7 +337,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
  * @details Thread is started in @detachstate with @arg argument passed to @f.
  * return   RM_ERR_OK - sccess,
  *          RM_ERR_FAIL - error initializing thread's environment */
-int
+enum rm_error
 rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate); 
 
 
@@ -377,5 +380,6 @@ rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
  * @details Uses uuid generation support, the character array must be at least 37 bytes. */
 void
 rm_get_unique_string(char name[RM_UNIQUE_STRING_LEN]);
+
 
 #endif	/* RSYNCME_H */
