@@ -40,8 +40,10 @@ rm_do_msg_push_rx(void* arg) {
 
     s = rm_session_create(RM_PUSH_RX);
     if (s == NULL) {
-        /* TODO send ack with error: temporary unavailable, try again ? */
-        close(work->fd);
+        err = rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION);	/* send ACK explaining error */
+        if (err != RM_ERR_OK) {
+            goto fail;
+        }
         return NULL;
     }
     uuid_unparse(msg_push->ssid, ssid1);
@@ -53,8 +55,7 @@ rm_do_msg_push_rx(void* arg) {
         goto fail;
     }
     RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], ssid1, ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
-    /* send ACK OK */
-    err = rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK);
+    err = rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK);	/* send ACK OK */
     if (err != RM_ERR_OK) {
         goto fail;
     }
