@@ -49,22 +49,27 @@ else
 fi
 
 if [ -d "$dir" ]; then
-  echo "--> directory ["$1"] exists, please specify new folder"
-  exit 2
-fi
-
-sudo mkdir "$dir"
-if [ $? -ne 0 ]; then
+  echo "--> directory ["$1"] exists, do you want to reuse it?"
+  read res
+  if [ $res != "Y" ] && [ $res != "y" ] && [ $res != "yes" ] && [ $res != "Yes" ]; then
+    exit 2
+  fi
+else
+  sudo mkdir "$dir"
+  if [ $? -ne 0 ]; then
     echo " --> can't create a directory ["$dir"]"
     exit 3
-fi
-user=$(whoami)
-sudo chown -R "$user": "$dir"
-if [ $? -ne 0 ]; then
+  fi
+  user=$(whoami)
+  sudo chown -R "$user": "$dir"
+  if [ $? -ne 0 ]; then
     echo " --> can't chown the directory ["$dir"]"
     exit 4
+  fi
 fi
-cd $dir											# change directory
+
+# change directory
+cd $dir
 
 pack=cmake										# check/install cmake
 pkg_check_install "$pack"

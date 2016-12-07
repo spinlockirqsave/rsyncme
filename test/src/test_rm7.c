@@ -33,7 +33,7 @@ test_rm_fopen_file_prefixed(const char *name, const char *prefix,
         return NULL;
     }
     strncpy(f_z->name, prefix, 49);
-    snprintf(f_z->name + strlen(f_z->name), 50, "%lu", L);
+    snprintf(f_z->name + strlen(f_z->name), 50, "%zu", L);
     strncpy(f_z->name + strlen(f_z->name), name, RM_FILE_LEN_MAX);
     f_z->name[RM_FILE_LEN_MAX + 99] = '\0';
     return f_z->f = fopen(f_z->name, mode);
@@ -285,12 +285,12 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
         assert(prvt != NULL);
         return -4;
     }
-    if (prvt->f_y == NULL) {
+    if (s->f_y == NULL) {
         RM_LOG_CRIT("%s", "WTF! NULL f_y in private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -5;
     }
-    if (prvt->f_z == NULL) {
+    if (s->f_z == NULL) {
         RM_LOG_CRIT("%s", "WTF! NULL f_z in private session?! Have you added some neat code recently?");
         assert(prvt != NULL);
         return -6;
@@ -298,7 +298,7 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
 
     /* test processing of delta element, NOTE: this test doesn't test rm_session_delta_rx_f_local nor remote but ONLY rm_rx_process_delta_element.
      * We can write directly to session's reconstruction context in this test */
-    err = rm_rx_process_delta_element(delta_e, prvt->f_y, prvt->f_z, (struct rm_delta_reconstruct_ctx*)&s->rec_ctx);
+    err = rm_rx_process_delta_element(delta_e, s->f_y, s->f_z, (struct rm_delta_reconstruct_ctx*)&s->rec_ctx);
     switch (err) {
         case 0: break;
         case -1:
@@ -437,12 +437,12 @@ test_rm_rx_process_delta_element_1(void **state) {
             s->rec_ctx.send_threshold = L;
             prvt = s->prvt;
             prvt->h = h;
-            prvt->f_x = f_x;                        /* run on same file */
-            prvt->f_y = f_y;
-            prvt->f_z = f_z->f;
+            s->f_x = f_x;
+            s->f_y = f_y;
+            s->f_z = f_z->f;
             prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */
@@ -556,7 +556,7 @@ test_rm_rx_process_delta_element_1(void **state) {
 
             k = 0;
             while (k < (rec_by_ref + rec_by_raw)) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, prvt->f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, s->f_x) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", fname);
                     if (f != NULL) {
                         fclose(f);
@@ -568,7 +568,7 @@ test_rm_rx_process_delta_element_1(void **state) {
                     }
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, prvt->f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, s->f_z) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_z->name);
                     if (f != NULL) {
                         fclose(f);
@@ -844,12 +844,12 @@ test_rm_rx_process_delta_element_2(void **state) {
             /* setup private session's arguments */
             prvt = s->prvt;
             prvt->h = h;
-            prvt->f_x = f_x;                        /* run on @x */
-            prvt->f_y = f_y;
-            prvt->f_z = f_z->f;
+            s->f_x = f_x;
+            s->f_y = f_y;
+            s->f_z = f_z->f;
             prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, prvt->f_x, prvt->delta_f, 0);
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */
@@ -943,14 +943,14 @@ test_rm_rx_process_delta_element_2(void **state) {
 
             k = 0;
             while (k < (rec_by_ref + rec_by_raw)) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, prvt->f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, s->f_x) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     fclose(f_z->f);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, prvt->f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, s->f_z) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_z->name);
                     fclose(f_x);
                     fclose(f_y);

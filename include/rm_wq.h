@@ -11,9 +11,24 @@
 
 #include "rm.h"
 #include "rm_error.h"
+#include "rm_do_msg.h"
 
 #include "twlist.h"
 
+
+enum rm_work_sync_async_type {
+    RM_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
+    RM_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
+};
+
+/* Keep in sync with rm_work_type_str */
+enum rm_work_type {
+    RM_WORK_PROCESS_MSG_PUSH = 0,
+    RM_WORK_PROCESS_MSG_PULL = 1,
+    RM_WORK_PROCESS_MSG_BYE = 2,
+    RM_WORK_PROCESS_N
+};
+const char *rm_work_type_str[RM_WORK_PROCESS_N + 1];
 
 struct rm_worker {              /* thread wrapper */
     uint8_t         idx;        /* index in workqueue table */
@@ -38,16 +53,22 @@ struct rm_workqueue {
 /* @brief   Start the worker threads.
  * @details After this returns the @workers_n variable in workqueue is set to the numbers of successfuly created
  *          and now running threads. It isn't neccessary the same number that has been passed to this function. */
-enum rm_error
-rm_wq_workqueue_init(struct rm_workqueue *q, uint32_t workers_n, const char *name);
+enum rm_error rm_wq_workqueue_init(struct rm_workqueue *q, uint32_t workers_n, const char *name);
+enum rm_error rm_wq_workqueue_deinit(struct rm_workqueue *wq);
 
-struct rm_workqueue*
-rm_wq_workqueue_create(uint32_t workers_n, const char *name);
+/* queue MUST be empty now */
+void rm_wq_workqueue_free(struct rm_workqueue *wq);
+struct rm_workqueue* rm_wq_workqueue_create(uint32_t workers_n, const char *name);
+enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq);
 
 struct rm_work {
     struct twlist_head  link;
-    void                *data;
-    void (*f)(void*);
+    enum rm_work_type   task;
+    struct rsyncme      *rm;
+    struct rm_msg       *msg;               /* message handle */
+    int                 fd;                 /* socket */
+    void* (*f)(void*);                      /* processing */
+    void (*f_dtor)(void*);                  /* destructor */
 };
 
 #define RM_WORK_INITIALIZER(n, d, f) {      \
@@ -58,6 +79,15 @@ struct rm_work {
 
 #define DECLARE_WORK(n, d, f) \
     struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
+
+struct rm_work*
+rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));
+
+struct rm_work*
+rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));
+
+void
+rm_work_free(struct rm_work* work);
 
 void
 rm_wq_queue_work(struct rm_workqueue *q, struct rm_work* work);
