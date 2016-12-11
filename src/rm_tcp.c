@@ -9,8 +9,7 @@
 #include "rm.h"
 
 
-ssize_t
-rm_tcp_rx(int fd, void *buf, size_t bytes_n) {
+enum rm_error rm_tcp_rx(int fd, void *dst, size_t bytes_n) {
     size_t      bytes_read_total = 0;
     ssize_t     bytes_read;
 
@@ -19,35 +18,36 @@ rm_tcp_rx(int fd, void *buf, size_t bytes_n) {
     }
     while (bytes_read_total != bytes_n) {
         do {
-            bytes_read = read(fd, (unsigned char*) buf + bytes_read_total, (bytes_n - bytes_read_total));
+            bytes_read = read(fd, (unsigned char*) dst + bytes_read_total, (bytes_n - bytes_read_total));
         } while ((bytes_read == -1) && (errno == EINTR));
-        if (bytes_read == -1) { /* Bad. */
-            return -1;
+        if (bytes_read == 0) {
+            return RM_ERR_EOF;
+        }
+        if (bytes_read < 0) {
+            return RM_ERR_READ;
         }
         bytes_read_total += bytes_read;
     }
-    return bytes_read_total;
+    return RM_ERR_OK;
 }
 
-ssize_t
-rm_tcp_tx(int fd, void *buf, size_t bytes_n) {
+enum rm_error rm_tcp_tx(int fd, void *src, size_t bytes_n) {
     size_t      bytes_written_total = 0;
     ssize_t     bytes_written;
 
     while (bytes_written_total != bytes_n) {
         do {
-            bytes_written = write(fd, (unsigned char*) buf + bytes_written_total, (bytes_n - bytes_written_total));
+            bytes_written = write(fd, (unsigned char*) src + bytes_written_total, (bytes_n - bytes_written_total));
         } while ((bytes_written == -1) && (errno == EINTR));
-        if (bytes_written == -1) { /* Bad. */
-            return -1;
+        if (bytes_written < 0) {
+            return RM_ERR_WRITE;
         }
         bytes_written_total += bytes_written;
     }
-    return bytes_written_total;
+    return RM_ERR_OK;
 }
 
-int
-rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e) {
+int rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e) {
     ssize_t bytes_written;
     unsigned char buf[RM_CH_CH_REF_SIZE], *pbuf;
 
@@ -65,8 +65,7 @@ rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e) {
     return 0;
 }
 
-enum rm_error
-rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status) {
+enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status) {
     struct rm_msg_hdr   hdr = {0};
     struct rm_msg_ack   ack = {0};
     struct rm_msg_ack   raw_msg_ack = {0};
@@ -80,8 +79,7 @@ rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status) {
     return rm_tcp_write(fd, &raw_msg_ack, hdr.len);
 }
 
-int
-rm_tcp_set_socket_blocking_mode(int fd, uint8_t on) {
+int rm_tcp_set_socket_blocking_mode(int fd, uint8_t on) {
     if (fd < 0 || on > 1) {
         return -1;
     }
@@ -101,15 +99,13 @@ rm_tcp_set_socket_blocking_mode(int fd, uint8_t on) {
 
 /* @brief   Resolve host names.
  * @details Return 0 on success or EAI_* errcode to be used with gai_strerror(). */
-static int
-rm_core_resolve_host(const char *host, unsigned int port, struct addrinfo *hints, struct addrinfo **res) {
+static int rm_core_resolve_host(const char *host, unsigned int port, struct addrinfo *hints, struct addrinfo **res) {
     char strport[32];
     snprintf(strport, sizeof strport, "%u", port);
     return getaddrinfo(host, strport, hints, res);
 }
 
-enum rm_error
-rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, const char **err_str) {
+enum rm_error rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, const char **err_str) {
     int             err;
     struct addrinfo hints, *res, *ressave;
 
@@ -153,8 +149,7 @@ rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, 
     return RM_ERR_OK;
 }
 
-enum rm_error
-rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char **err_str) {
+enum rm_error rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char **err_str) {
     int             err;
     struct addrinfo hints, *res, *ressave;
 
@@ -198,8 +193,7 @@ rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char 
     return RM_ERR_OK;
 }
 
-enum rm_error
-rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t timeout_s, uint16_t timeout_us) {
+enum rm_error rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t timeout_s, uint16_t timeout_us) {
     int             err, fd_err;
     socklen_t       len;
 
@@ -233,8 +227,7 @@ exit:
     return err;
 }
 
-enum rm_error
-rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
+enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
     int             err, errsave = RM_ERR_FAIL;
     struct addrinfo hints, *res, *ressave;
 
@@ -282,8 +275,7 @@ rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int do
     return errsave;
 }
 
-enum rm_error
-rm_tcp_read(int fd, void *dst, size_t bytes_n) {
+enum rm_error rm_tcp_read(int fd, void *dst, size_t bytes_n) {
     ssize_t         read_n = 0;
     unsigned char   *buf = dst;
 
@@ -301,8 +293,7 @@ rm_tcp_read(int fd, void *dst, size_t bytes_n) {
     return RM_ERR_OK;
 }
 
-enum rm_error
-rm_tcp_write(int fd, const void *src, size_t bytes_n) {
+enum rm_error rm_tcp_write(int fd, const void *src, size_t bytes_n) {
     ssize_t         written = 0;
     const unsigned char *buf = src;
 

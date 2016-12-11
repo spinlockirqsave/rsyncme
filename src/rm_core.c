@@ -106,8 +106,7 @@ rm_core_hdr_hash(struct rm_msg_hdr *hdr) {
     return twhash_32(((hdr->pt << 24) | (hdr->flags << 16) | hdr->len), RM_CORE_HASH_CHALLENGE_BITS);
 }
 
-enum rm_error
-rm_core_validate_hash(unsigned char *buf) {
+enum rm_error rm_core_validate_hash(unsigned char *buf) {
     uint32_t    hash, challenge;
     uint8_t     pt, flags;
     uint16_t    len;
@@ -124,8 +123,7 @@ rm_core_validate_hash(unsigned char *buf) {
     return RM_ERR_OK;
 }
 
-enum rm_error
-rm_core_tcp_msg_valid_pt(unsigned char* buf) {
+enum rm_error rm_core_tcp_msg_valid_pt(unsigned char* buf) {
     uint8_t pt = rm_get_msg_hdr_pt(buf);
     if (pt == RM_PT_MSG_PUSH || pt == RM_PT_MSG_PULL || pt == RM_PT_MSG_BYE) {
         return RM_ERR_OK;
@@ -133,8 +131,7 @@ rm_core_tcp_msg_valid_pt(unsigned char* buf) {
     return RM_ERR_FAIL;
 }
 
-enum rm_error
-rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) {
+enum rm_error rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) {
     if ((size_t)read_n < sizeof(struct rm_msg_hdr)) {
         return RM_ERR_FAIL;
     }
@@ -146,6 +143,10 @@ rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) {
     }
     /* TODO validate all fields */
     return RM_ERR_OK;
+}
+
+enum rm_error rm_core_tcp_msg_ack_validate(unsigned char *buf, int read_n) {
+    return rm_core_tcp_msg_hdr_validate(buf, read_n);
 }
 
 int

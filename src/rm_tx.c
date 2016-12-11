@@ -306,20 +306,19 @@ err_exit:
     return err;
 }
 
-int
-rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
-        size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
-        struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
-    enum rm_error  err = RM_ERR_OK;
-    FILE        *f_x = NULL;   /* original file, to be synced into @y */
-    int         fd_x;
-    struct stat fs;
-    size_t      x_sz;
-    struct rm_session               *s = NULL;
-    struct rm_session_push_tx       *prvt = NULL;
+int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
+    enum rm_error       err = RM_ERR_OK;
+    FILE                *f_x = NULL;                                                            /* original file, to be synced with @y */
+    int                 fd_x;
+    struct stat         fs;
+    size_t              x_sz;
+    struct rm_session           *s = NULL;
+    struct rm_session_push_tx   *prvt = NULL;
 
     struct rm_msg_push  msg = {0};
     unsigned char       *msg_raw = NULL;
+    unsigned char       *buf = NULL;
+    struct rm_msg_ack   ack = {0};
 
     (void) y;
     (void) z;
@@ -338,7 +337,7 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     if (f_x == NULL) {
         return RM_ERR_OPEN_X;
     }
-    fd_x = fileno(f_x); /* get input file size */
+    fd_x = fileno(f_x);                                                                         /* get input file size */
     memset(&fs, 0, sizeof(fs));
     if (fstat(fd_x, &fs) != 0) {
         err = RM_ERR_FSTAT_X;
@@ -349,7 +348,7 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
         return RM_ERR_X_ZERO_SIZE;
     }
 
-    s = rm_session_create(RM_PUSH_TX);  /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+    s = rm_session_create(RM_PUSH_TX);                                                          /* rx nonoverlapping checksums, calc rolling checksums, produce delta vector and tx to receiver */
     if (s == NULL) {
         err = RM_ERR_CREATE_SESSION;
         goto err_exit;
@@ -363,7 +362,7 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
 
     memset(&msg, 0, sizeof msg);
     if (rm_msg_push_init(&msg) != RM_ERR_OK) {
-        return RM_ERR_MEM;
+        goto err_exit;                                                                          /* RM_ERR_MEM */
     }
     msg.hdr->pt = RM_PT_MSG_PUSH;
     msg.hdr->flags = flags;
@@ -371,10 +370,10 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     msg.L = L;
 
     msg.x_sz = strlen(x) + 1;
-    strcpy(msg.x, x); /* commandline tool will not pass here string longer than RM_FILE_LEN_MAX which is also the size of file name buffers in msg push */
+    strcpy(msg.x, x);                                                                           /* commandline tool will not pass here string longer than RM_FILE_LEN_MAX which is also the size of file name buffers in msg push */
     if (y != NULL) {
         msg.y_sz = strlen(y) + 1;
-        strcpy(msg.y, y); /* copies the string including the NULL terminator */
+        strcpy(msg.y, y);                                                                       /* copies the string including the NULL terminator */
     } else {
         msg.y_sz = 0;
     }
@@ -387,29 +386,64 @@ rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t 
     msg.hdr->len = rm_calc_msg_len(&msg);
     msg.hdr->hash = rm_core_hdr_hash(msg.hdr);
 
-    /* TODO malloc raw buffer for push message */
     msg_raw = malloc(msg.hdr->len);
     if (msg_raw == NULL) {
         return RM_ERR_TOO_MUCH_REQUESTED;
     }
-    /* TODO add serialization of all fields of push message */
     rm_serialize_msg_push(msg_raw, &msg);
-    err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);
+    err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);                                        /* tx msg PUSH */
     if (err != RM_ERR_OK) {
-        return RM_ERR_WRITE;
+        goto err_exit;                                                                          /* RM_ERR_WRITE */
     }
 
+    if (rm_msg_ack_init(&ack) != RM_ERR_OK) {                                                   /* prepare for incoming ACK, allocate space for header == ACK */
+        goto err_exit; /* TODO Couldn't allocate message ack. Not enough memory */
+    }
+    buf = malloc(RM_MSG_ACK_LEN);                                                               /* buffer for incoming raw message header */
+    if (buf == NULL) {
+        goto err_exit; /* TODO Couldn't allocate buffer for the message header. Not enough memory */
+    }
+    err = rm_tcp_rx(prvt->fd, buf, RM_MSG_ACK_LEN);                                                   /* wait for incoming ACK */
+    if (err != RM_ERR_OK) {                                                                     /* RM_ERR_READ || RM_ERR_EOF */
+        goto err_exit; /* TODO handle */
+    }
+    err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_ACK_LEN);                                    /* validate potential ACK message: check header: hash, size and pt*/
+    if (err != RM_ERR_OK) { /* bad message */
+        switch (err) {
+            case RM_ERR_FAIL: /* Invalid hash */
+                break;
+            case RM_ERR_MSG_PT_UNKNOWN: /* Unknown message type */
+                break;
+            default: /* Unknown error */
+                break;
+        }
+        goto err_exit;
+    }
+
+    rm_deserialize_msg_ack(buf, &ack);
+    free(buf);
+    buf = NULL;
 
     rm_session_free(s);
     s = NULL;
+
     free(msg_raw);
     msg_raw = NULL;
     free(msg.hdr);
     msg.hdr = NULL;
+    free(ack.hdr);
+    ack.hdr = NULL;
 
     return RM_ERR_OK;
 
 err_exit:
+    switch (err) {
+        case RM_ERR_MEM:
+        case RM_ERR_WRITE:
+            /* TODO bad... */
+        default:
+            break;
+    }
     if (f_x != NULL) {
         fclose(f_x);
         f_x = NULL;
@@ -425,6 +459,10 @@ err_exit:
     if (msg.hdr != NULL) {
         free(msg.hdr);
         msg.hdr = NULL;
+    }
+    if (ack.hdr != NULL) {
+        free(ack.hdr);
+        ack.hdr = NULL;
     }
     return err;
 }

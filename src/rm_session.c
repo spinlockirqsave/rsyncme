@@ -244,8 +244,7 @@ end:
     return;
 }
 
-void *
-rm_session_ch_ch_tx_f(void *arg) {
+void* rm_session_ch_ch_tx_f(void *arg) {
     struct rm_session *s =
         (struct rm_session *)arg;
     assert(s != NULL);
@@ -256,8 +255,7 @@ exit:
     return NULL;
 }
 
-void *
-rm_session_ch_ch_rx_f(void *arg) {
+void* rm_session_ch_ch_rx_f(void *arg) {
     struct rm_session *s =
         (struct rm_session *)arg;
     assert(s != NULL);
@@ -327,8 +325,7 @@ exit:
 }
 
 
-void *
-rm_session_delta_rx_f_local(void *arg) {
+void* rm_session_delta_rx_f_local(void *arg) {
     FILE                            *f_y;           /* reference file, on which reconstruction is performed */
     FILE                            *f_z;           /* result file */
     struct rm_session_push_local    *prvt_local;
@@ -428,8 +425,7 @@ err_exit:
     return NULL; /* this thread must be created in joinable state */
 }
 
-void *
-rm_session_delta_rx_f_remote(void *arg) {
+void* rm_session_delta_rx_f_remote(void *arg) {
     FILE                            *f_y;           /* file on which reconstruction is performed */
     /*twfifo_queue                    *q; */
     /*const struct rm_delta_e         *delta_e;        iterator over delta elements */
