@@ -34,17 +34,17 @@ rm_do_msg_push_rx(void* arg) {
     struct rm_msg_push          *msg_push = NULL;
     char                        ssid1[RM_UNIQUE_STRING_LEN];
     char                        ssid2[RM_UNIQUE_STRING_LEN];
+    uint8_t                     ack_tx_err = 0;                                                         /* set to 1 if ACK tx failed */
 
     struct rm_work* work = (struct rm_work*) arg;
     msg_push = (struct rm_msg_push*) work->msg;
 
     s = rm_session_create(RM_PUSH_RX);
     if (s == NULL) {
-        err = rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION);	/* send ACK explaining error */
-        if (err != RM_ERR_OK) {
-            goto fail;
+        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION) != RM_ERR_OK) {      /* send ACK explaining error */
+            ack_tx_err = 1;
         }
-        return NULL;
+        goto fail;
     }
     uuid_unparse(msg_push->ssid, ssid1);
     uuid_unparse(s->id, ssid2);
@@ -52,20 +52,24 @@ rm_do_msg_push_rx(void* arg) {
 
     err = rm_session_assign_validate_from_msg_push(s, msg_push);
     if (err != RM_ERR_OK) {
-        goto fail;
-    }
-    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], ssid1, ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
-    err = rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK);	/* send ACK OK */
-    if (err != RM_ERR_OK) {
+        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err) != RM_ERR_OK) {                        /* send ACK with error */
+            ack_tx_err = 1;
+        }
         goto fail;
     }
 
-    rm_core_session_add(work->rm, s); /* insert session into global table and list */
+    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], ssid1, ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
+    if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK) != RM_ERR_OK) {                      /* send ACK OK */
+        ack_tx_err = 1;
+        goto fail;
+    }
+
+    rm_core_session_add(work->rm, s);                                                                   /* insert session into global table and list */
     RM_LOG_INFO("[%s] [3]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
 
     prvt = (struct rm_session_push_rx*) s->prvt;
 
-    err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE); /* start tx_ch_ch and rx delta threads, save pids in session object */
+    err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);     /* start tx_ch_ch and rx delta threads, save pids in session object */
     if (err != RM_ERR_OK) {
         goto fail;
     }
@@ -87,10 +91,14 @@ rm_do_msg_push_rx(void* arg) {
     RM_LOG_INFO("[%s] [4]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
     if (s != NULL) {
         rm_session_free(s);
+        s = NULL;
     }
     return NULL;
 
 fail:
+    if (s == NULL) {                                                                                    /* session failed to create */
+        RM_LOG_ERR("[%s] [FAIL]: ERR [%u], failed to create session", rm_work_type_str[work->task], err);
+    }
     switch (err) {
 
         case RM_ERR_Y_Z_SYNC:
@@ -98,17 +106,22 @@ fail:
         case RM_ERR_OPEN_Z:
         case RM_ERR_OPEN_Y:
         case RM_ERR_OPEN_TMP:
-            /* TODO send tcp response with error code */
-            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u]", rm_work_type_str[work->task], ssid1, ssid2, err);
+            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled", rm_work_type_str[work->task], ssid1, ssid2, err);
             break;
 
-        case RM_ERR_WRITE:
-            /* error sending RM_MSG_PUSH_ACK */
-            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : error sending push ack", rm_work_type_str[work->task], ssid1, ssid2, err);
+        case RM_ERR_WRITE:                                                                              /* error sending RM_MSG_PUSH_ACK */
+            if (s != NULL) {
+                RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : error sending PUSH ack", rm_work_type_str[work->task], ssid1, ssid2, err);
+            } else {
+                RM_LOG_ERR("[%s] [FAIL]: ERR [%u] : error sending PUSH ack", rm_work_type_str[work->task], err);
+            }
             break;
 
         default:
-            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u]", rm_work_type_str[work->task], ssid1, ssid2, err);
+            RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : default", rm_work_type_str[work->task], ssid1, ssid2, err);
+    }
+    if (ack_tx_err == 1) {                                                                              /* failed to send ACK */
+        /* TODO reschedule the job? */
     }
     if (s != NULL) {
         rm_session_free(s);
