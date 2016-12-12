@@ -73,9 +73,10 @@ void* rm_do_msg_push_rx(void* arg) {
         ack_tx_err = 1;
         goto fail;
     }
+    RM_LOG_INFO("[%s] [3]: [%s] -> [%s], TXed ACK", rm_work_type_str[work->task], ssid1, ssid2);
 
     rm_core_session_add(work->rm, s);                                                                   /* insert session into global table and list */
-    RM_LOG_INFO("[%s] [3]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
+    RM_LOG_INFO("[%s] [4]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
 
     prvt = (struct rm_session_push_rx*) s->prvt;
 
@@ -98,7 +99,7 @@ void* rm_do_msg_push_rx(void* arg) {
         err = RM_ERR_DELTA_RX_THREAD;
     }
 
-    RM_LOG_INFO("[%s] [4]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
+    RM_LOG_INFO("[%s] [5]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], ssid1, ssid2, s->hash);
     if (s != NULL) {
         rm_session_free(s);
         s = NULL;
