@@ -11,7 +11,7 @@
 #include "rm_session.h"
 
 
-enum rm_error rm_msg_push_init(struct rm_msg_push *msg) {
+enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) {
     msg->hdr = malloc(sizeof *(msg->hdr));
     if (msg->hdr == NULL) {
         return RM_ERR_FAIL;
@@ -24,7 +24,7 @@ void rm_msg_push_free(struct rm_msg_push *msg) {
     free(msg);
 }
 
-enum rm_error rm_msg_ack_init(struct rm_msg_ack *msg) {
+enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *msg) {
     msg->hdr = malloc(sizeof *(msg->hdr));
     if (msg->hdr == NULL) {
         return RM_ERR_FAIL;

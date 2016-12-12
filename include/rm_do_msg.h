@@ -73,10 +73,10 @@ struct rm_msg_pull
     char                z[RM_FILE_LEN_MAX];     /* z file name  */
 };
 
-enum rm_error rm_msg_push_init(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
+enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 void rm_msg_push_free(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 
-enum rm_error rm_msg_ack_init(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
+enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
 void rm_msg_ack_free(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
 
 /* @brief       Handles incoming rsync push request in new sesion.
