@@ -76,7 +76,7 @@ enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status
     hdr.hash = rm_core_hdr_hash(&hdr);
     ack.hdr = &hdr;
     rm_serialize_msg_ack((unsigned char*)&raw_msg_ack, &ack);
-    return rm_tcp_write(fd, &raw_msg_ack, hdr.len);
+    return rm_tcp_tx(fd, &raw_msg_ack, hdr.len);
 }
 
 int rm_tcp_set_socket_blocking_mode(int fd, uint8_t on) {

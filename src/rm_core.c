@@ -125,7 +125,7 @@ enum rm_error rm_core_validate_hash(unsigned char *buf) {
 
 enum rm_error rm_core_tcp_msg_valid_pt(unsigned char* buf) {
     uint8_t pt = rm_get_msg_hdr_pt(buf);
-    if (pt == RM_PT_MSG_PUSH || pt == RM_PT_MSG_PULL || pt == RM_PT_MSG_BYE) {
+    if (pt == RM_PT_MSG_PUSH || pt == RM_PT_MSG_PUSH_ACK || pt == RM_PT_MSG_PULL || pt == RM_PT_MSG_PULL_ACK || pt == RM_PT_MSG_BYE) {
         return RM_ERR_OK;
     }
     return RM_ERR_FAIL;

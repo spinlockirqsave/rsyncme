@@ -204,6 +204,7 @@ enum rm_io_direction {
     RM_WRITE
 };
 
+/* change rm_core_tcp_msg_hdr_validate and rm_core_tcp_msg_valid_pt if payload types are changed */
 enum rm_pt_type {
     RM_PT_MSG_PUSH,
     RM_PT_MSG_PUSH_ACK,
