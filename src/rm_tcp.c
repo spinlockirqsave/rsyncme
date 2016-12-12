@@ -207,6 +207,8 @@ enum rm_error rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res,
     }
 
     err = rm_core_select(fd, RM_WRITE, timeout_s, timeout_us);
+    if (err == ECONNREFUSED)
+        return RM_ERR_CONNECT_REFUSED;
     if (err == -1) {
         err = RM_ERR_FAIL;
         goto exit;
@@ -215,6 +217,10 @@ enum rm_error rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res,
         getsockopt(fd, SOL_SOCKET, SO_ERROR, &fd_err, &len);
         if (fd_err == 0) {
             err = RM_ERR_OK;
+        } else if (fd_err == ECONNREFUSED) {
+            err = RM_ERR_CONNECT_REFUSED;
+        } else if (fd_err == EHOSTUNREACH) {
+            err = RM_ERR_CONNECT_HOSTUNREACH;
         } else {
             err = RM_ERR_FAIL;
         }
@@ -261,8 +267,12 @@ enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_
             break;
         } else if (err == RM_ERR_CONNECT_TIMEOUT) {
             errsave = RM_ERR_CONNECT_TIMEOUT;
+        } else if (err == RM_ERR_CONNECT_REFUSED) {
+            errsave = RM_ERR_CONNECT_REFUSED;
+        } else if (err == RM_ERR_CONNECT_HOSTUNREACH) {
+            errsave = RM_ERR_CONNECT_HOSTUNREACH;
         } else {
-            errsave = RM_ERR_FAIL;
+            errsave = RM_ERR_CONNECT_GEN_ERR;
         }
         close(*fd);
     } while ((res = res->ai_next) != NULL);

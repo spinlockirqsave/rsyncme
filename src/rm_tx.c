@@ -444,6 +444,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 err_exit:
     switch (err) {
         case RM_ERR_CONNECT_TIMEOUT:
+        case RM_ERR_CONNECT_REFUSED:
 
         case RM_ERR_MEM:
             break;

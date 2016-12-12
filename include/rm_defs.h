@@ -186,16 +186,19 @@ enum rm_error {
     RM_ERR_WORKQUEUE_CREATE = 58,
     RM_ERR_WORKQUEUE_STOP = 59,
     RM_ERR_GETADDRINFO = 60,
-    RM_ERR_CONNECT_TIMEOUT = 61,
-    RM_ERR_MSG_PT_UNKNOWN = 62,
-    RM_ERR_EOF = 63,
-    RM_ERR_CH_CH_TX_THREAD = 64,
-    RM_ERR_Y_NULL = 65,
-    RM_ERR_Y_Z_SYNC = 66,
-    RM_ERR_BLOCK_SIZE = 67,
-    RM_ERR_RESULT_F_NAME = 68,
-    RM_ERR_BUSY = 69,
-    RM_ERR_UNKNOWN_ERROR = 70
+    RM_ERR_CONNECT_GEN_ERR = 61,
+    RM_ERR_CONNECT_TIMEOUT = 62,
+    RM_ERR_CONNECT_REFUSED = 63,
+    RM_ERR_CONNECT_HOSTUNREACH = 64,
+    RM_ERR_MSG_PT_UNKNOWN = 65,
+    RM_ERR_EOF = 66,
+    RM_ERR_CH_CH_TX_THREAD = 67,
+    RM_ERR_Y_NULL = 68,
+    RM_ERR_Y_Z_SYNC = 69,
+    RM_ERR_BLOCK_SIZE = 70,
+    RM_ERR_RESULT_F_NAME = 71,
+    RM_ERR_BUSY = 72,
+    RM_ERR_UNKNOWN_ERROR = 73
     /* max number of error limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 

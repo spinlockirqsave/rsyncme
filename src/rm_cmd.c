@@ -494,6 +494,27 @@ main( int argc, char *argv[]) {
                             fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u]\n", addr, port);
                         }
                         goto fail;
+                    case RM_ERR_CONNECT_REFUSED:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
+                    case RM_ERR_CONNECT_HOSTUNREACH:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
+                    case RM_ERR_CONNECT_GEN_ERR:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
                     case RM_ERR_DELTA_TX_THREAD_LAUNCH:
                         fprintf(stderr, "Error. Delta tx thread launch failed\n");
                         goto fail;
