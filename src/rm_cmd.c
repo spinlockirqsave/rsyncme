@@ -509,6 +509,26 @@ main( int argc, char *argv[]) {
                     case RM_ERR_MEM:
                         fprintf(stderr, "Error. Not enough memory\n");
                         exit(EXIT_FAILURE);
+                    case RM_ERR_Y_Z_SYNC:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (do not delete @y after @z has been synced, but @z name is not given or is same as @y)\n");
+                        goto fail;
+                    case RM_ERR_Y_NULL:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (@y name empty)\n");
+                        goto fail;
+                    case RM_ERR_OPEN_Z:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (can't open @z file)\n");
+                        goto fail;
+                    case RM_ERR_OPEN_Y:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (can't open @y file)\n");
+                        goto fail;
+                    case RM_ERR_OPEN_TMP:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (can't open temporary file)\n");
+                        goto fail;
                     case RM_ERR_BAD_CALL:
                     default:
                         fprintf(stderr, "\nInternal error.\n");

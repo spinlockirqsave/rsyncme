@@ -424,6 +424,11 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
     free(buf);
     buf = NULL;
 
+    if (ack.hdr->flags != RM_ERR_OK) {                                                          /* if request cannot be handled */
+        err = ack.hdr->flags;
+        goto err_exit;
+    }
+
     rm_session_free(s);
     s = NULL;
 
