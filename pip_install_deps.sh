@@ -8,12 +8,12 @@
 
 pkg_check_install ()
 {
-    PKG_OK=$(dpkg-query -W --showformat='${Status}\n' "$pack"|grep "install ok installed")
-    echo "--> checking for "$pack": $PKG_OK"
-    if [ "" == "$PKG_OK" ]; then
-      echo "--> no "$pack". Setting up "$pack"."
-      apt-get --force-yes --yes install "$pack"
-    fi
+	PKG_OK=$(dpkg-query -W --showformat='${Status}\n' "$1" | grep "install")
+	echo "Checking for [$1] : [$PKG_OK]"
+	if [ "$PKG_OK" != "install ok installed" ]; then
+		echo "Installing [$1]..."
+		apt-get install --force-yes --yes $1
+	fi
 }
 
 install_cmocka ()
@@ -39,33 +39,35 @@ install_cmocka ()
     make install
 }
 
-
-dir=$1						# dir is the name of a new folder when to download cmocka
-if [ $dir ]; then				# dir must be passed to this script
-  echo "--> creating directory [$dir]"
-else
-    echo "--> please specify the directory to create"
+if [ $# != 1 ]; then
+    echo "--> please specify the directory for cmocka"
     exit 1
+else
+	dir=$1						# dir is the name of the folder when to download cmocka
+	if [ -d "$dir" ]; then
+		echo "--> directory ["$1"] exists, do you want to reuse it? [y/Y/yes/Yes for YES]"
+		read res
+		if [ $res != "Y" ] && [ $res != "y" ] && [ $res != "yes" ] && [ $res != "Yes" &&  $res != "YES" ]; then
+			exit 2
+		fi
+	else
+		mkdir $dir
+		if [ $? -ne 0 ]; then
+			echo " --> can't create a directory [$dir]"
+			exit 3
+		fi
+		chown -R $USER $dir
+		if [ $? -ne 0 ]; then
+			echo " --> can't chown the directory [$dir]"
+			exit 4
+		fi
+	fi
 fi
 
-if [ -d $dir ]; then
-  echo "--> directory [$dir] exists, please specify new folder"
-  exit 2
-fi
-
-mkdir $dir
-if [ $? -ne 0 ]; then
-    echo " --> can't create a directory [$dir]"
-    exit 3
-fi
 cd $dir											# change directory
-
-pack=cmake										# check/install cmake
-pkg_check_install "$pack"
-pack=uuid										# check/install uuid
-pkg_check_install "$pack"
-pack=uuid-dev									# check/install uuid-dev
-pkg_check_install "$pack"
+pkg_check_install cmake
+pkg_check_install uuid
+pkg_check_install uuid-dev
 install_cmocka                                  # install cmocka
 if [ ! -d "/usr/local/rsyncme/log" ]; then
 	mkdir -p /usr/local/rsyncme/log

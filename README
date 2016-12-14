@@ -93,9 +93,9 @@ git checkout with --recursive option:
     A. Manually
         apt-get install uuid uuid-dev
     B. Using our script
-        bash install_deps.sh cmocka   (give name of folder where to install cmocka,
-                                        e.g. "cmocka", you may need sudo to install
-                                        packages)
+        sh install_deps.sh cmocka	(give name of folder where to install cmocka,
+                                    e.g. "cmocka", you may need sudo to install
+                                    packages)
         
 Our tests depend on cmocka, which depends on cmake, so please be sure
 to have them installed first if you want to run tests (you can do it manually
@@ -104,9 +104,9 @@ following below instructions or run our install_deps.sh script).
 4.1.2 Installing cmocka:
 
     A. Using script:
-        bash install_deps.sh cmocka   (give name of folder where to install cmocka,
-                                        e.g. "cmocka", you may need sudo to install
-                                        packages)
+        sh install_deps.sh cmocka	(give name of folder where to install cmocka,
+                                    e.g. "cmocka", you may need sudo to install
+                                    packages)
 
     B. To install manually:
         First, install cmake:
