@@ -3,7 +3,7 @@
 # @file     install_cmocka.sh
 # @author   Piotr Gregor <piotrek.gregor@gmail.com>
 # @date     7 July 2016 11:59 PM
-# @brief    cmocka (and cmake) installation for Pipelines automated build
+# @brief    cmocka (and cmake) installation for Bitbucket's Pipelines automated build
 
 
 pkg_check_install ()
@@ -42,20 +42,20 @@ install_cmocka ()
 
 dir=$1						# dir is the name of a new folder when to download cmocka
 if [ $dir ]; then				# dir must be passed to this script
-  echo "--> creating directory ["$dir"]"
+  echo "--> creating directory [$dir]"
 else
     echo "--> please specify the directory to create"
     exit 1
 fi
 
-if [ -d "$dir" ]; then
-  echo "--> directory ["$1"] exists, please specify new folder"
+if [ -d $dir ]; then
+  echo "--> directory [$dir] exists, please specify new folder"
   exit 2
 fi
 
-mkdir "$dir"
+mkdir $dir
 if [ $? -ne 0 ]; then
-    echo " --> can't create a directory ["$dir"]"
+    echo " --> can't create a directory [$dir]"
     exit 3
 fi
 cd $dir											# change directory
@@ -67,4 +67,9 @@ pkg_check_install "$pack"
 pack=uuid-dev									# check/install uuid-dev
 pkg_check_install "$pack"
 install_cmocka                                  # install cmocka
+if [ ! -d "/usr/local/rsyncme/log" ]; then
+	mkdir -p /usr/local/rsyncme/log
+fi
+chown -R $USER /usr/local/rsyncme
+chmod u+rw /usr/local/rsyncme
 
