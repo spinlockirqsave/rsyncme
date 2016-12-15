@@ -186,7 +186,7 @@ rm_core_tcp_msg_assemble(int fd, enum rm_pt_type pt, void **body_raw, size_t byt
             if (*body_raw == NULL) {
                 return RM_ERR_MEM;
             }
-            err = rm_tcp_read(fd, *body_raw, bytes_n);
+            err = rm_tcp_rx(fd, *body_raw, bytes_n);
             if (err != RM_ERR_OK) {
                 free(*body_raw);
                 *body_raw = NULL;
