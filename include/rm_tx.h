@@ -38,13 +38,11 @@
  *          -5 couldn't stat @y
  *          -6 internal error: in rm_rx_insert_nonoverlapping_ch_ch_local
  *          -7 buffered copy failed */
-enum rm_error
-rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
+enum rm_error rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) __attribute__ ((nonnull(1,2,9)));
 
 /* Initialize PUSH, ask for nonoverlapping checksums, send delta vector. */
-int
-rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
+int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
         size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags,
         struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) __attribute__ ((nonnull(1,2,9,10,14)));
 

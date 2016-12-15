@@ -90,8 +90,8 @@ rm_core_tcp_msg_valid_pt(unsigned char* buf);
 
 /* @brief       Validate the TCP message.
  * @details     read_n MUST be positive. */
-enum rm_error
-rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) __attribute__ ((nonnull(1)));
+enum rm_error rm_core_tcp_msg_hdr_validate(unsigned char *buf, int read_n) __attribute__ ((nonnull(1)));
+enum rm_error rm_core_tcp_msg_ack_validate(unsigned char *buf, int read_n) __attribute__ ((nonnull(1)));
 
 int
 rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s, uint16_t timeout_us);

@@ -494,6 +494,27 @@ main( int argc, char *argv[]) {
                             fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u]\n", addr, port);
                         }
                         goto fail;
+                    case RM_ERR_CONNECT_REFUSED:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
+                    case RM_ERR_CONNECT_HOSTUNREACH:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
+                    case RM_ERR_CONNECT_GEN_ERR:
+                        if (err_str != NULL) {
+                            fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u], [%s]\n", addr, port, err_str);
+                        } else {
+                            fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u]\n", addr, port);
+                        }
+                        goto fail;
                     case RM_ERR_DELTA_TX_THREAD_LAUNCH:
                         fprintf(stderr, "Error. Delta tx thread launch failed\n");
                         goto fail;
@@ -509,6 +530,26 @@ main( int argc, char *argv[]) {
                     case RM_ERR_MEM:
                         fprintf(stderr, "Error. Not enough memory\n");
                         exit(EXIT_FAILURE);
+                    case RM_ERR_Y_Z_SYNC:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (do not delete @y after @z has been synced, but @z name is not given or is same as @y)\n");
+                        goto fail;
+                    case RM_ERR_Y_NULL:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (@y name empty)\n");
+                        goto fail;
+                    case RM_ERR_OPEN_Z:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (can't open @z file)\n");
+                        goto fail;
+                    case RM_ERR_OPEN_Y:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (can't open @y file)\n");
+                        goto fail;
+                    case RM_ERR_OPEN_TMP:
+                        fprintf(stderr, "Error, request can't be handled by remote peer");
+                        fprintf(stderr, " (can't open temporary file)\n");
+                        goto fail;
                     case RM_ERR_BAD_CALL:
                     default:
                         fprintf(stderr, "\nInternal error.\n");

@@ -167,7 +167,7 @@ do_it_all(int fd, struct rsyncme* rm) {
         switch (err) {
 
             case RM_ERR_FAIL:
-                RM_LOG_ERR("%s", "Invalid hash");
+                RM_LOG_ERR("%s", "Message corrupted: invalid hash or message too short");
                 break;
 
             case RM_ERR_MSG_PT_UNKNOWN:
@@ -200,7 +200,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 
     switch (pt) { /* message OK, process it */
         case RM_PT_MSG_PUSH:
-            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, fd, rm_do_msg_push_rx, rm_msg_push_dtor); /* worker takes ownerhip of TCP socket and memory allocated for msg (including hdr) */
+            work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, fd, rm_do_msg_push_rx, rm_msg_push_dtor); /* worker takes the ownership of TCP socket and memory allocated for msg (including hdr) */
             if (work == NULL) {
                 RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
                 goto err_exit;

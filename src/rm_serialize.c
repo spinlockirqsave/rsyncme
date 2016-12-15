@@ -8,28 +8,24 @@
 #include "rm_serialize.h"
 
 
-unsigned char*
-rm_serialize_char(unsigned char *buf, char v) {
+unsigned char* rm_serialize_char(unsigned char *buf, char v) {
     buf[0] = v;
     return buf + 1;
 }
 
-unsigned char*
-rm_serialize_u8(unsigned char *buf, uint8_t v) {
+unsigned char* rm_serialize_u8(unsigned char *buf, uint8_t v) {
     buf[0] = v;
     return buf + 1;
 }
 
-unsigned char*
-rm_serialize_u16(unsigned char *buf, uint16_t v) {
+unsigned char* rm_serialize_u16(unsigned char *buf, uint16_t v) {
     buf[0] = (v >> 8) & 0xFF;
     buf[1] = v & 0xFF;
     return buf + 2;
 }
 
 /* @brief   Write big-endian int value into buffer assumes 32-bit int and 8-bit char. */
-unsigned char*
-rm_serialize_u32(unsigned char *buf, uint32_t v) {
+unsigned char* rm_serialize_u32(unsigned char *buf, uint32_t v) {
     buf[0] = (v >> 24) & 0xFF;
     buf[1] = (v >> 16) & 0xFF;
     buf[2] = (v >> 8) & 0xFF;
@@ -37,8 +33,7 @@ rm_serialize_u32(unsigned char *buf, uint32_t v) {
     return buf + 4;
 }
 
-unsigned char *
-rm_serialize_u64(unsigned char *buf, uint64_t v) {
+unsigned char* rm_serialize_u64(unsigned char *buf, uint64_t v) {
     buf[0] = (v >> (24 + 32)) & 0xFF;
     buf[1] = (v >> (16 + 32)) & 0xFF;
     buf[2] = (v >> (8 + 32)) & 0xFF;
@@ -51,8 +46,7 @@ rm_serialize_u64(unsigned char *buf, uint64_t v) {
 }
 
 /* @brief   Write big-endian int value into buffer assumes 8-bit char. */
-unsigned char *
-rm_serialize_size_t(unsigned char *buf, size_t v) {
+unsigned char* rm_serialize_size_t(unsigned char *buf, size_t v) {
     if (sizeof(size_t) == 4) {
         buf = rm_serialize_u32(buf, v);
         return buf;
@@ -71,8 +65,7 @@ rm_serialize_size_t(unsigned char *buf, size_t v) {
     }
 }
 
-unsigned char*
-rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n) {
+unsigned char* rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n) {
     if (src == NULL) {
         return buf;
     }
@@ -81,8 +74,7 @@ rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n) {
     return (buf + bytes_n);
 }
 
-unsigned char*
-rm_serialize_mem(void *buf, const void *src, size_t bytes_n) {
+unsigned char* rm_serialize_mem(void *buf, const void *src, size_t bytes_n) {
     if (src == NULL) {
         return (unsigned char*)buf;
     }
@@ -90,8 +82,7 @@ rm_serialize_mem(void *buf, const void *src, size_t bytes_n) {
     return (((unsigned char*)buf) + bytes_n);
 }
 
-unsigned char *
-rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) {
+unsigned char* rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) {
     buf = rm_serialize_u32(buf, h->hash);
     buf = rm_serialize_u8(buf, h->pt);
     buf = rm_serialize_u8(buf, h->flags);
@@ -99,8 +90,7 @@ rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) {
     return buf;
 }
 
-unsigned char *
-rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) {
+unsigned char* rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) {
     buf = rm_serialize_msg_hdr(buf, m->hdr);
     buf = rm_serialize_mem(buf, m->ssid, sizeof(m->ssid));
     buf = rm_serialize_u64(buf, m->L);
@@ -113,59 +103,50 @@ rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) {
     return buf;
 }
 
-unsigned char *
-rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) {
+unsigned char* rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) {
     buf = rm_serialize_msg_hdr(buf, m->hdr);
     return buf;
 }
 
-unsigned char *
-rm_serialize_msg_pull(unsigned char *buf, struct rm_msg_pull *m) {
+unsigned char* rm_serialize_msg_pull(unsigned char *buf, struct rm_msg_pull *m) {
     buf = rm_serialize_msg_hdr(buf, m->hdr);
     buf = rm_serialize_u32(buf, m->L);
     buf = rm_serialize_u32(buf, m->ch_ch_n);
     return buf;
 }
 
-uint32_t
-rm_get_msg_hdr_hash(unsigned char *buf) {
+uint32_t rm_get_msg_hdr_hash(unsigned char *buf) {
     return ntohl(*(uint32_t*)(buf + RM_MSG_HDR_HASH_OFFSET));
 }
 
-uint8_t
-rm_get_msg_hdr_pt(unsigned char *buf) {
+uint8_t rm_get_msg_hdr_pt(unsigned char *buf) {
     return *((uint8_t*)(buf + RM_MSG_HDR_PT_OFFSET));
 }
 
-uint8_t
-rm_get_msg_hdr_flags(unsigned char *buf) {
+uint8_t rm_get_msg_hdr_flags(unsigned char *buf) {
     return *((uint8_t*)(buf + RM_MSG_HDR_FLAGS_OFFSET));
 }
 
-uint16_t
-rm_get_msg_hdr_len(unsigned char *buf) {
+uint16_t rm_get_msg_hdr_len(unsigned char *buf) {
     uint16_t tmp;
     rm_deserialize_u16(buf + RM_MSG_HDR_LEN_OFFSET, &tmp);
     return tmp;
 }
 
-unsigned char*
-rm_deserialize_u8(unsigned char *buf, uint8_t *v) {
+unsigned char* rm_deserialize_u8(unsigned char *buf, uint8_t *v) {
     *v = 0;
     *v = *buf;
     return buf + 1;
 }
 
-unsigned char*
-rm_deserialize_u16(unsigned char *buf, uint16_t *v) {
+unsigned char* rm_deserialize_u16(unsigned char *buf, uint16_t *v) {
     *v = 0;
     *v = *(buf + 0) << 8;
     *v += *(buf + 1);
     return buf + 2;
 }
 
-unsigned char*
-rm_deserialize_u32(unsigned char *buf, uint32_t *v) {
+unsigned char* rm_deserialize_u32(unsigned char *buf, uint32_t *v) {
     *v = 0;
     *v = *(buf + 0) << 24;
     *v += (*(buf + 1) << 16);
@@ -174,8 +155,7 @@ rm_deserialize_u32(unsigned char *buf, uint32_t *v) {
     return buf + 4;
 }
 
-unsigned char *
-rm_deserialize_u64(unsigned char *buf, uint64_t *v) {
+unsigned char* rm_deserialize_u64(unsigned char *buf, uint64_t *v) {
     *v = 0;
     *v =  ((uint64_t) *(buf + 0) << (24 + 32));
     *v += ((uint64_t) *(buf + 1) << (16 + 32));
@@ -188,8 +168,7 @@ rm_deserialize_u64(unsigned char *buf, uint64_t *v) {
     return buf + 8;
 }
 
-unsigned char *
-rm_deserialize_size_t(unsigned char *buf, size_t *v) {
+unsigned char* rm_deserialize_size_t(unsigned char *buf, size_t *v) {
     if (sizeof(size_t) == 4) {
         buf = rm_deserialize_u32(buf, (uint32_t*)v);
         return buf;
@@ -209,8 +188,7 @@ rm_deserialize_size_t(unsigned char *buf, size_t *v) {
     }
 }
 
-unsigned char*
-rm_deserialize_string(const void *buf, char *dst, size_t bytes_n) {
+unsigned char* rm_deserialize_string(const void *buf, char *dst, size_t bytes_n) {
     if (dst == NULL) {
         return (unsigned char*)buf;
     }
@@ -219,8 +197,7 @@ rm_deserialize_string(const void *buf, char *dst, size_t bytes_n) {
     return (((unsigned char*) buf) + bytes_n);
 }
 
-unsigned char*
-rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n) {
+unsigned char* rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n) {
     if (dst == NULL) {
         return (unsigned char*)buf;
     }
@@ -228,8 +205,7 @@ rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n) {
     return (((unsigned char*) buf) + bytes_n);
 }
 
-unsigned char *
-rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) {
+unsigned char* rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) {
     buf = rm_deserialize_u32(buf, &(hdr->hash));
     buf = rm_deserialize_u8(buf, &(hdr->pt));
     buf = rm_deserialize_u8(buf, &(hdr->flags));
@@ -237,8 +213,7 @@ rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) {
     return buf;
 }
 
-unsigned char *
-rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) {
+unsigned char* rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) {
     buf = rm_deserialize_mem(buf, (char*)m->ssid, sizeof(m->ssid));
     buf = rm_deserialize_u64(buf, (uint64_t*) &m->L);
     buf = rm_deserialize_u16(buf, &m->x_sz);
@@ -256,16 +231,18 @@ rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) {
     return buf;
 }
 
-/* *m takes ownership ow hdr */
-unsigned char *
-rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_hdr *hdr, struct rm_msg_push **m) {
+/* *m takes ownership of hdr */
+unsigned char* rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_hdr *hdr, struct rm_msg_push **m) {
     (*m)->hdr = hdr;
     buf = rm_deserialize_msg_push_body(buf, *m);
     return buf;
 }
 
-struct rm_msg*
-rm_deserialize_msg(enum rm_pt_type pt, struct rm_msg_hdr *hdr, unsigned char *body_raw) {
+unsigned char* rm_deserialize_msg_ack(unsigned char *buf, struct rm_msg_ack *ack) {
+    return rm_deserialize_msg_hdr(buf, ack->hdr);
+}
+
+struct rm_msg* rm_deserialize_msg(enum rm_pt_type pt, struct rm_msg_hdr *hdr, unsigned char *body_raw) {
     void *m = NULL;
 
     switch (pt) {
