@@ -56,7 +56,8 @@ else
 			echo " --> can't create a directory [$dir]"
 			exit 3
 		fi
-		chown -R $USER $dir
+		user=$(whoami)
+		chown -R $user $dir
 		if [ $? -ne 0 ]; then
 			echo " --> can't chown the directory [$dir]"
 			exit 4
