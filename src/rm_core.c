@@ -73,7 +73,8 @@ rm_core_session_add(struct rsyncme *rm, struct rm_session *s) {
     twlist_add(&rm->sessions_list, &s->link);
 
     /* TODO temporary hash using long from 16 byte hash.data -> do it better */
-    twhash_add(rm->sessions, &s->hlink, (long)s->hash.data);	/* TODO temporary hash using long from 16 byte hash.data -> do it better */
+    twhash_add(rm->sessions, &s->hlink, (long)s->hash.data);					/* TODO temporary hash using long from 16 byte hash.data -> do it better */
+	s->hashed_hash = twhash_min((long)s->hash.data, TWHASH_BITS(rm->sessions));		/* save the hashed_hash */
     rm->sessions_n++;
     pthread_mutex_unlock(&rm->mutex);
     return;

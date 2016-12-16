@@ -73,8 +73,8 @@ void* rm_do_msg_push_rx(void* arg) {
     }
     RM_LOG_INFO("[%s] [3]: [%s] -> [%s], TXed ACK", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
-    rm_core_session_add(work->rm, s);                                                                   /* insert session into global table and list */
-    RM_LOG_INFO("[%s] [4]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+    rm_core_session_add(work->rm, s);                                                                   /* insert session into global table and list, hash md5 hash */
+    RM_LOG_INFO("[%s] [4]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
 
     prvt = (struct rm_session_push_rx*) s->prvt;
 

@@ -285,7 +285,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
                 }
                 assert(blocks_n == blocks_n_exp && "rm_do_msg_push_rx ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
                 if (RM_LOGLEVEL > RM_LOGLEVEL_NORMAL)
-                    RM_LOG_INFO("[%s] -> [%s], [%u]: TX-ed [%zu] nonoverlapping checksum elements", s->ssid1, s->ssid2, s->hash, blocks_n);
+                    RM_LOG_INFO("[%s] -> [%s], [%u]: TX-ed [%zu] nonoverlapping checksum elements", s->ssid1, s->ssid2, s->hashed_hash, blocks_n_exp);
             } else {
                 if (msg_push->hdr->flags & RM_BIT_4) {                                                          /* force creation if @y doesn't exist? */
                     if (msg_push->z != NULL) {                                                                  /* use different name? */

@@ -23,6 +23,7 @@ struct rm_session
 
     unsigned char           id[RM_UUID_LEN];
     struct rm_md5           hash;
+	uint32_t				hashed_hash;
     pthread_mutex_t         mutex;
 
     FILE                    *f_x;               /* file on which rolling is performed */              
