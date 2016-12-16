@@ -14,6 +14,8 @@
 #include "twlist.h"
 
 
+extern enum rm_loglevel RM_LOGLEVEL;
+
 struct rm_session
 {
     struct twhlist_node     hlink;  /* hashtable handle */
@@ -33,6 +35,9 @@ struct rm_session
     void                    *prvt;
     struct timespec         clk_realtime_start, clk_realtime_stop;
     double                  clk_cputime_start, clk_cputime_stop;
+    enum rm_loglevel        loglevel;
+    char                    ssid1[RM_UNIQUE_STRING_LEN];
+    char                    ssid2[RM_UNIQUE_STRING_LEN];
 };
 
 /* Transmitter/receiver, local. */

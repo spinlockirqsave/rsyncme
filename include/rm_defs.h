@@ -115,13 +115,19 @@ typedef uint8_t rm_push_flags;  /* Bit  meaning
                                  * 6    (--leave) do not delete @y after @z has been reconstructed,
                                  * 7 */
 
-enum rm_session_type
-{
+enum rm_session_type {
     RM_PUSH_LOCAL,
     RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
     RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
     RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
     RM_PULL_TX      /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
+};
+
+enum rm_loglevel {
+    RM_LOGLEVEL_NOTHING, /* well, log nothing */                                 /* 0 */
+    RM_LOGLEVEL_NORMAL,  /* log just the most important information */           /* 1 */
+    RM_LOGLEVEL_THREADS, /* log also information coming from worker threads */   /* 2 */
+    RM_LOGLEVEL_VERBOSE  /* log all information that can be logged */            /* 3 */
 };
 
 enum rm_error {

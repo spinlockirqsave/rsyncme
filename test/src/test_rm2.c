@@ -10,6 +10,8 @@
 #include "test_rm2.h"
 
 
+enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
+
 const char* rm_test_fnames[RM_TEST_FNAMES_N] = { "rm_f_0_ts2", "rm_f_1_ts2",
     "rm_f_2_ts2","rm_f_65_ts2", "rm_f_100_ts2", "rm_f_511_ts2", "rm_f_512_ts2",
     "rm_f_513_ts2", "rm_f_1023_ts2", "rm_f_1024_ts2", "rm_f_1025_ts2",

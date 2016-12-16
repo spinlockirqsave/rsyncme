@@ -14,9 +14,11 @@
 #include "rm_wq.h"
 #include "rm_daemon.h"
 
+#include <getopt.h>
+
 
 struct rsyncme  rm;
-
+enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
 
 static void rm_daemon_sigint_handler(int signo) {
     if (signo != SIGINT) {
@@ -240,15 +242,120 @@ err_exit:
     }
 }
 
-int
-main(void) {
-    int             listenfd, connfd;
-    int             err, errsv;
+static void rsyncme_d_usage(const char *name)
+{
+    if (name == NULL) {
+        return;
+    }
+    fprintf(stderr, "\nusage:\t %s [-l loglevel]\n\n", name);
+    fprintf(stderr, "     \t -l           : logging level [0-3]\n"
+                    "     \t                0 - no logging, 1 - normal, 2 - +threads, 3 - verbose\n");
+    fprintf(stderr, "     \t --help       : display this help and exit\n");
+    fprintf(stderr, "     \t --version    : output version information and exit\n");
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "\nExamples:\n");
+    fprintf(stderr, "	rsyncme_d\n"
+            "\t\tThis will start daemon with standard settings (normal logging level)\n");
+    fprintf(stderr, "	rsyncme_d -l 2\n"
+            "\t\tThis will start daemon with logging including information\n"
+            "\t\tfrom worker threads\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "For more information please consult documentation.\n");
+    fprintf(stderr, "\n");
+}
+
+static void rsyncme_d_range_error(char argument, unsigned long value)
+{
+    fprintf(stderr, "\nERR, argument [%c] too big [%lu]\n\n", argument, value);
+}
+
+static void rsyncme_d_help_hint(const char *name)
+{
+    if (name == NULL)
+        return;
+    fprintf(stderr, "\nTry %s --help for more information.\n", name);
+    return;
+}
+
+int main(int argc, char *argv[]) {
+    char                c;
+    char                *pCh;
+    unsigned long long  helper;
+    int                     listenfd, connfd;
+    int                     err, errsv;
     struct sockaddr_in      srv_addr_in;
     struct sockaddr_storage cli_addr;
     socklen_t               cli_len;
     struct sigaction        sa;
     enum rm_error           status;
+
+    int option_index = 0;
+    struct option long_options[] = {
+        { "help", no_argument, 0, 1 },
+        { "version", no_argument, 0, 2 },
+        { "verbose", no_argument, 0, 3 },
+        { 0 }
+    };
+
+    while ((c = getopt_long(argc, argv, "l:", long_options, &option_index)) != -1) {    /* parse optional command line arguments */
+        switch (c) {
+
+            case 0:
+                if (long_options[option_index].flag != 0)                               /* If this option set a flag, turn flag on in ioctl struct */
+                    break;
+                fprintf(stderr, "Long option [%s]", long_options[option_index].name);
+                if (optarg)
+                    fprintf(stderr, " with arg [%s]", optarg);
+                fprintf(stderr, "\n");
+                break;
+
+            case 1:
+                rsyncme_d_usage(argv[0]);                                               /* --help */
+                exit(EXIT_SUCCESS);
+                break;
+
+            case 2:
+                fprintf(stderr, "\nversion [%s]\n", RM_VERSION);                        /* --version */
+                exit(EXIT_SUCCESS);
+                break;
+
+            case 3:
+                RM_LOGLEVEL = RM_LOGLEVEL_VERBOSE;                                      /* --verbose */
+                break;
+
+            case 'l':
+                helper = strtoul(optarg, &pCh, 10);
+                if (helper > RM_LOGLEVEL_VERBOSE) {
+                    rsyncme_d_range_error(c, helper);
+                    exit(EXIT_FAILURE);
+                }
+                if ((pCh == optarg) || (*pCh != '\0')) {                                /* check */
+                    fprintf(stderr, "Invalid argument\n");
+                    fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+                    rsyncme_d_help_hint(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                RM_LOGLEVEL = helper;
+                break;
+
+            case '?':
+                if (optopt == 'l')
+                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                else if (isprint(optopt))
+                    fprintf(stderr,"Unknown option '-%c'.\n", optopt);
+                else {
+                    fprintf(stderr, "Are there any long options? "
+                            "Please check that you have typed them correctly.\n");
+                }
+                rsyncme_d_usage(argv[0]);
+                exit(EXIT_FAILURE);
+
+            default:
+                rsyncme_d_help_hint(argv[0]);
+                exit(EXIT_FAILURE);
+        }
+    }
 
     if (RM_CORE_DAEMONIZE == 1) {
         err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");

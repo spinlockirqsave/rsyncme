@@ -15,8 +15,11 @@
 #include <getopt.h>
 
 
-static void
-rsyncme_usage(const char *name) {
+enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
+
+
+static void rsyncme_usage(const char *name)
+{
     if (name == NULL) {
         return;
     }
@@ -67,13 +70,13 @@ rsyncme_usage(const char *name) {
     fprintf(stderr, "\n");
 }
 
-static void
-rsyncme_range_error(char argument, unsigned long value) {
+static void rsyncme_range_error(char argument, unsigned long value)
+{
     fprintf(stderr, "\nERR, argument [%c] too big [%lu]\n\n", argument, value);
 }
 
-static void
-print_stats(struct rm_delta_reconstruct_ctx rec_ctx) {
+static void print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
+{
     enum rm_reconstruct_method method;
     double                  real_time, cpu_time;
     size_t                  bytes;
@@ -118,16 +121,16 @@ print_stats(struct rm_delta_reconstruct_ctx rec_ctx) {
     }
 }
 
-static void help_hint(const char *name) {
-    if (name == NULL) {
+static void help_hint(const char *name)
+{
+    if (name == NULL)
         return;
-    }
     fprintf(stderr, "\nTry %s --help for more information.\n", name);
     return;
 }
 
-int
-main( int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     int             c;
     enum rm_error   res;
     char	x[RM_FILE_LEN_MAX] = {0};
