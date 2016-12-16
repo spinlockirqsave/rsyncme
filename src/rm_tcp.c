@@ -47,30 +47,25 @@ enum rm_error rm_tcp_tx(int fd, void *src, size_t bytes_n)
 
 int rm_tcp_tx_ch_ch(int fd, const struct rm_ch_ch_ref *e)
 {
-    ssize_t bytes_written;
     unsigned char buf[RM_CH_CH_REF_SIZE], *pbuf;
 
     pbuf = rm_serialize_u32(buf, e->ch_ch.f_ch);                                    /* serialize data */
     memcpy(pbuf, &e->ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
     pbuf += RM_STRONG_CHECK_BYTES;
-    bytes_written = rm_tcp_tx(fd, buf, RM_CH_CH_SIZE);                              /* tx over TCP connection */
-    if (bytes_written == -1 || bytes_written != RM_CH_CH_SIZE) {
+    if (rm_tcp_tx(fd, buf, RM_CH_CH_SIZE) != RM_ERR_OK)                             /* tx over TCP connection */
         return -1;
-    }
     return 0;
 }
 
 int rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e)
 {
-    ssize_t bytes_written;
     unsigned char buf[RM_CH_CH_REF_SIZE], *pbuf;
 
     pbuf = rm_serialize_u32(buf, e->ch_ch.f_ch);                                    /* serialize data */
     memcpy(pbuf, &e->ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
     pbuf += RM_STRONG_CHECK_BYTES;
     pbuf = rm_serialize_size_t(pbuf, e->ref);
-    bytes_written = rm_tcp_tx(fd, buf, RM_CH_CH_REF_SIZE);                          /* tx over TCP connection */
-    if (bytes_written == -1 || bytes_written != RM_CH_CH_REF_SIZE)
+    if (rm_tcp_tx(fd, buf, RM_CH_CH_REF_SIZE) != RM_ERR_OK)                         /* tx over TCP connection */
         return -1;
     return 0;
 }
