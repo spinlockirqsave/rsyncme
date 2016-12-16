@@ -23,8 +23,7 @@ size_t  rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 13, 50, 64, 100, 127, 
     600, 800, 1000, 1100, 1123, 1124, 1125,
     1200, 100000 };
 
-    int
-test_rm_setup(void **state)
+int test_rm_setup(void **state)
 {
     int         err;
     size_t      i,j;
@@ -84,8 +83,7 @@ test_rm_setup(void **state)
     return 0;
 }
 
-    int
-test_rm_teardown(void **state)
+int test_rm_teardown(void **state)
 {
     int     i;
     FILE    *f;
@@ -114,8 +112,7 @@ test_rm_teardown(void **state)
 /* #1 */
 
 /* @brief   Tests number of calculated entries. */
-    void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
+void test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
 {
     FILE                    *f;
     int                     fd;
@@ -165,7 +162,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
             RM_LOG_INFO("Testing of splitting file into non-overlapping blocks: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0); /* number of blocks */
-            res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, NULL, blocks_n, &entries_n);
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
 
@@ -192,15 +189,16 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
  *          here it will simply count the number of times
  *          it was called. */
 size_t  f_tx_ch_ch_ref_2_callback_count;
-int
-f_tx_ch_ch_ref_test_2(const struct f_tx_ch_ch_ref_arg_1 arg) {
-    (void) arg;
+int f_tx_ch_ch_ref_test_2(int fd, const struct rm_ch_ch_ref *e)
+{
+    (void) fd;
+    (void) e;
     f_tx_ch_ch_ref_2_callback_count++;
     return 0;
 }
 /* @brief   Tests number of callback calls made. */
-void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
+void test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
+{
     FILE                    *f;
     int                     fd;
     size_t                  i, j, L, file_sz;
@@ -249,7 +247,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             f_tx_ch_ch_ref_2_callback_count = 0; /* reset callback counter */
-            rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n);
+            rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n);
             assert_int_equal(f_tx_ch_ch_ref_2_callback_count, blocks_n);
 
             blocks_n = 0;
@@ -270,8 +268,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state) {
 }
 
 /* @brief   Test of checksums correctness. */
-    void
-test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
+void test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
 {
     FILE                    *f;
     int                     fd;
@@ -326,7 +323,7 @@ test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
             RM_LOG_INFO("Testing checksum correctness: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
-            res = rm_rx_insert_nonoverlapping_ch_ch_ref(f, fname, h, L, NULL, blocks_n, &entries_n);
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, NULL, blocks_n, &entries_n);
             assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
             rewind(f);

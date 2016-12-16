@@ -23,6 +23,9 @@ struct rm_ch_ch_ref;
 enum rm_error rm_tcp_rx(int fd, void *dst, size_t bytes_n);
 enum rm_error rm_tcp_tx(int fd, void *src, size_t bytes_n);
 
+/* tx checksums only */
+int rm_tcp_tx_ch_ch(int fd, const struct rm_ch_ch_ref *e);
+/* tx checksums & ref */
 int rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e);
 
 enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status);

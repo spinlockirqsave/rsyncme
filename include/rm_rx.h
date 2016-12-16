@@ -42,6 +42,13 @@ struct f_tx_ch_ch_ref_arg_1
 };
 
 /* return   RM_ERR_OK - success,
+ *          RM_ERR_BAD_CALL - bad parameters
+ *          RM_ERR_ARG - session type not handled,
+ *          RM_ERR_TX - transmission error */
+int
+rm_rx_f_tx_ch_ch(const struct f_tx_ch_ch_ref_arg_1 arg);
+
+/* return   RM_ERR_OK - success,
  *          RM_ERR_BAD_CALL - null parameters (session or checksum object)
  *          RM_ERR_ARG - session type not handled,
  *          RM_ERR_RX - null private object,
@@ -56,8 +63,8 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg);
  *          RM_ERR_READ - read I/O failed,
  *          RM_ERR_TX - transmission error */
 int
-rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f_x, const char *fname, struct twhlist_head *h, size_t L,
-        int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) __attribute__((nonnull(1,2)));
+rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f_x, const char *fname, struct twhlist_head *h, size_t L,
+        int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n) __attribute__((nonnull(2,3)));
 
 /* @brief   Calculates ch_ch structs for all non-overlapping @L bytes blocks (last one may be less than @L)
  *          from file @f and inserts them into array @checkums.

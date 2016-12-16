@@ -87,11 +87,11 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
         y_sz = fs.st_size;
 
         blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-        if (rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n) != RM_ERR_OK) {
+        if (rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n) != RM_ERR_OK) {
             err = RM_ERR_NONOVERLAPPING_INSERT;
             goto  err_exit;
         }
-        assert (blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
+        assert(blocks_n == blocks_n_exp && "rm_tx_local_push ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
     } else {
         if (flags & RM_BIT_4) { /* force creation if @y doesn't exist? */
             if (z != NULL) { /* use different name? */

@@ -8,13 +8,14 @@
 #include "rm_rx.h"
 
 
-int
-rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg) {
+int rm_rx_f_tx_ch_ch(const struct f_tx_ch_ch_ref_arg_1 arg)
+{
     const struct rm_ch_ch_ref       *e;
     const struct rm_session         *s;
     enum rm_session_type            s_type;
     struct rm_session_push_rx       *rm_push_rx;
     struct rm_session_pull_rx       *rm_pull_rx;
+    int                             fd;
 
     e = arg.e;
     s = arg.s;
@@ -25,22 +26,53 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg) {
 
     switch (s_type) {
         case RM_PUSH_RX:
-            rm_push_rx = (struct rm_session_push_rx*) s->prvt;
-            if (rm_push_rx == NULL) {
+            rm_push_rx = (struct rm_session_push_rx *) s->prvt;
+            if (rm_push_rx == NULL)
                 return RM_ERR_RX;
-            }
-            if (rm_tcp_tx_ch_ch_ref(rm_push_rx->fd, e) < 0) {
+            fd = rm_push_rx->fd;
+            break;
+        case RM_PULL_RX:
+            rm_pull_rx = (struct rm_session_pull_rx *) s->prvt;
+            if (rm_pull_rx == NULL)
+                return RM_ERR_RX;
+            fd = rm_pull_rx->fd;
+            break;
+        default:
+            return RM_ERR_ARG;
+    }
+    if (rm_tcp_tx_ch_ch(fd, e) < 0)
+        return RM_ERR_TX;
+    return RM_ERR_OK;
+}
+
+int rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
+{
+    const struct rm_ch_ch_ref       *e;
+    const struct rm_session         *s;
+    enum rm_session_type            s_type;
+    struct rm_session_push_rx       *rm_push_rx;
+    struct rm_session_pull_rx       *rm_pull_rx;
+
+    e = arg.e;
+    s = arg.s;
+    if (e == NULL || s == NULL)
+        return RM_ERR_BAD_CALL;
+    s_type = s->type;
+
+    switch (s_type) {
+        case RM_PUSH_RX:
+            rm_push_rx = (struct rm_session_push_rx*) s->prvt;
+            if (rm_push_rx == NULL)
+                return RM_ERR_RX;
+            if (rm_tcp_tx_ch_ch_ref(rm_push_rx->fd, e) < 0)
                 return RM_ERR_TX;
-            }
             break;
         case RM_PULL_RX:
             rm_pull_rx = (struct rm_session_pull_rx*) s->prvt;
-            if (rm_pull_rx == NULL) {
+            if (rm_pull_rx == NULL)
                 return RM_ERR_RX;
-            }
-            if (rm_tcp_tx_ch_ch_ref(rm_pull_rx->fd, e) < 0) {
+            if (rm_tcp_tx_ch_ch_ref(rm_pull_rx->fd, e) < 0)
                 return RM_ERR_TX;
-            }
             break;
         default:
             return RM_ERR_ARG;
@@ -49,19 +81,18 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg) {
     return RM_ERR_OK;
 }
 
-int
-rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist_head *h, size_t L,
-        int (*f_tx_ch_ch_ref)(const struct f_tx_ch_ch_ref_arg_1), size_t limit, size_t *blocks_n) {
-    int                 fd, res;
+int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, struct twhlist_head *h, size_t L,
+        int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n)
+{
+    int                 res;
     enum rm_error       err;
     struct stat         fs;
     uint32_t	        file_sz, read_left, read_now, read;
     size_t              entries_n = 0;
     struct rm_ch_ch_ref_hlink	*e;
     unsigned char	    *buf;
-    struct f_tx_ch_ch_ref_arg_1 arg;
 
-    if (f == NULL || fname == NULL || L == 0) {
+    if (f == NULL || fname == NULL || L == 0 || fd < 0) {
         err = RM_ERR_BAD_CALL;
         goto done;
     }
@@ -119,9 +150,7 @@ rm_rx_insert_nonoverlapping_ch_ch_ref(FILE *f, const char *fname, struct twhlist
         entries_n++;
 
         if (f_tx_ch_ch_ref != NULL) { /* tx checksums to remote A ? */
-            arg.e = &e->data;
-            arg.s = NULL;
-            if (f_tx_ch_ch_ref(arg) != RM_ERR_OK) {
+            if (f_tx_ch_ch_ref(fd, &e->data) != RM_ERR_OK) {
                 free(buf);
                 err = RM_ERR_TX;
                 goto done;
@@ -141,9 +170,9 @@ done:
     return err;
 }
 
-int
-rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch_ch *checksums, size_t L,
-        int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n) {
+int rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch_ch *checksums, size_t L,
+        int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n)
+{
     int         fd, res;
     struct stat fs;
     uint32_t	file_sz, read_left, read_now, read;
@@ -155,9 +184,8 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch
     assert(fname != NULL);
     assert(L > 0);
     assert(checksums != NULL);
-    if (f == NULL || fname == NULL || L == 0 || checksums == NULL) {
+    if (f == NULL || fname == NULL || L == 0 || checksums == NULL)
         return RM_ERR_BAD_CALL;
-    }
 
     fd = fileno(f);
     res = fstat(fd, &fs);
@@ -201,16 +229,15 @@ rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch
         read_now = rm_min(L, read_left);
     } while (read_now > 0 && entries_n < limit);
 
-    if (blocks_n != NULL) {
+    if (blocks_n != NULL)
         *blocks_n = entries_n;
-    }
     free(buf);
     return RM_ERR_OK;
 }
 
-int
-rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struct twlist_head *l,
-        size_t L, size_t limit, size_t *blocks_n) {
+int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struct twlist_head *l,
+        size_t L, size_t limit, size_t *blocks_n)
+{
     int                     fd, res;
     struct stat             fs;
     uint32_t	            file_sz, read_left, read_now, read;
@@ -222,9 +249,8 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struct tw
     assert(fname != NULL);
     assert(l != NULL);
     assert(L > 0);
-    if (f == NULL || fname == NULL || L == 0 || l == NULL) {
+    if (f == NULL || fname == NULL || L == 0 || l == NULL)
         return RM_ERR_BAD_CALL;
-    }
 
     fd = fileno(f); /* get file size */
     res = fstat(fd, &fs);
@@ -287,38 +313,34 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struct tw
    }
    */
 
-int
-rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
-        struct rm_delta_reconstruct_ctx *ctx) {
+int rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
+        struct rm_delta_reconstruct_ctx *ctx)
+{
     size_t  z_offset;   /* current offset in @f_z */
     assert(delta_e != NULL && f_y != NULL && f_z != NULL && ctx != NULL);
-    if (delta_e == NULL || f_y == NULL || f_z == NULL || ctx == NULL) {
+    if (delta_e == NULL || f_y == NULL || f_z == NULL || ctx == NULL)
         return RM_ERR_BAD_CALL;
-    }
     z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
 
     switch (delta_e->type) {
 
         case RM_DELTA_ELEMENT_REFERENCE:
-            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK) { /* copy referenced bytes from @f_y to @f_z */
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
                 return RM_ERR_COPY_OFFSET;
-            }
-            ctx->rec_by_ref += delta_e->raw_bytes_n;    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
+            ctx->rec_by_ref += delta_e->raw_bytes_n;                                                                    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
             ++ctx->delta_ref_n;
             break;
 
         case RM_DELTA_ELEMENT_RAW_BYTES:
-            if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z) != 1) { /* copy raw bytes to @f_z directly */
+            if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z) != 1)    /* copy raw bytes to @f_z directly */
                 return RM_ERR_WRITE;
-            }
             ctx->rec_by_raw += delta_e->raw_bytes_n;
             ++ctx->delta_raw_n;
             break;
 
         case RM_DELTA_ELEMENT_ZERO_DIFF:
-            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != RM_ERR_OK) { /* copy all bytes from @f_y to @f_z */
+            if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != RM_ERR_OK)                                          /* copy all bytes from @f_y to @f_z */
                 return RM_ERR_COPY_BUFFERED;
-            }
             ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check here at receiver that is correct */
             ++ctx->delta_ref_n;
             ctx->rec_by_zero_diff += delta_e->raw_bytes_n;
@@ -327,9 +349,8 @@ rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f
 
         case RM_DELTA_ELEMENT_TAIL:
 
-            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK) { /* copy referenced bytes from @f_y to @f_z */
+            if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
                 return RM_ERR_COPY_OFFSET;
-            }
             ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check here at receiver there is no error */
             ++ctx->delta_ref_n;
             ctx->rec_by_tail += delta_e->raw_bytes_n;
