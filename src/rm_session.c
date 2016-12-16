@@ -76,6 +76,8 @@ void rm_session_push_local_free(struct rm_session_push_local *prvt)
 
 enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, struct rm_msg_push *m)
 {
+    struct rm_session_push_rx   *push_rx = NULL;
+
     if (m->L == 0) {                                                                    /* L can't be 0 */
         return RM_ERR_BLOCK_SIZE;
     }
@@ -86,6 +88,8 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
     switch (s->type) {
 
         case RM_PUSH_RX:                                                                /* validate remote PUSH RX */
+            push_rx = s->prvt;
+            push_rx->msg_push = m;
             s->f_x = NULL;
             if ((m->hdr->flags & RM_BIT_6) && (m->z_sz == 0 || (strcmp(m->y, m->z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
                 return RM_ERR_Y_Z_SYNC;
@@ -104,23 +108,23 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
                     if (s->f_z == NULL) {
                         return RM_ERR_OPEN_Z;
                     }
-                    goto ok;                                                            /* @y is NULL though */
+                    goto maybe_f_z;                                                     /* @y is NULL though */
                 } else {
                     return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
                 }
             }
             rm_md5((unsigned char*) m->y, m->y_sz, s->hash.data);
-            return RM_ERR_OK;
+            goto exit;
 
         case RM_PULL_RX:                                                                /* validate remote PULL RX */
             rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
-            return RM_ERR_OK;
+            goto exit;
 
         default:                                                                        /* TX and everything else */
             return RM_ERR_FAIL;
     }
 
-ok:
+maybe_f_z:
     if (s->f_z == NULL) {
         if (m->z_sz == 0) {
             rm_get_unique_string(m->z);
@@ -130,6 +134,7 @@ ok:
             return RM_ERR_OPEN_TMP;
         }
     }
+exit:
     return RM_ERR_OK;
 }
 
