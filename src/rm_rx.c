@@ -84,7 +84,7 @@ int rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
 int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, struct twhlist_head *h, size_t L,
         int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n)
 {
-    int                 res;
+    int                 ffd, res;
     enum rm_error       err;
     struct stat         fs;
     uint32_t	        file_sz, read_left, read_now, read;
@@ -99,8 +99,8 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 
     entries_n = 0;
 
-    fd = fileno(f); /* get file size */
-    res = fstat(fd, &fs);
+    ffd = fileno(f); /* get file size */
+    res = fstat(ffd, &fs);
     if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
         err = RM_ERR_FSTAT;
@@ -173,7 +173,7 @@ done:
 int rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct rm_ch_ch *checksums, size_t L,
         int (*f_tx_ch_ch)(const struct rm_ch_ch *), size_t limit, size_t *blocks_n)
 {
-    int         fd, res;
+    int         ffd, res;
     struct stat fs;
     uint32_t	file_sz, read_left, read_now, read;
     size_t      entries_n;
@@ -187,8 +187,8 @@ int rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct r
     if (f == NULL || fname == NULL || L == 0 || checksums == NULL)
         return RM_ERR_BAD_CALL;
 
-    fd = fileno(f);
-    res = fstat(fd, &fs);
+    ffd = fileno(f);
+    res = fstat(ffd, &fs);
     if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
         return RM_ERR_FSTAT;
@@ -238,7 +238,7 @@ int rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct r
 int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struct twlist_head *l,
         size_t L, size_t limit, size_t *blocks_n)
 {
-    int                     fd, res;
+    int                     ffd, res;
     struct stat             fs;
     uint32_t	            file_sz, read_left, read_now, read;
     size_t                  entries_n;
@@ -252,8 +252,8 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struc
     if (f == NULL || fname == NULL || L == 0 || l == NULL)
         return RM_ERR_BAD_CALL;
 
-    fd = fileno(f); /* get file size */
-    res = fstat(fd, &fs);
+    ffd = fileno(f); /* get file size */
+    res = fstat(ffd, &fs);
     if (res != 0) {
         RM_LOG_PERR("Can't fstat file [%s]", fname);
         return RM_ERR_FSTAT;

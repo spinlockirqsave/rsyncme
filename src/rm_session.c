@@ -74,7 +74,7 @@ void rm_session_push_local_free(struct rm_session_push_local *prvt)
     return;
 }
 
-enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, struct rm_msg_push *m)
+enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, struct rm_msg_push *m, int fd)
 {
     struct rm_session_push_rx   *push_rx = NULL;
 
@@ -90,6 +90,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
         case RM_PUSH_RX:                                                                /* validate remote PUSH RX */
             push_rx = s->prvt;
             push_rx->msg_push = m;
+            push_rx->fd = fd;
             s->f_x = NULL;
             if ((m->hdr->flags & RM_BIT_6) && (m->z_sz == 0 || (strcmp(m->y, m->z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
                 return RM_ERR_Y_Z_SYNC;
