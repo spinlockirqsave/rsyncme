@@ -60,6 +60,7 @@ test-check-debug:	test-debug
 	cd $(TESTSRCDIR) && make test-check-debug
 
 install:	all
+	$(shell if [ ! -d /usr/local/rsyncme/log ]; then mkdir -p /usr/local/rsyncme/log; chown -R $(SUDO_USER) /usr/local/rsyncme; fi)
 	cp $(CMDRELEASETARGET) /usr/bin
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
