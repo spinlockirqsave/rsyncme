@@ -135,6 +135,8 @@ fail:
     }
     if (s != NULL) {
         rm_session_free(s);
+        s = NULL;
+        work->msg = NULL;   /* do not free msg again in work dtor */
     }
     return NULL;
 }
