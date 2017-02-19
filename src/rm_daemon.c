@@ -289,6 +289,8 @@ int main(int argc, char *argv[]) {
     socklen_t               cli_len;
     struct sigaction        sa;
     enum rm_error           status;
+	char ip[INET_ADDRSTRLEN];
+	const char *ipptr = NULL;
 
     int option_index = 0;
     struct option long_options[] = {
@@ -424,6 +426,11 @@ int main(int argc, char *argv[]) {
         }
         exit(EXIT_FAILURE);
     }
+	ipptr = inet_ntop(AF_INET, &srv_addr_in.sin_addr, ip, sizeof(ip));
+	if (ipptr == NULL) {
+		ipptr = "Unknown IP";
+	}
+	RM_LOG_INFO("Listening on address [%s], port [%u]", ipptr, ntohs(srv_addr_in.sin_port));
 
     sa.sa_handler = rm_daemon_sigint_handler;
     sa.sa_flags = 0;

@@ -301,22 +301,18 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struc
 
     return	RM_ERR_OK;
 }
-/*
-   int
-   rm_rx_delta_e_reconstruct_f_1(void *arg)
-   {
-   struct rm_rx_delta_e_reconstruct_arg *delta_pack =
-   (struct rm_rx_delta_e_reconstruct_arg*) arg;
-   assert(delta_pack != NULL);
-   (void)delta_pack;
-   return NULL;
-   }
-   */
 
-int rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
-        struct rm_delta_reconstruct_ctx *ctx)
+/* Callback of rm_session_delta_rx_f_local in local push. */
+enum rm_error rm_rx_process_delta_element(void *arg)
 {
     size_t  z_offset;   /* current offset in @f_z */
+
+	struct rm_rx_delta_element_arg	*delta_pack = arg;
+	const struct rm_delta_e			*delta_e = delta_pack->delta_e;
+	FILE							*f_y = delta_pack->f_y;
+	FILE							*f_z = delta_pack->f_z;
+	struct rm_delta_reconstruct_ctx	*ctx = delta_pack->rec_ctx;
+
     assert(delta_e != NULL && f_y != NULL && f_z != NULL && ctx != NULL);
     if (delta_e == NULL || f_y == NULL || f_z == NULL || ctx == NULL)
         return RM_ERR_BAD_CALL;
@@ -361,6 +357,16 @@ int rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FIL
             assert(1 == 0 && "Unknown delta element type!");
             return RM_ERR_ARG;
     }
+
+    return RM_ERR_OK;
+}
+
+/* Callback of rm_session_delta_rx_f_local in remote push. */
+enum rm_error rm_rx_tx_delta_element(void *arg)
+{
+	struct rm_rx_delta_element_arg	*delta_pack = arg;
+	const struct rm_delta_e			*delta_e = delta_pack->delta_e;
+	(void) delta_e; /* TODO TCP TX */
 
     return RM_ERR_OK;
 }

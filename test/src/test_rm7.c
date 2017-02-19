@@ -255,6 +255,7 @@ static enum rm_error test_rm_roll_proc_cb_delta_element_call(void *arg)
     const struct rm_session         *s;
     struct rm_session_push_local    *prvt;
     struct rm_delta_e               *delta_e;
+	struct rm_rx_delta_element_arg	delta_pack = {0};
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
     if (cb_arg == NULL) {
@@ -300,7 +301,11 @@ static enum rm_error test_rm_roll_proc_cb_delta_element_call(void *arg)
 
     /* test processing of delta element, NOTE: this test doesn't test rm_session_delta_rx_f_local nor remote but ONLY rm_rx_process_delta_element.
      * We can write directly to session's reconstruction context in this test */
-    err = rm_rx_process_delta_element(delta_e, s->f_y, s->f_z, (struct rm_delta_reconstruct_ctx*)&s->rec_ctx);
+	delta_pack.delta_e = delta_e;
+	delta_pack.f_y = s->f_y;
+	delta_pack.f_z = s->f_z;
+	delta_pack.rec_ctx = (struct rm_delta_reconstruct_ctx *) &s->rec_ctx;
+    err = rm_rx_process_delta_element(&delta_pack);
     switch (err) {
         case 0: break;
         case -1:
@@ -442,9 +447,9 @@ void test_rm_rx_process_delta_element_1(void **state)
             s->f_x = f_x;
             s->f_y = f_y;
             s->f_z = f_z->f;
-            prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
+            prvt->delta_tx_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */
@@ -849,9 +854,9 @@ void test_rm_rx_process_delta_element_2(void **state)
             s->f_x = f_x;
             s->f_y = f_y;
             s->f_z = f_z->f;
-            prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
+            prvt->delta_tx_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */

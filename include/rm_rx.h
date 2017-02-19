@@ -96,16 +96,27 @@ int
 rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f_x, const char *fname, struct twlist_head *l, size_t L,
         size_t limit, size_t *blocks_n) __attribute__((nonnull(1,2,3)));
 
-/* @brief   Reconstruction procedure.
+struct rm_rx_delta_element_arg {
+	const struct rm_delta_e *delta_e;
+	FILE *f_y;
+	FILE *f_z;
+	struct rm_delta_reconstruct_ctx *rec_ctx;
+};
+/* @brief   Used in local session in local push.
+ * @details	Reconstruction procedure.
  * @return  RM_ERR_OK - success,
  *          RM_ERR_BAD_CALL - null parameters,
  *          RM_ERR_COPY_OFFSET - copy offset failed,
  *          RM_ERR_WRITE - fpwrite failed,
  *          RM_ERR_COPY_BUFFERED - copy buffered failed,
  *          RM_ERR_ARG - unknown delta type */
-int
-rm_rx_process_delta_element(const struct rm_delta_e *delta_e, FILE *f_y, FILE *f_z,
-        struct rm_delta_reconstruct_ctx *delta_reconstruct_ctx) __attribute__((nonnull(1,2,3,4)));
+enum rm_error
+rm_rx_process_delta_element(void *arg) __attribute__((nonnull(1)));
+
+/* @brief	Used in local session in remote push.
+ */
+enum rm_error
+rm_rx_tx_delta_element(void *arg) __attribute__((nonnull(1)));
 
 
 #endif	/* RSYNCME_RX_H */

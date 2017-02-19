@@ -489,8 +489,8 @@ void test_rm_rolling_ch_proc_1(void **state)
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;                        /* run on same file */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (file_sz == 0) {
                 assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
                 continue;
@@ -743,8 +743,8 @@ void test_rm_rolling_ch_proc_2(void **state)
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1003,8 +1003,8 @@ void test_rm_rolling_ch_proc_3(void **state)
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1273,8 +1273,8 @@ void test_rm_rolling_ch_proc_4(void **state)
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1605,8 +1605,8 @@ void test_rm_rolling_ch_proc_5(void **state)
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1829,8 +1829,8 @@ void test_rm_rolling_ch_proc_7(void **state)
     prvt = s->prvt; /* set private session's arguments */
     prvt->h = h;
     s->f_x = NULL;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #7 (Test error reporting: NULL file pointer)");
 }
@@ -1872,8 +1872,8 @@ void test_rm_rolling_ch_proc_8(void **state)
     }
     assert_true(fs.st_size == 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
     RM_LOG_INFO("%s", "PASSED test #8 (Test error reporting: zero size file)");
@@ -1907,8 +1907,8 @@ void test_rm_rolling_ch_proc_9(void **state)
         assert_true(1 == 0 && "Can't open @x file!");
     }
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #9 (Test error reporting: L == 0, [and zero size file])");
@@ -1952,8 +1952,8 @@ void test_rm_rolling_ch_proc_10(void **state)
     file_sz = fs.st_size;
     assert_true(file_sz > 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, file_sz); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, file_sz); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #10 (Test error reporting: L == 0, [and nonzero size file])");
@@ -1997,8 +1997,8 @@ void test_rm_rolling_ch_proc_11(void **state)
     file_sz = fs.st_size;
     assert_true(file_sz > 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, file_sz); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, file_sz); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
     RM_LOG_INFO("%s", "PASSED test #11 (Test error reporting: reading out of range on nonzero size file)");
@@ -2089,8 +2089,8 @@ test_rm_rolling_ch_proc_12(void **state) {
         prvt = s->prvt;
         prvt->h = h;
         s->f_x = f_x;
-        prvt->delta_f = rm_roll_proc_cb_1;
-        err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+        prvt->delta_tx_f = rm_roll_proc_cb_1;
+        err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);
         if (x_sz == 0) {
             assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
             continue;
@@ -2246,8 +2246,8 @@ void test_rm_rolling_ch_proc_13(void **state)
         prvt = s->prvt;
         prvt->h = h;
         s->f_x = f_x;
-        prvt->delta_f = rm_roll_proc_cb_1;
-        err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+        prvt->delta_tx_f = rm_roll_proc_cb_1;
+        err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);
         if (x_sz == 0) {
             assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
             continue;
@@ -2411,8 +2411,8 @@ void test_rm_rolling_ch_proc_14(void **state)
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -2598,8 +2598,8 @@ void test_rm_rolling_ch_proc_15(void **state)
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -2826,8 +2826,8 @@ void test_rm_rolling_ch_proc_16(void **state)
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -3068,8 +3068,8 @@ void test_rm_rolling_ch_proc_17(void **state)
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -3201,8 +3201,8 @@ test_rm_rolling_ch_proc_18(void **state) {
         assert_true(1 == 0 && "Can't open @x file!");
     }
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #18 (Test error reporting: send threshold == 0, [and zero size file])");
@@ -3246,8 +3246,8 @@ test_rm_rolling_ch_proc_19(void **state) {
     file_sz = fs.st_size;
     assert_true(file_sz > 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, file_sz); /* run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, file_sz); /* run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #19 (Test error reporting: send threshold == 0, [and nonzero size file])");
@@ -3281,8 +3281,8 @@ test_rm_rolling_ch_proc_20(void **state) {
         assert_true(1 == 0 && "Can't open @x file!");
     }
     s->f_x = f_x;
-    prvt->delta_f = NULL;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = NULL;
+    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #20 (Test error reporting: NULL delta function pointer)");
@@ -3348,8 +3348,8 @@ test_rm_rolling_ch_proc_21(void **state) {
             prvt = s->prvt;
             prvt->h = NULL;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, NULL, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;

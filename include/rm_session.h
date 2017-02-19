@@ -53,8 +53,8 @@ struct rm_session_push_local
                                                    new delta element has been produced */
     pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
     enum rm_rx_status       delta_rx_status;
-    rm_delta_f              *delta_f;           /* delta tx callback (enqueues delta elements) */
-    rm_delta_f              *delta_rx_f;        /* delta rx callback (dequeues delta elements and does data reconstruction) */
+    rm_delta_f              *delta_tx_f;        /* delta tx callback (in RM_PUSH_LOCAL enqueues delta elements, in RM_PUSH_TX the same) */
+    rm_delta_f              *delta_rx_f;        /* delta rx callback (in RM_PUSH_LOCAL dequeues delta elements and does data reconstruction, in RM_PUSH_TX dequeues deltas and transmits them over TCP) */
 };
 
 /* Receiver of file (delta vector) */
