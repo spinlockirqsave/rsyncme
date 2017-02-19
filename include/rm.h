@@ -123,7 +123,7 @@ struct rm_ch_ch_ref_hlink
 enum RM_DELTA_ELEMENT_TYPE
 {
     RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
-    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes. Bytes contained in delta raw element are always contiguous bytes from @x */
+    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes. Bytes contained in delta raw element are always contiguous bytes from @x, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
     RM_DELTA_ELEMENT_ZERO_DIFF, /* sent always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
                                    when L => f_x.sz and checksums computed on the whole file match,
                                    means files are the same. raw_bytes_n set to file size */

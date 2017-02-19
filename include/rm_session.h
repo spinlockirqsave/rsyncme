@@ -46,10 +46,13 @@ struct rm_session_push_local
 {
     pthread_t               delta_tx_tid;       /* producer (of delta elements, rolling checksum proc) */
     enum rm_tx_status       delta_tx_status;
-    struct twhlist_head     *h;                 /* nonoverlapping checkums */
+
+    struct twhlist_head     *h;                 /* nonoverlapping checksums hashtable, points to stack-allocated table */
+    pthread_mutex_t			h_mutex;			/* protects hashtable */
+
     twfifo_queue    tx_delta_e_queue;           /* queue of delta elements */
     pthread_mutex_t tx_delta_e_queue_mutex;
-    pthread_cond_t  tx_delta_e_queue_signal;    /* signaled by rolling proc when
+    pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
     pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
     enum rm_rx_status       delta_rx_status;
@@ -80,7 +83,7 @@ struct rm_session_push_tx
     int fd;                                     /* handle to the TCP connection */ 
     pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
     int                     ch_ch_rx_status;
-    pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex shared with ch_ch_rx thread */
+    pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex for synchronization with session_local's ch_ch_rx thread */
 };
 
 /* Receiver of file (delta vector) */

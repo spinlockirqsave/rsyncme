@@ -328,7 +328,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         return RM_ERR_BAD_CALL;
     }
 
-    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS); /* synchronised between threads with session_local's hashtable mutex (h_mutex) */
     twhash_init(h);
 
     f_x = fopen(x, "rb");
@@ -427,12 +427,19 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         goto err_exit;
     }
 
+    prvt->session_local.h = h; /* shared hashtable, assign pointer before launching checksums receiver thread */
+    err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f, s, PTHREAD_CREATE_JOINABLE);   /* RX nonoverlapping checksums and insert into hashtable */
+    if (err != RM_ERR_OK) {
+        err = RM_ERR_CH_CH_RX_THREAD_LAUNCH;
+        goto err_exit;
+    }
+
     s->rec_ctx.method = RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION;
     s->rec_ctx.L = L;
     s->rec_ctx.copy_all_threshold = copy_all_threshold;
     s->rec_ctx.copy_tail_threshold = copy_tail_threshold;
     s->rec_ctx.send_threshold = send_threshold;
-    prvt->session_local.h = h;
+    prvt->session_local.h = h; /* shared hashtable */
     s->f_x = f_x;
     s->f_y = NULL;
     s->f_z = NULL;
@@ -449,8 +456,12 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         err = RM_ERR_DELTA_RX_THREAD_LAUNCH;
         goto err_exit;
     }
+    pthread_join(prvt->ch_ch_rx_tid, NULL);
     pthread_join(prvt->session_local.delta_tx_tid, NULL);
     pthread_join(prvt->session_local.delta_rx_tid, NULL);
+    if (prvt->ch_ch_rx_status != RM_TX_STATUS_OK) {
+        err = RM_ERR_CH_CH_RX_THREAD;
+    }
     if (prvt->session_local.delta_tx_status != RM_TX_STATUS_OK) {
         err = RM_ERR_DELTA_TX_THREAD;
     }

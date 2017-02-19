@@ -52,6 +52,7 @@ void rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 void rm_session_push_local_init(struct rm_session_push_local *prvt)
 {
     memset(prvt, 0, sizeof(*prvt));
+    pthread_mutex_init(&prvt->h_mutex, NULL);
     TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
     pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
     pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
@@ -337,6 +338,7 @@ done:
     return NULL;
 }
 
+/* RX nonoverlapping checksums in RM_PUSH_TX */
 void *rm_session_ch_ch_rx_f(void *arg)
 {
     struct rm_session *s = (struct rm_session *) arg;
@@ -347,6 +349,7 @@ exit:
     return NULL;
 }
 
+/* enqueue deltas into queue (both in RM_PUSH_LOCAL & in RM_PUSH_TX) */
 void *rm_session_delta_tx_f(void *arg)
 {
     struct twhlist_head     *h;             /* nonoverlapping checkums */

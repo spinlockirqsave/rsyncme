@@ -518,11 +518,17 @@ int main(int argc, char *argv[])
                             fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u]\n", addr, port);
                         }
                         goto fail;
+                    case RM_ERR_CH_CH_RX_THREAD_LAUNCH:
+                        fprintf(stderr, "Error. Checksums rx thread launch failed\n");
+                        goto fail;
                     case RM_ERR_DELTA_TX_THREAD_LAUNCH:
                         fprintf(stderr, "Error. Delta tx thread launch failed\n");
                         goto fail;
                     case RM_ERR_DELTA_RX_THREAD_LAUNCH:
                         fprintf(stderr, "Error. Delta rx thread launch failed\n");
+                        goto fail;
+                    case RM_ERR_CH_CH_RX_THREAD:
+                        fprintf(stderr, "Error. Checkums rx thread failed\n");
                         goto fail;
                     case RM_ERR_DELTA_TX_THREAD:
                         fprintf(stderr, "Error. Delta tx thread failed\n");

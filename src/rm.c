@@ -460,7 +460,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
 
         if (match == 1) { /* tx RM_DELTA_ELEMENT_REFERENCE, TODO free delta object in callback!*/
             if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
-                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first, move ownership of raw bytes */
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, e->data.ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first, move ownership of raw bytes, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
                     return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
@@ -502,7 +502,7 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
             send_left -= 1;
             ++raw_bytes_n;
             if ((raw_bytes_n == send_threshold) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
-                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
+                if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK) {   /* tx, move ownership of raw bytes, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES */
                     return RM_ERR_TX_RAW;
                 }
                 raw_bytes_n = 0;
