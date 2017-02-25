@@ -70,18 +70,30 @@ int rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e)
     return 0;
 }
 
-enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status)
+enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status, uint16_t port)
 {
     struct rm_msg_hdr   hdr = {0};
-    struct rm_msg_ack   ack = {0};
-    struct rm_msg_ack   raw_msg_ack = {0};
+    union rm_msg_ack_u	ack;
+    union rm_msg_ack_u	raw_msg_ack;
 
     hdr.pt = pt;
     hdr.flags = status;
     hdr.len = rm_calc_msg_len(&hdr);
     hdr.hash = rm_core_hdr_hash(&hdr);
-    ack.hdr = &hdr;
-    rm_serialize_msg_ack((unsigned char*)&raw_msg_ack, &ack);
+    ack.msg_ack.hdr = &hdr;
+
+	switch (pt) {
+		case RM_PT_MSG_PUSH_ACK:
+			ack.msg_push_ack.delta_port = port;
+			rm_serialize_msg_push_ack((unsigned char*)&raw_msg_ack, &ack.msg_push_ack);
+			break;
+		case RM_PT_MSG_ACK:
+			rm_serialize_msg_ack((unsigned char*)&raw_msg_ack, &ack.msg_ack);
+			break;
+		default:
+			return RM_ERR_BAD_CALL;
+	}
+
     return rm_tcp_tx(fd, &raw_msg_ack, hdr.len);
 }
 

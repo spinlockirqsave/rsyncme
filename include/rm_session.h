@@ -54,9 +54,10 @@ struct rm_session_push_local
     pthread_mutex_t tx_delta_e_queue_mutex;
     pthread_cond_t  tx_delta_e_queue_signal;    /* signalled by rolling proc when
                                                    new delta element has been produced */
+    rm_delta_f              *delta_tx_f;        /* delta tx callback (in RM_PUSH_LOCAL enqueues delta elements, in RM_PUSH_TX the same) */
+
     pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
     enum rm_rx_status       delta_rx_status;
-    rm_delta_f              *delta_tx_f;        /* delta tx callback (in RM_PUSH_LOCAL enqueues delta elements, in RM_PUSH_TX the same) */
     rm_delta_f              *delta_rx_f;        /* delta rx callback (in RM_PUSH_LOCAL dequeues delta elements and does data reconstruction, in RM_PUSH_TX dequeues deltas and transmits them over TCP) */
 };
 
@@ -79,8 +80,12 @@ struct rm_session_push_rx
 /* Transmitter of file (delta vector) */
 struct rm_session_push_tx
 {
+	int						fd_delta_tx;		/* delta tx channel */
     struct rm_session_push_local session_local; /* delta producer and delta transmitter threads */
-    int fd;                                     /* handle to the TCP connection */ 
+
+    int fd;                                     /* main handle to the TCP connection */
+
+	int						fd_ch_ch_rx;		/* nonoverlapping checksums rx channel */
     pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
     int                     ch_ch_rx_status;
     pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex for synchronization with session_local's ch_ch_rx thread */

@@ -345,6 +345,9 @@ void *rm_session_ch_ch_rx_f(void *arg)
     assert(s != NULL);
     if (s == NULL)
         goto exit;
+
+	/* TODO start to listen for checksums, get port from rm_session_push_tx */
+	/* size_t bytes_to_rx = 0; */
 exit:
     return NULL;
 }

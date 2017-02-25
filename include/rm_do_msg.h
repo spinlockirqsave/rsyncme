@@ -40,7 +40,18 @@ struct rm_msg {                                 /* base type for derivation of m
 struct rm_msg_ack {
     struct rm_msg_hdr   *hdr;                   /* pt = rm_pt_type (*_ACK), flags = status (enum rm_error) */
 };
-#define RM_MSG_ACK_LEN          RM_MSG_HDR_LEN
+#define RM_MSG_ACK_LEN	(RM_MSG_HDR_LEN)
+
+struct rm_msg_push_ack {
+	struct rm_msg_ack	ack;
+	uint16_t			delta_port;				/* receiver awaits deltas on that port from transmitter of file */
+};
+#define RM_MSG_PUSH_ACK_LEN	(RM_MSG_HDR_LEN + 2)
+
+union rm_msg_ack_u {
+	struct rm_msg_ack		msg_ack;
+	struct rm_msg_push_ack	msg_push_ack;
+};
 
 struct rm_msg_push
 {
@@ -53,6 +64,7 @@ struct rm_msg_push
     char                y[RM_FILE_LEN_MAX];     /* y file name  */
     uint16_t            z_sz;                   /* size of string including terminating NULL byte '\0' */
     char                z[RM_FILE_LEN_MAX];     /* z file name  */
+	uint16_t			ch_ch_port;				/* transmitter awaits nonoverlapping checkums on that port from receiver of file */
 };
 
 /* transmitter sends PULL(x,y) -> this means receiver does PUSH(y,x) */

@@ -223,6 +223,7 @@ enum rm_pt_type {
     RM_PT_MSG_PUSH_ACK,
     RM_PT_MSG_PULL,
     RM_PT_MSG_PULL_ACK,
+	RM_PT_MSG_ACK,
     RM_PT_MSG_BYE
 };
 

@@ -42,14 +42,15 @@ void* rm_do_msg_push_rx(void* arg) {
     struct rm_session	        *s = NULL;
     struct rm_session_push_rx   *prvt = NULL;
     struct rm_msg_push          *msg_push = NULL;
-    uint8_t                     ack_tx_err = 0;                                                         /* set to 1 if ACK tx failed */
+    uint8_t                     ack_tx_err = 0;																/* set to 1 if ACK tx failed */
+	uint16_t					delta_port = 0;
 
     struct rm_work* work = (struct rm_work*) arg;
     msg_push = (struct rm_msg_push*) work->msg;
 
     s = rm_session_create(RM_PUSH_RX);
     if (s == NULL) {
-        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION) != RM_ERR_OK) {      /* send ACK explaining error */
+        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, 0) != RM_ERR_OK) {      /* send ACK explaining error */
             ack_tx_err = 1;
         }
         goto fail;
@@ -60,14 +61,16 @@ void* rm_do_msg_push_rx(void* arg) {
 
     err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);
     if (err != RM_ERR_OK) {
-        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err) != RM_ERR_OK) {                        /* send ACK with error */
+        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, 0) != RM_ERR_OK) {                        /* send ACK with error */
             ack_tx_err = 1;
         }
         goto fail;
     }
+	/* TODO open delta port for listening thread */
+	delta_port = 0;
 
-    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
-    if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK) != RM_ERR_OK) {                      /* send ACK OK */
+    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, delta_port);
+    if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, delta_port) != RM_ERR_OK) {                      /* send ACK OK */
         ack_tx_err = 1;
         goto fail;
     }
@@ -204,6 +207,7 @@ rm_calc_msg_len(void *arg) {
             } else {
                 len += 2;                       /* only file length field */
             }
+			len += 2;							/* ch_ch_port */
             break;
 
         case RM_PT_MSG_PULL:    /* TODO */
@@ -213,8 +217,16 @@ rm_calc_msg_len(void *arg) {
             break;
 
         case RM_PT_MSG_PUSH_ACK:
+            len = rm_calc_msg_hdr_len(msg->hdr);
+			len += 2;							/* deltas port */
+            break;
+
         case RM_PT_MSG_PULL_ACK:
             len = rm_calc_msg_hdr_len(msg->hdr);
+            break;
+
+        case RM_PT_MSG_ACK:
+			len = RM_MSG_ACK_LEN;
             break;
 
         default:

@@ -108,6 +108,12 @@ unsigned char* rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) {
     return buf;
 }
 
+unsigned char* rm_serialize_msg_push_ack(unsigned char *buf, struct rm_msg_push_ack *m) {
+    buf = rm_serialize_msg_hdr(buf, m->ack.hdr);
+	buf = rm_serialize_u16(buf, m->delta_port);
+    return buf;
+}
+
 unsigned char* rm_serialize_msg_pull(unsigned char *buf, struct rm_msg_pull *m) {
     buf = rm_serialize_msg_hdr(buf, m->hdr);
     buf = rm_serialize_u32(buf, m->L);
@@ -240,6 +246,11 @@ unsigned char* rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_hdr *hd
 
 unsigned char* rm_deserialize_msg_ack(unsigned char *buf, struct rm_msg_ack *ack) {
     return rm_deserialize_msg_hdr(buf, ack->hdr);
+}
+
+unsigned char* rm_deserialize_msg_push_ack(unsigned char *buf, struct rm_msg_push_ack *ack) {
+	buf = rm_deserialize_msg_hdr(buf, ack->ack.hdr);
+	return rm_deserialize_u16(buf, &ack->delta_port);
 }
 
 struct rm_msg* rm_deserialize_msg(enum rm_pt_type pt, struct rm_msg_hdr *hdr, unsigned char *body_raw) {
