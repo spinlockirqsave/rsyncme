@@ -29,7 +29,7 @@ int rm_rx_f_tx_ch_ch(const struct f_tx_ch_ch_ref_arg_1 arg)
             rm_push_rx = (struct rm_session_push_rx *) s->prvt;
             if (rm_push_rx == NULL)
                 return RM_ERR_RX;
-            fd = rm_push_rx->fd;
+            fd = rm_push_rx->ch_ch_fd;
             break;
         case RM_PULL_RX:
             rm_pull_rx = (struct rm_session_pull_rx *) s->prvt;
@@ -64,7 +64,7 @@ int rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
             rm_push_rx = (struct rm_session_push_rx*) s->prvt;
             if (rm_push_rx == NULL)
                 return RM_ERR_RX;
-            if (rm_tcp_tx_ch_ch_ref(rm_push_rx->fd, e) < 0)
+            if (rm_tcp_tx_ch_ch_ref(rm_push_rx->ch_ch_fd, e) < 0)
                 return RM_ERR_TX;
             break;
         case RM_PULL_RX:

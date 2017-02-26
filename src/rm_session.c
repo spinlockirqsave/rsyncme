@@ -17,6 +17,9 @@ void rm_session_push_rx_init(struct rm_session_push_rx *prvt)
     pthread_mutex_init(&prvt->rx_delta_e_queue_mutex, NULL);
     pthread_cond_init(&prvt->rx_delta_e_queue_signal, NULL);
     prvt->msg_push = NULL;
+	prvt->fd = -1;
+	prvt->ch_ch_fd = -1;
+	prvt->delta_fd = -1;
     return;
 }
 

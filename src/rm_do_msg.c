@@ -43,7 +43,6 @@ void* rm_do_msg_push_rx(void* arg) {
     struct rm_session_push_rx   *prvt = NULL;
     struct rm_msg_push          *msg_push = NULL;
     uint8_t                     ack_tx_err = 0;																/* set to 1 if ACK tx failed */
-	uint16_t					delta_port = 0;
 
     struct rm_work* work = (struct rm_work*) arg;
     msg_push = (struct rm_msg_push*) work->msg;
@@ -66,11 +65,21 @@ void* rm_do_msg_push_rx(void* arg) {
         }
         goto fail;
     }
-	/* TODO open delta port for listening thread */
-	delta_port = 0;
 
-    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, delta_port);
-    if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, delta_port) != RM_ERR_OK) {                      /* send ACK OK */
+    prvt = (struct rm_session_push_rx*) s->prvt;
+
+	/* open delta port for listening thread (port dynamically assigned as delta_port is initialised to 0) */
+	err = rm_tcp_listen(&prvt->delta_fd, INADDR_ANY, &prvt->delta_port, 0, RM_SERVER_LISTENQ); 
+    if (err != RM_ERR_OK) {
+        if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, 0) != RM_ERR_OK) {                        /* send ACK with error */
+            ack_tx_err = 1;
+        }
+		prvt->delta_fd = -1;
+        goto fail;
+    }
+
+    RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, prvt->delta_port);
+    if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, prvt->delta_port) != RM_ERR_OK) {                      /* send ACK OK */
         ack_tx_err = 1;
         goto fail;
     }
@@ -78,8 +87,6 @@ void* rm_do_msg_push_rx(void* arg) {
 
     rm_core_session_add(work->rm, s);                                                                   /* insert session into global table and list, hash md5 hash */
     RM_LOG_INFO("[%s] [4]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
-
-    prvt = (struct rm_session_push_rx*) s->prvt;
 
     err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);     /* start tx_ch_ch and rx delta threads, save pids in session object */
     if (err != RM_ERR_OK) {

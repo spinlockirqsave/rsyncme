@@ -64,10 +64,13 @@ struct rm_session_push_local
 /* Receiver of file (delta vector) */
 struct rm_session_push_rx
 {
-    int fd;                                     /* socket handle */
+    int						fd;					/* control socket handle */
+    int						ch_ch_fd;           /* socket handle */
     pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
     enum rm_tx_status       ch_ch_tx_status;
 
+    int						delta_fd;           /* socket handle */
+	uint16_t				delta_port;
     pthread_t               delta_rx_tid;       /* receiver of delta elements */
     enum rm_rx_status       delta_rx_status;
     twfifo_queue    rx_delta_e_queue;           /* rx queue of delta elements */

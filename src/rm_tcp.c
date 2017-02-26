@@ -303,6 +303,37 @@ enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_
     return errsave;
 }
 
+int rm_tcp_listen(int *listen_fd, in_addr_t addr, uint16_t *port, int reuseaddr, int backlog)
+{
+	int err;
+    struct sockaddr_in      srv_addr_in;
+
+    int listenfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    memset(&srv_addr_in, 0, sizeof(srv_addr_in));
+    srv_addr_in.sin_family      = AF_INET;
+    srv_addr_in.sin_addr.s_addr = htonl(addr);
+    srv_addr_in.sin_port        = htons(*port);
+
+    if (reuseaddr) {
+		err = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr));
+		if (err < 0)
+			return err;
+    }
+
+    err = bind(listenfd, (struct sockaddr*) &srv_addr_in, sizeof(srv_addr_in));
+    if (err < 0) {
+		return err;
+    }
+
+    err = listen(listenfd, backlog);
+    if (err < 0) {
+		return err;
+    }
+	*listen_fd = listenfd;
+	return 0;
+}
+
 enum rm_error rm_tcp_read(int fd, void *dst, size_t bytes_n)
 {
     ssize_t         read_n = 0;
