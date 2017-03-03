@@ -24,17 +24,29 @@ void rm_msg_push_free(struct rm_msg_push *msg) {
     free(msg);
 }
 
-enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *msg) {
-    msg->hdr = malloc(sizeof *(msg->hdr));
-    if (msg->hdr == NULL) {
+enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *ack) {
+    ack->hdr = malloc(sizeof *(ack->hdr));
+    if (ack->hdr == NULL) {
         return RM_ERR_FAIL;
     }
     return RM_ERR_OK;
 }
 
-void rm_msg_ack_free(struct rm_msg_ack *msg) {
-    free(msg->hdr);
-    free(msg);
+void rm_msg_ack_free(struct rm_msg_ack *ack) {
+    free(ack->hdr);
+    free(ack);
+}
+
+enum rm_error rm_msg_push_ack_alloc(struct rm_msg_push_ack *ack) {
+    if (rm_msg_ack_alloc(&ack->ack) != RM_ERR_OK)
+		return RM_ERR_FAIL;
+	ack->delta_port = 0;
+    return RM_ERR_OK;
+}
+
+void rm_msg_push_ack_free(struct rm_msg_push_ack *ack) {
+    free(ack->ack.hdr);
+    free(ack);
 }
 
 void* rm_do_msg_push_rx(void* arg) {

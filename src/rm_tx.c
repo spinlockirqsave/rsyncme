@@ -318,7 +318,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
     struct rm_msg_push  msg = {0};
     unsigned char       *msg_raw = NULL;
     unsigned char       *buf = NULL;
-    struct rm_msg_ack   ack = {0};
+    struct rm_msg_push_ack   ack;
 
     (void) y;
     (void) z;
@@ -394,18 +394,18 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         goto err_exit;                                                                          /* RM_ERR_WRITE */
     }
 
-    if (rm_msg_ack_alloc(&ack) != RM_ERR_OK) {                                                  /* prepare for incoming ACK, allocate space for header == ACK */
+    if (rm_msg_push_ack_alloc(&ack) != RM_ERR_OK) {												/* prepare for incoming ACK, allocate space for header == ACK */
         goto err_exit; /* TODO Couldn't allocate message ack. Not enough memory */
     }
-    buf = malloc(RM_MSG_ACK_LEN);                                                               /* buffer for incoming raw message header */
+    buf = malloc(RM_MSG_PUSH_ACK_LEN);															/* buffer for incoming raw message header */
     if (buf == NULL) {
         goto err_exit; /* TODO Couldn't allocate buffer for the message header. Not enough memory */
     }
-    err = rm_tcp_rx(prvt->fd, buf, RM_MSG_ACK_LEN);                                             /* wait for incoming ACK */
+    err = rm_tcp_rx(prvt->fd, buf, RM_MSG_PUSH_ACK_LEN);                                             /* wait for incoming ACK */
     if (err != RM_ERR_OK) {                                                                     /* RM_ERR_READ || RM_ERR_EOF */
         goto err_exit; /* TODO handle */
     }
-    err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_ACK_LEN);                                    /* validate potential ACK message: check header: hash, size and pt*/
+    err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_PUSH_ACK_LEN);                                    /* validate potential ACK message: check header: hash, size and pt*/
     if (err != RM_ERR_OK) { /* bad message */
         switch (err) {
             case RM_ERR_FAIL: /* Invalid hash */
@@ -418,14 +418,15 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         goto err_exit;
     }
 
-    rm_deserialize_msg_ack(buf, &ack);
+    rm_deserialize_msg_push_ack(buf, &ack);
     free(buf);
     buf = NULL;
 
-    if (ack.hdr->flags != RM_ERR_OK) {                                                          /* if request cannot be handled */
-        err = ack.hdr->flags;
+    if (ack.ack.hdr->flags != RM_ERR_OK) {                                                          /* if request cannot be handled */
+        err = ack.ack.hdr->flags;
         goto err_exit;
     }
+	prvt->msg_push_ack = &ack;
 
     prvt->session_local.h = h; /* shared hashtable, assign pointer before launching checksums receiver thread */
     err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f, s, PTHREAD_CREATE_JOINABLE);   /* RX nonoverlapping checksums and insert into hashtable */
@@ -476,8 +477,8 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
     msg_raw = NULL;
     free(msg.hdr);
     msg.hdr = NULL;
-    free(ack.hdr);
-    ack.hdr = NULL;
+    free(ack.ack.hdr);
+    ack.ack.hdr = NULL;
 
     return RM_ERR_OK;
 
@@ -510,9 +511,9 @@ err_exit:
         free(msg.hdr);
         msg.hdr = NULL;
     }
-    if (ack.hdr != NULL) {
-        free(ack.hdr);
-        ack.hdr = NULL;
+    if (ack.ack.hdr != NULL) {
+        free(ack.ack.hdr);
+        ack.ack.hdr = NULL;
     }
     return err;
 }

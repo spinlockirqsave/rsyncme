@@ -88,8 +88,10 @@ struct rm_msg_pull
 enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 void rm_msg_push_free(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 
-enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
-void rm_msg_ack_free(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
+enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *ack) __attribute__ ((nonnull(1)));
+void rm_msg_ack_free(struct rm_msg_ack *ack) __attribute__ ((nonnull(1)));
+enum rm_error rm_msg_push_ack_alloc(struct rm_msg_push_ack *ack) __attribute__ ((nonnull(1)));
+void rm_msg_push_ack_free(struct rm_msg_push_ack *ack) __attribute__ ((nonnull(1)));
 
 /* @brief       Handles incoming rsync push request in new sesion.
  * @details     Work struct callback for RM_WORK_PROCESS_MSG_PUSH.

@@ -92,6 +92,8 @@ struct rm_session_push_tx
     pthread_t               ch_ch_rx_tid;       /* receiver of nonoverlapping checksums */
     int                     ch_ch_rx_status;
     pthread_mutex_t         ch_ch_hash_mutex;   /* hashtable mutex for synchronization with session_local's ch_ch_rx thread */
+
+	struct rm_msg_push_ack *msg_push_ack;		/* ACK received from receiver (contains delta port on which receiver is expecting of deltas) */
 };
 
 /* Receiver of file (delta vector) */
