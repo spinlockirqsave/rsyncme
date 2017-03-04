@@ -82,6 +82,9 @@ void rm_session_push_local_free(struct rm_session_push_local *prvt)
 
 enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, struct rm_msg_push *m, int fd)
 {
+	int fd_y = -1;
+	struct stat fs;
+	size_t y_sz = 0;
     struct rm_session_push_rx   *push_rx = NULL;
 
     if (m->L == 0) {                                                                    /* L can't be 0 */
@@ -104,8 +107,16 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
             if (m->y_sz == 0) {
                 return RM_ERR_Y_NULL;                                                   /* error: what is the name of the result file? OR error: what is the name of the file you want to sync with? */
             }
-            s->f_y = fopen(m->y, "rb");                                                 /* try to open */ 
-            if (s->f_y == NULL) {
+            s->f_y = fopen(m->y, "rb");                                                 /* try to open */
+			if (s->f_y != NULL) {
+                fd_y = fileno(s->f_y);
+                memset(&fs, 0, sizeof(fs));
+                if (fstat(fd_y, &fs) != 0)
+				   return RM_ERR_FSTAT_Y;
+                y_sz = fs.st_size;
+				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checkums to be sent to remote transmitter */
+			} else {																	/* s->f_y is NULL */
+				push_rx->ch_ch_n = 0;													/* no checksums to send... */
                 if (m->hdr->flags & RM_BIT_4) {                                         /* force creation if @y doesn't exist? */
                     if (m->z_sz != 0) {                                                 /* use different name? */
                         s->f_z = fopen(m->z, "w+b");
@@ -413,18 +424,20 @@ exit:
 
 void *rm_session_delta_rx_f_local(void *arg)
 {
-    FILE                            *f_y;           /* reference file, on which reconstruction is performed */
-    FILE                            *f_z;           /* result file */
-    struct rm_session_push_local    *prvt_local;
-    twfifo_queue                    *q;
-    const struct rm_delta_e         *delta_e;       /* iterator over delta elements */
-    struct twlist_head              *lh;
+    FILE                            *f_y = NULL;		/* reference file, on which reconstruction is performed */
+    FILE                            *f_z = NULL;		/* result file */
+    struct rm_session_push_local    *prvt_local = NULL;
+    twfifo_queue                    *q = NULL;
+    const struct rm_delta_e         *delta_e = NULL;	/* iterator over delta elements */
+    struct twlist_head              *lh = NULL;
     size_t                          bytes_to_rx;
-    struct rm_session               *s;
+    struct rm_session               *s = NULL;
 	struct rm_rx_delta_element_arg delta_pack = {0};
-    struct rm_delta_reconstruct_ctx rec_ctx = {0};  /* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
+    struct rm_delta_reconstruct_ctx rec_ctx = {0};		/* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
     int err;
     enum rm_rx_status               status = RM_RX_STATUS_OK;
+    struct rm_session_push_tx		*prvt_tx = NULL;
+	struct rm_msg_push_ack			*ack = NULL;
 
     s = (struct rm_session*) arg;
     if (s == NULL) {
@@ -440,19 +453,22 @@ void *rm_session_delta_rx_f_local(void *arg)
         status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
-    prvt_local = s->prvt;
-    if (prvt_local == NULL) {
-        pthread_mutex_unlock(&s->mutex);
-        status = RM_RX_STATUS_INTERNAL_ERR;
-        goto err_exit;
-    }
-    assert(prvt_local != NULL);
-
-    bytes_to_rx = s->f_x_sz;
-    f_y         = s->f_y;
-    f_z         = s->f_z;
-    rec_ctx.L = s->rec_ctx.L; /* init reconstruction context */
-    pthread_mutex_unlock(&s->mutex);
+	if (s->type == RM_PUSH_LOCAL) {
+		prvt_local = s->prvt;
+		if (prvt_local == NULL) {
+			pthread_mutex_unlock(&s->mutex);
+			status = RM_RX_STATUS_INTERNAL_ERR;
+			goto err_exit;
+		}
+	} else {
+		prvt_tx = s->prvt;
+		if (prvt_tx == NULL) {
+			pthread_mutex_unlock(&s->mutex);
+			status = RM_RX_STATUS_INTERNAL_ERR;
+			goto err_exit;
+		}
+	}
+    assert((prvt_local != NULL) ^ (prvt_tx != NULL));
 
     assert((s->type == RM_PUSH_LOCAL && f_y != NULL) || s->type == RM_PUSH_TX);
     assert((s->type == RM_PUSH_LOCAL && f_z != NULL) || s->type == RM_PUSH_TX);
@@ -460,6 +476,18 @@ void *rm_session_delta_rx_f_local(void *arg)
         status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
+
+	if (s->type == RM_PUSH_LOCAL) {
+		bytes_to_rx = s->f_x_sz;
+		f_y         = s->f_y;
+		f_z         = s->f_z;
+	} else {												/* RM_PUSH_TX */
+		ack = prvt_tx->msg_push_ack;
+		bytes_to_rx = ack->ch_ch_n;
+	}
+    rec_ctx.L = s->rec_ctx.L;								/* init reconstruction context */
+    pthread_mutex_unlock(&s->mutex);
+
     if (bytes_to_rx == 0)
         goto done;
 

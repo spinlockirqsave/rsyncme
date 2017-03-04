@@ -45,8 +45,9 @@ struct rm_msg_ack {
 struct rm_msg_push_ack {
 	struct rm_msg_ack	ack;
 	uint16_t			delta_port;				/* receiver awaits deltas on that port from transmitter of file */
+	uint64_t			ch_ch_n;				/* receiver will send that many nonoverlapping checkums */
 };
-#define RM_MSG_PUSH_ACK_LEN	(RM_MSG_HDR_LEN + 2)
+#define RM_MSG_PUSH_ACK_LEN	(RM_MSG_HDR_LEN + 2 + 8)
 
 union rm_msg_ack_u {
 	struct rm_msg_ack		msg_ack;

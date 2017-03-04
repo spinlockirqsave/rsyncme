@@ -389,23 +389,23 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         return RM_ERR_TOO_MUCH_REQUESTED;
     }
     rm_serialize_msg_push(msg_raw, &msg);
-    err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);                                        /* tx msg PUSH */
+    err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);											/* tx msg PUSH */
     if (err != RM_ERR_OK) {
-        goto err_exit;                                                                          /* RM_ERR_WRITE */
+        goto err_exit;																				/* RM_ERR_WRITE */
     }
 
-    if (rm_msg_push_ack_alloc(&ack) != RM_ERR_OK) {												/* prepare for incoming ACK, allocate space for header == ACK */
+    if (rm_msg_push_ack_alloc(&ack) != RM_ERR_OK) {													/* prepare for incoming ACK, allocate space for header == ACK */
         goto err_exit; /* TODO Couldn't allocate message ack. Not enough memory */
     }
-    buf = malloc(RM_MSG_PUSH_ACK_LEN);															/* buffer for incoming raw message header */
+    buf = malloc(RM_MSG_PUSH_ACK_LEN);																/* buffer for incoming raw message header */
     if (buf == NULL) {
         goto err_exit; /* TODO Couldn't allocate buffer for the message header. Not enough memory */
     }
-    err = rm_tcp_rx(prvt->fd, buf, RM_MSG_PUSH_ACK_LEN);                                             /* wait for incoming ACK */
-    if (err != RM_ERR_OK) {                                                                     /* RM_ERR_READ || RM_ERR_EOF */
-        goto err_exit; /* TODO handle */
+    err = rm_tcp_rx(prvt->fd, buf, RM_MSG_PUSH_ACK_LEN);                                            /* wait for incoming ACK */
+    if (err != RM_ERR_OK) {																			/* RM_ERR_READ || RM_ERR_EOF */
+        goto err_exit; /* TODO handle */													
     }
-    err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_PUSH_ACK_LEN);                                    /* validate potential ACK message: check header: hash, size and pt*/
+    err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_PUSH_ACK_LEN);									/* validate potential ACK message: check header: hash, size and pt*/
     if (err != RM_ERR_OK) { /* bad message */
         switch (err) {
             case RM_ERR_FAIL: /* Invalid hash */

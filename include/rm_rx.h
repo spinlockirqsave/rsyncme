@@ -113,7 +113,10 @@ struct rm_rx_delta_element_arg {
 enum rm_error
 rm_rx_process_delta_element(void *arg) __attribute__((nonnull(1)));
 
-/* @brief	Used in local session in remote push.
+/* @brief	Used in local session's rm_session_delta_rx_f_local() thread proc in remote push as delta TCP TX callback.
+ * @details	In remote push this function will tx deltas over TCP socket connected to remote receiver's TCP port
+ *			(port number is received by transmitter in RM_MSG_PUSH_ACK message sent by remote receiver and it is stored
+ *			in session's ack message pointed to by @msg_push_ack pointer).
  */
 enum rm_error
 rm_rx_tx_delta_element(void *arg) __attribute__((nonnull(1)));

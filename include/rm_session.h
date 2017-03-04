@@ -65,6 +65,7 @@ struct rm_session_push_local
 struct rm_session_push_rx
 {
     int						fd;					/* control socket handle */
+	uint64_t				ch_ch_n;			/* number of nonoverlapping checksums to be txed to the file transmitter */
     int						ch_ch_fd;           /* socket handle */
     pthread_t               ch_ch_tx_tid;       /* transmitter of nonoverlapping checksums */
     enum rm_tx_status       ch_ch_tx_status;
@@ -77,7 +78,7 @@ struct rm_session_push_rx
     pthread_mutex_t rx_delta_e_queue_mutex;
     pthread_cond_t  rx_delta_e_queue_signal;    /* signaled by receiving proc when
                                                    delta elements are received on the socket */
-    struct rm_msg_push      *msg_push;          /* keeps pointer to MSG_PUSH message that describes incomig synchronization request */
+    struct rm_msg_push      *msg_push;          /* keeps pointer to MSG_PUSH message that describes incoming synchronization request */
 };
 
 /* Transmitter of file (delta vector) */
@@ -152,6 +153,13 @@ void* rm_session_ch_ch_rx_f(void *arg) __attribute__((nonnull(1)));
  */
 void* rm_session_delta_tx_f(void *arg);
 
+/* @brief		Delta TX thread procedure in remote push.
+ * @details		In remote push this function dequeues deltas from the queue
+ *				and transmits them over TCP to remote receiver. At the startup
+ *				this function connects to remote peer's TCP port passed
+ *				to the transmitter in RM_MSG_PUSH_ACK (session's @msg_push_ack
+ *				pointer points to that message).
+ */
 void* rm_session_delta_rx_f_local(void *arg) __attribute__((nonnull(1)));
 void* rm_session_delta_rx_f_remote(void *arg) __attribute__((nonnull(1)));
 
