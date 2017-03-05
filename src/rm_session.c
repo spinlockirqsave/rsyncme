@@ -470,13 +470,6 @@ void *rm_session_delta_rx_f_local(void *arg)
 	}
     assert((prvt_local != NULL) ^ (prvt_tx != NULL));
 
-    assert((s->type == RM_PUSH_LOCAL && f_y != NULL) || s->type == RM_PUSH_TX);
-    assert((s->type == RM_PUSH_LOCAL && f_z != NULL) || s->type == RM_PUSH_TX);
-    if (s->type == RM_PUSH_LOCAL && (f_y == NULL || f_z == NULL)) {
-        status = RM_RX_STATUS_INTERNAL_ERR;
-        goto err_exit;
-    }
-
 	if (s->type == RM_PUSH_LOCAL) {
 		bytes_to_rx = s->f_x_sz;
 		f_y         = s->f_y;
@@ -487,6 +480,13 @@ void *rm_session_delta_rx_f_local(void *arg)
 	}
     rec_ctx.L = s->rec_ctx.L;								/* init reconstruction context */
     pthread_mutex_unlock(&s->mutex);
+
+    assert((s->type == RM_PUSH_LOCAL && f_y != NULL) || s->type == RM_PUSH_TX);
+    assert((s->type == RM_PUSH_LOCAL && f_z != NULL) || s->type == RM_PUSH_TX);
+    if (s->type == RM_PUSH_LOCAL && (f_y == NULL || f_z == NULL)) {
+        status = RM_RX_STATUS_INTERNAL_ERR;
+        goto err_exit;
+    }
 
     if (bytes_to_rx == 0)
         goto done;
