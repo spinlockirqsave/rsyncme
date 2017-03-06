@@ -251,6 +251,47 @@ exit:
     return err;
 }
 
+enum rm_error rm_tcp_connect_nonblock_timeout_once_sockaddr(int fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us)
+{
+    int             err, fd_err;
+    socklen_t       len;
+
+    rm_tcp_set_socket_blocking_mode(fd, 0);
+
+    err = connect(fd, peer_addr, sizeof(*peer_addr));
+    if (err == 0) {
+        return RM_ERR_OK;
+    } else if ((errno != EINPROGRESS) && (errno != EINTR)) {
+        return RM_ERR_FAIL;
+    }
+
+    err = rm_core_select(fd, RM_WRITE, timeout_s, timeout_us);
+    if (err == ECONNREFUSED)
+        return RM_ERR_CONNECT_REFUSED;
+    if (err == -1) {
+        err = RM_ERR_FAIL;
+        goto exit;
+    } else if (err > 0) {
+        len = sizeof fd_err;
+        getsockopt(fd, SOL_SOCKET, SO_ERROR, &fd_err, &len);
+        if (fd_err == 0) {
+            err = RM_ERR_OK;
+        } else if (fd_err == ECONNREFUSED) {
+            err = RM_ERR_CONNECT_REFUSED;
+        } else if (fd_err == EHOSTUNREACH) {
+            err = RM_ERR_CONNECT_HOSTUNREACH;
+        } else {
+            err = RM_ERR_FAIL;
+        }
+    } else {
+        err = RM_ERR_CONNECT_TIMEOUT;
+    }
+
+exit:
+    rm_tcp_set_socket_blocking_mode(fd, 1);
+    return err;
+}
+
 enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str)
 {
     int             err, errsave = RM_ERR_FAIL;
@@ -301,6 +342,36 @@ enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_
 
     freeaddrinfo(ressave);
     return errsave;
+}
+
+enum rm_error rm_tcp_connect_nonblock_timeout_sockaddr(int *fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us, const char **err_str)
+{
+	int             err, errsave = RM_ERR_FAIL;
+	//uint16_t		peer_port = ntohs(((struct sockaddr_in *)peer_addr->sa_data)->sin_port);
+
+	*fd = socket(peer_addr->sa_family, SOCK_STREAM, 0);
+	if (*fd < 0)
+		goto exit;
+
+	err = rm_tcp_connect_nonblock_timeout_once_sockaddr(*fd, peer_addr, timeout_s, timeout_us);
+	if (err == RM_ERR_OK)
+		errsave = RM_ERR_OK;
+	else if (err == RM_ERR_CONNECT_TIMEOUT)
+		errsave = RM_ERR_CONNECT_TIMEOUT;
+	else if (err == RM_ERR_CONNECT_REFUSED)
+		errsave = RM_ERR_CONNECT_REFUSED;
+	else if (err == RM_ERR_CONNECT_HOSTUNREACH)
+		errsave = RM_ERR_CONNECT_HOSTUNREACH;
+	else
+		errsave = RM_ERR_CONNECT_GEN_ERR;
+
+	close(*fd);
+
+exit:
+	if (errsave != RM_ERR_OK)
+		*err_str = strerror(errno);
+
+	return errsave;
 }
 
 int rm_tcp_listen(int *listen_fd, in_addr_t addr, uint16_t *port, int reuseaddr, int backlog)

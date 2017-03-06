@@ -39,7 +39,9 @@ int rm_tcp_set_socket_blocking_mode(int fd, uint8_t on);
 enum rm_error rm_core_connect(int *fd, const char *host, uint16_t port, int domain, int type, const char **err_str) __attribute__((nonnull(1,2,6)));
 enum rm_error rm_tcp_connect(int *fd, const char *host, uint16_t port, int domain, const char **err_str) __attribute__((nonnull(1,2,5)));
 enum rm_error rm_tcp_connect_nonblock_timeout_once(int fd, struct addrinfo *res, uint16_t timeout_s, uint16_t timeout_us) __attribute__ ((nonnull(2)));
+enum rm_error rm_tcp_connect_nonblock_timeout_once_sockaddr(int fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us) __attribute__ ((nonnull(2)));
 enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) __attribute__((nonnull(1,2,7)));
+enum rm_error rm_tcp_connect_nonblock_timeout_sockaddr(int *fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) __attribute__((nonnull(1,2,5)));
 
 /* @brief		Open TCP port for listening.
  * @details		Port is dynamically assigned if @*port is 0.

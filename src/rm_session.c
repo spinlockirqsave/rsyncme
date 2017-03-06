@@ -428,6 +428,8 @@ void *rm_session_delta_rx_f_local(void *arg)
     FILE                            *f_z = NULL;		/* result file */
     struct rm_session_push_local    *prvt_local = NULL;
     twfifo_queue                    *q = NULL;
+    pthread_mutex_t                 *q_mutex = NULL;
+	pthread_cond_t					*q_signal = NULL;
     const struct rm_delta_e         *delta_e = NULL;	/* iterator over delta elements */
     struct twlist_head              *lh = NULL;
     size_t                          bytes_to_rx;
@@ -438,6 +440,11 @@ void *rm_session_delta_rx_f_local(void *arg)
     enum rm_rx_status               status = RM_RX_STATUS_OK;
     struct rm_session_push_tx		*prvt_tx = NULL;
 	struct rm_msg_push_ack			*ack = NULL;
+	enum rm_error					res = RM_ERR_OK;
+	const char						*err_str = NULL;
+
+	uint16_t	timeout_s = 10;							/* TODO get timeouts from the user */
+	uint16_t	timeout_us = 0;
 
     s = (struct rm_session*) arg;
     if (s == NULL) {
@@ -453,31 +460,46 @@ void *rm_session_delta_rx_f_local(void *arg)
         status = RM_RX_STATUS_INTERNAL_ERR;
         goto err_exit;
     }
-	if (s->type == RM_PUSH_LOCAL) {
+	if (s->type == RM_PUSH_LOCAL) {							/* RM_PUSH_LOCAL */
 		prvt_local = s->prvt;
 		if (prvt_local == NULL) {
 			pthread_mutex_unlock(&s->mutex);
 			status = RM_RX_STATUS_INTERNAL_ERR;
 			goto err_exit;
 		}
-	} else {
+		bytes_to_rx = s->f_x_sz;
+		f_y         = s->f_y;
+		f_z         = s->f_z;
+		q = &prvt_local->tx_delta_e_queue;
+		q_mutex = &prvt_local->tx_delta_e_queue_mutex;
+		q_signal = &prvt_local->tx_delta_e_queue_signal;
+	} else {												/* RM_PUSH_TX */
 		prvt_tx = s->prvt;
 		if (prvt_tx == NULL) {
 			pthread_mutex_unlock(&s->mutex);
 			status = RM_RX_STATUS_INTERNAL_ERR;
 			goto err_exit;
 		}
+		ack = prvt_tx->msg_push_ack;
+		bytes_to_rx = ack->ch_ch_n;
+		q = &prvt_tx->session_local.tx_delta_e_queue;
+		q_mutex = &prvt_tx->session_local.tx_delta_e_queue_mutex;
+		q_signal = &prvt_tx->session_local.tx_delta_e_queue_signal;
+
+		struct sockaddr peer_addr;
+		socklen_t addrlen = sizeof(peer_addr);
+		if (getpeername(prvt_tx->fd, &peer_addr, &addrlen) == -1) {
+			status = RM_ERR_GETPEERNAME;
+			goto err_exit;
+		}
+		res = rm_tcp_connect_nonblock_timeout_sockaddr(&prvt_tx->fd_delta_tx, &peer_addr, timeout_s, timeout_us, &err_str);
+		if (res != RM_ERR_OK) {
+			status = RM_ERR_CONNECT_GEN_ERR;
+			goto err_exit;
+		}
 	}
     assert((prvt_local != NULL) ^ (prvt_tx != NULL));
 
-	if (s->type == RM_PUSH_LOCAL) {
-		bytes_to_rx = s->f_x_sz;
-		f_y         = s->f_y;
-		f_z         = s->f_z;
-	} else {												/* RM_PUSH_TX */
-		ack = prvt_tx->msg_push_ack;
-		bytes_to_rx = ack->ch_ch_n;
-	}
     rec_ctx.L = s->rec_ctx.L;								/* init reconstruction context */
     pthread_mutex_unlock(&s->mutex);
 
@@ -491,12 +513,11 @@ void *rm_session_delta_rx_f_local(void *arg)
     if (bytes_to_rx == 0)
         goto done;
 
-    pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex); /* sleep on delta queue and reconstruct element once awoken */
-    q = &prvt_local->tx_delta_e_queue;
+    pthread_mutex_lock(q_mutex); /* sleep on delta queue and reconstruct element once awoken */
 
     while (bytes_to_rx > 0) {
         if (bytes_to_rx == 0) { /* checking for missing signal is not really needed here, as bytes_to_rx is local variable, nevertheless... */
-            pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+            pthread_mutex_unlock(q_mutex);
             goto done;
         }
         /* process delta element */
@@ -509,7 +530,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 			delta_pack.rec_ctx = &rec_ctx;
             err = prvt_local->delta_rx_f(&delta_pack);
             if (err != 0) {
-                pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
+                pthread_mutex_unlock(q_mutex);
                 status = RM_RX_STATUS_DELTA_PROC_FAIL;
                 goto err_exit;
             }
@@ -520,7 +541,7 @@ void *rm_session_delta_rx_f_local(void *arg)
             free((void*)delta_e);
         }
         if (bytes_to_rx > 0) {
-            pthread_cond_wait(&prvt_local->tx_delta_e_queue_signal, &prvt_local->tx_delta_e_queue_mutex);
+            pthread_cond_wait(q_signal, q_mutex);
         }
     }
     pthread_mutex_unlock(&prvt_local->tx_delta_e_queue_mutex);
@@ -535,14 +556,19 @@ done:
 		rec_ctx.copy_all_threshold_fired = s->rec_ctx.copy_all_threshold_fired; /* tx thread might have assigned to threshold_fired variables already and memcpy would overwrite them */
 		rec_ctx.copy_tail_threshold_fired = s->rec_ctx.copy_tail_threshold_fired;
 		memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
+		prvt_local->delta_rx_status = RM_RX_STATUS_OK;
+	} else {															/* RM_PUSH_TX */
+		prvt_tx->session_local.delta_rx_status = RM_RX_STATUS_OK;
 	}
-    prvt_local->delta_rx_status = RM_RX_STATUS_OK;
     pthread_mutex_unlock(&s->mutex);
     return NULL; /* this thread must be created in joinable state */
 
 err_exit:
     pthread_mutex_lock(&s->mutex);
-    prvt_local->delta_rx_status = status;
+    if (s->type == RM_PUSH_LOCAL)
+		prvt_local->delta_rx_status = status;
+	else
+		prvt_tx->session_local.delta_rx_status = status;
     pthread_mutex_unlock(&s->mutex);
     return NULL; /* this thread must be created in joinable state */
 }
