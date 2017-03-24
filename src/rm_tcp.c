@@ -402,6 +402,12 @@ int rm_tcp_listen(int *listen_fd, in_addr_t addr, uint16_t *port, int reuseaddr,
 		return err;
     }
 	*listen_fd = listenfd;
+	if (*port == 0) {
+		socklen_t len = sizeof(srv_addr_in);
+		if (getsockname(listenfd, (struct sockaddr*) &srv_addr_in, &len) == -1)
+			return -5555;
+		*port = ntohs(srv_addr_in.sin_port);
+	}
 	return 0;
 }
 

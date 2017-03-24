@@ -237,7 +237,8 @@ rm_calc_msg_len(void *arg) {
 
         case RM_PT_MSG_PUSH_ACK:
             len = rm_calc_msg_hdr_len(msg->hdr);
-			len += 2;							/* deltas port */
+			len += 2;							/* delta port */
+			len += 8;							/* checksums number */
             break;
 
         case RM_PT_MSG_PULL_ACK:
