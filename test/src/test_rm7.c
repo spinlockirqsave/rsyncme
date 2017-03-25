@@ -449,7 +449,7 @@ void test_rm_rx_process_delta_element_1(void **state)
             s->f_z = f_z->f;
             prvt->delta_tx_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */
@@ -856,7 +856,7 @@ void test_rm_rx_process_delta_element_2(void **state)
             s->f_z = f_z->f;
             prvt->delta_tx_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_tx_f, 0);
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */

@@ -309,7 +309,7 @@ enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_
 #endif
     hints.ai_protocol = 0; 
 
-    err = rm_core_resolve_host(host, port, &hints, &res);
+    err = rm_core_resolve_host(host, port, &hints, &res); /* TODO do not use resolve host (performance) */
     if (err != 0) {
         *err_str = gai_strerror(err);
         return RM_ERR_GETADDRINFO;  /* use gai_strerror(n) to get error string */

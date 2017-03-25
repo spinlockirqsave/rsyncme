@@ -328,7 +328,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
         return RM_ERR_BAD_CALL;
     }
 
-    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);											/* synchronised between threads with session_local's hashtable mutex (h_mutex) */
+    TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);											/* synchronised between threads with sesion_local's hashtable mutex (h_mutex) */
     twhash_init(h);
 
     f_x = fopen(x, "rb");

@@ -150,7 +150,9 @@ enum rm_rx_status
 {
     RM_RX_STATUS_OK                 = 0,    /* most wanted */
     RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
-    RM_RX_STATUS_DELTA_PROC_FAIL    = 2     /* error processing delta element */
+    RM_RX_STATUS_DELTA_PROC_FAIL    = 2,	/* error processing delta element */
+	RM_RX_STATUS_CH_CH_RX_TCP_FAIL	= 3,	/* error while reading socket in rm_session_ch_ch_rx_f */
+	RM_RX_STATUS_CH_CH_RX_MEM		= 4		/* malloc failed when attempting to get memory for checksum */
 };
 enum rm_reconstruct_method
 {
@@ -330,8 +332,8 @@ struct rm_session;
  *          RM_ERR_TX_TAIL - tx on tail failed,
  *          RM_ERR_TX_ZERO_DIFF - zero difference tx failed */
 enum rm_error
-rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4)));
+rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_mutex_t *h_mutex,
+        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4,5)));
 
 /* @brief   Start execution of @f function in new thread.
  * @details Thread is started in @detachstate with @arg argument passed to @f.

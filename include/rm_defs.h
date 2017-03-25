@@ -88,9 +88,8 @@
 #define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off
                                                    while debugging for convenience */
 #define RM_STRONG_CHECK_BYTES       16
-#define RM_CH_CH_SIZE (sizeof((((struct rm_ch_ch_ref*)0)->ch_ch)))
-#define RM_CH_CH_REF_SIZE (RM_CH_CH_SIZE + \
-        (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
+#define RM_CH_CH_SIZE				(sizeof(struct rm_ch_ch))
+#define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
 #define RM_NANOSEC_PER_SEC          1000000000U
 #define RM_CORE_HASH_CHALLENGE_BITS 32u
 

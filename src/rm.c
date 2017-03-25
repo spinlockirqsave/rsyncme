@@ -332,8 +332,9 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
  * @param   delta_f - tx/reconstruct callback, NOTE: this callback takes ownership
  *          of the delta elements allocated by rolling proc - this function MUST
  *          assert memory is freed */
+/* TODO Verify hashtable locking needs for rm_rolling_ch_proc <-> rm_session_ch_ch_rx_f */
 enum rm_error
-rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
+rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_mutex_t *h_mutex,
         FILE *f_x, rm_delta_f *delta_f, size_t from) {
     size_t          L;
     size_t          copy_all_threshold, copy_tail_threshold, send_threshold;
@@ -355,6 +356,8 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
     size_t          collisions_2nd_level = 0;
     size_t          collisions_3rd_level = 0;
     uint8_t         copy_all = 0, copy_all_threshold_fired = 0, copy_tail_threshold_fired = 0;
+
+	(void) h_mutex; /* Verify hashtable locking needs for rm_rolling_ch_proc <-> rm_session_ch_ch_rx_f */
 
     if ((s == NULL) || (f_x == NULL) || (delta_f == NULL)) {
         return RM_ERR_BAD_CALL;

@@ -39,7 +39,7 @@ void rm_session_push_tx_init(struct rm_session_push_tx *prvt)
     memset(prvt, 0, sizeof(*prvt));
     rm_session_push_local_init(&prvt->session_local);
 	prvt->session_local.delta_rx_f = rm_rx_tx_delta_element;
-    pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);
+    //pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);	/* moved to it's session_local object */
     return;
 }
 
@@ -47,7 +47,7 @@ void rm_session_push_tx_init(struct rm_session_push_tx *prvt)
 void rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 {
     rm_session_push_local_deinit(&prvt->session_local);
-    pthread_mutex_destroy(&prvt->ch_ch_hash_mutex);
+    //pthread_mutex_destroy(&prvt->ch_ch_hash_mutex); /* moved to it's sesion_local object */
     free(prvt);
     return;
 }
@@ -355,18 +355,66 @@ done:
 /* RX nonoverlapping checksums in RM_PUSH_TX */
 void *rm_session_ch_ch_rx_f(void *arg)
 {
-    struct rm_session *s = (struct rm_session *) arg;
-    assert(s != NULL);
-    if (s == NULL)
-        goto exit;
+	int fd = -1;
+	size_t ch_ch_n = 0;
+    struct rm_session_push_tx   *prvt = NULL;
+	struct rm_msg_push_ack		*ack = NULL;
+	enum rm_error				err = RM_ERR_OK;
+    struct rm_ch_ch_ref_hlink	*e = NULL;
+	size_t						entries_n = 0;
+	struct twhlist_head			*h = NULL;
+	pthread_mutex_t				*h_mutex = NULL;
+	enum rm_rx_status			status = RM_RX_STATUS_OK;
 
-	/* TODO start to listen for checksums, get port and bytes_to_rx from rm_session_push_tx */
-	/* size_t bytes_to_rx = 0; */
-exit:
-    return NULL;
+    struct rm_session *s = (struct rm_session *) arg;
+	prvt = s->prvt;
+	ack = prvt->msg_push_ack;
+	h = prvt->session_local.h;
+    h_mutex = &prvt->session_local.h_mutex;
+
+	fd = prvt->fd;
+	ch_ch_n = ack->ch_ch_n;
+    if (ch_ch_n == 0)
+        goto done;
+
+    while (ch_ch_n > 0) {
+        e = malloc(sizeof (*e));
+        if (e == NULL)	 {
+			status = RM_RX_STATUS_CH_CH_RX_MEM;
+            goto err_exit;
+        }
+
+		err = rm_tcp_rx(fd, &e->data.ch_ch, RM_CH_CH_SIZE);
+		if (err != RM_ERR_OK) {
+			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
+			goto err_exit;
+		}
+
+        e->data.ref = entries_n;														/* assign offset */
+		TWINIT_HLIST_NODE(&e->hlink);
+
+		pthread_mutex_lock(h_mutex); /* TODO Verify hashtable locking needs for rm_rolling_ch_proc <-> rm_session_ch_ch_rx_f */
+		twhash_add_bits(h, &e->hlink, e->data.ch_ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);	/* insert into hashtable, hashing fast checksum */
+		pthread_mutex_unlock(h_mutex);
+
+        entries_n++;
+		ch_ch_n--;
+    }
+
+done:
+    pthread_mutex_lock(&s->mutex);
+	prvt->ch_ch_rx_status = RM_RX_STATUS_OK;
+    pthread_mutex_unlock(&s->mutex);
+    return NULL; /* this thread must be created in joinable state */
+
+err_exit:
+    pthread_mutex_lock(&s->mutex);
+	prvt->ch_ch_rx_status = status;
+    pthread_mutex_unlock(&s->mutex);
+    return NULL; /* this thread must be created in joinable state */
 }
 
-/* enqueue deltas into queue (both in RM_PUSH_LOCAL & in RM_PUSH_TX) */
+/* enqueue delta into queue (both in RM_PUSH_LOCAL & in RM_PUSH_TX) */
 void *rm_session_delta_tx_f(void *arg)
 {
     struct twhlist_head     *h;             /* nonoverlapping checkums */
@@ -378,6 +426,7 @@ void *rm_session_delta_tx_f(void *arg)
     struct rm_session_push_tx       *prvt_tx;
     int                     err;
     enum rm_tx_status       status = RM_TX_STATUS_OK;
+	pthread_mutex_t			*h_mutex = NULL;
 
     s = (struct rm_session*) arg;
     assert(s != NULL);
@@ -399,6 +448,7 @@ void *rm_session_delta_tx_f(void *arg)
             if (prvt_tx == NULL)
                 goto exit;
             h       = prvt_tx->session_local.h;
+			h_mutex = &prvt_tx->session_local.h_mutex;
             delta_tx_f = prvt_tx->session_local.delta_tx_f;
             break;
 
@@ -406,7 +456,7 @@ void *rm_session_delta_tx_f(void *arg)
             goto exit;
     }
     pthread_mutex_unlock(&s->mutex);
-    err = rm_rolling_ch_proc(s, h, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
+    err = rm_rolling_ch_proc(s, h, h_mutex, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
     if (err != RM_ERR_OK)
         status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
     pthread_mutex_lock(&s->mutex);
