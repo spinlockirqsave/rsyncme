@@ -600,10 +600,12 @@ fail:
 
 enum rm_error
 rm_roll_proc_cb_1(void *arg) {
-    struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
-    const struct rm_session         *s;
-    struct rm_session_push_local    *prvt_local;
-    struct rm_delta_e               *delta_e;
+    struct rm_roll_proc_cb_arg      *cb_arg = NULL;         /* callback argument */
+    const struct rm_session         *s = NULL;
+    struct rm_session_push_local    *prvt_local = NULL;
+    struct rm_session_push_tx       *prvt_tx = NULL;
+    struct rm_delta_e               *delta_e = NULL;
+    enum rm_session_type			t;
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
     if (cb_arg == NULL) {
@@ -624,7 +626,20 @@ rm_roll_proc_cb_1(void *arg) {
         assert(delta_e != NULL);
         return RM_ERR_BAD_CALL;
     }
-    prvt_local = (struct rm_session_push_local*) s->prvt;
+    t = s->type;
+    switch (t) {
+        case RM_PUSH_LOCAL:
+            prvt_local = s->prvt;
+            break;
+
+        case RM_PUSH_TX:
+            prvt_tx = s->prvt;
+			prvt_local = (struct rm_session_push_local*) &prvt_tx->session_local;
+            break;
+
+        default:
+            return RM_ERR_BAD_CALL;
+    }
     if (prvt_local == NULL) {
         RM_DEBUG_LOG_CRIT("%s", "WTF! NULL private session?! Have you added  some neat code recently?");
         assert(prvt_local != NULL);

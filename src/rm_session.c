@@ -530,6 +530,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 			status = RM_RX_STATUS_INTERNAL_ERR;
 			goto err_exit;
 		}
+		prvt_local = &prvt_tx->session_local;
 		ack = prvt_tx->msg_push_ack;
 		bytes_to_rx = ack->ch_ch_n;
 		q = &prvt_tx->session_local.tx_delta_e_queue;
@@ -548,7 +549,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 			goto err_exit;
 		}
 	}
-    assert((prvt_local != NULL) ^ (prvt_tx != NULL));
+    assert(((prvt_local != NULL) && (prvt_tx != NULL)) ^ ((prvt_local != NULL) && (prvt_tx == NULL)));
 
     rec_ctx.L = s->rec_ctx.L;								/* init reconstruction context */
     pthread_mutex_unlock(&s->mutex);
