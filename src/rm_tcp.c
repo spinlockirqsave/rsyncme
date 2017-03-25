@@ -347,30 +347,30 @@ enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_
 enum rm_error rm_tcp_connect_nonblock_timeout_sockaddr(int *fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us, const char **err_str)
 {
 	int             err, errsave = RM_ERR_FAIL;
-	//uint16_t		peer_port = ntohs(((struct sockaddr_in *)peer_addr->sa_data)->sin_port);
 
 	*fd = socket(peer_addr->sa_family, SOCK_STREAM, 0);
 	if (*fd < 0)
-		goto exit;
+		goto err_exit;
 
 	err = rm_tcp_connect_nonblock_timeout_once_sockaddr(*fd, peer_addr, timeout_s, timeout_us);
-	if (err == RM_ERR_OK)
-		errsave = RM_ERR_OK;
-	else if (err == RM_ERR_CONNECT_TIMEOUT)
-		errsave = RM_ERR_CONNECT_TIMEOUT;
-	else if (err == RM_ERR_CONNECT_REFUSED)
-		errsave = RM_ERR_CONNECT_REFUSED;
-	else if (err == RM_ERR_CONNECT_HOSTUNREACH)
-		errsave = RM_ERR_CONNECT_HOSTUNREACH;
-	else
-		errsave = RM_ERR_CONNECT_GEN_ERR;
+	if (err != RM_ERR_OK) {
+		if (err == RM_ERR_CONNECT_TIMEOUT)
+			errsave = RM_ERR_CONNECT_TIMEOUT;
+		else if (err == RM_ERR_CONNECT_REFUSED)
+			errsave = RM_ERR_CONNECT_REFUSED;
+		else if (err == RM_ERR_CONNECT_HOSTUNREACH)
+			errsave = RM_ERR_CONNECT_HOSTUNREACH;
+		else
+			errsave = RM_ERR_CONNECT_GEN_ERR;
 
-	close(*fd);
-
-exit:
-	if (errsave != RM_ERR_OK)
 		*err_str = strerror(errno);
+		close(*fd);
+		goto err_exit;
+	}
+	return RM_ERR_OK;
 
+err_exit:
+	*err_str = strerror(errno);
 	return errsave;
 }
 
