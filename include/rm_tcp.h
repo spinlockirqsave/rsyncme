@@ -28,7 +28,7 @@ int rm_tcp_tx_ch_ch(int fd, const struct rm_ch_ch_ref *e);
 /* tx checksums & ref */
 int rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e);
 
-enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status, uint16_t port);
+enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status, struct rm_session *s);
 
 /* @brief       Set socket blocking mode.
  * @details     @on is either 0 or 1, if it is 0 blocking mode is turned off

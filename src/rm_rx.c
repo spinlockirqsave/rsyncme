@@ -361,12 +361,20 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 	return RM_ERR_OK;
 }
 
-/* Callback of rm_session_delta_rx_f_local in remote push. */
+/* In PUSH TX: Callback of rm_session_delta_rx_f_local for TX of delta over TCP using DELTA protocol */
 enum rm_error rm_rx_tx_delta_element(void *arg)
 {
+	int fd = -1;
 	struct rm_rx_delta_element_arg	*delta_pack = arg;
 	const struct rm_delta_e			*delta_e = delta_pack->delta_e;
 	(void) delta_e; /* TODO TCP TX */
+
+	fd = delta_pack->fd;
+
+	/* TODO TX delta over TCP using delta protocol */
+    if (rm_tcp_tx(fd, (void*) delta_e, 0) != RM_ERR_OK)                             /* tx over TCP connection */
+        return RM_ERR_WRITE;
+    return 0;
 
 	return RM_ERR_OK;
 }

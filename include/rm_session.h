@@ -29,7 +29,7 @@ struct rm_session
     FILE                    *f_x;               /* file on which rolling is performed */              
     FILE                    *f_y;               /* reference file */              
     FILE                    *f_z;               /* result file */              
-    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements */
+    size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements (xferred by delta and/or raw bytes) */
 
     enum rm_session_type    type;
     struct rm_delta_reconstruct_ctx rec_ctx;

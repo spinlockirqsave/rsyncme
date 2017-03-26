@@ -100,6 +100,8 @@ unsigned char* rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) 
 	buf = rm_serialize_string(buf, m->y, m->y_sz);
 	buf = rm_serialize_u16(buf, m->z_sz);
 	buf = rm_serialize_string(buf, m->z, m->z_sz);
+	buf = rm_serialize_u16(buf, m->ch_ch_port);
+	buf = rm_serialize_u64(buf, m->bytes);
 	return buf;
 }
 
@@ -221,7 +223,7 @@ unsigned char* rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr
 }
 
 unsigned char* rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) {
-	buf = rm_deserialize_mem(buf, (char*)m->ssid, sizeof(m->ssid));
+	buf = rm_deserialize_mem(buf, (char*) m->ssid, sizeof(m->ssid));
 	buf = rm_deserialize_u64(buf, (uint64_t*) &m->L);
 	buf = rm_deserialize_u16(buf, &m->x_sz);
 	if (m->x_sz > 0) {
@@ -235,6 +237,8 @@ unsigned char* rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_pu
 	if (m->z_sz > 0) {
 		buf = rm_deserialize_string(buf, m->z, rm_min(m->z_sz, sizeof(m->z)));
 	}
+	buf = rm_deserialize_u16(buf, &m->ch_ch_port);
+	buf = rm_deserialize_u64(buf, (uint64_t*) &m->bytes);
 	return buf;
 }
 

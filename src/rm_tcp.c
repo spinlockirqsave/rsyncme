@@ -70,11 +70,14 @@ int rm_tcp_tx_ch_ch_ref(int fd, const struct rm_ch_ch_ref *e)
     return 0;
 }
 
-enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status, uint16_t port)
-{
+enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status, struct rm_session *s)
+{	
     struct rm_msg_hdr   hdr = {0};
     union rm_msg_ack_u	ack;
     union rm_msg_ack_u	raw_msg_ack;
+
+	memset(&ack, 0, sizeof(ack));
+	memset(&raw_msg_ack, 0, sizeof(raw_msg_ack));
 
     hdr.pt = pt;
     hdr.flags = status;
@@ -84,7 +87,11 @@ enum rm_error rm_tcp_tx_msg_ack(int fd, enum rm_pt_type pt, enum rm_error status
 
 	switch (pt) {
 		case RM_PT_MSG_PUSH_ACK:
-			ack.msg_push_ack.delta_port = port;
+			if (s != NULL) {														/* if session is NULL this is ACK with error, delta port and checkums number are not valid numbers (will be TXed as 0), otherwise take values from PUSH RX session */
+				struct rm_session_push_rx *prvt = s->prvt;
+				ack.msg_push_ack.delta_port = prvt->delta_port;
+				ack.msg_push_ack.ch_ch_n = prvt->ch_ch_n;
+			}
 			rm_serialize_msg_push_ack((unsigned char*)&raw_msg_ack, &ack.msg_push_ack);
 			break;
 		case RM_PT_MSG_ACK:
@@ -251,47 +258,6 @@ exit:
     return err;
 }
 
-enum rm_error rm_tcp_connect_nonblock_timeout_once_sockaddr(int fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us)
-{
-    int             err, fd_err;
-    socklen_t       len;
-
-    rm_tcp_set_socket_blocking_mode(fd, 0);
-
-    err = connect(fd, peer_addr, sizeof(*peer_addr));
-    if (err == 0) {
-        return RM_ERR_OK;
-    } else if ((errno != EINPROGRESS) && (errno != EINTR)) {
-        return RM_ERR_FAIL;
-    }
-
-    err = rm_core_select(fd, RM_WRITE, timeout_s, timeout_us);
-    if (err == ECONNREFUSED)
-        return RM_ERR_CONNECT_REFUSED;
-    if (err == -1) {
-        err = RM_ERR_FAIL;
-        goto exit;
-    } else if (err > 0) {
-        len = sizeof fd_err;
-        getsockopt(fd, SOL_SOCKET, SO_ERROR, &fd_err, &len);
-        if (fd_err == 0) {
-            err = RM_ERR_OK;
-        } else if (fd_err == ECONNREFUSED) {
-            err = RM_ERR_CONNECT_REFUSED;
-        } else if (fd_err == EHOSTUNREACH) {
-            err = RM_ERR_CONNECT_HOSTUNREACH;
-        } else {
-            err = RM_ERR_FAIL;
-        }
-    } else {
-        err = RM_ERR_CONNECT_TIMEOUT;
-    }
-
-exit:
-    rm_tcp_set_socket_blocking_mode(fd, 1);
-    return err;
-}
-
 enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_t port, int domain, uint16_t timeout_s, uint16_t timeout_us, const char **err_str)
 {
     int             err, errsave = RM_ERR_FAIL;
@@ -342,6 +308,47 @@ enum rm_error rm_tcp_connect_nonblock_timeout(int *fd, const char *host, uint16_
 
     freeaddrinfo(ressave);
     return errsave;
+}
+
+enum rm_error rm_tcp_connect_nonblock_timeout_once_sockaddr(int fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us)
+{
+    int             err, fd_err;
+    socklen_t       len;
+
+    rm_tcp_set_socket_blocking_mode(fd, 0);
+
+    err = connect(fd, peer_addr, sizeof(*peer_addr));
+    if (err == 0) {
+        return RM_ERR_OK;
+    } else if ((errno != EINPROGRESS) && (errno != EINTR)) {
+        return RM_ERR_FAIL;
+    }
+
+    err = rm_core_select(fd, RM_WRITE, timeout_s, timeout_us);
+    if (err == ECONNREFUSED)
+        return RM_ERR_CONNECT_REFUSED;
+    if (err == -1) {
+        err = RM_ERR_FAIL;
+        goto exit;
+    } else if (err > 0) {
+        len = sizeof fd_err;
+        getsockopt(fd, SOL_SOCKET, SO_ERROR, &fd_err, &len);
+        if (fd_err == 0) {
+            err = RM_ERR_OK;
+        } else if (fd_err == ECONNREFUSED) {
+            err = RM_ERR_CONNECT_REFUSED;
+        } else if (fd_err == EHOSTUNREACH) {
+            err = RM_ERR_CONNECT_HOSTUNREACH;
+        } else {
+            err = RM_ERR_FAIL;
+        }
+    } else {
+        err = RM_ERR_CONNECT_TIMEOUT;
+    }
+
+exit:
+    rm_tcp_set_socket_blocking_mode(fd, 1);
+    return err;
 }
 
 enum rm_error rm_tcp_connect_nonblock_timeout_sockaddr(int *fd, struct sockaddr *peer_addr, uint16_t timeout_s, uint16_t timeout_us, const char **err_str)

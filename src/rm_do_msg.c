@@ -61,7 +61,7 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	s = rm_session_create(RM_PUSH_RX);
 	if (s == NULL) {
-		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, 0) != RM_ERR_OK) {      /* send ACK explaining error */
+		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, NULL) != RM_ERR_OK) {	/* send ACK explaining error */
 			ack_tx_err = 1;
 		}
 		goto fail;
@@ -72,7 +72,7 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);
 	if (err != RM_ERR_OK) {
-		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, 0) != RM_ERR_OK) {                        /* send ACK with error */
+		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, s) != RM_ERR_OK) {							/* send ACK with error */
 			ack_tx_err = 1;
 		}
 		goto fail;
@@ -83,7 +83,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	/* open delta port for listening thread (port dynamically assigned as delta_port is initialised to 0) */
 	err = rm_tcp_listen(&prvt->delta_fd, INADDR_ANY, &prvt->delta_port, 0, RM_SERVER_LISTENQ); 
 	if (err != RM_ERR_OK) {
-		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, 0) != RM_ERR_OK) {                        /* send ACK with error */
+		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, s) != RM_ERR_OK) {							/* send ACK with error */
 			ack_tx_err = 1;
 		}
 		prvt->delta_fd = -1;
@@ -91,21 +91,21 @@ void* rm_do_msg_push_rx(void* arg) {
 	}
 
 	RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, prvt->delta_port);
-	if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, prvt->delta_port) != RM_ERR_OK) {                      /* send ACK OK */
+	if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, s) != RM_ERR_OK) {						/* send ACK OK */
 		ack_tx_err = 1;
 		goto fail;
 	}
 	RM_LOG_INFO("[%s] [3]: [%s] -> [%s], TXed ACK", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
-	rm_core_session_add(work->rm, s);                                                                   /* insert session into global table and list, hash md5 hash */
+	rm_core_session_add(work->rm, s);																		/* insert session into global table and list, hash md5 hash */
 	RM_LOG_INFO("[%s] [4]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
 
-	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);     /* start tx_ch_ch and rx delta threads, save pids in session object */
+	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);			/* start tx_ch_ch and rx delta threads, save pids in session object */
 	if (err != RM_ERR_OK) {
 		goto fail;
 	}
 
-	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE); /* start rx delta thread */
+	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE);	/* start rx delta thread */
 	if (err != RM_ERR_OK) {
 		goto fail;
 	}
@@ -128,7 +128,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	return NULL;
 
 fail:
-	if (s == NULL) {                                                                                    /* session failed to create */
+	if (s == NULL) {																					/* session failed to create */
 		RM_LOG_ERR("[%s] [FAIL]: ERR [%u], failed to create session", rm_work_type_str[work->task], err);
 	}
 	switch (err) {
@@ -141,7 +141,7 @@ fail:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
-		case RM_ERR_WRITE:                                                                              /* error sending RM_MSG_PUSH_ACK */
+		case RM_ERR_WRITE:																				/* error sending RM_MSG_PUSH_ACK */
 			if (s != NULL) {
 				RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : error sending PUSH ack", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			} else {
@@ -152,7 +152,7 @@ fail:
 		default:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : default", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 	}
-	if (ack_tx_err == 1) {                                                                              /* failed to send ACK */
+	if (ack_tx_err == 1) {																				/* failed to send ACK */
 		/* TODO reschedule the job? */
 	}
 	if (s != NULL) {
@@ -227,6 +227,7 @@ rm_calc_msg_len(void *arg) {
 				len += 2;                       /* only file length field */
 			}
 			len += 2;							/* ch_ch_port */
+			len += 8;							/* bytes */
 			break;
 
 		case RM_PT_MSG_PULL:    /* TODO */

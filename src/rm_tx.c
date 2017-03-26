@@ -366,6 +366,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	msg.hdr->flags = flags;
 	memcpy(msg.ssid, s->id, RM_UUID_LEN);
 	msg.L = L;
+	msg.bytes = x_sz;																			/* bytes to be xferred by transmitter (by delta and/or by raw) */
 
 	msg.x_sz = strlen(x) + 1;
 	strcpy(msg.x, x);                                                                           /* commandline tool will not pass here string longer than RM_FILE_LEN_MAX which is also the size of file name buffers in msg push */
@@ -429,7 +430,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	prvt->msg_push_ack = &ack;
 
 	prvt->session_local.h = h;																		/* shared hashtable, assign pointer before launching checksums receiver thread */
-	err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f, s, PTHREAD_CREATE_JOINABLE);	/* RX nonoverlapping checksums and insert into hashtable */
+	err = rm_launch_thread(&prvt->ch_ch_rx_tid, rm_session_ch_ch_rx_f, s, PTHREAD_CREATE_JOINABLE);	/* start RX nonoverlapping checksums thread (insert checksums into hashtable) */
 	if (err != RM_ERR_OK) {
 		err = RM_ERR_CH_CH_RX_THREAD_LAUNCH;
 		goto err_exit;

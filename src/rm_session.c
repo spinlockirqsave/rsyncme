@@ -252,6 +252,7 @@ end:
 	return;
 }
 
+/* in PUSH RX: TX checksums to transmitter of file */
 void *rm_session_ch_ch_tx_f(void *arg)
 {
 	enum rm_error                   err = RM_ERR_OK;
@@ -282,7 +283,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 				goto err_exit;
 			}
 			msg_push = rm_push_rx->msg_push;
-			fd = rm_push_rx->fd;
+			fd = rm_push_rx->fd;																				/* TODO use separate socket for checksums TX? (ch_ch_port in receiver?) */
 			L = rm_push_rx->msg_push->L;
 			f_y = fopen(msg_push->y, "rb");
 			if (f_y != NULL) {                                                                                  /* if reference file exists, split it and calc checksums */
@@ -352,7 +353,7 @@ done:
 	return NULL;
 }
 
-/* RX nonoverlapping checksums in RM_PUSH_TX */
+/* in PUSH TX: RX nonoverlapping checksums and insert into hashtable */
 void *rm_session_ch_ch_rx_f(void *arg)
 {
 	int fd = -1;
@@ -372,7 +373,7 @@ void *rm_session_ch_ch_rx_f(void *arg)
 	h = prvt->session_local.h;
 	h_mutex = &prvt->session_local.h_mutex;
 
-	fd = prvt->fd;
+	fd = prvt->fd;																		/* TODO Do we need to use separate ch_ch channel (ch_ch_port) instead of main socket? */
 	ch_ch_n = ack->ch_ch_n;
 	if (ch_ch_n == 0)
 		goto done;
@@ -471,7 +472,7 @@ exit:
 	return NULL; /* this thread must be created in joinable state */
 }
 
-
+/* in PUSH TX: dequeue delta elements and TX them to receiver of file */
 void *rm_session_delta_rx_f_local(void *arg)
 {
 	FILE                            *f_y = NULL;		/* reference file, on which reconstruction is performed */
@@ -510,6 +511,10 @@ void *rm_session_delta_rx_f_local(void *arg)
 		status = RM_RX_STATUS_INTERNAL_ERR;
 		goto err_exit;
 	}
+
+	rec_ctx.L = s->rec_ctx.L;								/* init reconstruction context */
+	bytes_to_rx = s->f_x_sz;								/* bytes to be xferred (by delta and/or by raw) */
+
 	if (s->type == RM_PUSH_LOCAL) {							/* RM_PUSH_LOCAL */
 		prvt_local = s->prvt;
 		if (prvt_local == NULL) {
@@ -517,7 +522,6 @@ void *rm_session_delta_rx_f_local(void *arg)
 			status = RM_RX_STATUS_INTERNAL_ERR;
 			goto err_exit;
 		}
-		bytes_to_rx = s->f_x_sz;
 		f_y         = s->f_y;
 		f_z         = s->f_z;
 		q = &prvt_local->tx_delta_e_queue;
@@ -532,7 +536,6 @@ void *rm_session_delta_rx_f_local(void *arg)
 		}
 		prvt_local = &prvt_tx->session_local;
 		ack = prvt_tx->msg_push_ack;
-		bytes_to_rx = ack->ch_ch_n;
 		q = &prvt_tx->session_local.tx_delta_e_queue;
 		q_mutex = &prvt_tx->session_local.tx_delta_e_queue_mutex;
 		q_signal = &prvt_tx->session_local.tx_delta_e_queue_signal;
@@ -540,18 +543,20 @@ void *rm_session_delta_rx_f_local(void *arg)
 		struct sockaddr peer_addr;
 		socklen_t addrlen = sizeof(peer_addr);
 		if (getpeername(prvt_tx->fd, &peer_addr, &addrlen) == -1) {
+			pthread_mutex_unlock(&s->mutex);
 			status = RM_ERR_GETPEERNAME;
 			goto err_exit;
 		}
+		((struct sockaddr_in*)&peer_addr)->sin_port = htons(ack->delta_port);		/* use receiver's delta port from ACK */
 		res = rm_tcp_connect_nonblock_timeout_sockaddr(&prvt_tx->fd_delta_tx, &peer_addr, timeout_s, timeout_us, &err_str);
 		if (res != RM_ERR_OK) {
+			pthread_mutex_unlock(&s->mutex);
 			status = RM_ERR_CONNECT_GEN_ERR;
 			goto err_exit;
 		}
+		delta_pack.fd = prvt_tx->fd_delta_tx;										/* tell delta_rx_f callback about new delta channel */ 											
 	}
 	assert(((prvt_local != NULL) && (prvt_tx != NULL)) ^ ((prvt_local != NULL) && (prvt_tx == NULL)));
-
-	rec_ctx.L = s->rec_ctx.L;								/* init reconstruction context */
 	pthread_mutex_unlock(&s->mutex);
 
 	assert((s->type == RM_PUSH_LOCAL && f_y != NULL) || s->type == RM_PUSH_TX);
@@ -563,6 +568,10 @@ void *rm_session_delta_rx_f_local(void *arg)
 
 	if (bytes_to_rx == 0)
 		goto done;
+
+	delta_pack.f_y = f_y;
+	delta_pack.f_z = f_z;
+	delta_pack.rec_ctx = &rec_ctx;
 
 	pthread_mutex_lock(q_mutex); /* sleep on delta queue and reconstruct element once awoken */
 
@@ -576,9 +585,6 @@ void *rm_session_delta_rx_f_local(void *arg)
 			delta_e = tw_container_of(lh, struct rm_delta_e, link);
 			//err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
 			delta_pack.delta_e = delta_e;
-			delta_pack.f_y = f_y;
-			delta_pack.f_z = f_z;
-			delta_pack.rec_ctx = &rec_ctx;
 			err = prvt_local->delta_rx_f(&delta_pack);
 			if (err != 0) {
 				pthread_mutex_unlock(q_mutex);

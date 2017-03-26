@@ -101,6 +101,7 @@ struct rm_rx_delta_element_arg {
 	FILE *f_y;
 	FILE *f_z;
 	struct rm_delta_reconstruct_ctx *rec_ctx;
+	int fd;
 };
 /* @brief   Used in local session in local push.
  * @details	Reconstruction procedure.
