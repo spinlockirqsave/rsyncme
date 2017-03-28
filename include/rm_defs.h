@@ -93,6 +93,10 @@
 #define RM_NANOSEC_PER_SEC          1000000000U
 #define RM_CORE_HASH_CHALLENGE_BITS 32u
 
+#define RM_DELTA_ELEMENT_TYPE_FIELD_SIZE	1	/* we need 2 bits to be honest */
+#define RM_DELTA_ELEMENT_BYTES_FIELD_SIZE	8	/* it is size_t now, but we will change it to be uint64_t explicitly */
+#define RM_DELTA_ELEMENT_REF_FIELD_SIZE		8	/* it is size_t now, but we will change it to be uint64_t explicitly */
+
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */
 #define RM_L1_CACHE_RECOMMENDED     8192        /* buffer size, so that it should fit into

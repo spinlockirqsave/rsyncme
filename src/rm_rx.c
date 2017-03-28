@@ -361,20 +361,74 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 	return RM_ERR_OK;
 }
 
-/* In PUSH TX: Callback of rm_session_delta_rx_f_local for TX of delta over TCP using DELTA protocol */
+/* In PUSH TX: Callback of rm_session_delta_rx_f_local for TX of delta over TCP using DELTA protocol
+ * PROTOCOL
+ * Currently protocol is simple:
+ * 1.	TX delta type
+ * 2.	If it is DELTA_REFERENCE || DELTA_TAIL
+ *			then TX ref
+ *		else if it is DELTA_RAW_BYTES
+ *			then	TX bytes size,
+ *					TX bytes
+ *		else
+ *			it is DELTA_ZERO_DIFF, do not TX anything, we are done*/
 enum rm_error rm_rx_tx_delta_element(void *arg)
 {
+	// size_t  z_offset = 0;																							/* current offset in @f_z */
 	int fd = -1;
 	struct rm_rx_delta_element_arg	*delta_pack = arg;
 	const struct rm_delta_e			*delta_e = delta_pack->delta_e;
+	struct rm_delta_reconstruct_ctx	*ctx = delta_pack->rec_ctx;
 	(void) delta_e; /* TODO TCP TX */
 
 	fd = delta_pack->fd;
 
-	/* TODO TX delta over TCP using delta protocol */
-    if (rm_tcp_tx(fd, (void*) delta_e, 0) != RM_ERR_OK)                             /* tx over TCP connection */
-        return RM_ERR_WRITE;
-    return 0;
+	if (delta_e == NULL || ctx == NULL)
+		return RM_ERR_BAD_CALL;
+	// z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
+
+	/* TX delta over TCP using delta protocol */
+	if (rm_tcp_tx(fd, (void*) &delta_e->type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK)							/* tx delta type over TCP connection */
+		return RM_ERR_WRITE;
+
+	switch (delta_e->type) {
+
+		case RM_DELTA_ELEMENT_REFERENCE:																				/* receiver will copy referenced bytes from @f_y to @f_z */
+			if (rm_tcp_tx(fd, (void*) &delta_e->ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* tx ref over TCP connection */
+				return RM_ERR_WRITE;
+			ctx->rec_by_ref += delta_e->raw_bytes_n;                                                                    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
+			++ctx->delta_ref_n;
+			break;
+
+		case RM_DELTA_ELEMENT_TAIL:																						/* receiver will copy referenced bytes from @f_y to @f_z */
+			if (rm_tcp_tx(fd, (void*) &delta_e->ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* tx ref over TCP connection */
+				return RM_ERR_WRITE;
+			ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check here at receiver there is no error */
+			++ctx->delta_ref_n;
+			ctx->rec_by_tail += delta_e->raw_bytes_n;
+			++ctx->delta_tail_n;
+			break;
+
+		case RM_DELTA_ELEMENT_RAW_BYTES:																				/* receiver will copy raw bytes to @f_z directly */
+			if (rm_tcp_tx(fd, (void*) &delta_e->raw_bytes_n, RM_DELTA_ELEMENT_BYTES_FIELD_SIZE) != RM_ERR_OK)			/* tx bytes size over TCP connection */
+				return RM_ERR_WRITE;
+			if (rm_tcp_tx(fd, (void*) &delta_e->raw_bytes, delta_e->raw_bytes_n) != RM_ERR_OK)							/* tx bytes over TCP connection */
+				return RM_ERR_WRITE;
+			ctx->rec_by_raw += delta_e->raw_bytes_n;
+			++ctx->delta_raw_n;
+			break;
+
+		case RM_DELTA_ELEMENT_ZERO_DIFF:
+			ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check here at receiver that is correct */
+			++ctx->delta_ref_n;
+			ctx->rec_by_zero_diff += delta_e->raw_bytes_n;
+			++ctx->delta_zero_diff_n;
+			break;
+
+		default:
+			assert(1 == 0 && "Unknown delta element type!");
+			return RM_ERR_ARG;
+	}
 
 	return RM_ERR_OK;
 }

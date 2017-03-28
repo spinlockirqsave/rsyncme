@@ -657,7 +657,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	assert(prvt_rx != NULL);
 
 	pthread_mutex_lock(&s->mutex);
-	bytes_to_rx = s->f_x_sz;
+	bytes_to_rx = prvt_rx->msg_push->bytes;
 	/* f_y         = prvt_rx->f_y; */
 	pthread_mutex_unlock(&s->mutex);
 
