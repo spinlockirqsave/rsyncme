@@ -30,6 +30,14 @@ void rm_session_push_rx_free(struct rm_session_push_rx *prvt)
 	if (prvt->msg_push != NULL) {
 		rm_msg_push_free(prvt->msg_push);
 	}
+	if (prvt->delta_fd >= 0) {
+		close(prvt->delta_fd);
+		prvt->delta_fd = -1;
+	}
+	if (prvt->fd >= 0) {
+		close(prvt->fd);
+		prvt->fd = -1;
+	}
 	free(prvt);
 	return;
 }
@@ -66,7 +74,8 @@ void rm_session_push_local_init(struct rm_session_push_local *prvt)
 static void rm_session_push_local_deinit(struct rm_session_push_local *prvt)
 {
 	/* queue of delta elements MUST be empty now */
-	assert(twlist_empty(&prvt->tx_delta_e_queue) != 0 && "Delta elements queue NOT EMPTY!\n");
+	if (twlist_empty(&prvt->tx_delta_e_queue) != 0)
+		RM_LOG_ERR("%s", "Delta elements queue NOT EMPTY!\n");
 	pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
 	pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
 }
@@ -551,7 +560,14 @@ void *rm_session_delta_rx_f_local(void *arg)
 		res = rm_tcp_connect_nonblock_timeout_sockaddr(&prvt_tx->fd_delta_tx, &peer_addr, timeout_s, timeout_us, &err_str);
 		if (res != RM_ERR_OK) {
 			pthread_mutex_unlock(&s->mutex);
-			status = RM_ERR_CONNECT_GEN_ERR;
+			if (res == RM_ERR_CONNECT_TIMEOUT)
+				status = RM_RX_STATUS_CONNECT_TIMEOUT;
+			else if (res == RM_ERR_CONNECT_REFUSED)
+				status = RM_RX_STATUS_CONNECT_REFUSED;
+			else if (res == RM_ERR_CONNECT_HOSTUNREACH)
+				status = RM_RX_STATUS_CONNECT_HOSTUNREACH;
+			else
+				status = RM_RX_STATUS_CONNECT_GEN_ERR;
 			goto err_exit;
 		}
 		delta_pack.fd = prvt_tx->fd_delta_tx;										/* tell delta_rx_f callback about new delta channel */ 											
@@ -632,13 +648,13 @@ err_exit:
 
 void* rm_session_delta_rx_f_remote(void *arg)
 {
-	FILE                            *f_y;           /* file on which reconstruction is performed */
+	FILE                            *f_y = NULL;		/* file on which reconstruction is performed */
 	/*twfifo_queue                    *q; */
 	/*const struct rm_delta_e         *delta_e;        iterator over delta elements */
 	/*struct twlist_head              *lh;*/
-	struct rm_session_push_rx       *prvt_rx;
+	struct rm_session_push_rx       *prvt_rx = NULL;
 	size_t                          bytes_to_rx;
-	struct rm_session               *s;
+	struct rm_session               *s = NULL;
 
 	(void) f_y;
 	s = (struct rm_session*) arg;
@@ -668,6 +684,8 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	/* TODO read delta elements from rx socket and do reconstruction */
 
 exit:
+	close(prvt_rx->delta_fd);
+	prvt_rx->delta_fd = -1;
 	return NULL;
 done:
 	return NULL;

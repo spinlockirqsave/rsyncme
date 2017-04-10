@@ -152,7 +152,11 @@ enum rm_rx_status
     RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
     RM_RX_STATUS_DELTA_PROC_FAIL    = 2,	/* error processing delta element */
 	RM_RX_STATUS_CH_CH_RX_TCP_FAIL	= 3,	/* error while reading socket in rm_session_ch_ch_rx_f */
-	RM_RX_STATUS_CH_CH_RX_MEM		= 4		/* malloc failed when attempting to get memory for checksum */
+	RM_RX_STATUS_CH_CH_RX_MEM		= 4,	/* malloc failed when attempting to get memory for checksum */
+	RM_RX_STATUS_CONNECT_TIMEOUT	= 5,
+	RM_RX_STATUS_CONNECT_REFUSED	= 6,
+	RM_RX_STATUS_CONNECT_HOSTUNREACH	= 7,
+	RM_RX_STATUS_CONNECT_GEN_ERR	= 8
 };
 enum rm_reconstruct_method
 {

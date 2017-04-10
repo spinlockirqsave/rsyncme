@@ -379,7 +379,6 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 	struct rm_rx_delta_element_arg	*delta_pack = arg;
 	const struct rm_delta_e			*delta_e = delta_pack->delta_e;
 	struct rm_delta_reconstruct_ctx	*ctx = delta_pack->rec_ctx;
-	(void) delta_e; /* TODO TCP TX */
 
 	fd = delta_pack->fd;
 

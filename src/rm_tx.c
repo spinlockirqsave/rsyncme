@@ -463,12 +463,15 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	pthread_join(prvt->session_local.delta_rx_tid, NULL);
 	if (prvt->ch_ch_rx_status != RM_TX_STATUS_OK) {
 		err = RM_ERR_CH_CH_RX_THREAD;
+		goto err_exit;
 	}
 	if (prvt->session_local.delta_tx_status != RM_TX_STATUS_OK) {
 		err = RM_ERR_DELTA_TX_THREAD;
+		goto err_exit;
 	}
 	if (prvt->session_local.delta_rx_status != RM_RX_STATUS_OK) {
 		err = RM_ERR_DELTA_RX_THREAD;
+		goto err_exit;
 	}
 
 	rm_session_free(s);
@@ -484,25 +487,9 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	return RM_ERR_OK;
 
 err_exit:
-	switch (err) {
-		case RM_ERR_CONNECT_TIMEOUT:
-		case RM_ERR_CONNECT_REFUSED:
-
-		case RM_ERR_MEM:
-			break;
-		case RM_ERR_WRITE:
-			/* TODO bad... */
-			break;
-		default:
-			break;
-	}
 	if (f_x != NULL) {
 		fclose(f_x);
 		f_x = NULL;
-	}
-	if (s != NULL) {
-		rm_session_free(s);
-		s = NULL;
 	}
 	if (msg_raw != NULL) {
 		free(msg_raw);
@@ -515,6 +502,35 @@ err_exit:
 	if (ack.ack.hdr != NULL) {
 		free(ack.ack.hdr);
 		ack.ack.hdr = NULL;
+	}
+	switch (err) {
+		case RM_ERR_DELTA_RX_THREAD:
+
+		if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_TIMEOUT)
+			RM_LOG_ERR("%s", "Connection timeout\n");
+		else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_REFUSED)
+			RM_LOG_ERR("%s", "Connection refused\n");
+		else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_HOSTUNREACH)
+			RM_LOG_ERR("%s", "Host unreachable\n");
+		else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_GEN_ERR)
+				RM_LOG_ERR("%s", "Connection error\n");
+		else
+				RM_LOG_ERR("%s", "General connection error\n");
+		break;
+
+		case RM_ERR_MEM:
+				RM_LOG_ERR("%s", "Not enough memory\n");
+			break;
+		case RM_ERR_WRITE:
+			/* TODO bad... */
+				RM_LOG_ERR("%s", "Can't write\n");
+			break;
+		default:
+			break;
+	}
+	if (s != NULL) {
+		rm_session_free(s);
+		s = NULL;
 	}
 	return err;
 }
