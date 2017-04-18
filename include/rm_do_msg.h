@@ -65,7 +65,7 @@ struct rm_msg_push
     char                y[RM_FILE_LEN_MAX];     /* y file name  */
     uint16_t            z_sz;                   /* size of string including terminating NULL byte '\0' */
     char                z[RM_FILE_LEN_MAX];     /* z file name  */
-	uint16_t			ch_ch_port;				/* transmitter awaits nonoverlapping checksums on that port from receiver of file */
+	uint16_t			ch_ch_port;				/* transmitter awaits nonoverlapping checksums on that port from receiver of file (not used yet, main connection port is used as checksums channel as of now) */
 	uint64_t			bytes;					/* number of bytes to be xfered by transmitter (these bytes will be txed by delta and/or by raw) */
 };
 

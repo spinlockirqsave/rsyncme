@@ -16,6 +16,7 @@ enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) {
 	if (msg->hdr == NULL) {
 		return RM_ERR_FAIL;
 	}
+	memset(msg->hdr, 0, sizeof(*msg->hdr));
 	return RM_ERR_OK;
 }
 
@@ -29,11 +30,13 @@ enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *ack) {
 	if (ack->hdr == NULL) {
 		return RM_ERR_FAIL;
 	}
+	memset(ack->hdr, 0, sizeof(*ack->hdr));
 	return RM_ERR_OK;
 }
 
 void rm_msg_ack_free(struct rm_msg_ack *ack) {
 	free(ack->hdr);
+	ack->hdr = NULL;
 	free(ack);
 }
 
@@ -46,15 +49,18 @@ enum rm_error rm_msg_push_ack_alloc(struct rm_msg_push_ack *ack) {
 
 void rm_msg_push_ack_free(struct rm_msg_push_ack *ack) {
 	free(ack->ack.hdr);
+	ack->ack.hdr = NULL;
 	free(ack);
 }
 
 void* rm_do_msg_push_rx(void* arg) {
-	enum rm_error               err = RM_ERR_OK;
-	struct rm_session	        *s = NULL;
-	struct rm_session_push_rx   *prvt = NULL;
-	struct rm_msg_push          *msg_push = NULL;
-	uint8_t                     ack_tx_err = 0;																/* set to 1 if ACK tx failed */
+	enum rm_error					err = RM_ERR_OK;
+	struct rm_session				*s = NULL;
+	struct rm_session_push_rx		*prvt = NULL;
+	struct rm_msg_push				*msg_push = NULL;
+	uint8_t							ack_tx_err = 0;																/* set to 1 if ACK tx failed */
+	int								fd_z = -1;
+	struct stat                     fs = {0};
 
 	struct rm_work* work = (struct rm_work*) arg;
 	msg_push = (struct rm_msg_push*) work->msg;
@@ -119,7 +125,39 @@ void* rm_do_msg_push_rx(void* arg) {
 		err = RM_ERR_DELTA_RX_THREAD;
 	}
 
+//done:
+
 	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+
+	if (s->f_y != NULL) {
+		fclose(s->f_y);
+		s->f_y = NULL;
+	}
+
+	if (s->f_z != NULL) {																										/* fflush and close f_z */
+		fflush(s->f_z);
+		fd_z = fileno(s->f_z);
+		memset(&fs, 0, sizeof(fs));
+		if (fstat(fd_z, &fs) != 0) {
+			err = RM_ERR_FSTAT_Z;
+			goto fail;
+		}
+		fclose(s->f_z);
+		s->f_z = NULL;
+	}
+
+	if (prvt->msg_push->z_sz > 0) {																						/* use different name? */
+		if (rename(s->f_z_name, prvt->msg_push->z) == -1) {
+			err = RM_ERR_RENAME_TMP_Z;
+			goto fail;
+		}
+	} else {
+		if (rename(s->f_z_name, prvt->msg_push->y) == -1) {
+			err = RM_ERR_RENAME_TMP_Y;
+			goto fail;
+		}
+	}
+
 	if (s != NULL) {
 		rm_session_free(s); /* frees msg allocated for work as well */
 		s = NULL;

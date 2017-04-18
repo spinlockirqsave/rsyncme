@@ -110,6 +110,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 			push_rx->msg_push = m;
 			push_rx->fd = fd;
 			s->f_x = NULL;
+			s->f_x_sz = push_rx->msg_push->bytes;										/* bytes to RX, size of file to receive */
 			if ((m->hdr->flags & RM_BIT_6) && (m->z_sz == 0 || (strcmp(m->y, m->z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
 				return RM_ERR_Y_Z_SYNC;
 			}
@@ -266,18 +267,18 @@ void *rm_session_ch_ch_tx_f(void *arg)
 {
 	enum rm_error                   err = RM_ERR_OK;
 	struct rm_session               *s = (struct rm_session *) arg;
-	enum rm_session_type            s_type;
-	struct rm_session_push_rx       *rm_push_rx;
-	struct rm_session_pull_rx       *rm_pull_rx;
-	struct rm_msg_push              *msg_push;
+	enum rm_session_type            s_type = 0;
+	struct rm_session_push_rx       *rm_push_rx = NULL;
+	struct rm_session_pull_rx       *rm_pull_rx = NULL;
+	struct rm_msg_push              *msg_push = NULL;
 	size_t                          L = 0;
 	FILE                            *f_y = NULL;   /* file for taking non-overlapping blocks */
 	FILE                            *f_z = NULL;   /* result */
-	int                             fd_y;
+	int                             fd_y = -1;
 	uint8_t                         reference_file_exist = 0;
-	struct stat                     fs;
-	size_t                          y_sz, blocks_n_exp, blocks_n;
-	int                             fd;
+	struct stat                     fs = {0};
+	size_t                          y_sz = 0, blocks_n_exp = 0, blocks_n = 0;
+	int                             fd = -1;
 
 	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	twhash_init(h);
@@ -294,7 +295,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 			msg_push = rm_push_rx->msg_push;
 			fd = rm_push_rx->fd;																				/* TODO use separate socket for checksums TX? (ch_ch_port in receiver?) */
 			L = rm_push_rx->msg_push->L;
-			f_y = fopen(msg_push->y, "rb");
+			f_y = s->f_y;
 			if (f_y != NULL) {                                                                                  /* if reference file exists, split it and calc checksums */
 				reference_file_exist = 1;
 				fd_y = fileno(f_y);
@@ -327,7 +328,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 					clock_gettime(CLOCK_REALTIME, &s->clk_realtime_start);
 					s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
 					s->rec_ctx.method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
-					/* expected rec_ctx->delta_raw_n = 1; */
+					/* expected rec_rec_ctx.->delta_raw_n = 1; */
 					/* expected rec_ctx->rec_by_raw = x_sz; */
 					goto done;
 				} else {
@@ -512,9 +513,10 @@ void *rm_session_delta_rx_f_local(void *arg)
 		goto err_exit;
 	}
 	assert(s != NULL);
-	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
 
 	pthread_mutex_lock(&s->mutex);
+	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
+
 	if (s->type != RM_PUSH_TX && s->type != RM_PUSH_LOCAL) {
 		pthread_mutex_unlock(&s->mutex);
 		status = RM_RX_STATUS_INTERNAL_ERR;
@@ -632,6 +634,10 @@ done:
 		prvt_local->delta_rx_status = RM_RX_STATUS_OK;
 	} else {															/* RM_PUSH_TX */
 		prvt_tx->session_local.delta_rx_status = RM_RX_STATUS_OK;
+		if (prvt_tx->fd_delta_tx != -1) {
+			close(prvt_tx->fd_delta_tx);
+			prvt_tx->fd_delta_tx = -1;
+		}
 	}
 	pthread_mutex_unlock(&s->mutex);
 	return NULL; /* this thread must be created in joinable state */
@@ -640,8 +646,13 @@ err_exit:
 	pthread_mutex_lock(&s->mutex);
 	if (s->type == RM_PUSH_LOCAL)
 		prvt_local->delta_rx_status = status;
-	else
+	else {
 		prvt_tx->session_local.delta_rx_status = status;
+		if (prvt_tx->fd_delta_tx != -1) {
+			close(prvt_tx->fd_delta_tx);
+			prvt_tx->fd_delta_tx = -1;
+		}
+	}
 	pthread_mutex_unlock(&s->mutex);
 	return NULL; /* this thread must be created in joinable state */
 }
@@ -649,44 +660,172 @@ err_exit:
 void* rm_session_delta_rx_f_remote(void *arg)
 {
 	FILE                            *f_y = NULL;		/* file on which reconstruction is performed */
+	FILE                            *f_z = NULL;		/* result file */
 	/*twfifo_queue                    *q; */
 	/*const struct rm_delta_e         *delta_e;        iterator over delta elements */
 	/*struct twlist_head              *lh;*/
 	struct rm_session_push_rx       *prvt_rx = NULL;
-	size_t                          bytes_to_rx;
+	rm_push_flags					push_flags = 0;
+	char                            f_z_name[RM_UNIQUE_STRING_LEN];
+	int								listen_fd = -1, fd = -1;
+	size_t                          bytes_to_rx = 0;
 	struct rm_session               *s = NULL;
+	struct rm_rx_delta_element_arg delta_pack = {0};
+	struct rm_delta_reconstruct_ctx rec_ctx = {0};		/* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
+	enum rm_error					err = RM_ERR_OK;
+	enum rm_rx_status				status = RM_RX_STATUS_OK;
 
-	(void) f_y;
+	struct sockaddr_storage cli_addr = {0};;
+	socklen_t               cli_len = 0;
+
 	s = (struct rm_session*) arg;
 	if (s == NULL) {
-		goto exit;
+		goto err_exit;
 	}
 	assert(s != NULL);
 
+	pthread_mutex_lock(&s->mutex);
 	if (s->type != RM_PUSH_RX) {
-		goto exit;
+		pthread_mutex_unlock(&s->mutex);
+		goto err_exit;
 	}
 	prvt_rx = s->prvt;
 	if (prvt_rx == NULL) {
-		goto exit;
+		pthread_mutex_unlock(&s->mutex);
+		goto err_exit;
 	}
 	assert(prvt_rx != NULL);
-
-	pthread_mutex_lock(&s->mutex);
+	push_flags = (rm_push_flags) prvt_rx->msg_push->hdr->flags;
 	bytes_to_rx = prvt_rx->msg_push->bytes;
-	/* f_y         = prvt_rx->f_y; */
+	f_y         = s->f_y;
+	listen_fd = prvt_rx->delta_fd;
+	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
+	rec_ctx.L = s->rec_ctx.L;																								/* init reconstruction context */
 	pthread_mutex_unlock(&s->mutex);
+
+	if (f_y == NULL) {
+		assert(push_flags & RM_BIT_4);																						/* assert force creation if @y doesn't exist? */
+		if (!(push_flags & RM_BIT_4)) {
+			err = RM_ERR_BAD_CALL;
+			goto err_exit;
+		}
+	} else {
+		rm_get_unique_string(f_z_name);
+		f_z = fopen(f_z_name, "wb+");																						/* create and open @f_z for reading and writing in @z path */
+		if (f_z == NULL) {
+			err = RM_ERR_OPEN_TMP;
+			goto err_exit;
+		}
+		strncpy(s->f_z_name, f_z_name, RM_UNIQUE_STRING_LEN);
+		s->f_z = f_z;
+	}
+
+	cli_len = sizeof(cli_addr);
+	if ((fd = accept(listen_fd, (struct sockaddr *) &cli_addr, &cli_len)) < 0) {											/* accept transmitter's incoming connection */
+		status = RM_RX_STATUS_DELTA_RX_ACCEPT_FAIL;
+		goto err_exit;
+	}
 
 	if (bytes_to_rx == 0) {
 		goto done;
 	}
 
-	/* TODO read delta elements from rx socket and do reconstruction */
+	delta_pack.f_y = f_y;
+	delta_pack.f_z = f_z;
+	delta_pack.rec_ctx = &rec_ctx;
 
-exit:
-	close(prvt_rx->delta_fd);
-	prvt_rx->delta_fd = -1;
-	return NULL;
+	/* RX delta over TCP using delta protocol */
+	while (bytes_to_rx > 0) {
+		struct rm_delta_e delta_e;
+
+		/* RX delta over TCP using delta protocol */
+		if (rm_tcp_rx(fd, (void*) &delta_e.type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK) {							/* rx delta type over TCP connection */
+			status = RM_RX_STATUS_DELTA_RX_TCP_FAIL;
+			goto err_exit;
+		}
+
+		switch (delta_e.type) {
+
+			case RM_DELTA_ELEMENT_REFERENCE:																				/* copy referenced bytes from @f_y to @f_z */
+				if (rm_tcp_rx(fd, (void*) &delta_e.ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* rx ref over TCP connection */
+					goto err_exit;
+				break;
+
+			case RM_DELTA_ELEMENT_TAIL:																						/* copy referenced bytes from @f_y to @f_z */
+				if (rm_tcp_rx(fd, (void*) &delta_e.ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* rx ref over TCP connection */
+					goto err_exit;
+				break;
+
+			case RM_DELTA_ELEMENT_RAW_BYTES:																				/* copy raw bytes to @f_z directly */
+				if (rm_tcp_rx(fd, (void*) &delta_e.raw_bytes_n, RM_DELTA_ELEMENT_BYTES_FIELD_SIZE) != RM_ERR_OK)			/* rx bytes size over TCP connection */
+					goto err_exit;
+				delta_e.raw_bytes = malloc(delta_e.raw_bytes_n);															/* malloc buffer */
+				if (delta_e.raw_bytes == NULL)
+					goto err_exit;
+				if (rm_tcp_rx(fd, (void*) delta_e.raw_bytes, delta_e.raw_bytes_n) != RM_ERR_OK)							/* rx bytes over TCP connection */
+					goto err_exit;
+				break;
+
+			case RM_DELTA_ELEMENT_ZERO_DIFF:
+				break;
+
+			default:
+				assert(1 == 0 && "Unknown delta element type!");
+				goto err_exit;
+		}
+
+		delta_pack.delta_e = &delta_e;
+		err = rm_rx_process_delta_element(&delta_pack);																		/* do reconstruction */
+		if (err != 0) {
+			status = RM_RX_STATUS_DELTA_PROC_FAIL;
+			goto err_exit;
+		}
+
+		switch (delta_e.type) {
+
+			case RM_DELTA_ELEMENT_REFERENCE:
+			case RM_DELTA_ELEMENT_RAW_BYTES:
+				bytes_to_rx -= delta_e.raw_bytes_n;
+				break;
+
+			case RM_DELTA_ELEMENT_TAIL:
+			case RM_DELTA_ELEMENT_ZERO_DIFF:
+				bytes_to_rx = 0;
+				break;
+		}
+	}
+
 done:
-	return NULL;
+
+	pthread_mutex_lock(&s->mutex);
+
+	if (fd != -1) {							/* close accepted socket connection */
+		close(fd);
+		fd = -1;
+	}
+	if (prvt_rx->delta_fd != -1) {
+		close(prvt_rx->delta_fd);				/* close listening socket */
+		prvt_rx->delta_fd = -1;
+	}
+
+	assert(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw == s->f_x_sz);															/* f_x_sz assigned from msg_push in assign_validate method */
+	assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
+	memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
+	prvt_rx->delta_rx_status = RM_RX_STATUS_OK;
+	pthread_mutex_unlock(&s->mutex);
+	return NULL; /* this thread must be created in joinable state */
+
+err_exit:
+	pthread_mutex_lock(&s->mutex);
+	if (fd != -1) {							/* close accepted socket connection */
+		close(fd);
+		fd = -1;
+	}
+	if (prvt_rx->delta_fd != -1) {
+		close(prvt_rx->delta_fd);				/* close listening socket */
+		prvt_rx->delta_fd = -1;
+	}
+	prvt_rx->delta_rx_status = status;
+	pthread_mutex_unlock(&s->mutex);
+	return NULL; /* this thread must be created in joinable state */
 }

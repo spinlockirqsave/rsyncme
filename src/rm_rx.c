@@ -313,8 +313,8 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 	FILE							*f_z = delta_pack->f_z;
 	struct rm_delta_reconstruct_ctx	*ctx = delta_pack->rec_ctx;
 
-	assert(delta_e != NULL && f_y != NULL && f_z != NULL && ctx != NULL);
-	if (delta_e == NULL || f_y == NULL || f_z == NULL || ctx == NULL)
+	assert(delta_e != NULL && f_z != NULL && ctx != NULL);
+	if (delta_e == NULL || f_z == NULL || ctx == NULL)
 		return RM_ERR_BAD_CALL;
 	z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
 
@@ -351,6 +351,7 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 			++ctx->delta_ref_n;
 			ctx->rec_by_tail += delta_e->raw_bytes_n;
 			++ctx->delta_tail_n;
+			ctx->delta_tail_n = 1;
 			break;
 
 		default:

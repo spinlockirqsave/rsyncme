@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
 	}
 	while(rm.state != RM_CORE_ST_SHUT_DOWN) {
 		cli_len = sizeof(cli_addr);
-		if ((connfd = accept(listenfd, (struct sockaddr*)&cli_addr, &cli_len)) < 0) {
+		if ((connfd = accept(listenfd, (struct sockaddr *) &cli_addr, &cli_len)) < 0) {
 			errsv = errno;
 			if (errsv == EINTR) {
 				RM_LOG_PERR("%s", "Accept interrupted");

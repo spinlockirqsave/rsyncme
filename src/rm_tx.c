@@ -16,24 +16,24 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 	FILE        *f_x = NULL;   /* original file, to be synced into @y */
 	FILE        *f_y = NULL;   /* file for taking non-overlapping blocks */
 	FILE        *f_z = NULL;   /* result (with same name as @y) */
-	int         fd_x, fd_y, fd_z;
+	int         fd_x = -1, fd_y = -1, fd_z = -1;
 	uint8_t     reference_file_exist = 0;
 	struct stat fs;
-	size_t      x_sz, y_sz, z_sz, blocks_n_exp, blocks_n;
-	size_t                          bkt;    /* hashtable deletion */
-	const struct rm_ch_ch_ref_hlink *e;
-	struct twhlist_node             *tmp;
+	size_t      x_sz = 0, y_sz = 0, z_sz = 0, blocks_n_exp = 0, blocks_n = 0;
+	size_t                          bkt = 0;    /* hashtable deletion */
+	const struct rm_ch_ch_ref_hlink *e = NULL;
+	struct twhlist_node             *tmp = NULL;
 	struct rm_session               *s = NULL;
-	struct rm_session_push_local    *prvt;
+	struct rm_session_push_local    *prvt = NULL;
 	/*char                            *y_copy = NULL; *cwd = NULL;*/
-	char                            f_z_name[38];
-	struct timespec         clk_realtime_start, clk_realtime_stop;
-	double                  clk_cputime_start, clk_cputime_stop;
-	struct timespec         real_time;
-	double                  cpu_time;
-	twfifo_queue            *q;
-	const struct rm_delta_e *delta_e;
-	struct twlist_head      *lh;
+	char                            f_z_name[RM_UNIQUE_STRING_LEN];
+	struct timespec         clk_realtime_start = {0}, clk_realtime_stop = {0};
+	double                  clk_cputime_start = 0.0, clk_cputime_stop = 0.0;
+	struct timespec         real_time = {0};
+	double                  cpu_time = 0.0;
+	twfifo_queue            *q = NULL;
+	const struct rm_delta_e *delta_e = NULL;
+	struct twlist_head      *lh = NULL;
 
 	if ((x == NULL) || (y == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
 		return RM_ERR_BAD_CALL;
@@ -309,9 +309,9 @@ err_exit:
 int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
 	enum rm_error       err = RM_ERR_OK;
 	FILE                *f_x = NULL;	/* original file, to be synced with @y */
-	int					fd_x;
-	struct stat         fs;
-	size_t              x_sz;
+	int					fd_x = -1;
+	struct stat         fs = {0};
+	size_t              x_sz = 0;
 	struct rm_session           *s = NULL;
 	struct rm_session_push_tx   *prvt = NULL;
 
@@ -319,6 +319,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	unsigned char       *msg_raw = NULL;
 	unsigned char       *buf = NULL;
 	struct rm_msg_push_ack   ack;
+	memset(&ack, 0, sizeof(ack));
 
 	(void) y;
 	(void) z;
@@ -474,8 +475,18 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		goto err_exit;
 	}
 
+	pthread_mutex_lock(&s->mutex);
+	if (s->f_x != NULL) {
+		fclose(s->f_x);
+		s->f_x = NULL;
+	}
+	if (s->f_y != NULL) {
+		fclose(s->f_y);
+		s->f_y = NULL;
+	}
 	rm_session_free(s);
 	s = NULL;
+	pthread_mutex_unlock(&s->mutex);
 
 	free(msg_raw);
 	msg_raw = NULL;
@@ -487,22 +498,12 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	return RM_ERR_OK;
 
 err_exit:
-	if (f_x != NULL) {
-		fclose(f_x);
-		f_x = NULL;
-	}
-	if (msg_raw != NULL) {
-		free(msg_raw);
-		msg_raw = NULL;
-	}
-	if (msg.hdr != NULL) {
-		free(msg.hdr);
-		msg.hdr = NULL;
-	}
+
 	if (ack.ack.hdr != NULL) {
 		free(ack.ack.hdr);
 		ack.ack.hdr = NULL;
 	}
+
 	switch (err) {
 		case RM_ERR_DELTA_RX_THREAD:
 
@@ -528,9 +529,26 @@ err_exit:
 		default:
 			break;
 	}
+
+	pthread_mutex_lock(&s->mutex);
+	if (s->f_x != NULL) {
+		fclose(s->f_x);
+		s->f_x = NULL;
+	}
+	if (s->f_y != NULL) {
+		fclose(s->f_y);
+		s->f_y = NULL;
+	}
+	if (s->f_z != NULL) {
+		fflush(s->f_z);
+		fclose(s->f_z);
+		s->f_z = NULL;
+	}
 	if (s != NULL) {
 		rm_session_free(s);
 		s = NULL;
 	}
+	pthread_mutex_unlock(&s->mutex);
+
 	return err;
 }
