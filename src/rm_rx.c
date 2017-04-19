@@ -412,7 +412,7 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 		case RM_DELTA_ELEMENT_RAW_BYTES:																				/* receiver will copy raw bytes to @f_z directly */
 			if (rm_tcp_tx(fd, (void*) &delta_e->raw_bytes_n, RM_DELTA_ELEMENT_BYTES_FIELD_SIZE) != RM_ERR_OK)			/* tx bytes size over TCP connection */
 				return RM_ERR_WRITE;
-			if (rm_tcp_tx(fd, (void*) &delta_e->raw_bytes, delta_e->raw_bytes_n) != RM_ERR_OK)							/* tx bytes over TCP connection */
+			if (rm_tcp_tx(fd, (void*) delta_e->raw_bytes, delta_e->raw_bytes_n) != RM_ERR_OK)							/* tx bytes over TCP connection */
 				return RM_ERR_WRITE;
 			ctx->rec_by_raw += delta_e->raw_bytes_n;
 			++ctx->delta_raw_n;
