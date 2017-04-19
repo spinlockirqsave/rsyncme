@@ -99,6 +99,8 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 	if (m->L == 0) {                                                                    /* L can't be 0 */
 		return RM_ERR_BLOCK_SIZE;
 	}
+	s->rec_ctx.L = m->L;
+
 	if (m->x_sz == 0) {                                                                 /* @x not set */
 		return RM_ERR_X_ZERO_SIZE;
 	}
@@ -416,7 +418,15 @@ void *rm_session_ch_ch_rx_f(void *arg)
 			goto err_exit;
 		}
 
-		err = rm_tcp_rx(fd, &e->data.ch_ch, RM_CH_CH_SIZE);
+		uint32_t f_ch = 0;
+		err = rm_tcp_rx(fd, &f_ch, sizeof(f_ch));
+		if (err != RM_ERR_OK) {
+			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
+			goto err_exit;
+		}
+		rm_deserialize_u32((unsigned char *) &f_ch, &e->data.ch_ch.f_ch);
+
+		err = rm_tcp_rx(fd, &e->data.ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
 		if (err != RM_ERR_OK) {
 			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
@@ -488,9 +498,13 @@ void *rm_session_delta_tx_f(void *arg)
 			goto exit;
 	}
 	pthread_mutex_unlock(&s->mutex);
+
+
+	sleep(15);
 	err = rm_rolling_ch_proc(s, h, h_mutex, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
 	if (err != RM_ERR_OK)
 		status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
+
 	pthread_mutex_lock(&s->mutex);
 	if (t == RM_PUSH_LOCAL) {
 		prvt_local->delta_tx_status = status;
@@ -720,8 +734,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	bytes_to_rx = prvt_rx->msg_push->bytes;
 	f_y         = s->f_y;
 	listen_fd = prvt_rx->delta_fd;
-	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
-	rec_ctx.L = s->rec_ctx.L;																								/* init reconstruction context */
+	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
 	pthread_mutex_unlock(&s->mutex);
 
 	if (f_y == NULL) {

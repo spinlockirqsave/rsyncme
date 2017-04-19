@@ -323,7 +323,7 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 		case RM_DELTA_ELEMENT_REFERENCE:
 			if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
 				return RM_ERR_COPY_OFFSET;
-			ctx->rec_by_ref += delta_e->raw_bytes_n;                                                                    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
+			ctx->rec_by_ref += ctx->L;																					/* L bytes copied from @y */
 			++ctx->delta_ref_n;
 			break;
 
