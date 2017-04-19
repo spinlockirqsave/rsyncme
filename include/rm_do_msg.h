@@ -40,7 +40,19 @@ struct rm_msg {                                 /* base type for derivation of m
 struct rm_msg_ack {
     struct rm_msg_hdr   *hdr;                   /* pt = rm_pt_type (*_ACK), flags = status (enum rm_error) */
 };
-#define RM_MSG_ACK_LEN          RM_MSG_HDR_LEN
+#define RM_MSG_ACK_LEN	(RM_MSG_HDR_LEN)
+
+struct rm_msg_push_ack {
+	struct rm_msg_ack	ack;
+	uint16_t			delta_port;				/* receiver awaits deltas on that port from transmitter of file */
+	uint64_t			ch_ch_n;				/* receiver will send that many nonoverlapping checkums */
+};
+#define RM_MSG_PUSH_ACK_LEN	(RM_MSG_HDR_LEN + 2 + 8)
+
+union rm_msg_ack_u {
+	struct rm_msg_ack		msg_ack;
+	struct rm_msg_push_ack	msg_push_ack;
+};
 
 struct rm_msg_push
 {
@@ -53,6 +65,8 @@ struct rm_msg_push
     char                y[RM_FILE_LEN_MAX];     /* y file name  */
     uint16_t            z_sz;                   /* size of string including terminating NULL byte '\0' */
     char                z[RM_FILE_LEN_MAX];     /* z file name  */
+	uint16_t			ch_ch_port;				/* transmitter awaits nonoverlapping checksums on that port from receiver of file (not used yet, main connection port is used as checksums channel as of now) */
+	uint64_t			bytes;					/* number of bytes to be xfered by transmitter (these bytes will be txed by delta and/or by raw) */
 };
 
 /* transmitter sends PULL(x,y) -> this means receiver does PUSH(y,x) */
@@ -76,8 +90,10 @@ struct rm_msg_pull
 enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 void rm_msg_push_free(struct rm_msg_push *msg) __attribute__ ((nonnull(1)));
 
-enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
-void rm_msg_ack_free(struct rm_msg_ack *msg) __attribute__ ((nonnull(1)));
+enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *ack) __attribute__ ((nonnull(1)));
+void rm_msg_ack_free(struct rm_msg_ack *ack) __attribute__ ((nonnull(1)));
+enum rm_error rm_msg_push_ack_alloc(struct rm_msg_push_ack *ack) __attribute__ ((nonnull(1)));
+void rm_msg_push_ack_free(struct rm_msg_push_ack *ack) __attribute__ ((nonnull(1)));
 
 /* @brief       Handles incoming rsync push request in new sesion.
  * @details     Work struct callback for RM_WORK_PROCESS_MSG_PUSH.

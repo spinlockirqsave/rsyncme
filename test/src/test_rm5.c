@@ -10,6 +10,8 @@
 #include "test_rm5.h"
 
 
+enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
+
 const char* rm_test_fnames[RM_TEST_FNAMES_N] = { 
     "rm_f_0_ts5", "rm_f_1_ts5", "rm_f_2_ts5", "rm_f_3_ts5", "rm_f_4_ts5", "rm_f_8_ts5", "rm_f_65_ts5",
     "rm_f_100_ts5", "rm_f_511_ts5", "rm_f_512_ts5", "rm_f_513_ts5", "rm_f_1023_ts5",
@@ -25,8 +27,8 @@ size_t  rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 0, 1, 2, 3, 4, 8, 10, 13, 16
     513, 600, 800, 1000, 1100, 1123, 1124, 1125,
     1200, 100000 };
 
-static int
-test_rm_copy_files_and_postfix(const char *postfix) {
+static int test_rm_copy_files_and_postfix(const char *postfix)
+{
     int         err;
     FILE        *f, *f_copy;
     size_t      i, j;
@@ -98,8 +100,8 @@ test_rm_copy_files_and_postfix(const char *postfix) {
     return 0;
 }
 
-static int
-test_rm_delete_copies_of_files_postfixed(const char *postfix) {
+static int test_rm_delete_copies_of_files_postfixed(const char *postfix)
+{
     int         err;
     size_t      i;
     char        buf[RM_FILE_LEN_MAX + 50];
@@ -119,8 +121,8 @@ test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     return 0;
 }
 
-int
-test_rm_setup(void **state) {
+int test_rm_setup(void **state)
+{
     int         err;
     size_t      i,j;
     FILE        *f;
@@ -249,8 +251,8 @@ test_rm_setup(void **state) {
     return 0;
 }
 
-int
-test_rm_teardown(void **state) {
+int test_rm_teardown(void **state)
+{
     size_t  i;
     FILE    *f;
     struct  test_rm_state *rm_state;
@@ -318,9 +320,9 @@ test_rm_teardown(void **state) {
 }
 
 /* NOTE: copied from rm.c */
-static enum rm_error
-rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
-        size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n) {
+static enum rm_error rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, enum RM_DELTA_ELEMENT_TYPE type,
+        size_t ref, unsigned char *raw_bytes, size_t raw_bytes_n)
+{
     struct rm_delta_e           *delta_e;
 
     if ((cb_arg == NULL) || (delta_f == NULL)) {
@@ -350,8 +352,8 @@ rm_rolling_ch_proc_tx(struct rm_roll_proc_cb_arg  *cb_arg, rm_delta_f *delta_f, 
 }
 
 /* @brief   Test rm_rolling_ch_proc_tx error reporting against NULL callback argument. */
-void
-test_rm_rolling_ch_proc_tx_1(void **state) {
+void test_rm_rolling_ch_proc_tx_1(void **state)
+{
     enum rm_error err;
     rm_delta_f *delta_f = rm_roll_proc_cb_1;
     enum RM_DELTA_ELEMENT_TYPE type = RM_DELTA_ELEMENT_REFERENCE;
@@ -364,8 +366,8 @@ test_rm_rolling_ch_proc_tx_1(void **state) {
 }
 
 /* @brief   Test rm_rolling_ch_proc_tx error reporting against NULL delta function argument. */
-void
-test_rm_rolling_ch_proc_tx_2(void **state) {
+void test_rm_rolling_ch_proc_tx_2(void **state)
+{
     enum rm_error err;
     struct rm_roll_proc_cb_arg cb_arg;
     enum RM_DELTA_ELEMENT_TYPE type = RM_DELTA_ELEMENT_REFERENCE;
@@ -378,8 +380,8 @@ test_rm_rolling_ch_proc_tx_2(void **state) {
 }
 
 /* @brief   Test rm_rolling_ch_proc_tx error reporting against RM_DELTA_ELEMENT_RAW_BYTES and NULL raw bytes pointer. */
-void
-test_rm_rolling_ch_proc_tx_3(void **state) {
+void test_rm_rolling_ch_proc_tx_3(void **state)
+{
     enum rm_error err;
     struct rm_roll_proc_cb_arg cb_arg;
     rm_delta_f *delta_f = rm_roll_proc_cb_1;
@@ -391,8 +393,8 @@ test_rm_rolling_ch_proc_tx_3(void **state) {
     assert_int_equal(err, RM_ERR_IO_ERROR);
 }
 
-static void
-test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
+static void test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx)
+{
     RM_LOG_CRIT("rec_ctx dump:\nmethod [%zu], rec_by_ref [%zu], rec_by_raw [%zu], delta_ref_n [%zu], delta_raw_n [%zu], "
             "rec_by_tail [%zu], rec_by_zero_diff [%zu], delta_tail_n [%zu], delta_zero_diff_n [%zu], L [%zu], "
             "copy_all_threshold [%zu], copy_tail_threshold [%zu], send_threshold [%zu]", rec_ctx.method, rec_ctx.rec_by_ref, rec_ctx.rec_by_raw,
@@ -402,8 +404,8 @@ test_rm_dump(struct rm_delta_reconstruct_ctx rec_ctx) {
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x file is same as y (file has no changes). */
-void
-test_rm_rolling_ch_proc_1(void **state) {
+void test_rm_rolling_ch_proc_1(void **state)
+{
     FILE                    *f, *f_x, *f_y;
     int                     fd;
     int                     err;
@@ -468,7 +470,7 @@ test_rm_rolling_ch_proc_1(void **state) {
             } else {
                 blocks_n_exp = 0;
             }
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -487,8 +489,8 @@ test_rm_rolling_ch_proc_1(void **state) {
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;                        /* run on same file */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (file_sz == 0) {
                 assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
                 continue;
@@ -617,8 +619,8 @@ test_rm_rolling_ch_proc_1(void **state) {
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x is copy of y, but first byte in x is changed. */
-void
-test_rm_rolling_ch_proc_2(void **state) {
+void test_rm_rolling_ch_proc_2(void **state)
+{
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
@@ -726,7 +728,7 @@ test_rm_rolling_ch_proc_2(void **state) {
             RM_LOG_INFO("Testing #2 (first byte changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -741,8 +743,8 @@ test_rm_rolling_ch_proc_2(void **state) {
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -877,8 +879,8 @@ test_rm_rolling_ch_proc_2(void **state) {
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x is copy of y, but last byte in x is changed. */
-void
-test_rm_rolling_ch_proc_3(void **state) {
+void test_rm_rolling_ch_proc_3(void **state)
+{
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the end) */
     const char              *f_y_name;  /* @y name */
@@ -986,7 +988,7 @@ test_rm_rolling_ch_proc_3(void **state) {
             RM_LOG_INFO("Testing #3 (last byte changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -1001,8 +1003,8 @@ test_rm_rolling_ch_proc_3(void **state) {
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1132,8 +1134,8 @@ test_rm_rolling_ch_proc_3(void **state) {
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x is copy of y, but first and last bytes in x are changed. */
-void
-test_rm_rolling_ch_proc_4(void **state) {
+void test_rm_rolling_ch_proc_4(void **state)
+{
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed bytes) */
     const char              *f_y_name;  /* @y name */
@@ -1255,7 +1257,7 @@ test_rm_rolling_ch_proc_4(void **state) {
             RM_LOG_INFO("Testing #4 (2 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -1271,8 +1273,8 @@ test_rm_rolling_ch_proc_4(void **state) {
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1438,8 +1440,8 @@ test_rm_rolling_ch_proc_4(void **state) {
 
 /* @brief   Test if number of bytes enqueued as delta elements is correct,
  *          when x is copy of y, but first, middle and last bytes in x are changed. */
-void
-test_rm_rolling_ch_proc_5(void **state) {
+void test_rm_rolling_ch_proc_5(void **state)
+{
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed bytes) */
     const char              *f_y_name;  /* @y name */
@@ -1587,7 +1589,7 @@ test_rm_rolling_ch_proc_5(void **state) {
             RM_LOG_INFO("Testing #5 (3 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -1603,8 +1605,8 @@ test_rm_rolling_ch_proc_5(void **state) {
             prvt = s->prvt; /* setup private session's arguments */
             prvt->h = h;
             s->f_x = f_x;                        /* run on @x */
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
             assert_int_equal(err, RM_ERR_OK);
 
             q = &prvt->tx_delta_e_queue; /* verify s->prvt delta queue content */
@@ -1782,8 +1784,8 @@ test_rm_rolling_ch_proc_5(void **state) {
 
 /* @brief   Test error reporting.
  * @details NULL session. */
-void
-test_rm_rolling_ch_proc_6(void **state) {
+void test_rm_rolling_ch_proc_6(void **state)
+{
     FILE                *f_x;
     struct rm_session   *s;
     enum rm_error       err;
@@ -1799,7 +1801,7 @@ test_rm_rolling_ch_proc_6(void **state) {
         RM_LOG_ERR("Can't open file [%s]!", rm_state->f.name);
         assert_true(1 == 0 && "Can't open @x file!");
     }
-    err = rm_rolling_ch_proc(s, h, f_x, rm_roll_proc_cb_1, 0); /* 1. run rolling checksum procedure */
+    err = rm_rolling_ch_proc(s, h, NULL, f_x, rm_roll_proc_cb_1, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #6 (Test error reporting: NULL session)");
@@ -1807,8 +1809,8 @@ test_rm_rolling_ch_proc_6(void **state) {
 
 /* @brief   Test error reporting.
  * @details NULL file @x pointer. */
-void
-test_rm_rolling_ch_proc_7(void **state) {
+void test_rm_rolling_ch_proc_7(void **state)
+{
     struct rm_session   *s;
     struct rm_session_push_local *prvt;
     enum rm_error       err;
@@ -1827,16 +1829,16 @@ test_rm_rolling_ch_proc_7(void **state) {
     prvt = s->prvt; /* set private session's arguments */
     prvt->h = h;
     s->f_x = NULL;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #7 (Test error reporting: NULL file pointer)");
 }
 
 /* @brief   Test error reporting.
  * @details Bad request of reading out of range from file @x, file size is 0. */
-void
-test_rm_rolling_ch_proc_8(void **state) {
+void test_rm_rolling_ch_proc_8(void **state)
+{
     struct rm_session   *s;
     struct rm_session_push_local *prvt;
     enum rm_error       err;
@@ -1870,8 +1872,8 @@ test_rm_rolling_ch_proc_8(void **state) {
     }
     assert_true(fs.st_size == 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
     RM_LOG_INFO("%s", "PASSED test #8 (Test error reporting: zero size file)");
@@ -1879,8 +1881,8 @@ test_rm_rolling_ch_proc_8(void **state) {
 
 /* @brief   Test error reporting.
  * @details Bad request, block size is 0, file size is 0. */
-void
-test_rm_rolling_ch_proc_9(void **state) {
+void test_rm_rolling_ch_proc_9(void **state)
+{
     struct rm_session   *s;
     struct rm_session_push_local *prvt;
     enum rm_error       err;
@@ -1905,8 +1907,8 @@ test_rm_rolling_ch_proc_9(void **state) {
         assert_true(1 == 0 && "Can't open @x file!");
     }
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #9 (Test error reporting: L == 0, [and zero size file])");
@@ -1914,8 +1916,8 @@ test_rm_rolling_ch_proc_9(void **state) {
 
 /* @brief   Test error reporting.
  * @details Bad request, block size is 0, file size is not 0. */
-void
-test_rm_rolling_ch_proc_10(void **state) {
+void test_rm_rolling_ch_proc_10(void **state)
+{
     struct rm_session   *s;
     struct rm_session_push_local *prvt;
     enum rm_error       err;
@@ -1950,8 +1952,8 @@ test_rm_rolling_ch_proc_10(void **state) {
     file_sz = fs.st_size;
     assert_true(file_sz > 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, file_sz); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, file_sz); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #10 (Test error reporting: L == 0, [and nonzero size file])");
@@ -1959,8 +1961,8 @@ test_rm_rolling_ch_proc_10(void **state) {
 
 /* @brief   Test error reporting.
  * @details NULL request of reading out of range from file @x, file size is not 0. */
-void
-test_rm_rolling_ch_proc_11(void **state) {
+void test_rm_rolling_ch_proc_11(void **state)
+{
     struct rm_session   *s;
     struct rm_session_push_local *prvt;
     enum rm_error       err;
@@ -1995,8 +1997,8 @@ test_rm_rolling_ch_proc_11(void **state) {
     file_sz = fs.st_size;
     assert_true(file_sz > 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, file_sz); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, file_sz); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
     RM_LOG_INFO("%s", "PASSED test #11 (Test error reporting: reading out of range on nonzero size file)");
@@ -2069,7 +2071,7 @@ test_rm_rolling_ch_proc_12(void **state) {
         } else {
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
         }
-        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
         if (L == 0) {
             assert_int_equal(err, RM_ERR_BAD_CALL);
             continue;
@@ -2087,8 +2089,8 @@ test_rm_rolling_ch_proc_12(void **state) {
         prvt = s->prvt;
         prvt->h = h;
         s->f_x = f_x;
-        prvt->delta_f = rm_roll_proc_cb_1;
-        err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+        prvt->delta_tx_f = rm_roll_proc_cb_1;
+        err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);
         if (x_sz == 0) {
             assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
             continue;
@@ -2160,8 +2162,8 @@ test_rm_rolling_ch_proc_12(void **state) {
     return;
 }
 /* @brief   Test send threshold #2 (send threshold = L + 1) */
-void
-test_rm_rolling_ch_proc_13(void **state) {
+void test_rm_rolling_ch_proc_13(void **state)
+{
     FILE                    *f_x, *f_y;
     int                     fd;
     int                     err;
@@ -2226,7 +2228,7 @@ test_rm_rolling_ch_proc_13(void **state) {
         } else {
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
         }
-        err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
         if (L == 0) {
             assert_int_equal(err, RM_ERR_BAD_CALL);
             continue;
@@ -2244,8 +2246,8 @@ test_rm_rolling_ch_proc_13(void **state) {
         prvt = s->prvt;
         prvt->h = h;
         s->f_x = f_x;
-        prvt->delta_f = rm_roll_proc_cb_1;
-        err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+        prvt->delta_tx_f = rm_roll_proc_cb_1;
+        err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);
         if (x_sz == 0) {
             assert_int_equal(err, RM_ERR_TOO_MUCH_REQUESTED);
             continue;
@@ -2318,8 +2320,8 @@ test_rm_rolling_ch_proc_13(void **state) {
 }
 
 /* @brief   Test copy all threshold. Specify threshold of file size + 1 so copying must happened (single RAW bytes element expected, ZERO DIFF Can't happen, copy_all_threshold_fired MUST be set) */
-void
-test_rm_rolling_ch_proc_14(void **state) {
+void test_rm_rolling_ch_proc_14(void **state)
+{
     FILE                    *f, *f_x, *f_y;
     int                     fd;
     int                     err;
@@ -2391,7 +2393,7 @@ test_rm_rolling_ch_proc_14(void **state) {
             } else {
                 blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             }
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -2409,8 +2411,8 @@ test_rm_rolling_ch_proc_14(void **state) {
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -2505,8 +2507,8 @@ test_rm_rolling_ch_proc_14(void **state) {
 }
 
 /* @brief   Test copy tail threshold (#1). Specify threshold of file size + 1 so copying must happened, single RAW element expected, copy_all_threshold_fired must NOT be set as copy_all_threshold is set to 0, (ZERO DIFF can't happen) */
-void
-test_rm_rolling_ch_proc_15(void **state) {
+void test_rm_rolling_ch_proc_15(void **state)
+{
     FILE                    *f, *f_x, *f_y;
     int                     fd;
     int                     err;
@@ -2578,7 +2580,7 @@ test_rm_rolling_ch_proc_15(void **state) {
             } else {
                 blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             }
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -2596,8 +2598,8 @@ test_rm_rolling_ch_proc_15(void **state) {
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -2699,8 +2701,8 @@ test_rm_rolling_ch_proc_15(void **state) {
 }
 
 /* @brief   Test copy tail threshold (#2) file size % L. (RAW element at the tail expected), copy_tail_threshold_fired must be set. */
-void
-test_rm_rolling_ch_proc_16(void **state) {
+void test_rm_rolling_ch_proc_16(void **state)
+{
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with last bytes changed) */
     const char              *f_y_name;  /* @y name */
     unsigned char           c;
@@ -2805,7 +2807,7 @@ test_rm_rolling_ch_proc_16(void **state) {
             }
             RM_LOG_INFO("Testing #16 (copy tail threshold #2): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
 
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -2824,8 +2826,8 @@ test_rm_rolling_ch_proc_16(void **state) {
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -2941,8 +2943,8 @@ test_rm_rolling_ch_proc_16(void **state) {
 }
 
 /* @brief   Test copy tail threshold (#3) file size % L - 1. (RAW element at the tail expected), copy_tail_threshold_fired must be set */
-void
-test_rm_rolling_ch_proc_17(void **state) {
+void test_rm_rolling_ch_proc_17(void **state)
+{
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with last bytes changed) */
     const char              *f_y_name;  /* @y name */
     unsigned char           c;
@@ -3047,7 +3049,7 @@ test_rm_rolling_ch_proc_17(void **state) {
             }
             RM_LOG_INFO("Testing #17 (copy tail threshold #3): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
 
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -3066,8 +3068,8 @@ test_rm_rolling_ch_proc_17(void **state) {
             prvt = s->prvt;
             prvt->h = h;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -3199,8 +3201,8 @@ test_rm_rolling_ch_proc_18(void **state) {
         assert_true(1 == 0 && "Can't open @x file!");
     }
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #18 (Test error reporting: send threshold == 0, [and zero size file])");
@@ -3244,8 +3246,8 @@ test_rm_rolling_ch_proc_19(void **state) {
     file_sz = fs.st_size;
     assert_true(file_sz > 0);
     s->f_x = f_x;                        /* run on @x */
-    prvt->delta_f = rm_roll_proc_cb_1;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, file_sz); /* run rolling checksum procedure */
+    prvt->delta_tx_f = rm_roll_proc_cb_1;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, file_sz); /* run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #19 (Test error reporting: send threshold == 0, [and nonzero size file])");
@@ -3279,8 +3281,8 @@ test_rm_rolling_ch_proc_20(void **state) {
         assert_true(1 == 0 && "Can't open @x file!");
     }
     s->f_x = f_x;
-    prvt->delta_f = NULL;
-    err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0); /* 1. run rolling checksum procedure */
+    prvt->delta_tx_f = NULL;
+    err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0); /* 1. run rolling checksum procedure */
     fclose(f_x);
     assert_int_equal(err, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #20 (Test error reporting: NULL delta function pointer)");
@@ -3346,8 +3348,8 @@ test_rm_rolling_ch_proc_21(void **state) {
             prvt = s->prvt;
             prvt->h = NULL;
             s->f_x = f_x;
-            prvt->delta_f = rm_roll_proc_cb_1;
-            err = rm_rolling_ch_proc(s, NULL, s->f_x, prvt->delta_f, 0);    /* 1. run rolling checksum procedure */
+            prvt->delta_tx_f = rm_roll_proc_cb_1;
+            err = rm_rolling_ch_proc(s, NULL, NULL, s->f_x, prvt->delta_tx_f, 0);    /* 1. run rolling checksum procedure */
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;

@@ -24,6 +24,7 @@ unsigned char* rm_serialize_mem(void *buf, const void *src, size_t bytes_n) __at
 unsigned char* rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) __attribute__ ((nonnull(1,2)));
+unsigned char* rm_serialize_msg_push_ack(unsigned char *buf, struct rm_msg_push_ack *m) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_serialize_msg_pull(unsigned char *buf, struct rm_msg_pull *m) __attribute__ ((nonnull(1,2)));
 
 
@@ -45,6 +46,7 @@ unsigned char* rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr
 unsigned char* rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_hdr *hdr, struct rm_msg_push **m) __attribute__ ((nonnull(1,2,3)));
 unsigned char* rm_deserialize_msg_ack(unsigned char *buf, struct rm_msg_ack *ack) __attribute__ ((nonnull(1,2)));
+unsigned char* rm_deserialize_msg_push_ack(unsigned char *buf, struct rm_msg_push_ack *ack) __attribute__ ((nonnull(1,2)));
 struct rm_msg* rm_deserialize_msg(enum rm_pt_type pt, struct rm_msg_hdr *hdr, unsigned char *body_raw) __attribute__ ((nonnull(2,3)));
 
 

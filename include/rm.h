@@ -123,7 +123,7 @@ struct rm_ch_ch_ref_hlink
 enum RM_DELTA_ELEMENT_TYPE
 {
     RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
-    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes. Bytes contained in delta raw element are always contiguous bytes from @x */
+    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes. Bytes contained in delta raw element are always contiguous bytes from @x, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
     RM_DELTA_ELEMENT_ZERO_DIFF, /* sent always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
                                    when L => f_x.sz and checksums computed on the whole file match,
                                    means files are the same. raw_bytes_n set to file size */
@@ -150,7 +150,15 @@ enum rm_rx_status
 {
     RM_RX_STATUS_OK                 = 0,    /* most wanted */
     RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
-    RM_RX_STATUS_DELTA_PROC_FAIL    = 2     /* error processing delta element */
+	RM_RX_STATUS_DELTA_RX_ACCEPT_FAIL	= 2,	/* accept on delta socket error */
+	RM_RX_STATUS_DELTA_RX_TCP_FAIL	= 3,	/* error while reading socket in rm_session_delta_rx_f_remote */
+    RM_RX_STATUS_DELTA_PROC_FAIL    = 4,	/* error processing delta element */
+	RM_RX_STATUS_CH_CH_RX_TCP_FAIL	= 5,	/* error while reading socket in rm_session_ch_ch_rx_f */
+	RM_RX_STATUS_CH_CH_RX_MEM		= 6,	/* malloc failed when attempting to get memory for checksum */
+	RM_RX_STATUS_CONNECT_TIMEOUT	= 7,
+	RM_RX_STATUS_CONNECT_REFUSED	= 8,
+	RM_RX_STATUS_CONNECT_HOSTUNREACH	= 9,
+	RM_RX_STATUS_CONNECT_GEN_ERR	= 10
 };
 enum rm_reconstruct_method
 {
@@ -330,8 +338,8 @@ struct rm_session;
  *          RM_ERR_TX_TAIL - tx on tail failed,
  *          RM_ERR_TX_ZERO_DIFF - zero difference tx failed */
 enum rm_error
-rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h,
-        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4)));
+rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_mutex_t *h_mutex,
+        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4,5)));
 
 /* @brief   Start execution of @f function in new thread.
  * @details Thread is started in @detachstate with @arg argument passed to @f.
@@ -377,9 +385,11 @@ int
 rm_file_cmp(FILE *x, FILE *y, size_t x_offset, size_t y_offset, size_t bytes_n);
 
 /* @brief   Generate unique string.
- * @details Uses uuid generation support, the character array must be at least 37 bytes. */
+ * @details Uses uuid generation support, on Debian it is typedef for unsigned char [16] but our character array must be at least RM_UNIQUE_STRING_LEN bytes. */
 void
 rm_get_unique_string(char name[RM_UNIQUE_STRING_LEN]);
+
+uint64_t rm_gettid(void);
 
 
 #endif	/* RSYNCME_H */

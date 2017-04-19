@@ -10,6 +10,8 @@
 #include "test_rm7.h"
 
 
+enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
+
 const char* rm_test_fnames[RM_TEST_FNAMES_N] = {
     "rm_f_1_ts7", "rm_f_2_ts7","rm_f_4_ts7", "rm_f_8_ts7", "rm_f_65_ts7",
     "rm_f_100_ts7", "rm_f_511_ts7", "rm_f_512_ts7", "rm_f_513_ts7", "rm_f_1023_ts7",
@@ -28,10 +30,10 @@ rm_test_L_blocks[RM_TEST_L_BLOCKS_SIZE] = { 1, 2, 3, 4, 8, 10, 13, 16,
 
 static FILE*
 test_rm_fopen_file_prefixed(const char *name, const char *prefix,
-        size_t L, const char *mode, struct test_rm_file *f_z) {
-    if (name == NULL || prefix == NULL || mode == NULL || f_z == NULL) {
+       size_t L, const char *mode, struct test_rm_file *f_z)
+{
+    if (name == NULL || prefix == NULL || mode == NULL || f_z == NULL)
         return NULL;
-    }
     strncpy(f_z->name, prefix, 49);
     snprintf(f_z->name + strlen(f_z->name), 50, "%zu", L);
     strncpy(f_z->name + strlen(f_z->name), name, RM_FILE_LEN_MAX);
@@ -39,8 +41,8 @@ test_rm_fopen_file_prefixed(const char *name, const char *prefix,
     return f_z->f = fopen(f_z->name, mode);
 }
 
-static int
-test_rm_copy_files_and_postfix(const char *postfix) {
+static int test_rm_copy_files_and_postfix(const char *postfix)
+{
     int         err;
     FILE        *f, *f_copy;
     size_t      i, j;
@@ -118,8 +120,8 @@ test_rm_copy_files_and_postfix(const char *postfix) {
     return 0;
 }
 
-static int
-test_rm_delete_copies_of_files_postfixed(const char *postfix) {
+static int test_rm_delete_copies_of_files_postfixed(const char *postfix)
+{
     int         err;
     size_t      i;
     char        buf[RM_FILE_LEN_MAX + 50];
@@ -139,8 +141,8 @@ test_rm_delete_copies_of_files_postfixed(const char *postfix) {
     return 0;
 }
 
-int
-test_rm_setup(void **state) {
+int test_rm_setup(void **state)
+{
     int         err;
     size_t      i,j;
     FILE        *f;
@@ -215,8 +217,8 @@ test_rm_setup(void **state) {
     return 0;
 }
 
-int
-test_rm_teardown(void **state) {
+int test_rm_teardown(void **state)
+{
     size_t  i;
     FILE    *f;
     struct  test_rm_state *rm_state;
@@ -246,13 +248,14 @@ test_rm_teardown(void **state) {
  *          when x file is same as y (file has no changes). */
 
 /* @brief   Testing callback that calls rm_rx_process_delta_element */    
-static enum rm_error
-test_rm_roll_proc_cb_delta_element_call(void *arg) {
+static enum rm_error test_rm_roll_proc_cb_delta_element_call(void *arg)
+{
     int err;
     struct rm_roll_proc_cb_arg      *cb_arg;         /* callback argument */
     const struct rm_session         *s;
     struct rm_session_push_local    *prvt;
     struct rm_delta_e               *delta_e;
+	struct rm_rx_delta_element_arg	delta_pack = {0};
 
     cb_arg = (struct rm_roll_proc_cb_arg*) arg;
     if (cb_arg == NULL) {
@@ -298,7 +301,11 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
 
     /* test processing of delta element, NOTE: this test doesn't test rm_session_delta_rx_f_local nor remote but ONLY rm_rx_process_delta_element.
      * We can write directly to session's reconstruction context in this test */
-    err = rm_rx_process_delta_element(delta_e, s->f_y, s->f_z, (struct rm_delta_reconstruct_ctx*)&s->rec_ctx);
+	delta_pack.delta_e = delta_e;
+	delta_pack.f_y = s->f_y;
+	delta_pack.f_z = s->f_z;
+	delta_pack.rec_ctx = (struct rm_delta_reconstruct_ctx *) &s->rec_ctx;
+    err = rm_rx_process_delta_element(&delta_pack);
     switch (err) {
         case 0: break;
         case -1:
@@ -327,8 +334,8 @@ test_rm_roll_proc_cb_delta_element_call(void *arg) {
 
     return 0;
 }
-void
-test_rm_rx_process_delta_element_1(void **state) {
+void test_rm_rx_process_delta_element_1(void **state)
+{
     FILE                    *f, *f_x, *f_y;
     struct test_rm_file     *f_z;
     int                     fd, fd_z;
@@ -415,7 +422,7 @@ test_rm_rx_process_delta_element_1(void **state) {
 
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
@@ -440,9 +447,9 @@ test_rm_rx_process_delta_element_1(void **state) {
             s->f_x = f_x;
             s->f_y = f_y;
             s->f_z = f_z->f;
-            prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
+            prvt->delta_tx_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */
@@ -700,8 +707,8 @@ test_rm_rx_process_delta_element_1(void **state) {
 /* @brief   Test #2. */
 /* @brief   Test if result file @f_z is reconstructed properly
  *          when x is copy of y, but first byte in x is changed. */
-void
-test_rm_rx_process_delta_element_2(void **state) {
+void test_rm_rx_process_delta_element_2(void **state)
+{
     int                     err;
     char                    buf_x_name[RM_FILE_LEN_MAX + 50];   /* @x (copy of @y with changed single byte at the beginning) */
     const char              *f_y_name;  /* @y name */
@@ -820,7 +827,7 @@ test_rm_rx_process_delta_element_2(void **state) {
 
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -847,9 +854,9 @@ test_rm_rx_process_delta_element_2(void **state) {
             s->f_x = f_x;
             s->f_y = f_y;
             s->f_z = f_z->f;
-            prvt->delta_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
+            prvt->delta_tx_f = test_rm_roll_proc_cb_delta_element_call;    /* mock the callback */
             /* 1. run rolling checksum procedure */
-            err = rm_rolling_ch_proc(s, h, s->f_x, prvt->delta_f, 0);
+            err = rm_rolling_ch_proc(s, h, NULL, s->f_x, prvt->delta_tx_f, 0);
             assert_int_equal(err, RM_ERR_OK);
 
             /* verify s->prvt delta queue content */

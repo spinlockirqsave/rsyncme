@@ -36,6 +36,7 @@
 #include <sys/socket.h>         /* socket.h etc. */
 #include <netinet/in.h>         /* networking */
 #include <linux/netdevice.h>
+#include <linux/limits.h>		/* PATH_MAX */
 #include <arpa/inet.h>
 #include <string.h>             /* memset, strdup, etc. */
 #include <fcntl.h>              /* open, R_ONLY */
@@ -51,6 +52,8 @@
 #include <libgen.h>             /* dirname */
 #include <uuid/uuid.h>
 #include <sys/time.h>
+#include <stdarg.h>
+#include <stddef.h>
 
 
 #include "twlist.h"
@@ -70,7 +73,7 @@
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
 #define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files, MUST be > RM_UNIQUE_STRING_LEN */
-#define RM_UUID_LEN                 16u         /* as uuid_t on Debian */
+#define RM_UUID_LEN                 16u			/* as uuid_t on Debian */
 
 #define RM_ADLER32_MODULUS          65521L      /* biggest prime int less than 2^16 */
 #define RM_FASTCHECK_MODULUS        65536L      /* 2^16, this makes rolling calculation possible */
@@ -86,11 +89,14 @@
 #define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off
                                                    while debugging for convenience */
 #define RM_STRONG_CHECK_BYTES       16
-#define RM_CH_CH_SIZE (sizeof((((struct rm_ch_ch_ref*)0)->ch_ch)))
-#define RM_CH_CH_REF_SIZE (RM_CH_CH_SIZE + \
-        (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
+#define RM_CH_CH_SIZE				(sizeof(struct rm_ch_ch))
+#define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
 #define RM_NANOSEC_PER_SEC          1000000000U
 #define RM_CORE_HASH_CHALLENGE_BITS 32u
+
+#define RM_DELTA_ELEMENT_TYPE_FIELD_SIZE	1	/* we need 2 bits to be honest */
+#define RM_DELTA_ELEMENT_BYTES_FIELD_SIZE	8	/* it is size_t now, but we will change it to be uint64_t explicitly */
+#define RM_DELTA_ELEMENT_REF_FIELD_SIZE		8	/* it is size_t now, but we will change it to be uint64_t explicitly */
 
 /* defaults */
 #define RM_DEFAULT_L                512         /* default block size in bytes */
@@ -115,13 +121,19 @@ typedef uint8_t rm_push_flags;  /* Bit  meaning
                                  * 6    (--leave) do not delete @y after @z has been reconstructed,
                                  * 7 */
 
-enum rm_session_type
-{
+enum rm_session_type {
     RM_PUSH_LOCAL,
     RM_PUSH_RX,     /* receiver of file (delta vector) in PUSH request, and transmitter of nonoverlapping checksums */
     RM_PUSH_TX,     /* transmitter of delta vector in PUSH request, and receiver of nonoverlapping checksums, initiates the request */
     RM_PULL_RX,     /* receiver of file (delta vector) in PULL request, and transmitter of nonoverlapping checksums, initiates the request */
     RM_PULL_TX      /* transmitter of delta vector in PULL request, and receiver of nonoverlapping checksums */
+};
+
+enum rm_loglevel {
+    RM_LOGLEVEL_NOTHING, /* well, log nothing */                                 /* 0 */
+    RM_LOGLEVEL_NORMAL,  /* log just the most important information */           /* 1 */
+    RM_LOGLEVEL_THREADS, /* log also information coming from worker threads */   /* 2 */
+    RM_LOGLEVEL_VERBOSE  /* log all information that can be logged */            /* 3 */
 };
 
 enum rm_error {
@@ -158,48 +170,53 @@ enum rm_error {
     RM_ERR_DELTA_RX_THREAD_LAUNCH = 30,
     RM_ERR_DELTA_TX_THREAD = 31,
     RM_ERR_DELTA_RX_THREAD = 32,
-    RM_ERR_FILE_SIZE = 33,
-    RM_ERR_FILE_SIZE_REC_MISMATCH = 34,
-    RM_ERR_UNLINK_Y = 35,
-    RM_ERR_RENAME_TMP_Y = 36,
-    RM_ERR_RENAME_TMP_Z = 37,
-    RM_ERR_MEM = 38,
-    RM_ERR_CHDIR = 39,
-    RM_ERR_GETCWD = 40,
-    RM_ERR_TOO_MUCH_REQUESTED = 41,
-    RM_ERR_FERROR = 42,
-    RM_ERR_FEOF = 43,
-    RM_ERR_FSEEK = 44,
-    RM_ERR_RX = 45,
-    RM_ERR_TX = 46,
-    RM_ERR_TX_RAW = 47,
-    RM_ERR_TX_ZERO_DIFF = 48,
-    RM_ERR_TX_TAIL = 49,
-    RM_ERR_TX_REF = 50,
-    RM_ERR_FILE = 51,
-    RM_ERR_DIR = 52,
-    RM_ERR_SETSID = 53,
-    RM_ERR_FORK = 54,
-    RM_ERR_ARG = 55,
-    RM_ERR_QUEUE_NOT_EMPTY = 56,
-    RM_ERR_LAUNCH_WORKER = 57,
-    RM_ERR_WORKQUEUE_CREATE = 58,
-    RM_ERR_WORKQUEUE_STOP = 59,
-    RM_ERR_GETADDRINFO = 60,
-    RM_ERR_CONNECT_GEN_ERR = 61,
-    RM_ERR_CONNECT_TIMEOUT = 62,
-    RM_ERR_CONNECT_REFUSED = 63,
-    RM_ERR_CONNECT_HOSTUNREACH = 64,
-    RM_ERR_MSG_PT_UNKNOWN = 65,
-    RM_ERR_EOF = 66,
-    RM_ERR_CH_CH_TX_THREAD = 67,
-    RM_ERR_Y_NULL = 68,
-    RM_ERR_Y_Z_SYNC = 69,
-    RM_ERR_BLOCK_SIZE = 70,
-    RM_ERR_RESULT_F_NAME = 71,
-    RM_ERR_BUSY = 72,
-    RM_ERR_UNKNOWN_ERROR = 73
-    /* max number of error limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
+    RM_ERR_CH_CH_RX_THREAD_LAUNCH = 33,
+    RM_ERR_FILE_SIZE = 34,
+    RM_ERR_FILE_SIZE_REC_MISMATCH = 35,
+    RM_ERR_UNLINK_Y = 36,
+    RM_ERR_RENAME_TMP_Y = 37,
+    RM_ERR_RENAME_TMP_Z = 38,
+    RM_ERR_MEM = 39,
+    RM_ERR_CHDIR = 40,
+    RM_ERR_CHDIR_Y = 41,
+    RM_ERR_CHDIR_Z = 42,
+    RM_ERR_GETCWD = 43,
+    RM_ERR_TOO_MUCH_REQUESTED = 44,
+    RM_ERR_FERROR = 45,
+    RM_ERR_FEOF = 46,
+    RM_ERR_FSEEK = 47,
+    RM_ERR_RX = 48,
+    RM_ERR_TX = 49,
+    RM_ERR_TX_RAW = 50,
+    RM_ERR_TX_ZERO_DIFF = 51,
+    RM_ERR_TX_TAIL = 52,
+    RM_ERR_TX_REF = 53,
+    RM_ERR_FILE = 54,
+    RM_ERR_DIR = 55,
+    RM_ERR_SETSID = 56,
+    RM_ERR_FORK = 57,
+    RM_ERR_ARG = 58,
+    RM_ERR_QUEUE_NOT_EMPTY = 59,
+    RM_ERR_LAUNCH_WORKER = 60,
+    RM_ERR_WORKQUEUE_CREATE = 61,
+    RM_ERR_WORKQUEUE_STOP = 62,
+    RM_ERR_GETADDRINFO = 63,
+    RM_ERR_GETPEERNAME = 64,
+    RM_ERR_CONNECT_GEN_ERR = 65,
+    RM_ERR_CONNECT_TIMEOUT = 66,
+    RM_ERR_CONNECT_REFUSED = 67,
+    RM_ERR_CONNECT_HOSTUNREACH = 68,
+    RM_ERR_MSG_PT_UNKNOWN = 69,
+    RM_ERR_EOF = 70,
+    RM_ERR_CH_CH_TX_THREAD = 71,
+    RM_ERR_CH_CH_RX_THREAD = 72,
+    RM_ERR_Y_NULL = 73,
+    RM_ERR_Y_Z_SYNC = 74,
+    RM_ERR_BLOCK_SIZE = 75,
+    RM_ERR_RESULT_F_NAME = 76,
+    RM_ERR_BUSY = 77,
+    RM_ERR_UNKNOWN_ERROR = 78
+    /* max error code limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 
 enum rm_io_direction {
@@ -213,6 +230,7 @@ enum rm_pt_type {
     RM_PT_MSG_PUSH_ACK,
     RM_PT_MSG_PULL,
     RM_PT_MSG_PULL_ACK,
+	RM_PT_MSG_ACK,
     RM_PT_MSG_BYE
 };
 
