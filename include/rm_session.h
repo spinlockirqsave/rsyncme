@@ -31,6 +31,7 @@ struct rm_session
     FILE                    *f_z;               /* result file */
 	char					f_z_name[RM_UNIQUE_STRING_LEN];	/* tmp result */	
     size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements (xferred by delta and/or raw bytes) */
+    size_t                  f_y_sz;             /* size of @y and the number of bytes to be copied in DELTA_ZERO_DIFF */
 	char					f_y_dirname[RM_UNIQUE_STRING_LEN];
 	char					f_y_basename[RM_UNIQUE_STRING_LEN];
 	char					*f_y_bname;

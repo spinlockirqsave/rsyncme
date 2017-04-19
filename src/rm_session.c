@@ -138,6 +138,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 				if (fstat(fd_y, &fs) != 0)
 					return RM_ERR_FSTAT_Y;
 				y_sz = fs.st_size;
+				s->f_y_sz = y_sz;														/* use in DELTA_ZERO_DIFF */
 				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checksums to be sent to remote transmitter */
 			} else {																	/* s->f_y is NULL */
 				push_rx->ch_ch_n = 0;													/* no checksums to send... */
@@ -703,7 +704,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	rm_push_flags					push_flags = 0;
 	char                            f_z_name[RM_UNIQUE_STRING_LEN];
 	int								listen_fd = -1, fd = -1;
-	size_t                          bytes_to_rx = 0;
+	size_t                          bytes_to_rx = 0, y_sz = 0;
 	struct rm_session               *s = NULL;
 	struct rm_rx_delta_element_arg delta_pack = {0};
 	struct rm_delta_reconstruct_ctx rec_ctx = {0};		/* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
@@ -720,6 +721,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	assert(s != NULL);
 
 	pthread_mutex_lock(&s->mutex);
+
 	if (s->type != RM_PUSH_RX) {
 		pthread_mutex_unlock(&s->mutex);
 		goto err_exit;
@@ -730,11 +732,13 @@ void* rm_session_delta_rx_f_remote(void *arg)
 		goto err_exit;
 	}
 	assert(prvt_rx != NULL);
-	push_flags = (rm_push_flags) prvt_rx->msg_push->hdr->flags;
+	push_flags	= (rm_push_flags) prvt_rx->msg_push->hdr->flags;
 	bytes_to_rx = prvt_rx->msg_push->bytes;
 	f_y         = s->f_y;
-	listen_fd = prvt_rx->delta_fd;
+	y_sz		= s->f_y_sz;
+	listen_fd	= prvt_rx->delta_fd;
 	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
+
 	pthread_mutex_unlock(&s->mutex);
 
 	if (f_y == NULL) {
@@ -783,6 +787,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			case RM_DELTA_ELEMENT_REFERENCE:																				/* copy referenced bytes from @f_y to @f_z */
 				if (rm_tcp_rx(fd, (void*) &delta_e.ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* rx ref over TCP connection */
 					goto err_exit;
+				delta_e.raw_bytes_n = rec_ctx.L;																			/* by definition */
 				break;
 
 			case RM_DELTA_ELEMENT_TAIL:																						/* copy referenced bytes from @f_y to @f_z */
@@ -801,6 +806,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 				break;
 
 			case RM_DELTA_ELEMENT_ZERO_DIFF:
+				delta_e.raw_bytes_n = y_sz;																					/* by definition */
 				break;
 
 			default:
