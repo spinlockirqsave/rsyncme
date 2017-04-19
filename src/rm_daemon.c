@@ -150,6 +150,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 		goto err_exit;
 	}
 
+	RM_LOG_INFO("core: Waiting for incoming header from peer [%s] port [%u], on local interface [%s] port [%u]", peer_addr_str, peer_port, cli_addr_str, cli_port);
 	err = rm_tcp_read(fd, buf, to_read);																		/* wait for incoming header */
 	if (err == RM_ERR_EOF) {
 		if (peer_addr_str != NULL) {
@@ -163,6 +164,8 @@ do_it_all(int fd, struct rsyncme* rm) {
 		RM_LOG_PERR("%s", "Read failed on TCP control socket");
 		goto err_exit;
 	}
+
+	RM_LOG_INFO("core: Validating header from peer [%s] port [%u]", peer_addr_str, peer_port);
 	err = rm_core_tcp_msg_hdr_validate(buf, to_read);															/* validate the potential header of the message: check hash and pt, read_n can't be < 0 in call to validate */
 	if (err != RM_ERR_OK) {
 		RM_LOG_ERR("%s", "TCP control socket: bad message");
@@ -202,6 +205,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 
 	switch (pt) {																								/* message OK, process it */
 		case RM_PT_MSG_PUSH:
+			RM_LOG_INFO("core: Enqueuing MSG_PUSH work from peer [%s] port [%u]", peer_addr_str, peer_port);
 			work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, fd, rm_do_msg_push_rx, rm_msg_push_dtor); /* worker takes the ownership of TCP socket and memory allocated for msg (including hdr) */
 			if (work == NULL) {
 				RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
@@ -211,9 +215,11 @@ do_it_all(int fd, struct rsyncme* rm) {
 			break;
 
 		case RM_PT_MSG_PULL:
+			RM_LOG_INFO("core: Enqueuing MSG_PULL work from peer [%s] port [%u]", peer_addr_str, peer_port);
 			break;
 
 		case RM_PT_MSG_BYE:
+			RM_LOG_INFO("core: Enqueuing MSG_BYE work from peer [%s] port [%u]", peer_addr_str, peer_port);
 			break;
 
 		default:

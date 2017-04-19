@@ -21,7 +21,7 @@ struct rm_session
     struct twhlist_node     hlink;  /* hashtable handle */
     struct twlist_head      link;   /* list handle */
 
-    unsigned char           id[RM_UUID_LEN];
+    unsigned char			id[RM_UUID_LEN];
     struct rm_md5           hash;
 	uint32_t				hashed_hash;
     pthread_mutex_t         mutex;
@@ -31,6 +31,16 @@ struct rm_session
     FILE                    *f_z;               /* result file */
 	char					f_z_name[RM_UNIQUE_STRING_LEN];	/* tmp result */	
     size_t                  f_x_sz;             /* size of @x and the number of bytes to be addressed by delta elements (xferred by delta and/or raw bytes) */
+	char					f_y_dirname[RM_UNIQUE_STRING_LEN];
+	char					f_y_basename[RM_UNIQUE_STRING_LEN];
+	char					*f_y_bname;
+	char					*f_y_dname;
+	char					f_z_dirname[RM_UNIQUE_STRING_LEN];
+	char					f_z_basename[RM_UNIQUE_STRING_LEN];
+	char					*f_z_bname;
+	char					*f_z_dname;
+
+	char					pwd_init[PATH_MAX];
 
     enum rm_session_type    type;
     struct rm_delta_reconstruct_ctx rec_ctx;

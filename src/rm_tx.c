@@ -484,9 +484,9 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		fclose(s->f_y);
 		s->f_y = NULL;
 	}
+	pthread_mutex_unlock(&s->mutex);
 	rm_session_free(s);
 	s = NULL;
-	pthread_mutex_unlock(&s->mutex);
 
 	free(msg_raw);
 	msg_raw = NULL;
@@ -530,7 +530,6 @@ err_exit:
 			break;
 	}
 
-	pthread_mutex_lock(&s->mutex);
 	if (s->f_x != NULL) {
 		fclose(s->f_x);
 		s->f_x = NULL;
@@ -548,7 +547,6 @@ err_exit:
 		rm_session_free(s);
 		s = NULL;
 	}
-	pthread_mutex_unlock(&s->mutex);
 
 	return err;
 }

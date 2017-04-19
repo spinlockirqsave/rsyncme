@@ -691,6 +691,13 @@ void
 rm_get_unique_string(char name[RM_UNIQUE_STRING_LEN]) {
 	uuid_t out_and_then_in;
 	uuid_generate(out_and_then_in);
-	uuid_unparse(out_and_then_in, name);
+	uuid_unparse(out_and_then_in, (char *) name);
 	name[RM_UNIQUE_STRING_LEN - 1] = '\0';                        /* assert string is null terminated */
+}
+
+uint64_t rm_gettid(void) {
+	pthread_t ptid = pthread_self();
+	uint64_t tid = 0;
+	memcpy(&tid, &ptid, rm_min(sizeof(tid), sizeof(ptid)));
+	return tid;
 }

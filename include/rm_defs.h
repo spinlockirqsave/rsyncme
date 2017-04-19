@@ -36,6 +36,7 @@
 #include <sys/socket.h>         /* socket.h etc. */
 #include <netinet/in.h>         /* networking */
 #include <linux/netdevice.h>
+#include <linux/limits.h>		/* PATH_MAX */
 #include <arpa/inet.h>
 #include <string.h>             /* memset, strdup, etc. */
 #include <fcntl.h>              /* open, R_ONLY */
@@ -72,7 +73,7 @@
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
 #define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
 #define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files, MUST be > RM_UNIQUE_STRING_LEN */
-#define RM_UUID_LEN                 16u         /* as uuid_t on Debian */
+#define RM_UUID_LEN                 16u			/* as uuid_t on Debian */
 
 #define RM_ADLER32_MODULUS          65521L      /* biggest prime int less than 2^16 */
 #define RM_FASTCHECK_MODULUS        65536L      /* 2^16, this makes rolling calculation possible */
@@ -177,43 +178,45 @@ enum rm_error {
     RM_ERR_RENAME_TMP_Z = 38,
     RM_ERR_MEM = 39,
     RM_ERR_CHDIR = 40,
-    RM_ERR_GETCWD = 41,
-    RM_ERR_TOO_MUCH_REQUESTED = 42,
-    RM_ERR_FERROR = 43,
-    RM_ERR_FEOF = 44,
-    RM_ERR_FSEEK = 45,
-    RM_ERR_RX = 46,
-    RM_ERR_TX = 47,
-    RM_ERR_TX_RAW = 48,
-    RM_ERR_TX_ZERO_DIFF = 49,
-    RM_ERR_TX_TAIL = 50,
-    RM_ERR_TX_REF = 51,
-    RM_ERR_FILE = 52,
-    RM_ERR_DIR = 53,
-    RM_ERR_SETSID = 54,
-    RM_ERR_FORK = 55,
-    RM_ERR_ARG = 56,
-    RM_ERR_QUEUE_NOT_EMPTY = 57,
-    RM_ERR_LAUNCH_WORKER = 58,
-    RM_ERR_WORKQUEUE_CREATE = 59,
-    RM_ERR_WORKQUEUE_STOP = 60,
-    RM_ERR_GETADDRINFO = 61,
-    RM_ERR_GETPEERNAME = 62,
-    RM_ERR_CONNECT_GEN_ERR = 63,
-    RM_ERR_CONNECT_TIMEOUT = 64,
-    RM_ERR_CONNECT_REFUSED = 65,
-    RM_ERR_CONNECT_HOSTUNREACH = 66,
-    RM_ERR_MSG_PT_UNKNOWN = 67,
-    RM_ERR_EOF = 68,
-    RM_ERR_CH_CH_TX_THREAD = 69,
-    RM_ERR_CH_CH_RX_THREAD = 70,
-    RM_ERR_Y_NULL = 71,
-    RM_ERR_Y_Z_SYNC = 72,
-    RM_ERR_BLOCK_SIZE = 73,
-    RM_ERR_RESULT_F_NAME = 74,
-    RM_ERR_BUSY = 75,
-    RM_ERR_UNKNOWN_ERROR = 76
-    /* max number of error limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
+    RM_ERR_CHDIR_Y = 41,
+    RM_ERR_CHDIR_Z = 42,
+    RM_ERR_GETCWD = 43,
+    RM_ERR_TOO_MUCH_REQUESTED = 44,
+    RM_ERR_FERROR = 45,
+    RM_ERR_FEOF = 46,
+    RM_ERR_FSEEK = 47,
+    RM_ERR_RX = 48,
+    RM_ERR_TX = 49,
+    RM_ERR_TX_RAW = 50,
+    RM_ERR_TX_ZERO_DIFF = 51,
+    RM_ERR_TX_TAIL = 52,
+    RM_ERR_TX_REF = 53,
+    RM_ERR_FILE = 54,
+    RM_ERR_DIR = 55,
+    RM_ERR_SETSID = 56,
+    RM_ERR_FORK = 57,
+    RM_ERR_ARG = 58,
+    RM_ERR_QUEUE_NOT_EMPTY = 59,
+    RM_ERR_LAUNCH_WORKER = 60,
+    RM_ERR_WORKQUEUE_CREATE = 61,
+    RM_ERR_WORKQUEUE_STOP = 62,
+    RM_ERR_GETADDRINFO = 63,
+    RM_ERR_GETPEERNAME = 64,
+    RM_ERR_CONNECT_GEN_ERR = 65,
+    RM_ERR_CONNECT_TIMEOUT = 66,
+    RM_ERR_CONNECT_REFUSED = 67,
+    RM_ERR_CONNECT_HOSTUNREACH = 68,
+    RM_ERR_MSG_PT_UNKNOWN = 69,
+    RM_ERR_EOF = 70,
+    RM_ERR_CH_CH_TX_THREAD = 71,
+    RM_ERR_CH_CH_RX_THREAD = 72,
+    RM_ERR_Y_NULL = 73,
+    RM_ERR_Y_Z_SYNC = 74,
+    RM_ERR_BLOCK_SIZE = 75,
+    RM_ERR_RESULT_F_NAME = 76,
+    RM_ERR_BUSY = 77,
+    RM_ERR_UNKNOWN_ERROR = 78
+    /* max error code limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 
 enum rm_io_direction {

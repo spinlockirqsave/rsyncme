@@ -65,6 +65,8 @@ void* rm_do_msg_push_rx(void* arg) {
 	struct rm_work* work = (struct rm_work*) arg;
 	msg_push = (struct rm_msg_push*) work->msg;
 
+	RM_LOG_INFO("[%s] [0]: work started in thread [%llu]", rm_work_type_str[work->task], rm_gettid());
+
 	s = rm_session_create(RM_PUSH_RX);
 	if (s == NULL) {
 		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, NULL) != RM_ERR_OK) {	/* send ACK explaining error */
@@ -76,7 +78,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	uuid_unparse(s->id, s->ssid2);
 	RM_LOG_INFO("[%s] [1]: their ssid [%s] -> our ssid [%s]", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
-	err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);
+	err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);									/* validate, change dir to result's path */
 	if (err != RM_ERR_OK) {
 		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, s) != RM_ERR_OK) {							/* send ACK with error */
 			ack_tx_err = 1;

@@ -12,7 +12,7 @@
 
 void rm_session_push_rx_init(struct rm_session_push_rx *prvt)
 {
-	memset(prvt, 0, sizeof(*prvt));
+	memset(prvt, 0, sizeof(struct rm_session_push_rx));
 	TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
 	pthread_mutex_init(&prvt->rx_delta_e_queue_mutex, NULL);
 	pthread_cond_init(&prvt->rx_delta_e_queue_signal, NULL);
@@ -44,7 +44,7 @@ void rm_session_push_rx_free(struct rm_session_push_rx *prvt)
 
 void rm_session_push_tx_init(struct rm_session_push_tx *prvt)
 {
-	memset(prvt, 0, sizeof(*prvt));
+	memset(prvt, 0, sizeof(struct rm_session_push_tx));
 	rm_session_push_local_init(&prvt->session_local);
 	prvt->session_local.delta_rx_f = rm_rx_tx_delta_element;
 	//pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);	/* moved to it's session_local object */
@@ -62,7 +62,7 @@ void rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 
 void rm_session_push_local_init(struct rm_session_push_local *prvt)
 {
-	memset(prvt, 0, sizeof(*prvt));
+	memset(prvt, 0, sizeof(struct rm_session_push_local));
 	pthread_mutex_init(&prvt->h_mutex, NULL);
 	TWINIT_LIST_HEAD(&prvt->tx_delta_e_queue);
 	pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
@@ -111,6 +111,18 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 			push_rx->fd = fd;
 			s->f_x = NULL;
 			s->f_x_sz = push_rx->msg_push->bytes;										/* bytes to RX, size of file to receive */
+			if (m->y_sz > 0) {
+				strncpy(s->f_y_basename, m->y, RM_UNIQUE_STRING_LEN);					/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
+				strncpy(s->f_y_dirname, m->y, RM_UNIQUE_STRING_LEN);
+				s->f_y_bname = basename(s->f_y_basename);
+				s->f_y_dname = dirname(s->f_y_dirname);
+			}
+			if (m->z_sz > 0) {
+				strncpy(s->f_z_basename, m->z, RM_UNIQUE_STRING_LEN);					/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
+				strncpy(s->f_z_dirname, m->z, RM_UNIQUE_STRING_LEN);
+				s->f_z_bname = basename(s->f_z_basename);
+				s->f_z_dname = dirname(s->f_z_dirname);
+			}
 			if ((m->hdr->flags & RM_BIT_6) && (m->z_sz == 0 || (strcmp(m->y, m->z) == 0))) { /* if do not delete @y after @z has been synced, but @z name is not given or is same as @y - error */
 				return RM_ERR_Y_Z_SYNC;
 			}
@@ -124,7 +136,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 				if (fstat(fd_y, &fs) != 0)
 					return RM_ERR_FSTAT_Y;
 				y_sz = fs.st_size;
-				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checkums to be sent to remote transmitter */
+				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checksums to be sent to remote transmitter */
 			} else {																	/* s->f_y is NULL */
 				push_rx->ch_ch_n = 0;													/* no checksums to send... */
 				if (m->hdr->flags & RM_BIT_4) {                                         /* force creation if @y doesn't exist? */
@@ -140,6 +152,15 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 				} else {
 					return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
 				}
+			}
+			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* change working directory */
+				return RM_ERR_GETCWD;
+			if (s->f_z != NULL) {
+				if (chdir(s->f_z_dname) == -1)
+					return RM_ERR_CHDIR_Z;
+			} else {
+				if (chdir(s->f_y_dname) == -1)
+					return RM_ERR_CHDIR_Y;
 			}
 			rm_md5((unsigned char*) m->y, m->y_sz, s->hash.data);
 			goto exit;
@@ -179,13 +200,13 @@ enum rm_error rm_session_assign_from_msg_pull(struct rm_session *s, const struct
 /* TODO: generate GUID here */
 struct rm_session *rm_session_create(enum rm_session_type t)
 {
-	struct rm_session   *s;
-	uuid_t              uuid;
+	struct rm_session	*s = NULL;
+	uuid_t				uuid = {0};
 
 	s = malloc(sizeof *s);
 	if (s == NULL)
 		return NULL;
-	memset(s, 0, sizeof(*s));
+	memset(s, 0, sizeof(struct rm_session));
 	TWINIT_HLIST_NODE(&s->hlink);
 	TWINIT_LIST_HEAD(&s->link);
 	s->type = t;
@@ -762,7 +783,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 				delta_e.raw_bytes = malloc(delta_e.raw_bytes_n);															/* malloc buffer */
 				if (delta_e.raw_bytes == NULL)
 					goto err_exit;
-				if (rm_tcp_rx(fd, (void*) delta_e.raw_bytes, delta_e.raw_bytes_n) != RM_ERR_OK)							/* rx bytes over TCP connection */
+				if (rm_tcp_rx(fd, (void*) delta_e.raw_bytes, delta_e.raw_bytes_n) != RM_ERR_OK)								/* rx bytes over TCP connection */
 					goto err_exit;
 				break;
 
@@ -799,12 +820,12 @@ done:
 
 	pthread_mutex_lock(&s->mutex);
 
-	if (fd != -1) {							/* close accepted socket connection */
+	if (fd != -1) {																											/* close accepted socket connection */
 		close(fd);
 		fd = -1;
 	}
 	if (prvt_rx->delta_fd != -1) {
-		close(prvt_rx->delta_fd);				/* close listening socket */
+		close(prvt_rx->delta_fd);																							/* close listening socket */
 		prvt_rx->delta_fd = -1;
 	}
 
@@ -812,20 +833,26 @@ done:
 	assert(rec_ctx.delta_tail_n == 0 || rec_ctx.delta_tail_n == 1);
 	memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
 	prvt_rx->delta_rx_status = RM_RX_STATUS_OK;
+
 	pthread_mutex_unlock(&s->mutex);
+
 	return NULL; /* this thread must be created in joinable state */
 
 err_exit:
+
 	pthread_mutex_lock(&s->mutex);
-	if (fd != -1) {							/* close accepted socket connection */
+
+	if (fd != -1) {																											/* close accepted socket connection */
 		close(fd);
 		fd = -1;
 	}
 	if (prvt_rx->delta_fd != -1) {
-		close(prvt_rx->delta_fd);				/* close listening socket */
+		close(prvt_rx->delta_fd);																							/* close listening socket */
 		prvt_rx->delta_fd = -1;
 	}
 	prvt_rx->delta_rx_status = status;
+
 	pthread_mutex_unlock(&s->mutex);
+
 	return NULL; /* this thread must be created in joinable state */
 }
