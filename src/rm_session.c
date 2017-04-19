@@ -793,6 +793,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			case RM_DELTA_ELEMENT_TAIL:																						/* copy referenced bytes from @f_y to @f_z */
 				if (rm_tcp_rx(fd, (void*) &delta_e.ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* rx ref over TCP connection */
 					goto err_exit;
+				delta_e.raw_bytes_n = bytes_to_rx;																			/* by definition */
 				break;
 
 			case RM_DELTA_ELEMENT_RAW_BYTES:																				/* copy raw bytes to @f_z directly */
