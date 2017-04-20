@@ -502,7 +502,6 @@ void *rm_session_delta_tx_f(void *arg)
 	pthread_mutex_unlock(&s->mutex);
 
 
-	sleep(15);
 	err = rm_rolling_ch_proc(s, h, h_mutex, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
 	if (err != RM_ERR_OK)
 		status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
@@ -774,8 +773,9 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	delta_pack.rec_ctx = &rec_ctx;
 
 	/* RX delta over TCP using delta protocol */
+	struct rm_delta_e delta_e;
 	while (bytes_to_rx > 0) {
-		struct rm_delta_e delta_e;
+		memset(&delta_e, 0, sizeof(struct rm_delta_e));
 
 		/* RX delta over TCP using delta protocol */
 		if (rm_tcp_rx(fd, (void*) &delta_e.type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK) {							/* rx delta type over TCP connection */
