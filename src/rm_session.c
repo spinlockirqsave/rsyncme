@@ -432,6 +432,7 @@ void *rm_session_ch_ch_rx_f(void *arg)
 			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
 		}
+		RM_LOG_INFO("[RX]: checksum [%u]", e->data.ch_ch.f_ch);
 
 		e->data.ref = entries_n;														/* assign offset */
 		TWINIT_HLIST_NODE(&e->hlink);
@@ -781,6 +782,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			status = RM_RX_STATUS_DELTA_RX_TCP_FAIL;
 			goto err_exit;
 		}
+		RM_LOG_INFO("[RX]: delta type[%u]", delta_e.type);
 
 		switch (delta_e.type) {
 

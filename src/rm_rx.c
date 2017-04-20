@@ -386,6 +386,7 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 	if (delta_e == NULL || ctx == NULL)
 		return RM_ERR_BAD_CALL;
 	// z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
+	RM_LOG_INFO("[TX]: delta type[%u]", delta_e->type);
 
 	/* TX delta over TCP using delta protocol */
 	if (rm_tcp_tx(fd, (void*) &delta_e->type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK)							/* tx delta type over TCP connection */
