@@ -297,9 +297,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 	struct rm_msg_push              *msg_push = NULL;
 	size_t                          L = 0;
 	FILE                            *f_y = NULL;   /* file for taking non-overlapping blocks */
-	FILE                            *f_z = NULL;   /* result */
 	int                             fd_y = -1;
-	uint8_t                         reference_file_exist = 0;
 	struct stat                     fs = {0};
 	size_t                          y_sz = 0, blocks_n_exp = 0, blocks_n = 0;
 	int                             fd = -1;
@@ -314,75 +312,51 @@ void *rm_session_ch_ch_tx_f(void *arg)
 			rm_push_rx = (struct rm_session_push_rx*) s->prvt;
 			if (rm_push_rx == NULL) {
 				err = RM_ERR_RX;
-				goto err_exit;
+				goto done;
 			}
 			msg_push = rm_push_rx->msg_push;
 			fd = rm_push_rx->fd;																				/* TODO use separate socket for checksums TX? (ch_ch_port in receiver?) */
 			L = rm_push_rx->msg_push->L;
 			f_y = s->f_y;
 			if (f_y != NULL) {                                                                                  /* if reference file exists, split it and calc checksums */
-				reference_file_exist = 1;
 				fd_y = fileno(f_y);
 				memset(&fs, 0, sizeof(fs));
 				if (fstat(fd_y, &fs) != 0) {
 					err = RM_ERR_FSTAT_Y;
-					goto err_exit;
+					goto done;
 				}
 				y_sz = fs.st_size;
 
 				blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);                                                   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
 				if (rm_rx_insert_nonoverlapping_ch_ch_ref(fd, f_y, msg_push->y, h, L, rm_tcp_tx_ch_ch, blocks_n_exp, &blocks_n) != RM_ERR_OK) {  /* tx ch_ch only, no ref */
 					err = RM_ERR_NONOVERLAPPING_INSERT;
-					goto  err_exit;
+					goto  done;
 				}
 				assert(blocks_n == blocks_n_exp && "rm_do_msg_push_rx ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
 				if (RM_LOGLEVEL > RM_LOGLEVEL_NORMAL)
 					RM_LOG_INFO("[%s] -> [%s], [%u]: TX-ed [%zu] nonoverlapping checksum elements", s->ssid1, s->ssid2, s->hashed_hash, blocks_n_exp);
 			} else {
-				if (msg_push->hdr->flags & RM_BIT_4) {                                                          /* force creation if @y doesn't exist? */
-					if (msg_push->z != NULL) {                                                                  /* use different name? */
-						f_z = fopen(msg_push->z, "w+b");
-					} else {
-						f_z = fopen(msg_push->y, "w+b");
-					}
-					if (f_z == NULL) {
-						err = RM_ERR_OPEN_Z;
-						goto err_exit;
-					}
-					clock_gettime(CLOCK_REALTIME, &s->clk_realtime_start);
-					s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
-					s->rec_ctx.method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
-					/* expected rec_rec_ctx.->delta_raw_n = 1; */
-					/* expected rec_ctx->rec_by_raw = x_sz; */
-					goto done;
-				} else {
-					err = RM_ERR_OPEN_Y;
-					goto err_exit;
-				}
+				goto done;																						/* no checkums to TX */
 			}
 			break;
+
 		case RM_PULL_RX:
 			rm_pull_rx = (struct rm_session_pull_rx*) s->prvt;
 			if (rm_pull_rx == NULL) {
 				err = RM_ERR_RX;
-				goto err_exit;
+				goto done;
 			}
 			fd = rm_pull_rx->fd;
 			break;
+
 		default:
 			err = RM_ERR_ARG;
-			goto err_exit;
+			break;
 	}
 
-err_exit:
-	/* TODO set session's status error */
-	if (reference_file_exist == 1) {    /* TODO */
-	}
 done:
-	if (reference_file_exist == 1) {    /* TODO */
-	}
 	pthread_mutex_lock(&s->mutex);
-	rm_push_rx->ch_ch_tx_status = err;
+	rm_push_rx->ch_ch_tx_status = err;																			/* set session's status error */
 	pthread_mutex_unlock(&s->mutex);
 	return NULL;
 }
@@ -736,6 +710,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	bytes_to_rx = prvt_rx->msg_push->bytes;
 	f_y         = s->f_y;
 	y_sz		= s->f_y_sz;
+	f_z			= s->f_z;
 	listen_fd	= prvt_rx->delta_fd;
 	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
 
