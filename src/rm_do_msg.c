@@ -58,7 +58,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	struct rm_session				*s = NULL;
 	struct rm_session_push_rx		*prvt = NULL;
 	struct rm_msg_push				*msg_push = NULL;
-	uint8_t							ack_tx_err = 0;																/* set to 1 if ACK tx failed */
+	uint8_t							ack_tx_err = 0;															/* set to 1 if ACK tx failed */
 	int								fd_z = -1;
 	struct stat                     fs = {0};
 
@@ -127,16 +127,17 @@ void* rm_do_msg_push_rx(void* arg) {
 		err = RM_ERR_DELTA_RX_THREAD;
 	}
 
-	//done:
-
-	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
 
 	if (s->f_y != NULL) {
 		fclose(s->f_y);
 		s->f_y = NULL;
 	}
 
-	if (s->f_z != NULL) {																										/* fflush and close f_z */
+	if (prvt->msg_push->hdr->flags & RM_BIT_4)																/* force creation if @y doesn't exist? */
+		goto done;
+
+	if (s->f_z != NULL) {																					/* fflush and close f_z */
 		fflush(s->f_z);
 		fd_z = fileno(s->f_z);
 		memset(&fs, 0, sizeof(fs));
@@ -148,7 +149,7 @@ void* rm_do_msg_push_rx(void* arg) {
 		s->f_z = NULL;
 	}
 
-	if (prvt->msg_push->z_sz > 0) {																						/* use different name? */
+	if (prvt->msg_push->z_sz > 0) {																			/* use different name? */
 		if (rename(s->f_z_name, prvt->msg_push->z) == -1) {
 			err = RM_ERR_RENAME_TMP_Z;
 			goto fail;
@@ -160,15 +161,19 @@ void* rm_do_msg_push_rx(void* arg) {
 		}
 	}
 
+done:
+
+	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+
 	if (s != NULL) {
-		rm_session_free(s); /* frees msg allocated for work as well */
+		rm_session_free(s);																					/* frees msg allocated for work as well */
 		s = NULL;
-		work->msg = NULL;   /* do not free msg again in work dtor */
+		work->msg = NULL;																					/* do not free msg again in work dtor */
 	}
 	return NULL;
 
 fail:
-	if (s == NULL) {																					/* session failed to create */
+	if (s == NULL) {																						/* session failed to create */
 		RM_LOG_ERR("[%s] [FAIL]: ERR [%u], failed to create session", rm_work_type_str[work->task], err);
 	}
 	switch (err) {
@@ -181,7 +186,7 @@ fail:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
-		case RM_ERR_WRITE:																				/* error sending RM_MSG_PUSH_ACK */
+		case RM_ERR_WRITE:																					/* error sending RM_MSG_PUSH_ACK */
 			if (s != NULL) {
 				RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : error sending PUSH ack", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			} else {
@@ -192,13 +197,13 @@ fail:
 		default:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : default", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 	}
-	if (ack_tx_err == 1) {																				/* failed to send ACK */
+	if (ack_tx_err == 1) {																					/* failed to send ACK */
 		/* TODO reschedule the job? */
 	}
 	if (s != NULL) {
 		rm_session_free(s);
 		s = NULL;
-		work->msg = NULL;   /* do not free msg again in work dtor */
+		work->msg = NULL;																					/* do not free msg again in work dtor */
 	}
 	return NULL;
 }

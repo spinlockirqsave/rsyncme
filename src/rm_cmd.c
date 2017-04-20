@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 						goto fail;
 					case RM_ERR_OPEN_Y:
 						fprintf(stderr, "Error, request can't be handled by remote peer");
-						fprintf(stderr, " (can't open @y file)\n");
+						fprintf(stderr, " (can't open @y file)\nDoes [%s] exist on the receiver [%s]?\n", y, addr);
 						goto fail;
 					case RM_ERR_OPEN_TMP:
 						fprintf(stderr, "Error, request can't be handled by remote peer");
