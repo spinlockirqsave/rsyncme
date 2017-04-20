@@ -82,18 +82,18 @@
 /* @brief   Strong checksum struct. MD5. */
 struct rm_md5
 {
-    unsigned char data[RM_STRONG_CHECK_BYTES];
+	unsigned char data[RM_STRONG_CHECK_BYTES];
 };
 
 /* @brief   Checksum checksum struct. */
 struct rm_ch_ch
 {
-    uint32_t        f_ch;   /* Fast and cheap 32-bit rolling checksum,
-                             * MUST be cheap to compute at every byte offset */
-    struct rm_md5   s_ch;   /* Strong and computationally expensive 128-bit checksum,
-                             * MUST have a very low probability of collision.
-                             * This is computed only when fast & cheap checksum matches
-                             * one of the fast & cheap checksums in ch_ch vector. */
+	uint32_t        f_ch;   /* Fast and cheap 32-bit rolling checksum,
+							 * MUST be cheap to compute at every byte offset */
+	struct rm_md5   s_ch;   /* Strong and computationally expensive 128-bit checksum,
+							 * MUST have a very low probability of collision.
+							 * This is computed only when fast & cheap checksum matches
+							 * one of the fast & cheap checksums in ch_ch vector. */
 };
 
 /* @brief   Checksum checksum struct used for remote/local syncs.
@@ -101,58 +101,58 @@ struct rm_ch_ch
  *          in file these checksums correspond to. */
 struct rm_ch_ch_ref
 {
-    struct rm_ch_ch     ch_ch;
-    size_t              ref;    /* The reference to location in B's F_B file
-                                 * (taken from ch_ch list), block number */
+	struct rm_ch_ch     ch_ch;
+	size_t              ref;    /* The reference to location in B's F_B file
+								 * (taken from ch_ch list), block number */
 };
 
 /* @brief   Checksum checksum struct used for local syncs. */
 struct rm_ch_ch_ref_link
 {
-    struct rm_ch_ch_ref data;
-    struct twlist_head  link;
+	struct rm_ch_ch_ref data;
+	struct twlist_head  link;
 };
 
 /* @brief   Checksum checksum struct used for remote/local syncs. */
 struct rm_ch_ch_ref_hlink
 {
-    struct rm_ch_ch_ref data;
-    struct twhlist_node hlink;
+	struct rm_ch_ch_ref data;
+	struct twhlist_node hlink;
 };
 
 enum RM_DELTA_ELEMENT_TYPE
 {
-    RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
-    RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes. Bytes contained in delta raw element are always contiguous bytes from @x, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
-    RM_DELTA_ELEMENT_ZERO_DIFF, /* sent always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
-                                   when L => f_x.sz and checksums computed on the whole file match,
-                                   means files are the same. raw_bytes_n set to file size */
-    RM_DELTA_ELEMENT_TAIL       /* match is found on the tail, bytes matched(raw_bytes_n set) < L < file_sz,
-                                 * raw_bytes_n set to number of bytes that matched */
+	RM_DELTA_ELEMENT_REFERENCE, /* reference to block */
+	RM_DELTA_ELEMENT_RAW_BYTES, /* data bytes. Bytes contained in delta raw element are always contiguous bytes from @x, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
+	RM_DELTA_ELEMENT_ZERO_DIFF, /* sent always as single element in delta vector, bytes matched(raw_bytes_n set) == file_sz <= L
+								   when L => f_x.sz and checksums computed on the whole file match,
+								   means files are the same. raw_bytes_n set to file size */
+	RM_DELTA_ELEMENT_TAIL       /* match is found on the tail, bytes matched(raw_bytes_n set) < L < file_sz,
+								 * raw_bytes_n set to number of bytes that matched */
 };
 
 /* HIGH LEVEL API
  * Delta vector element. As created from bytes on wire. */
 struct rm_delta_e
 {
-    enum RM_DELTA_ELEMENT_TYPE  type;
-    size_t                      ref;
-    unsigned char               *raw_bytes;
-    size_t                      raw_bytes_n;
-    struct twlist_head          link;           /* to link me in list/stack/queue */
+	enum RM_DELTA_ELEMENT_TYPE  type;
+	size_t                      ref;
+	unsigned char               *raw_bytes;
+	size_t                      raw_bytes_n;
+	struct twlist_head          link;           /* to link me in list/stack/queue */
 };
 enum rm_tx_status
 {
-    RM_TX_STATUS_OK                 = 0,    /* WANTED */
-    RM_TX_STATUS_ROLLING_PROC_FAIL  = 1     /* error in rolling checksum procedure */
+	RM_TX_STATUS_OK                 = 0,    /* WANTED */
+	RM_TX_STATUS_ROLLING_PROC_FAIL  = 1     /* error in rolling checksum procedure */
 };
 enum rm_rx_status
 {
-    RM_RX_STATUS_OK                 = 0,    /* most wanted */
-    RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
+	RM_RX_STATUS_OK                 = 0,    /* most wanted */
+	RM_RX_STATUS_INTERNAL_ERR       = 1,    /* bad call, NULL session, prvt session or file pointers */
 	RM_RX_STATUS_DELTA_RX_ACCEPT_FAIL	= 2,	/* accept on delta socket error */
 	RM_RX_STATUS_DELTA_RX_TCP_FAIL	= 3,	/* error while reading socket in rm_session_delta_rx_f_remote */
-    RM_RX_STATUS_DELTA_PROC_FAIL    = 4,	/* error processing delta element */
+	RM_RX_STATUS_DELTA_PROC_FAIL    = 4,	/* error processing delta element */
 	RM_RX_STATUS_CH_CH_RX_TCP_FAIL	= 5,	/* error while reading socket in rm_session_ch_ch_rx_f */
 	RM_RX_STATUS_CH_CH_RX_MEM		= 6,	/* malloc failed when attempting to get memory for checksum */
 	RM_RX_STATUS_CONNECT_TIMEOUT	= 7,
@@ -162,25 +162,25 @@ enum rm_rx_status
 };
 enum rm_reconstruct_method
 {
-    RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION  = 0,    /* usual */
-    RM_RECONSTRUCT_METHOD_COPY_BUFFERED         = 1     /* @y doesn't exist and --forced flag is specified, rolling proc is not used, file is simply copied,
-                                                           rec_ctx->delta_raw_n == 1, rec_ctx->rec_by_raw == file size */
+	RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION  = 0,    /* usual */
+	RM_RECONSTRUCT_METHOD_COPY_BUFFERED         = 1     /* @y doesn't exist and --forced flag is specified, rolling proc is not used, file is simply copied,
+														   rec_ctx->delta_raw_n == 1, rec_ctx->rec_by_raw == file size */
 };
 struct rm_delta_reconstruct_ctx
 {
-    enum rm_reconstruct_method  method; /* updated by rx thread */
-    size_t                      rec_by_ref, rec_by_raw,
-                                delta_ref_n, delta_raw_n,
-                                rec_by_tail, rec_by_zero_diff,
-                                delta_tail_n, delta_zero_diff_n; /* updated by rx thread */
-    size_t                      L;
-    size_t                      copy_all_threshold; /* if file is less than this, it will be sent as ZERO DIFF element, updated by main thread (cmd)*/
-    size_t                      copy_tail_threshold; /* if less than this bytes have left to process, they will be sent as raw delta element */
-    size_t                      send_threshold; /* limit on the value of bytes to be sent in a single delta RAW element */
-    uint8_t                     copy_all_threshold_fired, copy_tail_threshold_fired; /* updated by tx thread */
-    struct timespec             time_real; /* updated by main thread (tx_local_push)*/
-    double                      time_cpu;
-    size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
+	enum rm_reconstruct_method  method; /* updated by rx thread */
+	size_t                      rec_by_ref, rec_by_raw,
+								delta_ref_n, delta_raw_n,
+								rec_by_tail, rec_by_zero_diff,
+								delta_tail_n, delta_zero_diff_n; /* updated by rx thread */
+	size_t                      L;
+	size_t                      copy_all_threshold; /* if file is less than this, it will be sent as ZERO DIFF element, updated by main thread (cmd)*/
+	size_t                      copy_tail_threshold; /* if less than this bytes have left to process, they will be sent as raw delta element */
+	size_t                      send_threshold; /* limit on the value of bytes to be sent in a single delta RAW element */
+	uint8_t                     copy_all_threshold_fired, copy_tail_threshold_fired; /* updated by tx thread */
+	struct timespec             time_real; /* updated by main thread (tx_local_push)*/
+	double                      time_cpu;
+	size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
 };
 
 /* @brief   Calculate similar to adler32 fast checksum on a given
@@ -232,14 +232,14 @@ rm_adler32_2(uint32_t adler, const unsigned char *data, size_t len);
  *          of byte k+L using RM_ADLER32_MODULUS. */
 uint32_t
 rm_adler32_roll(uint32_t adler, unsigned char a_k,
-        unsigned char a_kL, size_t L);
+		unsigned char a_kL, size_t L);
 /* @brief   Rolls fast checksum @adler computed on bytes [k,k+L-1]
  *          to [k+1,k+L].
  * @details	Updates @adler by removal of byte k and addition
  *          of byte k+L using RM_FASTCHECK_MODULUS. */
 uint32_t
 rm_fast_check_roll(uint32_t adler, unsigned char a_k,
-        unsigned char a_kL, size_t L);
+		unsigned char a_kL, size_t L);
 
 uint32_t
 rm_fast_check_roll_tail(uint32_t adler, unsigned char a_k, size_t L);
@@ -339,7 +339,7 @@ struct rm_session;
  *          RM_ERR_TX_ZERO_DIFF - zero difference tx failed */
 enum rm_error
 rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_mutex_t *h_mutex,
-        FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4,5)));
+		FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4,5)));
 
 /* @brief   Start execution of @f function in new thread.
  * @details Thread is started in @detachstate with @arg argument passed to @f.
@@ -351,8 +351,8 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate);
 
 struct rm_roll_proc_cb_arg
 {
-    struct rm_delta_e       *delta_e;
-    const struct rm_session *s;
+	struct rm_delta_e       *delta_e;
+	const struct rm_session *s;
 };
 /* @brief   Tx delta element locally (RM_PUSH_LOCAL).
  * @details Rolling proc callback. Called synchronously.

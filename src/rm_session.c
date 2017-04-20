@@ -114,14 +114,14 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 			s->f_x = NULL;
 			s->f_x_sz = push_rx->msg_push->bytes;										/* bytes to RX, size of file to receive */
 			if (m->y_sz > 0) {
-				strncpy(s->f_y_basename, m->y, RM_UNIQUE_STRING_LEN);					/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
-				strncpy(s->f_y_dirname, m->y, RM_UNIQUE_STRING_LEN);
+				strncpy(s->f_y_basename, m->y, PATH_MAX);								/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
+				strncpy(s->f_y_dirname, m->y, PATH_MAX);
 				s->f_y_bname = basename(s->f_y_basename);
 				s->f_y_dname = dirname(s->f_y_dirname);
 			}
 			if (m->z_sz > 0) {
-				strncpy(s->f_z_basename, m->z, RM_UNIQUE_STRING_LEN);					/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
-				strncpy(s->f_z_dirname, m->z, RM_UNIQUE_STRING_LEN);
+				strncpy(s->f_z_basename, m->z, PATH_MAX);								/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
+				strncpy(s->f_z_dirname, m->z, PATH_MAX);
 				s->f_z_bname = basename(s->f_z_basename);
 				s->f_z_dname = dirname(s->f_z_dirname);
 			}

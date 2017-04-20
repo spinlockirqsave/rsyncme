@@ -103,7 +103,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 		cli_port = ntohs(cli_addr_in6->sin6_port);
 	}
 	if (cli_addr_str == NULL) {
-		RM_LOG_ERR("Can't convert binary host address to presentation format, [%s]", strerror(errno));
+		RM_LOG_ERR("core: Can't convert binary host address to presentation format, [%s]", strerror(errno));
 	}
 	peer_len = sizeof peer_addr;
 	getpeername(fd, (struct sockaddr*)&peer_addr, &peer_len);   /* get their's side of TCP connection */
@@ -117,36 +117,37 @@ do_it_all(int fd, struct rsyncme* rm) {
 		peer_port = ntohs(peer_addr_in6->sin6_port);
 	}
 	if (peer_addr_str == NULL) {
-		RM_LOG_ERR("Can't convert binary peer's address to presentation format, [%s]", strerror(errno));
+		RM_LOG_ERR("core: Can't convert binary peer's address to presentation format, [%s]", strerror(errno));
 	}
 	if (peer_addr_str == NULL) {
 		if (cli_addr_str == NULL) {
-			RM_LOG_INFO("Incoming connection, port [%u], handled on local port [%u]", peer_port, cli_port);
+			RM_LOG_INFO("core: Incoming connection, port [%u], handled on local port [%u]", peer_port, cli_port);
 		} else {
 			RM_LOG_INFO("Incoming connection, port [%u], handled on local interface [%s] port [%u]", peer_port, cli_addr_str, cli_port);
 		}
 	} else {
 		if (cli_addr_str == NULL) {
-			RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local port [%u]", peer_addr_str, peer_port, cli_port);
+			RM_LOG_INFO("core: Incoming connection, peer [%s] port [%u], handled on local port [%u]", peer_addr_str, peer_port, cli_port);
 		} else {
-			RM_LOG_INFO("Incoming connection, peer [%s] port [%u], handled on local interface [%s] port [%u]", peer_addr_str, peer_port, cli_addr_str, cli_port);
+			RM_LOG_INFO("core: Incoming connection, peer [%s] port [%u], handled on local interface [%s] port [%u]", peer_addr_str, peer_port, cli_addr_str, cli_port);
 		}
 	}
 
 	if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
-		RM_LOG_ALERT("%s", "Authentication failed.\n");
+		RM_LOG_ALERT("%s", "core: Authentication failed.\n");
+		err = RM_ERR_AUTH;
 		goto err_exit;
 	}
 
 	hdr = malloc(sizeof(*hdr));
 	if (hdr == NULL) {
-		RM_LOG_CRIT("%s", "Couldn't allocate message header. Not enough memory");
+		RM_LOG_CRIT("%s", "core: Couldn't allocate message header. Not enough memory");
 		goto err_exit;
 	}
 	to_read = rm_calc_msg_hdr_len(hdr);
 	buf = malloc(to_read);																						/* buffer for incoming message header */
 	if (buf == NULL) {
-		RM_LOG_CRIT("%s", "Couldn't allocate buffer for the message header. Not enough memory");
+		RM_LOG_CRIT("%s", "core: Couldn't allocate buffer for the message header. Not enough memory");
 		goto err_exit;
 	}
 
@@ -154,33 +155,33 @@ do_it_all(int fd, struct rsyncme* rm) {
 	err = rm_tcp_read(fd, buf, to_read);																		/* wait for incoming header */
 	if (err == RM_ERR_EOF) {
 		if (peer_addr_str != NULL) {
-			RM_LOG_INFO("Closing connection in passive mode, peer [%s] port [%u]", peer_addr_str, peer_port);
+			RM_LOG_INFO("core: Closing connection in passive mode, peer [%s] port [%u]", peer_addr_str, peer_port);
 		} else {
-			RM_LOG_INFO("Closing connection in passive mode, peer port [%u]", peer_port);
+			RM_LOG_INFO("core: Closing connection in passive mode, peer port [%u]", peer_port);
 		}
 		goto err_exit;
 	}
 	if (err == RM_ERR_READ) {
-		RM_LOG_PERR("%s", "Read failed on TCP control socket");
+		RM_LOG_PERR("%s", "core: Read failed on TCP control socket");
 		goto err_exit;
 	}
 
 	RM_LOG_INFO("core: Validating header from peer [%s] port [%u]", peer_addr_str, peer_port);
 	err = rm_core_tcp_msg_hdr_validate(buf, to_read);															/* validate the potential header of the message: check hash and pt, read_n can't be < 0 in call to validate */
 	if (err != RM_ERR_OK) {
-		RM_LOG_ERR("%s", "TCP control socket: bad message");
+		RM_LOG_ERR("%s", "core: TCP control socket: bad message");
 		switch (err) {
 
 			case RM_ERR_FAIL:
-				RM_LOG_ERR("%s", "Message corrupted: invalid hash or message too short");
+				RM_LOG_ERR("%s", "core: Message corrupted: invalid hash or message too short");
 				break;
 
 			case RM_ERR_MSG_PT_UNKNOWN:
-				RM_LOG_ERR("%s", "Unknown message type");
+				RM_LOG_ERR("%s", "core: Unknown message type");
 				break;
 
 			default:
-				RM_LOG_ERR("%s", "Unknown error");
+				RM_LOG_ERR("%s", "core: Unknown error");
 				break;
 		}
 		goto err_exit;
@@ -199,7 +200,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 	}
 	msg = rm_deserialize_msg(pt, hdr, body_raw);
 	if (msg == NULL) {
-		RM_LOG_CRIT("%s", "Error deserializing message. Not enough memory");
+		RM_LOG_CRIT("%s", "core: Error deserializing message. Not enough memory");
 		goto err_exit;
 	}
 
@@ -208,7 +209,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 			RM_LOG_INFO("core: Enqueuing MSG_PUSH work from peer [%s] port [%u]", peer_addr_str, peer_port);
 			work = rm_work_create(RM_WORK_PROCESS_MSG_PUSH, rm, msg, fd, rm_do_msg_push_rx, rm_msg_push_dtor); /* worker takes the ownership of TCP socket and memory allocated for msg (including hdr) */
 			if (work == NULL) {
-				RM_LOG_CRIT("%s", "Couldn't allocate work. Not enough memory");
+				RM_LOG_CRIT("%s", "core: Couldn't allocate work. Not enough memory");
 				goto err_exit;
 			}
 			rm_wq_queue_work(&rm->wq, work); 
@@ -223,7 +224,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 			break;
 
 		default:
-			RM_LOG_ERR("%s", "Unknown TCP message type, this can't happen");
+			RM_LOG_ERR("%s", "core: Unknown TCP message type, this can't happen");
 			goto err_exit;
 	}
 
@@ -246,6 +247,11 @@ err_exit:
 		free(msg);
 		msg = NULL;
 	}
+
+	rm_tcp_tx_msg_ack(fd, RM_PT_MSG_ACK, err, NULL); /* send general ACK with error */
+	RM_LOG_INFO("core: TXed ACK with error [%u] to peer [%s] port [%u]", err, peer_addr_str, peer_port);
+	close(fd);
+	RM_LOG_INFO("core: Closed connection with peer [%s] port [%u]", peer_addr_str, peer_port);
 }
 
 static void rsyncme_d_usage(const char *name)
@@ -386,18 +392,18 @@ int main(int argc, char *argv[]) {
 	int reuseaddr_on = 1;
 	err = setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &reuseaddr_on, sizeof(reuseaddr_on));
 	if (err < 0) {
-		RM_LOG_ERR("%s", "Setting of SO_REUSEADDR on server's managing socket failed");
+		RM_LOG_ERR("%s", "core: Setting of SO_REUSEADDR on server's managing socket failed");
 	}
 
 	err = bind(listenfd, (struct sockaddr*)&srv_addr_in, sizeof(srv_addr_in));
 	if (err < 0) {
-		RM_LOG_PERR("%s", "Bind of server's port to managing socket failed");
+		RM_LOG_PERR("%s", "core: Bind of server's port to managing socket failed");
 		exit(EXIT_FAILURE);
 	}
 
 	status = rm_core_init(&rm);
 	if (status != RM_ERR_OK) {
-		RM_LOG_CRIT("%s", "Can't initialize the engine");
+		RM_LOG_CRIT("%s", "core: Can't initialize the engine");
 		switch (status) {
 
 			case RM_ERR_WORKQUEUE_CREATE:
@@ -409,26 +415,26 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	if (rm.wq.workers_active_n != RM_WORKERS_N) {   /* TODO CPU checking, choose optimal number of threads */
-		RM_LOG_WARN("Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
+		RM_LOG_WARN("core: Couldn't start all workers for main work queue, [%u] requested but only [%u] started", RM_WORKERS_N, rm.wq.workers_n);
 	} else {
-		RM_LOG_INFO("Main work queue started with [%u] worker threads", rm.wq.workers_n);
+		RM_LOG_INFO("core: Main work queue started with [%u] worker threads", rm.wq.workers_n);
 	}
 
 	err = listen(listenfd, RM_SERVER_LISTENQ);
 	if (err < 0) {
 		errsv = errno;
-		RM_LOG_PERR("%s", "TCP listen on server's port failed");
+		RM_LOG_PERR("%s", "core: TCP listen on server's port failed");
 		switch(errsv) {
 			case EADDRINUSE:
-				RM_LOG_ERR("%s", "Another socket is already listening on the same port");
+				RM_LOG_ERR("%s", "core: Another socket is already listening on the same port");
 			case EBADF:
-				RM_LOG_ERR("%s", "Not a valid descriptor");
+				RM_LOG_ERR("%s", "core: Not a valid descriptor");
 			case ENOTSOCK:
-				RM_LOG_ERR("%s", "Not a socket");
+				RM_LOG_ERR("%s", "core: Not a socket");
 			case EOPNOTSUPP:
-				RM_LOG_ERR("%s", "The socket is not of a type that supports the listen() call");
+				RM_LOG_ERR("%s", "core: The socket is not of a type that supports the listen() call");
 			default:
-				RM_LOG_ERR("%s", "Unknown error");
+				RM_LOG_ERR("%s", "core: Unknown error");
 		}
 		exit(EXIT_FAILURE);
 	}
@@ -436,39 +442,39 @@ int main(int argc, char *argv[]) {
 	if (ipptr == NULL) {
 		ipptr = "Unknown IP";
 	}
-	RM_LOG_INFO("Listening on address [%s], port [%u]", ipptr, ntohs(srv_addr_in.sin_port));
+	RM_LOG_INFO("core: Listening on address [%s], port [%u]", ipptr, ntohs(srv_addr_in.sin_port));
 
 	sa.sa_handler = rm_daemon_sigint_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
 	if (sigaction(SIGINT, &sa, NULL) != 0) {
-		RM_LOG_PERR("%s", "Couldn't set signal handler for SIGINT");
+		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGINT");
 	}
 	sa.sa_handler = rm_daemon_sigtstp_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
 	if (sigaction(SIGTSTP, &sa, NULL) != 0) {
-		RM_LOG_PERR("%s", "Couldn't set signal handler for SIGTSTP");
+		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGTSTP");
 	}
 	while(rm.state != RM_CORE_ST_SHUT_DOWN) {
 		cli_len = sizeof(cli_addr);
 		if ((connfd = accept(listenfd, (struct sockaddr *) &cli_addr, &cli_len)) < 0) {
 			errsv = errno;
 			if (errsv == EINTR) {
-				RM_LOG_PERR("%s", "Accept interrupted");
+				RM_LOG_PERR("%s", "core: Accept interrupted");
 				if (rm.signal_pending == 1) {
 					rm_daemon_signal_handler(rm.signo);
 				}
 				continue;
 			} else {
-				RM_LOG_PERR("%s", "Accept error");
+				RM_LOG_PERR("%s", "core: Accept error");
 				continue;
 			}
 		}
 		do_it_all(connfd, &rm);
 	}
 
-	RM_LOG_INFO("%s", "Shutting down");
+	RM_LOG_INFO("%s", "core: Shutdown");
 
 	pthread_mutex_lock(&rm.mutex);
 	status = rm_core_deinit(&rm);
@@ -476,16 +482,16 @@ int main(int argc, char *argv[]) {
 	if (status != RM_ERR_OK) {
 		switch (status) {
 			case RM_ERR_BUSY:
-				RM_LOG_ERR("%s", "Sessions hashtable not empty");
+				RM_LOG_ERR("%s", "core: Sessions hashtable not empty");
 				break;
 			case RM_ERR_FAIL:
-				RM_LOG_ERR("%s", "Sessions list not empty");
+				RM_LOG_ERR("%s", "core: Sessions list not empty");
 				break;
 			case RM_ERR_WORKQUEUE_STOP:
-				RM_LOG_ERR("%s", "Error stopping main workqueue");
+				RM_LOG_ERR("%s", "core: Error stopping main workqueue");
 				break;
 			case RM_ERR_MEM:
-				RM_LOG_ERR("%s", "Error deinitializing main workqueue");
+				RM_LOG_ERR("%s", "core: Error deinitializing main workqueue");
 				break;
 			default:
 				break;

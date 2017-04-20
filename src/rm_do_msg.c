@@ -127,7 +127,7 @@ void* rm_do_msg_push_rx(void* arg) {
 		err = RM_ERR_DELTA_RX_THREAD;
 	}
 
-//done:
+	//done:
 
 	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
 
