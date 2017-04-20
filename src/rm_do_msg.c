@@ -127,15 +127,12 @@ void* rm_do_msg_push_rx(void* arg) {
 		err = RM_ERR_DELTA_RX_THREAD;
 	}
 
-	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	if (s->f_y != NULL) {
 		fclose(s->f_y);
 		s->f_y = NULL;
 	}
-
-	if (prvt->msg_push->hdr->flags & RM_BIT_4)																/* force creation if @y doesn't exist? */
-		goto done;
 
 	if (s->f_z != NULL) {																					/* fflush and close f_z */
 		fflush(s->f_z);
@@ -148,6 +145,9 @@ void* rm_do_msg_push_rx(void* arg) {
 		fclose(s->f_z);
 		s->f_z = NULL;
 	}
+
+	if (prvt->msg_push->hdr->flags & RM_BIT_4)																/* force creation if @y doesn't exist? */
+		goto done;
 
 	if (prvt->msg_push->z_sz > 0) {																			/* use different name? */
 		if (rename(s->f_z_name, prvt->msg_push->z) == -1) {
