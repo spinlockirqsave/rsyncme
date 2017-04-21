@@ -68,15 +68,20 @@ void* rm_do_msg_push_rx(void* arg) {
 	RM_LOG_INFO("[%s] [0]: work started in thread [%llu]", rm_work_type_str[work->task], rm_gettid());
 
 	s = rm_session_create(RM_PUSH_RX);
-	if (s == NULL) {
+	if (s == NULL || s->prvt == NULL) {
 		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, NULL) != RM_ERR_OK) {	/* send ACK explaining error */
 			ack_tx_err = 1;
 		}
 		goto fail;
 	}
+
+	prvt = (struct rm_session_push_rx*) s->prvt;
 	uuid_unparse(msg_push->ssid, s->ssid1);
 	uuid_unparse(s->id, s->ssid2);
+
 	RM_LOG_INFO("[%s] [1]: their ssid [%s] -> our ssid [%s]", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
+	RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
 
 	err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);									/* validate, change dir to result's path */
 	if (err != RM_ERR_OK) {
@@ -86,9 +91,9 @@ void* rm_do_msg_push_rx(void* arg) {
 		goto fail;
 	}
 
-	prvt = (struct rm_session_push_rx*) s->prvt;
-
 	/* open delta port for listening thread (port dynamically assigned as delta_port is initialised to 0) */
+	RM_LOG_INFO("[%s] [3]: [%s] -> [%s], Opening ephemeral delta rx port", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
 	err = rm_tcp_listen(&prvt->delta_fd, INADDR_ANY, &prvt->delta_port, 0, RM_SERVER_LISTENQ); 
 	if (err != RM_ERR_OK) {
 		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, err, s) != RM_ERR_OK) {							/* send ACK with error */
@@ -98,36 +103,48 @@ void* rm_do_msg_push_rx(void* arg) {
 		goto fail;
 	}
 
-	RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, prvt->delta_port);
+	RM_LOG_INFO("[%s] [4]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], listening on delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, prvt->delta_port);
+
 	if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, s) != RM_ERR_OK) {						/* send ACK OK */
 		ack_tx_err = 1;
 		goto fail;
 	}
-	RM_LOG_INFO("[%s] [3]: [%s] -> [%s], TXed ACK", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
+	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], TXed ACK", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	rm_core_session_add(work->rm, s);																		/* insert session into global table and list, hash md5 hash */
-	RM_LOG_INFO("[%s] [4]: [%s] -> [%s], hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
+
+	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
 
 	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);			/* start tx_ch_ch and rx delta threads, save pids in session object */
 	if (err != RM_ERR_OK) {
 		goto fail;
 	}
 
+	RM_LOG_INFO("[%s] [7]: [%s] -> [%s], Checkums tx thread started", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
 	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE);	/* start rx delta thread */
 	if (err != RM_ERR_OK) {
 		goto fail;
 	}
 
+	RM_LOG_INFO("[%s] [8]: [%s] -> [%s], Delta rx thread started", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
 	pthread_join(prvt->ch_ch_tx_tid, NULL);
+
+	RM_LOG_INFO("[%s] [9]: [%s] -> [%s], Checksums tx thread joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
 	pthread_join(prvt->delta_rx_tid, NULL);
+
 	if (prvt->ch_ch_tx_status != RM_TX_STATUS_OK) {
 		err = RM_ERR_CH_CH_TX_THREAD;
 	}
+
 	if (prvt->delta_rx_status != RM_RX_STATUS_OK) {
 		err = RM_ERR_DELTA_RX_THREAD;
 	}
 
-	RM_LOG_INFO("[%s] [5]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+	RM_LOG_INFO("[%s] [10]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	if (s->f_y != NULL) {
 		fclose(s->f_y);
@@ -163,7 +180,7 @@ void* rm_do_msg_push_rx(void* arg) {
 
 done:
 
-	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
 
 	if (s != NULL) {
 		rm_session_free(s);																					/* frees msg allocated for work as well */
@@ -179,9 +196,37 @@ fail:
 	switch (err) {
 
 		case RM_ERR_Y_Z_SYNC:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, --leave option set (do not delete @y after @z has been synced) but @z name is not given or is same as @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
 		case RM_ERR_Y_NULL:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, @y file name must be specified", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_FSTAT_Y:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't fstat @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
 		case RM_ERR_OPEN_Z:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @z", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
 		case RM_ERR_OPEN_Y:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_GETCWD:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't get current working directory", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_CHDIR_Z:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't change current working directory to @z's dir", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_CHDIR_Y:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't change current working directory to @y's dir", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
 		case RM_ERR_OPEN_TMP:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;

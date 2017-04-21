@@ -149,17 +149,17 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 						s->f_z = fopen(m->y, "w+b");
 					}
 					if (s->f_z == NULL) {
-						return RM_ERR_OPEN_Z;
+						return RM_ERR_OPEN_Z;											/* couldn't open @z */
 					}
 					goto maybe_f_z;                                                     /* @y is NULL though */
 				} else {
 					return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
 				}
 			}
-			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* change working directory */
+			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
 				return RM_ERR_GETCWD;
 			if (s->f_z != NULL) {
-				if (chdir(s->f_z_dname) == -1)
+				if (chdir(s->f_z_dname) == -1)											/* change current working directory */
 					return RM_ERR_CHDIR_Z;
 			} else {
 				if (chdir(s->f_y_dname) == -1)

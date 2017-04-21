@@ -573,7 +573,7 @@ int main(int argc, char *argv[])
 						goto fail;
 					case RM_ERR_OPEN_Y:
 						fprintf(stderr, "Error, request can't be handled by remote peer");
-						fprintf(stderr, " (can't open @y file)\nDoes [%s] exist on the receiver [%s]?\n", y, addr);
+						fprintf(stderr, " (can't open @y file)\nDoes [%s] exist on the receiver [%s]?\nPlease set --force (--f) option if you want to force the file creation in case it doesn't exist.\n", y, addr);
 						goto fail;
 					case RM_ERR_OPEN_TMP:
 						fprintf(stderr, "Error, request can't be handled by remote peer");
