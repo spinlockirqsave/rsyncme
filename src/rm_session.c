@@ -99,6 +99,8 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 	if (m->L == 0) {                                                                    /* L can't be 0 */
 		return RM_ERR_BLOCK_SIZE;
 	}
+	s->rec_ctx.L = m->L;
+
 	if (m->x_sz == 0) {                                                                 /* @x not set */
 		return RM_ERR_X_ZERO_SIZE;
 	}
@@ -112,14 +114,14 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 			s->f_x = NULL;
 			s->f_x_sz = push_rx->msg_push->bytes;										/* bytes to RX, size of file to receive */
 			if (m->y_sz > 0) {
-				strncpy(s->f_y_basename, m->y, RM_UNIQUE_STRING_LEN);					/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
-				strncpy(s->f_y_dirname, m->y, RM_UNIQUE_STRING_LEN);
+				strncpy(s->f_y_basename, m->y, PATH_MAX);								/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
+				strncpy(s->f_y_dirname, m->y, PATH_MAX);
 				s->f_y_bname = basename(s->f_y_basename);
 				s->f_y_dname = dirname(s->f_y_dirname);
 			}
 			if (m->z_sz > 0) {
-				strncpy(s->f_z_basename, m->z, RM_UNIQUE_STRING_LEN);					/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
-				strncpy(s->f_z_dirname, m->z, RM_UNIQUE_STRING_LEN);
+				strncpy(s->f_z_basename, m->z, PATH_MAX);								/* copy strings for use with basename/dirname which may return pointer to statically alloced memory */
+				strncpy(s->f_z_dirname, m->z, PATH_MAX);
 				s->f_z_bname = basename(s->f_z_basename);
 				s->f_z_dname = dirname(s->f_z_dirname);
 			}
@@ -136,6 +138,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 				if (fstat(fd_y, &fs) != 0)
 					return RM_ERR_FSTAT_Y;
 				y_sz = fs.st_size;
+				s->f_y_sz = y_sz;														/* use in DELTA_ZERO_DIFF */
 				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checksums to be sent to remote transmitter */
 			} else {																	/* s->f_y is NULL */
 				push_rx->ch_ch_n = 0;													/* no checksums to send... */
@@ -146,17 +149,17 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 						s->f_z = fopen(m->y, "w+b");
 					}
 					if (s->f_z == NULL) {
-						return RM_ERR_OPEN_Z;
+						return RM_ERR_OPEN_Z;											/* couldn't open @z */
 					}
 					goto maybe_f_z;                                                     /* @y is NULL though */
 				} else {
 					return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
 				}
 			}
-			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* change working directory */
+			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
 				return RM_ERR_GETCWD;
 			if (s->f_z != NULL) {
-				if (chdir(s->f_z_dname) == -1)
+				if (chdir(s->f_z_dname) == -1)											/* change current working directory */
 					return RM_ERR_CHDIR_Z;
 			} else {
 				if (chdir(s->f_y_dname) == -1)
@@ -294,9 +297,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 	struct rm_msg_push              *msg_push = NULL;
 	size_t                          L = 0;
 	FILE                            *f_y = NULL;   /* file for taking non-overlapping blocks */
-	FILE                            *f_z = NULL;   /* result */
 	int                             fd_y = -1;
-	uint8_t                         reference_file_exist = 0;
 	struct stat                     fs = {0};
 	size_t                          y_sz = 0, blocks_n_exp = 0, blocks_n = 0;
 	int                             fd = -1;
@@ -311,75 +312,51 @@ void *rm_session_ch_ch_tx_f(void *arg)
 			rm_push_rx = (struct rm_session_push_rx*) s->prvt;
 			if (rm_push_rx == NULL) {
 				err = RM_ERR_RX;
-				goto err_exit;
+				goto done;
 			}
 			msg_push = rm_push_rx->msg_push;
 			fd = rm_push_rx->fd;																				/* TODO use separate socket for checksums TX? (ch_ch_port in receiver?) */
 			L = rm_push_rx->msg_push->L;
 			f_y = s->f_y;
 			if (f_y != NULL) {                                                                                  /* if reference file exists, split it and calc checksums */
-				reference_file_exist = 1;
 				fd_y = fileno(f_y);
 				memset(&fs, 0, sizeof(fs));
 				if (fstat(fd_y, &fs) != 0) {
 					err = RM_ERR_FSTAT_Y;
-					goto err_exit;
+					goto done;
 				}
 				y_sz = fs.st_size;
 
 				blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);                                                   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
 				if (rm_rx_insert_nonoverlapping_ch_ch_ref(fd, f_y, msg_push->y, h, L, rm_tcp_tx_ch_ch, blocks_n_exp, &blocks_n) != RM_ERR_OK) {  /* tx ch_ch only, no ref */
 					err = RM_ERR_NONOVERLAPPING_INSERT;
-					goto  err_exit;
+					goto  done;
 				}
 				assert(blocks_n == blocks_n_exp && "rm_do_msg_push_rx ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
 				if (RM_LOGLEVEL > RM_LOGLEVEL_NORMAL)
 					RM_LOG_INFO("[%s] -> [%s], [%u]: TX-ed [%zu] nonoverlapping checksum elements", s->ssid1, s->ssid2, s->hashed_hash, blocks_n_exp);
 			} else {
-				if (msg_push->hdr->flags & RM_BIT_4) {                                                          /* force creation if @y doesn't exist? */
-					if (msg_push->z != NULL) {                                                                  /* use different name? */
-						f_z = fopen(msg_push->z, "w+b");
-					} else {
-						f_z = fopen(msg_push->y, "w+b");
-					}
-					if (f_z == NULL) {
-						err = RM_ERR_OPEN_Z;
-						goto err_exit;
-					}
-					clock_gettime(CLOCK_REALTIME, &s->clk_realtime_start);
-					s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
-					s->rec_ctx.method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
-					/* expected rec_rec_ctx.->delta_raw_n = 1; */
-					/* expected rec_ctx->rec_by_raw = x_sz; */
-					goto done;
-				} else {
-					err = RM_ERR_OPEN_Y;
-					goto err_exit;
-				}
+				goto done;																						/* no checkums to TX */
 			}
 			break;
+
 		case RM_PULL_RX:
 			rm_pull_rx = (struct rm_session_pull_rx*) s->prvt;
 			if (rm_pull_rx == NULL) {
 				err = RM_ERR_RX;
-				goto err_exit;
+				goto done;
 			}
 			fd = rm_pull_rx->fd;
 			break;
+
 		default:
 			err = RM_ERR_ARG;
-			goto err_exit;
+			break;
 	}
 
-err_exit:
-	/* TODO set session's status error */
-	if (reference_file_exist == 1) {    /* TODO */
-	}
 done:
-	if (reference_file_exist == 1) {    /* TODO */
-	}
 	pthread_mutex_lock(&s->mutex);
-	rm_push_rx->ch_ch_tx_status = err;
+	rm_push_rx->ch_ch_tx_status = err;																			/* set session's status error */
 	pthread_mutex_unlock(&s->mutex);
 	return NULL;
 }
@@ -416,11 +393,20 @@ void *rm_session_ch_ch_rx_f(void *arg)
 			goto err_exit;
 		}
 
-		err = rm_tcp_rx(fd, &e->data.ch_ch, RM_CH_CH_SIZE);
+		uint32_t f_ch = 0;
+		err = rm_tcp_rx(fd, &f_ch, sizeof(f_ch));
 		if (err != RM_ERR_OK) {
 			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
 		}
+		rm_deserialize_u32((unsigned char *) &f_ch, &e->data.ch_ch.f_ch);
+
+		err = rm_tcp_rx(fd, &e->data.ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
+		if (err != RM_ERR_OK) {
+			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
+			goto err_exit;
+		}
+		RM_LOG_INFO("[RX]: checksum [%u]", e->data.ch_ch.f_ch);
 
 		e->data.ref = entries_n;														/* assign offset */
 		TWINIT_HLIST_NODE(&e->hlink);
@@ -488,9 +474,12 @@ void *rm_session_delta_tx_f(void *arg)
 			goto exit;
 	}
 	pthread_mutex_unlock(&s->mutex);
+
+
 	err = rm_rolling_ch_proc(s, h, h_mutex, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
 	if (err != RM_ERR_OK)
 		status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
+
 	pthread_mutex_lock(&s->mutex);
 	if (t == RM_PUSH_LOCAL) {
 		prvt_local->delta_tx_status = status;
@@ -689,7 +678,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	rm_push_flags					push_flags = 0;
 	char                            f_z_name[RM_UNIQUE_STRING_LEN];
 	int								listen_fd = -1, fd = -1;
-	size_t                          bytes_to_rx = 0;
+	size_t                          bytes_to_rx = 0, y_sz = 0;
 	struct rm_session               *s = NULL;
 	struct rm_rx_delta_element_arg delta_pack = {0};
 	struct rm_delta_reconstruct_ctx rec_ctx = {0};		/* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
@@ -706,6 +695,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	assert(s != NULL);
 
 	pthread_mutex_lock(&s->mutex);
+
 	if (s->type != RM_PUSH_RX) {
 		pthread_mutex_unlock(&s->mutex);
 		goto err_exit;
@@ -716,12 +706,14 @@ void* rm_session_delta_rx_f_remote(void *arg)
 		goto err_exit;
 	}
 	assert(prvt_rx != NULL);
-	push_flags = (rm_push_flags) prvt_rx->msg_push->hdr->flags;
+	push_flags	= (rm_push_flags) prvt_rx->msg_push->hdr->flags;
 	bytes_to_rx = prvt_rx->msg_push->bytes;
 	f_y         = s->f_y;
-	listen_fd = prvt_rx->delta_fd;
-	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
-	rec_ctx.L = s->rec_ctx.L;																								/* init reconstruction context */
+	y_sz		= s->f_y_sz;
+	f_z			= s->f_z;
+	listen_fd	= prvt_rx->delta_fd;
+	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
+
 	pthread_mutex_unlock(&s->mutex);
 
 	if (f_y == NULL) {
@@ -756,25 +748,29 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	delta_pack.rec_ctx = &rec_ctx;
 
 	/* RX delta over TCP using delta protocol */
+	struct rm_delta_e delta_e;
 	while (bytes_to_rx > 0) {
-		struct rm_delta_e delta_e;
+		memset(&delta_e, 0, sizeof(struct rm_delta_e));
 
 		/* RX delta over TCP using delta protocol */
 		if (rm_tcp_rx(fd, (void*) &delta_e.type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK) {							/* rx delta type over TCP connection */
 			status = RM_RX_STATUS_DELTA_RX_TCP_FAIL;
 			goto err_exit;
 		}
+		RM_LOG_INFO("[RX]: delta type[%u]", delta_e.type);
 
 		switch (delta_e.type) {
 
 			case RM_DELTA_ELEMENT_REFERENCE:																				/* copy referenced bytes from @f_y to @f_z */
 				if (rm_tcp_rx(fd, (void*) &delta_e.ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* rx ref over TCP connection */
 					goto err_exit;
+				delta_e.raw_bytes_n = rec_ctx.L;																			/* by definition */
 				break;
 
 			case RM_DELTA_ELEMENT_TAIL:																						/* copy referenced bytes from @f_y to @f_z */
 				if (rm_tcp_rx(fd, (void*) &delta_e.ref, RM_DELTA_ELEMENT_REF_FIELD_SIZE) != RM_ERR_OK)						/* rx ref over TCP connection */
 					goto err_exit;
+				delta_e.raw_bytes_n = bytes_to_rx;																			/* by definition */
 				break;
 
 			case RM_DELTA_ELEMENT_RAW_BYTES:																				/* copy raw bytes to @f_z directly */
@@ -788,6 +784,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 				break;
 
 			case RM_DELTA_ELEMENT_ZERO_DIFF:
+				delta_e.raw_bytes_n = y_sz;																					/* by definition */
 				break;
 
 			default:

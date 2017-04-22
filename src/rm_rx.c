@@ -323,7 +323,7 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 		case RM_DELTA_ELEMENT_REFERENCE:
 			if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
 				return RM_ERR_COPY_OFFSET;
-			ctx->rec_by_ref += delta_e->raw_bytes_n;                                                                    /* L == delta_e->raw_bytes_n for REFERNECE delta elements*/
+			ctx->rec_by_ref += ctx->L;																					/* L bytes copied from @y */
 			++ctx->delta_ref_n;
 			break;
 
@@ -386,6 +386,7 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 	if (delta_e == NULL || ctx == NULL)
 		return RM_ERR_BAD_CALL;
 	// z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
+	RM_LOG_INFO("[TX]: delta type[%u]", delta_e->type);
 
 	/* TX delta over TCP using delta protocol */
 	if (rm_tcp_tx(fd, (void*) &delta_e->type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK)							/* tx delta type over TCP connection */
@@ -412,7 +413,7 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 		case RM_DELTA_ELEMENT_RAW_BYTES:																				/* receiver will copy raw bytes to @f_z directly */
 			if (rm_tcp_tx(fd, (void*) &delta_e->raw_bytes_n, RM_DELTA_ELEMENT_BYTES_FIELD_SIZE) != RM_ERR_OK)			/* tx bytes size over TCP connection */
 				return RM_ERR_WRITE;
-			if (rm_tcp_tx(fd, (void*) &delta_e->raw_bytes, delta_e->raw_bytes_n) != RM_ERR_OK)							/* tx bytes over TCP connection */
+			if (rm_tcp_tx(fd, (void*) delta_e->raw_bytes, delta_e->raw_bytes_n) != RM_ERR_OK)							/* tx bytes over TCP connection */
 				return RM_ERR_WRITE;
 			ctx->rec_by_raw += delta_e->raw_bytes_n;
 			++ctx->delta_raw_n;

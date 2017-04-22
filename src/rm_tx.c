@@ -403,18 +403,35 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	if (buf == NULL) {
 		goto err_exit; /* TODO Couldn't allocate buffer for the message header. Not enough memory */
 	}
-	err = rm_tcp_rx(prvt->fd, buf, RM_MSG_PUSH_ACK_LEN);                                            /* wait for incoming ACK */
+	err = rm_tcp_rx(prvt->fd, buf, RM_MSG_ACK_LEN);													/* wait for incoming ACK, generic part */
+	if (err != RM_ERR_OK) {																			/* RM_ERR_READ || RM_ERR_EOF */
+		goto err_exit; /* TODO handle */													
+	}
+	rm_deserialize_msg_ack(buf, &ack.ack);
+	if (ack.ack.hdr->pt != RM_PT_MSG_PUSH_ACK) {                                                    /* if not MSG_PUSH_ACK, i.e. generic ACK describibg some error occurred on the receiver side */
+		if (ack.ack.hdr->flags != RM_ERR_OK) {                                                      /* if request cannot be handled, maybe AUTH failure or RM_ERR_CHDIR_Z */
+			err = ack.ack.hdr->flags;
+			goto err_exit;
+		} else {
+			RM_LOG_CRIT("ACK of type [%u] with status [%u] not expected here", ack.ack.hdr->pt, ack.ack.hdr->flags);
+		}
+	}
+	err = rm_tcp_rx(prvt->fd, buf + RM_MSG_ACK_LEN, RM_MSG_PUSH_ACK_LEN - RM_MSG_ACK_LEN);          /* wait for incoming MSG PUSH part of the ACK */
 	if (err != RM_ERR_OK) {																			/* RM_ERR_READ || RM_ERR_EOF */
 		goto err_exit; /* TODO handle */													
 	}
 	err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_PUSH_ACK_LEN);									/* validate potential ACK message: check header: hash, size and pt*/
 	if (err != RM_ERR_OK) { /* bad message */
+		RM_LOG_ERR("Bad MSG_PUSH_ACK, error [%u]", err);
 		switch (err) {
 			case RM_ERR_FAIL: /* Invalid hash */
+				RM_LOG_ERR("Invalid hash [%u]", ack.ack.hdr->hash);
 				break;
 			case RM_ERR_MSG_PT_UNKNOWN: /* Unknown message type */
+				RM_LOG_ERR("Unknown payload type [%u]", ack.ack.hdr->pt);
 				break;
 			default: /* Unknown error */
+				RM_LOG_CRIT("Unknown error [%u]", err);
 				break;
 		}
 		goto err_exit;
@@ -503,29 +520,36 @@ err_exit:
 		free(ack.ack.hdr);
 		ack.ack.hdr = NULL;
 	}
+	if (buf != NULL) {
+		free(buf);
+		buf = NULL;
+	}
 
 	switch (err) {
+
 		case RM_ERR_DELTA_RX_THREAD:
 
-		if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_TIMEOUT)
-			RM_LOG_ERR("%s", "Connection timeout\n");
-		else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_REFUSED)
-			RM_LOG_ERR("%s", "Connection refused\n");
-		else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_HOSTUNREACH)
-			RM_LOG_ERR("%s", "Host unreachable\n");
-		else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_GEN_ERR)
+			if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_TIMEOUT)
+				RM_LOG_ERR("%s", "Connection timeout\n");
+			else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_REFUSED)
+				RM_LOG_ERR("%s", "Connection refused\n");
+			else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_HOSTUNREACH)
+				RM_LOG_ERR("%s", "Host unreachable\n");
+			else if (prvt->session_local.delta_rx_status == RM_RX_STATUS_CONNECT_GEN_ERR)
 				RM_LOG_ERR("%s", "Connection error\n");
-		else
+			else
 				RM_LOG_ERR("%s", "General connection error\n");
-		break;
+			break;
 
 		case RM_ERR_MEM:
-				RM_LOG_ERR("%s", "Not enough memory\n");
+			RM_LOG_ERR("%s", "Not enough memory\n");
 			break;
+
 		case RM_ERR_WRITE:
 			/* TODO bad... */
-				RM_LOG_ERR("%s", "Can't write\n");
+			RM_LOG_ERR("%s", "Can't write\n");
 			break;
+
 		default:
 			break;
 	}
