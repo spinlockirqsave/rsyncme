@@ -146,7 +146,8 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	RM_LOG_INFO("[%s] [10]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
-	if (s->f_y != NULL) {
+	if (s->f_y != NULL) {																					/* fflush and close f_y */
+		fflush(s->f_y);
 		fclose(s->f_y);
 		s->f_y = NULL;
 	}
@@ -163,8 +164,10 @@ void* rm_do_msg_push_rx(void* arg) {
 		s->f_z = NULL;
 	}
 
-	if (prvt->msg_push->hdr->flags & RM_BIT_4)																/* force creation if @y doesn't exist? */
-		goto done;
+	if (((prvt->msg_push->hdr->flags & RM_BIT_6) == 0u) && (unlink(prvt->msg_push->y) != 0)) {				/* if --leave not set and unlink failed */
+		err = RM_ERR_UNLINK_Y;
+		goto fail;
+	}
 
 	if (prvt->msg_push->z_sz > 0) {																			/* use different name? */
 		if (rename(s->f_z_name, prvt->msg_push->z) == -1) {
@@ -177,8 +180,6 @@ void* rm_do_msg_push_rx(void* arg) {
 			goto fail;
 		}
 	}
-
-done:
 
 	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
 
@@ -237,6 +238,10 @@ fail:
 			} else {
 				RM_LOG_ERR("[%s] [FAIL]: ERR [%u] : error sending PUSH ack", rm_work_type_str[work->task], err);
 			}
+			break;
+
+		case RM_ERR_BAD_CALL:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, bad arguments", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
 		default:

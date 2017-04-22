@@ -108,6 +108,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 	switch (s->type) {
 
 		case RM_PUSH_RX:                                                                /* validate remote PUSH RX */
+
 			push_rx = s->prvt;
 			push_rx->msg_push = m;
 			push_rx->fd = fd;
@@ -142,33 +143,15 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checksums to be sent to remote transmitter */
 			} else {																	/* s->f_y is NULL */
 				push_rx->ch_ch_n = 0;													/* no checksums to send... */
-				if (m->hdr->flags & RM_BIT_4) {                                         /* force creation if @y doesn't exist? */
-					if (m->z_sz != 0) {                                                 /* use different name? */
-						s->f_z = fopen(m->z, "w+b");
-					} else {
-						s->f_z = fopen(m->y, "w+b");
-					}
-					if (s->f_z == NULL) {
-						return RM_ERR_OPEN_Z;											/* couldn't open @z */
-					}
-					goto maybe_f_z;                                                     /* @y is NULL though */
-				} else {
+				if (!(m->hdr->flags & RM_BIT_4))										/* if not --force creation when @y doesn't exist? */
 					return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
-				}
 			}
-			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
-				return RM_ERR_GETCWD;
-			if (s->f_z != NULL) {
-				if (chdir(s->f_z_dname) == -1)											/* change current working directory */
-					return RM_ERR_CHDIR_Z;
-			} else {
-				if (chdir(s->f_y_dname) == -1)
-					return RM_ERR_CHDIR_Y;
-			}
+
 			rm_md5((unsigned char*) m->y, m->y_sz, s->hash.data);
-			goto exit;
+			break;
 
 		case RM_PULL_RX:                                                                /* validate remote PULL RX */
+
 			rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
 			goto exit;
 
@@ -176,17 +159,24 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 			return RM_ERR_FAIL;
 	}
 
-maybe_f_z:
-	if (s->f_z == NULL) {
-		if (m->z_sz == 0) {
-			rm_get_unique_string(m->z);
-		}
-		s->f_z = fopen(m->z, "wb+");                                                    /* and open @f_z for reading and writing */
-		if (s->f_z == NULL) {
-			return RM_ERR_OPEN_TMP;
-		}
-	}
+	/* @y exists and is opened for reading  (s->f_y != NULL), reference file exists or @y doesn;t exist but --force is set */
+	rm_get_unique_string(s->f_z_name);
+	s->f_z = fopen(s->f_z_name, "wb+");													/* open tmp file @f_z for reading and writing in @z path */
+	if (s->f_z == NULL)
+		return RM_ERR_OPEN_TMP;
+
 exit:
+
+	if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
+		return RM_ERR_GETCWD;
+	if (m->z_sz > 0) {															/* result f_z will be ultimately renamed to @z (and @y will be deleted or maybe not if --leave flag is also set) */
+		if (chdir(s->f_z_dname) == -1)
+			return RM_ERR_CHDIR_Z;
+	} else {																	/* result f_z will be renamed to @y which doesn't exist yet */
+		if (chdir(s->f_y_dname) == -1)
+			return RM_ERR_CHDIR_Y;
+	}
+
 	return RM_ERR_OK;
 }
 
@@ -676,7 +666,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	/*struct twlist_head              *lh;*/
 	struct rm_session_push_rx       *prvt_rx = NULL;
 	rm_push_flags					push_flags = 0;
-	char                            f_z_name[RM_UNIQUE_STRING_LEN];
+	//char                            f_z_name[RM_UNIQUE_STRING_LEN];
 	int								listen_fd = -1, fd = -1;
 	size_t                          bytes_to_rx = 0, y_sz = 0;
 	struct rm_session               *s = NULL;
@@ -717,20 +707,21 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	pthread_mutex_unlock(&s->mutex);
 
 	if (f_y == NULL) {
-		assert(push_flags & RM_BIT_4);																						/* assert force creation if @y doesn't exist? */
-		if (!(push_flags & RM_BIT_4)) {
+		assert((push_flags & RM_BIT_4) && (f_z != NULL));																	/* assert force creation if @y doesn't exist? */
+		if (!(push_flags & RM_BIT_4) || (f_z == NULL)) {
 			err = RM_ERR_BAD_CALL;
 			goto err_exit;
 		}
 	} else {
-		rm_get_unique_string(f_z_name);
-		f_z = fopen(f_z_name, "wb+");																						/* create and open @f_z for reading and writing in @z path */
+		/*rm_get_unique_string(f_z_name);
+		f_z = fopen(f_z_name, "wb+");																						create and open @f_z for reading and writing in @z path
 		if (f_z == NULL) {
 			err = RM_ERR_OPEN_TMP;
 			goto err_exit;
 		}
 		strncpy(s->f_z_name, f_z_name, RM_UNIQUE_STRING_LEN);
 		s->f_z = f_z;
+		*/
 	}
 
 	cli_len = sizeof(cli_addr);

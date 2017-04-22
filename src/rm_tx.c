@@ -245,26 +245,16 @@ done:
 	}
 	rec_ctx->time_cpu = cpu_time;
 	rec_ctx->time_real = real_time;
-	/*if (y_copy != NULL) {
-	  free(y_copy);
-	  y_copy = NULL;
-	  }*/
+
 	if (f_z != NULL) {
 		fclose(f_z);
 		f_z = NULL;
 	}
-	/*chdir(cwd);
-	  if (cwd != NULL) {
-	  free(cwd);
-	  cwd = NULL;
-	  }*/
+
 	return RM_ERR_OK;
 
 err_exit:
-	/*if (y_copy != NULL) {
-	  free(y_copy);
-	  y_copy = NULL;
-	  }*/
+
 	if (f_x != NULL) {
 		fclose(f_x);
 		f_x = NULL;
@@ -298,11 +288,7 @@ err_exit:
 		rm_session_free(s);
 		s = NULL;
 	}
-	/*if (cwd != NULL) {
-	  chdir(cwd);
-	  free(cwd);
-	  cwd = NULL;
-	  }*/
+
 	return err;
 }
 
