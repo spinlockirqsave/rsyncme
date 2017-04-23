@@ -42,7 +42,7 @@ static void rsyncme_usage(const char *name)
 			"     \t                is equal to size of the block\n");
 	fprintf(stderr, "     \t -l           : block size in bytes, if it is not given then\n"
 			"     \t                default value of 512 bytes is used\n");
-	fprintf(stderr, "     \t --force      : force creation of @y if it doesn't exist\n");
+	fprintf(stderr, "     \t --force      : force creation of result (@y or @z if given) in case the reference file @y doesn't exist\n");
 	fprintf(stderr, "     \t --leave      : leave @y after @z has been reconstructed\n");
 	fprintf(stderr, "     \t --timeout_s  : seconds part of timeout limit on connect\n");
 	fprintf(stderr, "     \t --timeout_us : microseconds part of timeout limit on connect\n");
@@ -482,6 +482,12 @@ int main(int argc, char *argv[])
 					case RM_ERR_FSTAT_X:
 						fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
 						goto fail;
+					case RM_ERR_FSTAT_Y:
+						fprintf(stderr, "Error. Couldn't stat @y [%s]\n", y);
+						goto fail;
+					case RM_ERR_FSTAT_TMP:
+						fprintf(stderr, "Error. Receiver failed (couldn't stat intermediate tmp file)\n");
+						goto fail;
 					case RM_ERR_X_ZERO_SIZE:
 						fprintf(stderr, "Error. @x [%s] size is zero\n", x);
 						goto fail;
@@ -490,52 +496,52 @@ int main(int argc, char *argv[])
 						goto fail;
 					case RM_ERR_GETADDRINFO:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. can't get server address, [%s]\n", err_str);
+							fprintf(stderr, "Error. can't get receiver's address, [%s]\n", err_str);
 						} else {
-							fprintf(stderr, "Error. can't get server address\n");
+							fprintf(stderr, "Error. can't get receiver's address\n");
 						}
 						goto fail;
 					case RM_ERR_CONNECT_TIMEOUT:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_CONNECT_REFUSED:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_CONNECT_HOSTUNREACH:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_CONNECT_GEN_ERR:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_AUTH:
-						fprintf(stderr, "Error. Authentication failure. Is this IP allowed by rsyncme server running on [%s]\n", addr);
+						fprintf(stderr, "Error. Authentication failure. Is this IP allowed by receiver running on [%s]\n", addr);
 						goto fail;
 					case RM_ERR_CHDIR_Y:
 						strncpy(y_dirname, y, PATH_MAX);
 						y_dname = dirname(y_dirname);
-						fprintf(stderr, "Error. Server running on [%s] cannot change working directory to @y's dir [%s]\n", addr, y_dname);
+						fprintf(stderr, "Error. receiver running on [%s] cannot change working directory to @y's dir [%s]\n", addr, y_dname);
 						y_dname = NULL;
 						goto fail;
 					case RM_ERR_CHDIR_Z:
 						strncpy(z_dirname, z, PATH_MAX);
 						z_dname = dirname(z_dirname);
-						fprintf(stderr, "Error. Server running on [%s] cannot change working directory to @z's dir [%s]\n", addr, z_dname);
+						fprintf(stderr, "Error. Receiver running on [%s] cannot change working directory to @z's dir [%s]\n", addr, z_dname);
 						z_dname = NULL;
 						goto fail;
 					case RM_ERR_CH_CH_RX_THREAD_LAUNCH:
@@ -548,7 +554,7 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "Error. Delta rx thread launch failed\n");
 						goto fail;
 					case RM_ERR_CH_CH_RX_THREAD:
-						fprintf(stderr, "Error. Checkums rx thread failed\n");
+						fprintf(stderr, "Error. Checksums rx thread failed\n");
 						goto fail;
 					case RM_ERR_DELTA_TX_THREAD:
 						fprintf(stderr, "Error. Delta tx thread failed\n");
@@ -560,28 +566,45 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "Error. Not enough memory\n");
 						exit(EXIT_FAILURE);
 					case RM_ERR_Y_Z_SYNC:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (do not delete @y after @z has been synced, but @z name is not given or is same as @y)\n");
 						goto fail;
 					case RM_ERR_Y_NULL:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (@y name empty)\n");
 						goto fail;
 					case RM_ERR_OPEN_Z:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (can't open @z file)\n");
 						goto fail;
 					case RM_ERR_OPEN_Y:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
-						fprintf(stderr, " (can't open @y file)\nDoes [%s] exist on the receiver [%s]?\nPlease set --force (--f) option if you want to force the file creation in case it doesn't exist.\n", y, addr);
+						fprintf(stderr, "Error, request can't be handled by receiver");
+						fprintf(stderr, " (can't open @y file)\nDoes reference file [%s] exist on the receiver [%s]?\nPlease set --force (--f) option if you want to force the creation of result file in case the reference file doesn't exist.\n", y, addr);
 						goto fail;
 					case RM_ERR_OPEN_TMP:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (can't open temporary file)\n");
 						goto fail;
+					case RM_ERR_Y_ZERO_SIZE:
+						fprintf(stderr, "Error. @y [%s] size is zero\n", x);
+						goto fail;
+					case RM_ERR_Z_ZERO_SIZE:
+						fprintf(stderr, "Error. @z [%s] size is zero\n", x);
+						goto fail;
 					case RM_ERR_BAD_CALL:
+						fprintf(stderr, "Error. Receiver considers arguments as misconfigured conception\n");
+						goto fail;
+					case RM_ERR_BLOCK_SIZE:
+						fprintf(stderr, "Error. Block size can't be zero\n");
+						goto fail;
+					case RM_ERR_RENAME_TMP_Y:
+						fprintf(stderr, "Error. Receiver can't rename result file to @y [%s]\n", y);
+						goto fail;
+					case RM_ERR_RENAME_TMP_Z:
+						fprintf(stderr, "Error. Receiver can't rename result file to @z [%s]\n", z);
+						goto fail;
 					default:
-						fprintf(stderr, "\nInternal error.\n");
+						fprintf(stderr, "\nError.\n");
 						return -1;
 				}
 			}

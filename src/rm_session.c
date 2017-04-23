@@ -153,19 +153,11 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 		case RM_PULL_RX:                                                                /* validate remote PULL RX */
 
 			rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
-			goto exit;
+			break;
 
 		default:                                                                        /* TX and everything else */
 			return RM_ERR_FAIL;
 	}
-
-	/* @y exists and is opened for reading  (s->f_y != NULL), reference file exists or @y doesn;t exist but --force is set */
-	rm_get_unique_string(s->f_z_name);
-	s->f_z = fopen(s->f_z_name, "wb+");													/* open tmp file @f_z for reading and writing in @z path */
-	if (s->f_z == NULL)
-		return RM_ERR_OPEN_TMP;
-
-exit:
 
 	if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
 		return RM_ERR_GETCWD;
@@ -176,6 +168,12 @@ exit:
 		if (chdir(s->f_y_dname) == -1)
 			return RM_ERR_CHDIR_Y;
 	}
+
+	/* @y exists and is opened for reading  (s->f_y != NULL), reference file exists or @y doesn;t exist but --force is set */
+	rm_get_unique_string(s->f_z_name);
+	s->f_z = fopen(s->f_z_name, "wb+");													/* open tmp file @f_z for reading and writing in @z path */
+	if (s->f_z == NULL)
+		return RM_ERR_OPEN_TMP;
 
 	return RM_ERR_OK;
 }

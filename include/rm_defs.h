@@ -216,8 +216,10 @@ enum rm_error {
 	RM_ERR_RESULT_F_NAME = 76,
 	RM_ERR_BUSY = 77,
 	RM_ERR_AUTH = 78,
-	RM_ERR_Z_ZERO_SIZE = 79,
-	RM_ERR_UNKNOWN_ERROR = 80
+	RM_ERR_Y_ZERO_SIZE = 79,
+	RM_ERR_Z_ZERO_SIZE = 80,
+	RM_ERR_FSTAT_TMP = 81,
+	RM_ERR_UNKNOWN_ERROR = 82
 		/* max error code limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 
