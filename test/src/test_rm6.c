@@ -159,7 +159,7 @@ test_rm_fast_check_roll_tail(void **state) {
             /* read last bytes from file, up to L or file_sz */
             read_now = rm_min(L, file_sz);
             a_k_pos = file_sz - read_now;
-            read = rm_fpread(buf, sizeof(unsigned char), read_now, file_sz - read_now, f);
+            read = rm_fpread(buf, sizeof(unsigned char), read_now, file_sz - read_now, f, NULL);
             if (read != read_now) {
                 if (feof(f)) {
                     RM_LOG_PERR("Error reading file [%s], EOF", fname);
@@ -189,7 +189,7 @@ test_rm_fast_check_roll_tail(void **state) {
 
                 /* read last bytes from file, up to L or file_sz */
                 read_now = read_left;
-                read = rm_fpread(buf, sizeof(unsigned char), read_now, file_sz - read_now, f);
+                read = rm_fpread(buf, sizeof(unsigned char), read_now, file_sz - read_now, f, NULL);
                 if (read != read_now) {
                     RM_LOG_PERR("Error reading file [%s], skipping", fname);
                     continue;
@@ -199,7 +199,7 @@ test_rm_fast_check_roll_tail(void **state) {
                 /* calc checksums */
                 adler1 = rm_fast_check_block(buf, read);
                 /* tail checksum */
-                if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f) != 1) { /* rm_fpread returns the number of successfully read blocks, in this case it doesn't really matter */
+                if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f, NULL) != 1) { /* rm_fpread returns the number of successfully read blocks, in this case it doesn't really matter */
                     RM_LOG_PERR("Error reading file [%s], skipping", fname);
                     continue;
                 }

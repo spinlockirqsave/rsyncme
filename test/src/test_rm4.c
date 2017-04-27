@@ -164,7 +164,7 @@ void test_rm_rx_insert_nonoverlapping_ch_ch_ref_1(void **state)
             RM_LOG_INFO("Testing of splitting file into non-overlapping blocks: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0); /* number of blocks */
-            res = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, NULL, blocks_n, &entries_n);
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, NULL, blocks_n, &entries_n, NULL);
             assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
 
@@ -249,7 +249,7 @@ void test_rm_rx_insert_nonoverlapping_ch_ch_ref_2(void **state)
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
             f_tx_ch_ch_ref_2_callback_count = 0; /* reset callback counter */
-            rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n);
+            rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, f_tx_ch_ch_ref_test_2, blocks_n, &entries_n, NULL);
             assert_int_equal(f_tx_ch_ch_ref_2_callback_count, blocks_n);
 
             blocks_n = 0;
@@ -325,7 +325,7 @@ void test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
             RM_LOG_INFO("Testing checksum correctness: file [%s], size [%zu], block size L [%zu], buffer"
                     " [%zu]", fname, file_sz, L, RM_TEST_L_MAX);
             blocks_n = file_sz / L + (file_sz % L ? 1 : 0);
-            res = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, NULL, blocks_n, &entries_n);
+            res = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f, fname, h, L, NULL, blocks_n, &entries_n, NULL);
             assert_int_equal(res, RM_ERR_OK);
             assert_int_equal(entries_n, blocks_n);
             rewind(f);
@@ -358,7 +358,7 @@ void test_rm_rx_insert_nonoverlapping_ch_ch_ref_3(void **state)
                             if (e->data.ref == e_reference.data.ref) {
                                 break; /* OK, FOUND */
                             } else {
-                                read = rm_fpread(buf2, read_now, sizeof(char), e->data.ref, f); /* references differ but blocks must be the same,
+                                read = rm_fpread(buf2, read_now, sizeof(char), e->data.ref, f, NULL); /* references differ but blocks must be the same,
                                                                                                    read at @e offset and compare with current block */
                                 if (read != read_now) {
                                     RM_LOG_PERR("Error reading file [%s] "

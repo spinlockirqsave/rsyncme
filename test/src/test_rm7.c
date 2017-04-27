@@ -80,7 +80,7 @@ static int test_rm_copy_files_and_postfix(const char *postfix)
                 fclose(f);
                 return -1;
             }
-            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
+            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i], NULL);
             switch (err) {
                 case RM_ERR_OK:
                     break;
@@ -422,7 +422,7 @@ void test_rm_rx_process_delta_element_1(void **state)
 
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_y);
@@ -563,7 +563,7 @@ void test_rm_rx_process_delta_element_1(void **state)
 
             k = 0;
             while (k < (rec_by_ref + rec_by_raw)) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, s->f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, s->f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", fname);
                     if (f != NULL) {
                         fclose(f);
@@ -575,7 +575,7 @@ void test_rm_rx_process_delta_element_1(void **state)
                     }
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, s->f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, s->f_z, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_z->name);
                     if (f != NULL) {
                         fclose(f);
@@ -793,7 +793,7 @@ void test_rm_rx_process_delta_element_2(void **state)
         }
         f_x_sz = fs.st_size;
         /* read first byte */
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -801,7 +801,7 @@ void test_rm_rx_process_delta_element_2(void **state)
         }
         /* change first byte, so ZERO_DIFF delta can't happen in this test, therefore this would be an error in this test */
         cx = (cx + 1) % 256;
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -827,7 +827,7 @@ void test_rm_rx_process_delta_element_2(void **state)
 
             /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0);
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -950,14 +950,14 @@ void test_rm_rx_process_delta_element_2(void **state)
 
             k = 0;
             while (k < (rec_by_ref + rec_by_raw)) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, s->f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, s->f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     fclose(f_z->f);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, s->f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, s->f_z, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_z->name);
                     fclose(f_x);
                     fclose(f_y);

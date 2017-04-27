@@ -87,7 +87,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 		y_sz = fs.st_size;
 
 		blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-		if (rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n) != RM_ERR_OK) {
+		if (rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL) != RM_ERR_OK) {
 			err = RM_ERR_NONOVERLAPPING_INSERT;
 			goto  err_exit;
 		}
@@ -105,11 +105,11 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 			}
 			clock_gettime(CLOCK_REALTIME, &clk_realtime_start);
 			clk_cputime_start = clock() / CLOCKS_PER_SEC;
-			if (rm_copy_buffered(f_x, f_z, x_sz) != RM_ERR_OK) { /* @y doesn't exist and --forced flag is specified */
+			if (rm_copy_buffered(f_x, f_z, x_sz, NULL) != RM_ERR_OK) {								/* @y doesn't exist and --forced flag is specified */
 				err = RM_ERR_COPY_BUFFERED;
 				goto err_exit;
 			}
-			if (rec_ctx != NULL) {  /* fill in reconstruction context if given */
+			if (rec_ctx != NULL) {																	/* fill in reconstruction context if given */
 				rec_ctx->method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
 				rec_ctx->delta_raw_n = 1;
 				rec_ctx->rec_by_raw = x_sz;

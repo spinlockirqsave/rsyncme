@@ -202,6 +202,7 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 	TWINIT_LIST_HEAD(&s->link);
 	s->type = t;
 	pthread_mutex_init(&s->mutex, NULL);
+	pthread_mutex_init(&s->y_file_mutex, NULL);
 
 	switch (t) {
 		case RM_PUSH_RX:
@@ -241,6 +242,7 @@ fail:
 		free(s->prvt);
 	}
 	pthread_mutex_destroy(&s->mutex);
+	pthread_mutex_destroy(&s->y_file_mutex);
 	free(s);
 	return NULL;
 }
@@ -251,6 +253,7 @@ void rm_session_free(struct rm_session *s)
 
 	assert(s != NULL);
 	pthread_mutex_destroy(&s->mutex);
+	pthread_mutex_destroy(&s->y_file_mutex);
 	t = s->type;
 	if (s->prvt == NULL)
 		goto end;
@@ -290,8 +293,8 @@ void *rm_session_ch_ch_tx_f(void *arg)
 	size_t                          y_sz = 0, blocks_n_exp = 0, blocks_n = 0;
 	int                             fd = -1;
 
-	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
-	twhash_init(h);
+	//TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+	//twhash_init(h);
 
 	s_type = s->type;
 
@@ -316,7 +319,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 				y_sz = fs.st_size;
 
 				blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);                                                   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-				if (rm_rx_insert_nonoverlapping_ch_ch_ref(fd, f_y, msg_push->y, h, L, rm_tcp_tx_ch_ch, blocks_n_exp, &blocks_n) != RM_ERR_OK) {  /* tx ch_ch only, no ref */
+				if (rm_rx_insert_nonoverlapping_ch_ch_ref(fd, f_y, msg_push->y, NULL, L, rm_tcp_tx_ch_ch, blocks_n_exp, &blocks_n, &s->y_file_mutex) != RM_ERR_OK) {  /* tx ch_ch only, no ref */
 					err = RM_ERR_NONOVERLAPPING_INSERT;
 					goto  done;
 				}
@@ -375,8 +378,8 @@ void *rm_session_ch_ch_rx_f(void *arg)
 		goto done;
 
 	while (ch_ch_n > 0) {
-		e = malloc(sizeof (*e));
-		if (e == NULL)	 {
+		e = malloc(sizeof(struct rm_ch_ch_ref_hlink));
+		if (e == NULL) {
 			status = RM_RX_STATUS_CH_CH_RX_MEM;
 			goto err_exit;
 		}
@@ -462,8 +465,7 @@ void *rm_session_delta_tx_f(void *arg)
 			goto exit;
 	}
 	pthread_mutex_unlock(&s->mutex);
-
-
+//sleep(5);
 	err = rm_rolling_ch_proc(s, h, h_mutex, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
 	if (err != RM_ERR_OK)
 		status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
@@ -659,6 +661,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 {
 	FILE                            *f_y = NULL;		/* file on which reconstruction is performed */
 	FILE                            *f_z = NULL;		/* result file */
+	pthread_mutex_t					*file_mutex = NULL;
 	/*twfifo_queue                    *q; */
 	/*const struct rm_delta_e         *delta_e;        iterator over delta elements */
 	/*struct twlist_head              *lh;*/
@@ -701,6 +704,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	f_z			= s->f_z;
 	listen_fd	= prvt_rx->delta_fd;
 	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
+	file_mutex	= &s->y_file_mutex;
 
 	pthread_mutex_unlock(&s->mutex);
 
@@ -735,6 +739,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	delta_pack.f_y = f_y;
 	delta_pack.f_z = f_z;
 	delta_pack.rec_ctx = &rec_ctx;
+	delta_pack.file_mutex = file_mutex;
 
 	/* RX delta over TCP using delta protocol */
 	struct rm_delta_e delta_e;

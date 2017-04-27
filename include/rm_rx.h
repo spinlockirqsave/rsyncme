@@ -64,7 +64,7 @@ rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg);
  *          RM_ERR_TX - transmission error */
 int
 rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f_x, const char *fname, struct twhlist_head *h, size_t L,
-        int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n) __attribute__((nonnull(2,3)));
+        int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n, pthread_mutex_t *file_mutex) __attribute__((nonnull(2,3)));
 
 /* @brief   Calculates ch_ch structs for all non-overlapping @L bytes blocks (last one may be less than @L)
  *          from file @f and inserts them into array @checkums.
@@ -97,11 +97,12 @@ rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f_x, const char *fname, struct 
         size_t limit, size_t *blocks_n) __attribute__((nonnull(1,2,3)));
 
 struct rm_rx_delta_element_arg {
-	const struct rm_delta_e *delta_e;
-	FILE *f_y;
-	FILE *f_z;
-	struct rm_delta_reconstruct_ctx *rec_ctx;
-	int fd;
+	const struct rm_delta_e			*delta_e;
+	FILE							*f_y;
+	FILE							*f_z;
+	struct rm_delta_reconstruct_ctx	*rec_ctx;
+	int								fd;
+	pthread_mutex_t					*file_mutex;
 };
 /* @brief   Used in local session in local push.
  * @details	Reconstruction procedure.

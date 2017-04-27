@@ -66,7 +66,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                 fclose(f);
                 return -1;
             }
-            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
+            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i], NULL);
             switch (err) {
                 case RM_ERR_OK:
                     break;
@@ -432,13 +432,13 @@ test_rm_cmd_1(void **state) {
 
         k = 0; /* verify files content */
         while (k < f_x_sz) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                 fclose(f_x);
                 fclose(f_y);
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
-            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                 fclose(f_x);
                 fclose(f_y);
@@ -623,13 +623,13 @@ test_rm_cmd_2(void **state) {
 
             k = 0; /* verify files content */
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
@@ -813,13 +813,13 @@ test_rm_cmd_3(void **state) {
 
             k = 0; /* verify files content */
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_z);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_z_name);
                     fclose(f_x);
                     fclose(f_z);
@@ -857,7 +857,7 @@ test_rm_cmd_3(void **state) {
             }
             assert_true(f_y != NULL && "Can't open file @y");
             fd_y = fileno(f_y);
-            rm_copy_buffered(f_x, f_y, f_x_sz);
+            rm_copy_buffered(f_x, f_y, f_x_sz, NULL);
         }
         if (f_x != NULL) fclose(f_x);
         f_x = NULL;
@@ -1034,21 +1034,21 @@ test_rm_cmd_4(void **state) {
 
             k = 0; /* verify files content */
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     fclose(f_z);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
                     fclose(f_z);
                     assert_true(1 == 0 && "ERROR reading byte in file @y!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_z_name);
                     fclose(f_x);
                     fclose(f_y);

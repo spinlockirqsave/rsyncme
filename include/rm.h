@@ -265,7 +265,7 @@ rm_md5(const unsigned char *data, size_t len, unsigned char res[16]);
  *          RM_ERR_FERROR: ferror set on either @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 enum rm_error
-rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
+rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n, pthread_mutex_t *file_mutex);
 
 /* @brief   Copy @bytes_n bytes from @x starting at @offset
  *          into @dst buffer.
@@ -276,7 +276,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
  *          RM_ERR_FERROR: ferror set on @x,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 enum rm_error
-rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
+rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n, pthread_mutex_t *file_mutex);
 
 /* @brief   Read @items_n blocks of @size bytes each from stream @f at offset @offset.
  * @details This method can't be used with file locking because of internal buffering
@@ -284,7 +284,7 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
  * @return  As fread, on success the number of blocks (each of @size size)
  *          read by fread. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
-rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
+rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex);
 
 /* @brief   Write @items_n blocks of @size bytes each from stream @f at offset @offset.
  * @details This method can't be used with file locking because of internal buffering
@@ -292,7 +292,7 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
  * @return  As fwrite, on success the number of blocks (each of @size size)
  *          written by fwrite. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
-rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
+rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex);
 
 /* @brief   Copy @bytes_n bytes from @x at offset @x_offset into @y at @y_offset.
  * @details Calls rm_fpread/rm_fpwrite buffered API functions.
@@ -303,7 +303,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
  *          RM_ERR_FERROR: error set on @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 enum rm_error
-rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
+rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset, pthread_mutex_t *file_mutex);
 
 typedef enum rm_error (rm_delta_f)(void*);
 

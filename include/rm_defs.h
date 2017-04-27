@@ -71,7 +71,7 @@
 
 #define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end, MUST be longer than sizeof(uuid_t)! */
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
-#define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
+#define RM_NONOVERLAPPING_HASH_BITS 19          /* 19 bits hash, array size == 524 288 (131 072) */
 #define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files, MUST be > RM_UNIQUE_STRING_LEN */
 #define RM_UUID_LEN                 16u			/* as uuid_t on Debian */
 
@@ -86,8 +86,7 @@
 #define RM_CORE_ST_SHUT_DOWN        255         /* shutting down, no more requests */
 #define RM_CORE_CONNECTIONS_MAX     1           /* max number of simultaneous connections */
 #define RM_CORE_HASH_OK             84
-#define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off
-												   while debugging for convenience */
+#define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off while debugging for convenience */
 #define RM_STRONG_CHECK_BYTES       16
 #define RM_CH_CH_SIZE				(sizeof(struct rm_ch_ch))
 #define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + (sizeof(((struct rm_ch_ch_ref*)0)->ref)))

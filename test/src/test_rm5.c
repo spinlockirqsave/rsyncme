@@ -66,7 +66,7 @@ static int test_rm_copy_files_and_postfix(const char *postfix)
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
                 return -1;
             }
-            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
+            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i], NULL);
             switch (err) {
                 case RM_ERR_OK:
                     break;
@@ -470,7 +470,7 @@ void test_rm_rolling_ch_proc_1(void **state)
             } else {
                 blocks_n_exp = 0;
             }
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
                 continue;
@@ -696,14 +696,14 @@ void test_rm_rolling_ch_proc_2(void **state)
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change first byte, so ZERO_DIFF delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -728,7 +728,7 @@ void test_rm_rolling_ch_proc_2(void **state)
             RM_LOG_INFO("Testing #2 (first byte changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -956,14 +956,14 @@ void test_rm_rolling_ch_proc_3(void **state)
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change last byte, so ZERO_DIFF delta and TAIL delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -988,7 +988,7 @@ void test_rm_rolling_ch_proc_3(void **state)
             RM_LOG_INFO("Testing #3 (last byte changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -1212,27 +1212,27 @@ void test_rm_rolling_ch_proc_4(void **state)
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change first byte, so ZERO_DIFF delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
-        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change last byte, so TAIL delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -1257,7 +1257,7 @@ void test_rm_rolling_ch_proc_4(void **state)
             RM_LOG_INFO("Testing #4 (2 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -1518,21 +1518,21 @@ void test_rm_rolling_ch_proc_5(void **state)
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change first byte, so ZERO_DIFF delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         half_sz = f_x_sz / 2 + f_x_sz % 2;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, half_sz, f_x) != 1) { /* read middle byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, half_sz, f_x, NULL) != 1) { /* read middle byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1545,7 +1545,7 @@ void test_rm_rolling_ch_proc_5(void **state)
             continue;
         }
         c = (c + 1) % 256;    /* change middle byte */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, half_sz, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, half_sz, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1557,14 +1557,14 @@ void test_rm_rolling_ch_proc_5(void **state)
             }
             continue;
         }
-        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change last byte, so TAIL delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -1589,7 +1589,7 @@ void test_rm_rolling_ch_proc_5(void **state)
             RM_LOG_INFO("Testing #5 (3 bytes changed): file @x[%s] size [%zu] file @y[%s], size [%zu], block size L [%zu]", buf_x_name, f_x_sz, f_y_name, f_y_sz, L);
 
             blocks_n_exp = f_y_sz / L + (f_y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             assert_int_equal(err, RM_ERR_OK);
             assert_int_equal(blocks_n_exp, blocks_n);
             rewind(f_x);
@@ -2071,7 +2071,7 @@ test_rm_rolling_ch_proc_12(void **state) {
         } else {
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
         }
-        err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
         if (L == 0) {
             assert_int_equal(err, RM_ERR_BAD_CALL);
             continue;
@@ -2228,7 +2228,7 @@ void test_rm_rolling_ch_proc_13(void **state)
         } else {
             blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
         }
-        err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+        err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
         if (L == 0) {
             assert_int_equal(err, RM_ERR_BAD_CALL);
             continue;
@@ -2393,7 +2393,7 @@ void test_rm_rolling_ch_proc_14(void **state)
             } else {
                 blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             }
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -2580,7 +2580,7 @@ void test_rm_rolling_ch_proc_15(void **state)
             } else {
                 blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0); /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
             }
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -2777,14 +2777,14 @@ void test_rm_rolling_ch_proc_16(void **state)
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change last byte, so ZERO_DIFF delta and TAIL delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -2807,7 +2807,7 @@ void test_rm_rolling_ch_proc_16(void **state)
             }
             RM_LOG_INFO("Testing #16 (copy tail threshold #2): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
 
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {
@@ -3019,14 +3019,14 @@ void test_rm_rolling_ch_proc_17(void **state)
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
             continue;
         }
         c = (c + 1) % 256; /* change last byte, so ZERO_DIFF delta and TAIL delta can't happen in this test, this would be an error */
-        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&c, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -3049,7 +3049,7 @@ void test_rm_rolling_ch_proc_17(void **state)
             }
             RM_LOG_INFO("Testing #17 (copy tail threshold #3): file [%s], size [%zu], @y size [%zu], block size L [%zu], threshold [%zu]", buf_x_name, f_x_sz, f_y_sz, L, threshold);
 
-            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n);
+            err = rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, f_y_name, h, L, NULL, blocks_n_exp, &blocks_n, NULL);
             if (L == 0) {
                 assert_int_equal(err, RM_ERR_BAD_CALL);
             } else {

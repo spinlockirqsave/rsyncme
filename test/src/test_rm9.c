@@ -70,7 +70,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                 RM_LOG_ERR("Can't open [%s] copy of file [%s]", buf, rm_test_fnames[i]);
                 return -1;
             }
-            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
+            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i], NULL);
             switch (err) {
                 case RM_ERR_OK:
                     break;

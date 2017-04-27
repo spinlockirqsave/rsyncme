@@ -82,15 +82,15 @@ int rm_rx_f_tx_ch_ch_ref_1(const struct f_tx_ch_ch_ref_arg_1 arg)
 }
 
 int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, struct twhlist_head *h, size_t L,
-		int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n)
+		int (*f_tx_ch_ch_ref)(int fd, const struct rm_ch_ch_ref *e), size_t limit, size_t *blocks_n, pthread_mutex_t *file_mutex)
 {
-	int                 ffd, res;
-	enum rm_error       err;
-	struct stat         fs;
-	uint32_t	        file_sz, read_left, read_now, read;
+	int                 ffd = -1, res = -1;
+	enum rm_error       err = 0;
+	struct stat         fs = {0};
+	size_t				file_sz = 0, read_left = 0, read_now = 0, read = 0;
 	size_t              entries_n = 0;
-	struct rm_ch_ch_ref_hlink	*e;
-	unsigned char	    *buf;
+	struct rm_ch_ch_ref_hlink	*e = NULL;
+	unsigned char	    *buf = NULL;
 
 	if (f == NULL || fname == NULL || L == 0 || fd < 0) {
 		err = RM_ERR_BAD_CALL;
@@ -99,7 +99,14 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 
 	entries_n = 0;
 
+	if (file_mutex != NULL)
+		pthread_mutex_lock(file_mutex);
+
 	ffd = fileno(f); /* get file size */
+
+	if (file_mutex != NULL)
+		pthread_mutex_unlock(file_mutex);
+
 	res = fstat(ffd, &fs);
 	if (res != 0) {
 		RM_LOG_PERR("Can't fstat file [%s]", fname);
@@ -113,7 +120,7 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 		goto done;
 	}
 
-	read_left = file_sz; /* read L bytes chunks */
+	read_left = file_sz;																	/* read L bytes chunks */
 	read_now = rm_min(L, read_left);
 	buf = malloc(read_now);
 	if (buf == NULL) {
@@ -123,14 +130,14 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 	}
 
 	do {
-		read = fread(buf, 1, read_now, f);
+		read = rm_fpread(buf, 1, read_now, L * entries_n, f, file_mutex);
 		if (read != read_now) {
 			RM_LOG_PERR("Error reading file [%s]", fname);
 			free(buf);
 			err = RM_ERR_READ;
 			goto done;
 		}
-		e = malloc(sizeof (*e)); /* alloc new table entry */
+		e = malloc(sizeof (*e));															/* alloc new table entry */
 		if (e == NULL)	 {
 			RM_LOG_PERR("%s", "Can't allocate table entry, malloc failed");
 			free(buf);
@@ -138,18 +145,18 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 			goto done;
 		}
 
-		e->data.ch_ch.f_ch = rm_fast_check_block(buf, read); /* compute checksums */
+		e->data.ch_ch.f_ch = rm_fast_check_block(buf, read);								/* compute checksums */
 		rm_md5(buf, read, e->data.ch_ch.s_ch.data);
 
-		e->data.ref = entries_n; /* assign offset */
+		e->data.ref = entries_n;															/* assign offset */
 
-		if (h != NULL) { /* insert into hashtable, hashing fast checksum */
+		if (h != NULL) {																	/* insert into hashtable, hashing fast checksum */
 			TWINIT_HLIST_NODE(&e->hlink);
 			twhash_add_bits(h, &e->hlink, e->data.ch_ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
 		}
 		entries_n++;
 
-		if (f_tx_ch_ch_ref != NULL) { /* tx checksums to remote A ? */
+		if (f_tx_ch_ch_ref != NULL) {														/* tx checksums to remote A ? */
 			if (f_tx_ch_ch_ref(fd, &e->data) != RM_ERR_OK) {
 				free(buf);
 				err = RM_ERR_TX;
@@ -312,6 +319,7 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 	FILE							*f_y = delta_pack->f_y;
 	FILE							*f_z = delta_pack->f_z;
 	struct rm_delta_reconstruct_ctx	*ctx = delta_pack->rec_ctx;
+	pthread_mutex_t					*m = delta_pack->file_mutex;
 
 	assert(delta_e != NULL && f_z != NULL && ctx != NULL);
 	if (delta_e == NULL || f_z == NULL || ctx == NULL)
@@ -321,21 +329,21 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 	switch (delta_e->type) {
 
 		case RM_DELTA_ELEMENT_REFERENCE:
-			if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
+			if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset, m) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
 				return RM_ERR_COPY_OFFSET;
 			ctx->rec_by_ref += ctx->L;																					/* L bytes copied from @y */
 			++ctx->delta_ref_n;
 			break;
 
 		case RM_DELTA_ELEMENT_RAW_BYTES:
-			if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z) != 1)    /* copy raw bytes to @f_z directly */
+			if (rm_fpwrite(delta_e->raw_bytes, delta_e->raw_bytes_n * sizeof(unsigned char), 1, z_offset, f_z, m) != 1)    /* copy raw bytes to @f_z directly */
 				return RM_ERR_WRITE;
 			ctx->rec_by_raw += delta_e->raw_bytes_n;
 			++ctx->delta_raw_n;
 			break;
 
 		case RM_DELTA_ELEMENT_ZERO_DIFF:
-			if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n) != RM_ERR_OK)                                          /* copy all bytes from @f_y to @f_z */
+			if (rm_copy_buffered(f_y, f_z, delta_e->raw_bytes_n, m) != RM_ERR_OK)                                          /* copy all bytes from @f_y to @f_z */
 				return RM_ERR_COPY_BUFFERED;
 			ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check here at receiver that is correct */
 			++ctx->delta_ref_n;
@@ -345,7 +353,7 @@ enum rm_error rm_rx_process_delta_element(void *arg)
 
 		case RM_DELTA_ELEMENT_TAIL:
 
-			if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
+			if (rm_copy_buffered_offset(f_y, f_z, delta_e->raw_bytes_n, delta_e->ref * ctx->L, z_offset, m) != RM_ERR_OK)  /* copy referenced bytes from @f_y to @f_z */
 				return RM_ERR_COPY_OFFSET;
 			ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check here at receiver there is no error */
 			++ctx->delta_ref_n;

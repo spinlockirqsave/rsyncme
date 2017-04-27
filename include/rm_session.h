@@ -25,6 +25,7 @@ struct rm_session
 	struct rm_md5           hash;
 	uint32_t				hashed_hash;
 	pthread_mutex_t         mutex;
+	pthread_mutex_t         y_file_mutex;
 
 	FILE                    *f_x;               /* file on which rolling is performed */              
 	FILE                    *f_y;               /* reference file */              
