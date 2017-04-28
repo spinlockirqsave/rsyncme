@@ -301,6 +301,9 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	struct rm_session           *s = NULL;
 	struct rm_session_push_tx   *prvt = NULL;
 
+	struct timespec         real_time = {0};
+	double                  cpu_time = 0.0;
+
 	struct rm_msg_push  msg = {0};
 	unsigned char       *msg_raw = NULL;
 	unsigned char       *buf = NULL;
@@ -487,6 +490,17 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		fclose(s->f_y);
 		s->f_y = NULL;
 	}
+
+	s->clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
+	cpu_time = s->clk_cputime_stop - s->clk_cputime_start;
+	clock_gettime(CLOCK_REALTIME, &s->clk_realtime_stop);
+	real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
+	real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec;
+	s->rec_ctx.time_cpu = cpu_time;
+	s->rec_ctx.time_real = real_time;
+
+	memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
+
 	pthread_mutex_unlock(&s->mutex);
 	rm_session_free(s);
 	s = NULL;
