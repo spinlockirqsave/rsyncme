@@ -191,7 +191,7 @@ rm_md5(const unsigned char *data, size_t len,
 	md5_final(&ctx, res);
 }
 
-enum rm_error
+	enum rm_error
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n, pthread_mutex_t *file_mutex)
 {
 	size_t read, read_exp;
@@ -235,7 +235,7 @@ exit:
 	return err;
 }
 
-enum rm_error
+	enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n, pthread_mutex_t *file_mutex)
 {
 	enum rm_error err = RM_ERR_OK;
@@ -275,7 +275,7 @@ exit:
 
 /* @details This method can't be used with file locking because of internal buffering
  *          made by buffered I/O library, read() system call should be used instead. */
-size_t
+	size_t
 rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex)
 {
 	size_t res = 0;
@@ -296,7 +296,7 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthrea
 
 /* @details This method can't be used with file locking because of internal buffering
  *          made by buffered I/O library, write() system call should be used instead. */
-size_t
+	size_t
 rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex)
 {
 	size_t res = 0;
@@ -315,7 +315,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f,
 	return res;
 }
 
-enum rm_error
+	enum rm_error
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset, pthread_mutex_t *file_mutex)
 {
 	enum rm_error err = RM_ERR_OK;
@@ -673,11 +673,13 @@ fail:
 enum rm_error
 rm_roll_proc_cb_1(void *arg) {
 	struct rm_roll_proc_cb_arg      *cb_arg = NULL;         /* callback argument */
-	const struct rm_session         *s = NULL;
+	struct rm_session				*s = NULL;
 	struct rm_session_push_local    *prvt_local = NULL;
 	struct rm_session_push_tx       *prvt_tx = NULL;
 	struct rm_delta_e               *delta_e = NULL;
-	enum rm_session_type			t;
+	enum rm_session_type			t = 0;
+	struct rm_delta_reconstruct_ctx	*ctx = NULL;
+	uint8_t							update_ctx = 0;
 
 	cb_arg = (struct rm_roll_proc_cb_arg*) arg;
 	if (cb_arg == NULL) {
@@ -698,15 +700,19 @@ rm_roll_proc_cb_1(void *arg) {
 		assert(delta_e != NULL);
 		return RM_ERR_BAD_CALL;
 	}
+
+	ctx = &s->rec_ctx;
 	t = s->type;
 	switch (t) {
 		case RM_PUSH_LOCAL:
 			prvt_local = s->prvt;
+			update_ctx = 0;																									/* ctx is updated in rm_rx_process_delta_element */
 			break;
 
 		case RM_PUSH_TX:
 			prvt_tx = s->prvt;
 			prvt_local = (struct rm_session_push_local*) &prvt_tx->session_local;
+			update_ctx = 1;																									/* in remote TX this is **really** transmitter, so we do update reconstruction ctx */ 
 			break;
 
 		default:
@@ -716,6 +722,43 @@ rm_roll_proc_cb_1(void *arg) {
 		RM_DEBUG_LOG_CRIT("%s", "WTF! NULL private session?! Have you added  some neat code recently?");
 		assert(prvt_local != NULL);
 		return RM_ERR_BAD_CALL;
+	}
+
+	if (update_ctx) {																										/* remote TX ? */
+		pthread_mutex_lock(&s->mutex);
+		switch (delta_e->type) {
+
+			case RM_DELTA_ELEMENT_REFERENCE:
+				ctx->rec_by_ref += ctx->L;																					/* L bytes copied from @y */
+				++ctx->delta_ref_n;
+				break;
+
+			case RM_DELTA_ELEMENT_RAW_BYTES:
+				ctx->rec_by_raw += delta_e->raw_bytes_n;
+				++ctx->delta_raw_n;
+				break;
+
+			case RM_DELTA_ELEMENT_ZERO_DIFF:
+				ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta ZERO_DIFF has raw_bytes_n set to indicate bytes that matched (whole file) so we can nevertheless check here at receiver that is correct */
+				++ctx->delta_ref_n;
+				ctx->rec_by_zero_diff += delta_e->raw_bytes_n;
+				++ctx->delta_zero_diff_n;
+				break;
+
+			case RM_DELTA_ELEMENT_TAIL:
+				ctx->rec_by_ref += delta_e->raw_bytes_n; /* delta TAIL has raw_bytes_n set to indicate bytes that matched (that tail) so we can nevertheless check here at receiver there is no error */
+				++ctx->delta_ref_n;
+				ctx->rec_by_tail += delta_e->raw_bytes_n;
+				++ctx->delta_tail_n;
+				ctx->delta_tail_n = 1;
+				break;
+
+			default:
+				pthread_mutex_unlock(&s->mutex);
+				assert(1 == 0 && "Unknown delta element type!");
+				return RM_ERR_ARG;
+		}
+		pthread_mutex_unlock(&s->mutex);
 	}
 
 	pthread_mutex_lock(&prvt_local->tx_delta_e_queue_mutex);    /* enqueue delta (and move ownership to delta_rx_tid!) */
