@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
 						}
 						goto fail;
 					case RM_ERR_AUTH:
-						fprintf(stderr, "Error. Authentication failure. Is this IP allowed by receiver running on [%s]\n", addr);
+						fprintf(stderr, "Error. Authentication failure. Is this IP allowed by receiver running on [%s]?\nSkip --auth flag when starting the receiver to disable authentication.\n", addr);
 						goto fail;
 					case RM_ERR_CHDIR_Y:
 						strncpy(y_dirname, y, PATH_MAX);

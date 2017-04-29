@@ -8,8 +8,8 @@
 #include "rm_util.h"
 
 
-int
-rm_util_dt(char *buf) {
+int rm_util_dt(char *buf)
+{
 	struct tm	t;
 	time_t		now = time(0);
 
@@ -20,8 +20,8 @@ rm_util_dt(char *buf) {
 	return RM_ERR_FAIL;
 }
 
-int
-rm_util_dt_detail(char *buf) {
+int rm_util_dt_detail(char *buf)
+{
 	struct tm	t;
 	struct timeval	tv;
 
@@ -37,19 +37,19 @@ rm_util_dt_detail(char *buf) {
 }
 
 /* rsyncme_2016-01-05_16-52-45:081207.log */
-int
-rm_util_openlogs(const char *dir, const char *name) {
+int rm_util_openlogs(const char *dir, const char *name)
+{
 	FILE	*stream;
-	int	err;
+	int		err;
 	char	*full_path;
 
-	if (dir == NULL) {
+	if (dir == NULL)
 		return RM_ERR_BAD_CALL;
-	}
+
 	full_path = malloc(strlen(dir) + strlen(name) + 1 + 27 + 1 + 3 + 1);
-	if (full_path == NULL) {
+	if (full_path == NULL)
 		return RM_ERR_MEM;
-	}
+
 	sprintf(full_path, "%s%s_", dir, name);
 	if (rm_util_dt_detail(full_path + strlen(dir) + strlen(name) + 1) != RM_ERR_OK) {
 		err = RM_ERR_GENERAL_ERROR;
@@ -85,8 +85,8 @@ fail:
 	return err;
 }
 
-int
-rm_util_log(FILE *stream, const char *fmt, ...) {
+int rm_util_log(FILE *stream, const char *fmt, ...)
+{
 	va_list	args;
 	char 	buf[4096];
 	char	dt[28];
@@ -103,8 +103,8 @@ rm_util_log(FILE *stream, const char *fmt, ...) {
 	return RM_ERR_OK; 
 }
 
-int
-rm_util_log_perr(FILE *stream, const char *fmt, ...) {
+int rm_util_log_perr(FILE *stream, const char *fmt, ...)
+{
 	va_list	args;
 	char 	buf[4096];
 	char	dt[28];
@@ -121,8 +121,8 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...) {
 	return RM_ERR_OK; 
 }
 
-int
-rm_util_daemonize(const char *dir, int noclose, const char *logname) {
+int rm_util_daemonize(const char *dir, int noclose, const char *logname)
+{
 	pid_t	pid, sid;
 	int 	fd;
 
@@ -165,8 +165,8 @@ rm_util_daemonize(const char *dir, int noclose, const char *logname) {
 	return RM_ERR_OK;
 }
 
-int
-rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, uint8_t ignore_signals) {
+int rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *logname, uint8_t ignore_signals)
+{
 	int 	fd;
 
 	if (ignore_signals != 0) { /* TODO: handle signals */

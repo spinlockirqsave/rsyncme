@@ -476,14 +476,14 @@ void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
 			break;
 	}
 	fprintf(stderr, "\ntime        : real [%lf]s, cpu [%lf]s", real_time, cpu_time);
-	fprintf(stderr, "\nbandwidth   : [%lf]MB/s\n", ((double) bytes / 1000000) / real_time);
-	if ((rec_ctx.copy_all_threshold_fired == 1) || (rec_ctx.copy_tail_threshold_fired == 1)) {
-		fprintf(stderr, "\n");
-	}
+	fprintf(stderr, "\nbandwidth   : [%lf]MB/s\n\n", ((double) bytes / 1000000) / real_time);
 	if (rec_ctx.copy_all_threshold_fired == 1) {
 		fprintf(stderr, "copy all    : fired\n");
 	}
 	if (rec_ctx.copy_tail_threshold_fired == 1) {
 		fprintf(stderr, "copy tail   : fired\n");
+	}
+	if ((rec_ctx.copy_all_threshold_fired == 1) || (rec_ctx.copy_tail_threshold_fired == 1)) {
+		fprintf(stderr, "\n");
 	}
 }

@@ -133,10 +133,12 @@ do_it_all(int fd, struct rsyncme* rm) {
 		}
 	}
 
-	if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
-		RM_LOG_ALERT("%s", "core: Authentication failed.\n");
-		err = RM_ERR_AUTH;
-		goto err_exit;
+	if (rm->opt.authenticate) {
+		if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
+			RM_LOG_ALERT("core: Authentication failed. Receiver doesn't accept requests from [%s]. Please skip --auth flag when starting the receiver to disable authentication\n", peer_addr_str);
+			err = RM_ERR_AUTH;
+			goto err_exit;
+		}
 	}
 
 	hdr = malloc(sizeof(*hdr));
@@ -262,8 +264,10 @@ static void rsyncme_d_usage(const char *name)
 	fprintf(stderr, "\nusage:\t %s [-l loglevel]\n\n", name);
 	fprintf(stderr, "     \t -l           : logging level [0-3]\n"
 			"     \t                0 - no logging, 1 - normal, 2 - +threads, 3 - verbose\n");
+	fprintf(stderr, "     \t --auth       : authenticate requests\n");
 	fprintf(stderr, "     \t --help       : display this help and exit\n");
 	fprintf(stderr, "     \t --version    : output version information and exit\n");
+	fprintf(stderr, "     \t --verbose    : max logging\n");
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "\nExamples:\n");
@@ -291,24 +295,28 @@ static void rsyncme_d_help_hint(const char *name)
 }
 
 int main(int argc, char *argv[]) {
-	char                c;
-	char                *pCh;
-	unsigned long long  helper;
-	int                     listenfd, connfd;
-	int                     err, errsv;
-	struct sockaddr_in      srv_addr_in;
-	struct sockaddr_storage cli_addr;
-	socklen_t               cli_len;
+	char                c = 0;
+	char                *pCh = NULL;
+	unsigned long long  helper = 0;
+	int                     listenfd = -1, connfd = -1;
+	int                     err = -1, errsv = -1;
+	struct sockaddr_in      srv_addr_in = {0};;
+	struct sockaddr_storage cli_addr = {0};;
+	socklen_t               cli_len = 0;
 	struct sigaction        sa;
-	enum rm_error           status;
+	enum rm_error           status = RM_ERR_OK;
 	char ip[INET_ADDRSTRLEN];
 	const char *ipptr = NULL;
+	struct rm_core_options	opt = {0};
+
+	memset(&sa, 0, sizeof(struct sigaction));
 
 	int option_index = 0;
 	struct option long_options[] = {
-		{ "help", no_argument, 0, 1 },
-		{ "version", no_argument, 0, 2 },
-		{ "verbose", no_argument, 0, 3 },
+		{ "auth", no_argument, 0, 1 },
+		{ "help", no_argument, 0, 2 },
+		{ "version", no_argument, 0, 3 },
+		{ "verbose", no_argument, 0, 4 },
 		{ 0 }
 	};
 
@@ -325,16 +333,20 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 1:
+				opt.authenticate = 1;													/* authenticate requests */
+				break;
+
+			case 2:
 				rsyncme_d_usage(argv[0]);                                               /* --help */
 				exit(EXIT_SUCCESS);
 				break;
 
-			case 2:
+			case 3:
 				fprintf(stderr, "\nversion [%s]\n", RM_VERSION);                        /* --version */
 				exit(EXIT_SUCCESS);
 				break;
 
-			case 3:
+			case 4:
 				RM_LOGLEVEL = RM_LOGLEVEL_VERBOSE;                                      /* --verbose */
 				break;
 
@@ -401,7 +413,7 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	status = rm_core_init(&rm);
+	status = rm_core_init(&rm, &opt);
 	if (status != RM_ERR_OK) {
 		RM_LOG_CRIT("%s", "core: Can't initialize the engine");
 		switch (status) {
