@@ -17,11 +17,22 @@ Content
 7. DEBUGGING
 8. CLEAN
 
+
+
 1. OVERVIEW
 
-Software for efficient synchronization of remote data over TCP connection
-without sending of redundant data, utilizing custom synchronization algorithm
-based on a well known rsync algorithm.
+rsyncme is open source tool for easy and efficient synchronization of data
+locally (on the same PC) and remotely (PC <-> PC) over TCP connection.
+The main idea is to avoid sending of redundant data, that is these bytes
+from file which didn't change from last sync. The bytes which need to be sent
+are prepared without a need of having the remote file available locally (a priori).
+We hope the concept to prove useful on low bandwidth links, when the time needed
+to transmit data overwhelms the time that alternatively will be spent
+by endpoints on computing differences and performing data reconstruction.
+
+The synchronization algorithm is derived from a well known rsync algorithm
+but we offer different options to the algorithm and believe to have better
+and simpler implementation.
 
 
 

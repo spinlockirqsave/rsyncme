@@ -11,17 +11,20 @@ USAGE OF rsyncme
 Content
 1. OVERVIEW
 2. EXAMPLES
-2.1 Basic example
-2.2 More advanced example
+2.1 Basic example (remote sync)
+2.2 Basic example (local sync)
+2.3 More advanced example (local sync)
 3. OPTIONS
-4. LOCAL SYNCHRONIZATION
-4.1 OPTIONS
-4.1.1 -z OPTION
-4.1.2 --leave OPTION
-4.1.3 -l OPTION
-4.1.4 -t OPTION
-4.1.5 -a OPTION
-5. REMOTE SYNCHRONIZATION
+3.1 TRANSMITTER
+3.2 RECEIVER
+4. REMOTE SYNCHRONIZATION
+5. LOCAL SYNCHRONIZATION
+5.1 OPTIONS
+5.1.1 -z OPTION
+5.1.2 --leave OPTION
+5.1.3 -l OPTION
+5.1.4 -t OPTION
+5.1.5 -a OPTION
 
 
 1. OVERVIEW
@@ -48,7 +51,31 @@ to a new file and -y file deleted or left intact.
 
 2. EXAMPLES
 
-2.1 Basic example
+2.1 Basic example (remote sync)
+
+Let us assume we have Oracle client installer stored locally and we would like
+to sync it with remote (IP 52.16.18.168) version as we may have made some changes
+to the local file and want remote file to be same as this version.
+
+peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
+-rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+
+Assuming there is a rsyncme receiver running on 52.16.18.168 with
+
+./rsyncme_d
+
+and maybe old version of file in /tmp folder then 
+
+rsyncme push -i 52.16.18.168
+	-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-z /tmp/client --l
+
+is a command to sync that version with our local version. The result is saved
+as a new file /tmp/client on remote host (see (4) for details).
+
+
+2.2 Basic example (local sync)
 
 Let us assume two files, calc1.ods and calc2.ods are present in ~/Documents
 directory and you made some changes to calc1.ods (a value of single cell
@@ -77,7 +104,7 @@ version of file would be used literally, avoiding copying of 8704 bytes,
 which would be copied at the other end of the link from referenced old version
 of file, if it was remote sync.
 
-2.2 More advanced example
+2.3 More advanced example (local sync)
 
 Let us synchronize just changed version of file with its previous version, leaving
 both files unchanged and producing result in new file. Moreover let us drive the algorithm
@@ -103,8 +130,12 @@ that didn't match.
 
     OK.
 
+(see (5) for details).
+
 
 3. OPTIONS
+
+3.1 TRANSMITTER
 
 push        Set up @x as source of changes, @y as result/output.
 pull        Set up @y as source of changes, @x as result/output.
@@ -132,10 +163,185 @@ pull        Set up @y as source of changes, @x as result/output.
             to matching block is just to be sent (or the EOF is reached),
             then already accumulated bytes are sent immediately.
 
+3.2 RECEIVER
 
-4. LOCAL SYNCHRONIZATION
+-l			Loglevel (0 - no logging, 1 - normal, 2 - +threads, 3 - verbose)
+--auth		Authenticate incoming requests (currently in 0.1.3-alpha, allowed
+			IP is hardcoded in rm_config.h as #define RM_IP_AUTH "127.0.0.1") 
+--help		Print help and exit.
+--version	Print software version and exit.
+--verbose	Same as -l 3.
+
+
+4. REMOTE SYNCHRONIZATION
+
+If the -i option is given in the command, this means this is remote sync.
+TCP connection is used to transmit/receive data.
+
+Continuing 2.1 example...
+
+Let us assume we have Oracle client installer stored locally and we would like
+to sync it with remote (IP 52.16.18.168) version as we may have made some changes
+to the local file and want remote file to be same as this version.
+
+peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
+-rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+
+Assuming there is a rsyncme receiver running on 52.16.18.168 with
+
+./rsyncme_d
+
+and maybe old version of file in /tmp folder then 
+
+rsyncme push -i 52.16.18.168
+	-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-z /tmp/client --l
+
+is a command to sync that version with our local version. The result is saved
+as a new file /tmp/client on remote host.
+
+The output on the transmitter side:
+
+peter@westernst:~/Downloads$ rsyncme push -i 52.16.18.168
+								-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+								-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+								-z /tmp/client --l
+
+Remote push.
+2017-04-29_23-37-31:253719	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2288600433]
+2017-04-29_23-37-31:253760	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [837820154]
+2017-04-29_23-37-31:253768	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1156948906]
+2017-04-29_23-37-31:253775	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1424659506]
+2017-04-29_23-37-31:253782	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2821700257]
+2017-04-29_23-37-31:253792	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1935574658]
+2017-04-29_23-37-31:253799	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [651789785]
+2017-04-29_23-37-31:253806	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2470142762]
+2017-04-29_23-37-31:253813	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2680824165]
+... more checksums RX
+2017-04-29_23-37-31:266017	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1731920797]
+2017-04-29_23-37-31:266023	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [4144168466]
+2017-04-29_23-37-31:266030	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [945355691]
+2017-04-29_23-37-31:406809	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[1]
+2017-04-29_23-37-31:406854	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:406880	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407080	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407091	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407101	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407112	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407123	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+... more delta TX
+2017-04-29_23-37-31:411596	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411626	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411626	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [3173775786]
+2017-04-29_23-37-31:411638	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411658	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411670	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411649	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [3238854276]
+2017-04-29_23-37-31:411681	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411688	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [3114465905]
+2017-04-29_23-37-31:411698	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411709	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2320104914]
+2017-04-29_23-37-31:411723	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411843	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2961374749]
+2017-04-29_23-37-31:411853	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411858	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2770141613]
+2017-04-29_23-37-31:411870	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411877	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [959448129]
+2017-04-29_23-37-31:411886	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+...more delta TX / checksums RX
+2017-04-29_23-37-31:423972	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424028	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424041	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424054	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424068	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424081	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[3]
+
+
+method      : DELTA_RECONSTRUCTION (block [512])
+bytes       : [634803] (by raw [512], by refs [634291])
+deltas      : [1240] (raw [1], refs [1239])
+collisions  : 1st [2], 2nd [0], 3rd [0]
+time        : real [0.514972]s, cpu [0.030970]s
+bandwidth   : [1.232694]MB/s
+
+
+OK.
+
+The output on the receiver side:
+
+cat rsyncme_2017-04-29_22-39-13:509254.err
+
+2017-04-29_22-39-58:032125      INFO    rm_core.c:22:rm_core_init():    Starting main work queue
+2017-04-29_22-39-58:032230      INFO    rm_daemon.c:432:main(): core: Main work queue started with [8] worker threads
+2017-04-29_22-39-58:032241      INFO    rm_daemon.c:457:main(): core: Listening on address [0.0.0.0], port [5048]
+2017-04-29_22-40-12:383177      INFO    rm_daemon.c:132:do_it_all():    core: Incoming connection, peer [119.129.145.68] port [33425], handled on local interface [171.21.33.21] port [5048]
+2017-04-29_22-40-12:383207      INFO    rm_daemon.c:156:do_it_all():    core: Waiting for incoming header from peer [119.129.145.68] port [33425], on local interface [171.21.33.21] port [5048]
+2017-04-29_22-40-12:385021      INFO    rm_daemon.c:171:do_it_all():    core: Validating header from peer [119.129.145.68] port [33425]
+2017-04-29_22-40-12:385041      INFO    rm_daemon.c:211:do_it_all():    core: Enqueuing MSG_PUSH work from peer [119.129.145.68] port [33425]
+2017-04-29_22-40-12:385074      INFO    rm_do_msg.c:68:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [0]: work started in thread [139706108393216]
+2017-04-29_22-40-12:385161      INFO    rm_do_msg.c:82:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [1]: their ssid [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> our ssid [399b2504-4991-4d2e-810c-b8889f74299f]
+2017-04-29_22-40-12:385166      INFO    rm_do_msg.c:84:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [2]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], x [/home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], y [/tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], z [/tmp/client], L [512], flags [110][0x6e]. Validating...
+2017-04-29_22-40-12:385247      INFO    rm_do_msg.c:95:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [3]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Opening ephemeral delta rx port
+2017-04-29_22-40-12:385260      INFO    rm_do_msg.c:106:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [4]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], x [/home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], y [/tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], z [/tmp/client], L [512], flags [0x6e], tmp [3f618daa-62f9-444c-8f07-d95431e3b812], listening on delta rx port [53903]
+2017-04-29_22-40-12:385280      INFO    rm_do_msg.c:113:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [5]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], TXed ACK
+2017-04-29_22-40-12:385285      INFO    rm_do_msg.c:117:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [6]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Session hashed to [272]
+2017-04-29_22-40-12:385318      INFO    rm_do_msg.c:124:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [7]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Checksums tx thread started
+2017-04-29_22-40-12:385333      INFO    rm_do_msg.c:131:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [8]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Delta rx thread started
+2017-04-29_22-40-12:385380      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2288600433]
+2017-04-29_22-40-12:385394      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [837820154]
+2017-04-29_22-40-12:385405      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [1156948906]
+2017-04-29_22-40-12:385417      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [1424659506]
+2017-04-29_22-40-12:385428      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2821700257]
+2017-04-29_22-40-12:385439      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [1935574658]
+... more TX checksum
+2017-04-29_22-40-12:399657      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2046427318]
+2017-04-29_22-40-12:495426      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[1]
+2017-04-29_22-40-12:499668      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2688873146]
+2017-04-29_22-40-12:508680      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:519677      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [691394732]
+2017-04-29_22-40-12:528717      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:54680      INFO    rm_session.c:328:rm_session_ch_ch_tx_f():       [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], [272]: TX-ed [1240] nonoverlapping checksum elements
+2017-04-29_22-40-12:549708      INFO    rm_do_msg.c:135:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [9]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Checksums tx thread joined
+2017-04-29_22-40-12:708723      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:708728      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:708733      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:708737      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+... more delta RX
+2017-04-29_22-40-12:800334      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800338      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800343      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800347      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800351      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800356      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[3]
+2017-04-29_22-40-12:800419      INFO    rm_do_msg.c:139:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [10]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], All threads joined
+
+method      : DELTA_RECONSTRUCTION (block [512])
+bytes       : [634803] (by raw [512], by refs [634291])
+deltas      : [1240] (raw [1], refs [1239])
+collisions  : 1st [0], 2nd [0], 3rd [0]
+time        : real [0.415255]s, cpu [0.010000]s
+bandwidth   : [1.528705]MB/s
+
+2017-04-29_22-40-12:800705      INFO    rm_do_msg.c:200:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [11]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Session [2517838439] ended
+
+
+In this example we can see that there was only one delta element (difference element)
+which contained raw data, the rest of them (1239) contained only a reference to the old
+file location from which data has been copied to the result file on remote host.
+In this case file wasn't changes at all. Finding good matches allowed for sending
+only 512 bytes literally, the remaining 634291 bytes were sent as 1239 references.
+This allowed to achieve 1.23 MB/s up bandwidth on 0.92 Mb(up)/7.2 Mb(down) Ethernet link.   
+
+
+
+5. LOCAL SYNCHRONIZATION
 
 If the -i option is not given in the command, this means this is local sync.
+That means TCP connection is not used at all and you don't need rsyncme
+receiver to be running at all. The rsyncme process will read/write the data
+by direct system calls to fread/fwrite (though sync algorithm will be used
+in the same way as if it was remote sync over TCP connection).
 The basic command to synchronize file @x and file @y on the same machine is
 
     rsyncme push -x @x -y @y
@@ -145,21 +351,21 @@ as @x after this is done, and @x is unchanged.
 The basic command will create sychronized version of @y with the same name
 and in the same location, but this can be changed with -z and/or --leave option.
 
-4.1 OPTIONS
+5.1 OPTIONS
 
-4.1.1 -z OPTION
+5.1.1 -z OPTION
 
     rsyncme push -x @x -y @y -z @z
 
 This will output new version of @y as @z, i.e. @y becomes @z (if @y name was different from @z name there is no file with name @y after this is done).
 
-4.1.2 --leave OPTION
+5.1.2 --leave OPTION
 
     rsyncme push -x @x -y @y -z @z --leave
 
 will work as 4.1.1 but @y file will not be deleted nor changed - it is left intact.
 
-4.1.3 -l OPTION
+5.1.3 -l OPTION
 
     rsyncme push -x @x -y @y -l block_size
 
@@ -173,7 +379,7 @@ Example:
 
 This will use 128 bytes as synchronization block size.
 
-4.1.4 -t OPTION
+5.1.4 -t OPTION
 
     rsyncme push -x @x -y @y -t number_of_bytes
 
@@ -192,7 +398,7 @@ Example:
 
 This will use 80 bytes as copy tail threshold.
 
-4.1.5 -a OPTION
+5.1.5 -a OPTION
 
     rsyncme push -x @x -y @y -a number_of_bytes
 
@@ -206,6 +412,3 @@ Example:
 This will use 80 bytes as copy all threshold. All files of sizes less than 80 bytes
 are sent straight away, skipping the rolling checksum procedure.
 
-5. REMOTE SYNCHRONIZATION
-
-Remote synchronization will be implemented in 0.1.3 version.
