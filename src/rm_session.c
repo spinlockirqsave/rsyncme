@@ -662,12 +662,8 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	FILE                            *f_y = NULL;		/* file on which reconstruction is performed */
 	FILE                            *f_z = NULL;		/* result file */
 	pthread_mutex_t					*file_mutex = NULL;
-	/*twfifo_queue                    *q; */
-	/*const struct rm_delta_e         *delta_e;        iterator over delta elements */
-	/*struct twlist_head              *lh;*/
 	struct rm_session_push_rx       *prvt_rx = NULL;
 	rm_push_flags					push_flags = 0;
-	//char                            f_z_name[RM_UNIQUE_STRING_LEN];
 	int								listen_fd = -1, fd = -1;
 	size_t                          bytes_to_rx = 0, y_sz = 0;
 	struct rm_session               *s = NULL;
@@ -675,6 +671,9 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	struct rm_delta_reconstruct_ctx rec_ctx = {0};		/* describes result of reconstruction, we will copy this to session reconstruct context after all is done to avoid locking on each delta element */
 	enum rm_error					err = RM_ERR_OK;
 	enum rm_rx_status				status = RM_RX_STATUS_OK;
+
+	struct timespec					real_time = {0};
+	double							cpu_time = 0.0;
 
 	struct sockaddr_storage cli_addr = {0};;
 	socklen_t               cli_len = 0;
@@ -811,6 +810,14 @@ done:
 
 	pthread_mutex_lock(&s->mutex);
 
+	s->clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
+	cpu_time = s->clk_cputime_stop - s->clk_cputime_start;
+	clock_gettime(CLOCK_REALTIME, &s->clk_realtime_stop);
+	real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
+	real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec;
+	rec_ctx.time_cpu = cpu_time;
+	rec_ctx.time_real = real_time;
+
 	if (fd != -1) {																											/* close accepted socket connection */
 		close(fd);
 		fd = -1;
@@ -842,6 +849,7 @@ err_exit:
 		prvt_rx->delta_fd = -1;
 	}
 	prvt_rx->delta_rx_status = status;
+	memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
 
 	pthread_mutex_unlock(&s->mutex);
 

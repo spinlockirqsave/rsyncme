@@ -196,6 +196,7 @@ void* rm_do_msg_push_rx(void* arg) {
 		}
 	}
 
+	rm_rx_print_stats(s->rec_ctx);
 	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
 
 	if (s != NULL) {

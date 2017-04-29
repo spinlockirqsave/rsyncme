@@ -191,7 +191,7 @@ rm_md5(const unsigned char *data, size_t len,
 	md5_final(&ctx, res);
 }
 
-	enum rm_error
+enum rm_error
 rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n, pthread_mutex_t *file_mutex)
 {
 	size_t read, read_exp;
@@ -235,7 +235,7 @@ exit:
 	return err;
 }
 
-	enum rm_error
+enum rm_error
 rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n, pthread_mutex_t *file_mutex)
 {
 	enum rm_error err = RM_ERR_OK;
@@ -275,7 +275,7 @@ exit:
 
 /* @details This method can't be used with file locking because of internal buffering
  *          made by buffered I/O library, read() system call should be used instead. */
-	size_t
+size_t
 rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex)
 {
 	size_t res = 0;
@@ -296,7 +296,7 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthrea
 
 /* @details This method can't be used with file locking because of internal buffering
  *          made by buffered I/O library, write() system call should be used instead. */
-	size_t
+size_t
 rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex)
 {
 	size_t res = 0;
@@ -315,7 +315,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f,
 	return res;
 }
 
-	enum rm_error
+enum rm_error
 rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset, pthread_mutex_t *file_mutex)
 {
 	enum rm_error err = RM_ERR_OK;
@@ -417,10 +417,8 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 	unsigned char               *raw_bytes = NULL;															/* buffer for literal bytes */
 	size_t                      a_k_pos = 0, a_kL_pos = 0;
 	unsigned char               a_k = 0, a_kL = 0;															/* bytes to remove/add from rolling checksum */
-	uint8_t         hit = 0;
 	size_t          collisions_1st_level = 0;
 	size_t          collisions_2nd_level = 0;
-	size_t          collisions_3rd_level = 0;
 	uint8_t         copy_all = 0, copy_all_threshold_fired = 0, copy_tail_threshold_fired = 0;
 
 	/*(void) h_mutex;  Verify hashtable locking needs for rm_rolling_ch_proc <-> rm_session_ch_ch_rx_f */
@@ -506,12 +504,10 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 			}
 		} /* roll */
 		match = 0;
-		hit = 0;
 		hash = twhash_min(ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
 		if (h_mutex != NULL)
 			pthread_mutex_lock(h_mutex);
 		twhlist_for_each_entry(e, &h[hash], hlink) {        /* hit 1, 1st Level match? (hashtable hash match) */
-			hit = 1;
 			if (e->data.ch_ch.f_ch == ch.f_ch) {            /* hit 2, 2nd Level match?, (fast rolling checksum match) */
 				if (rm_copy_buffered_2(f_x, a_k_pos, buf, read, NULL) != RM_ERR_OK) {
 					return RM_ERR_COPY_BUFFERED;
@@ -556,9 +552,6 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 			}
 			send_left -= read;
 		} else { /* tx raw bytes */
-			if (hit == 1) {             /* no match found, if hash tag was hit increase 3rd level collisions */
-				++collisions_3rd_level;
-			}
 			if (raw_bytes_n == 0) {
 				raw_bytes = malloc(raw_bytes_max * sizeof(*raw_bytes));
 				if (raw_bytes == NULL) {
@@ -589,7 +582,6 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 	pthread_mutex_lock(&s->mutex);
 	s->rec_ctx.collisions_1st_level = collisions_1st_level;
 	s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
-	s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
 	s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
 	s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
 	pthread_mutex_unlock(&s->mutex);
@@ -606,7 +598,6 @@ copy_tail:
 	pthread_mutex_lock(&s->mutex);
 	s->rec_ctx.collisions_1st_level = collisions_1st_level;
 	s->rec_ctx.collisions_2nd_level = collisions_2nd_level;
-	s->rec_ctx.collisions_3rd_level = collisions_3rd_level;
 	s->rec_ctx.copy_all_threshold_fired = copy_all_threshold_fired;
 	s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
 	pthread_mutex_unlock(&s->mutex);
@@ -672,11 +663,11 @@ fail:
 
 enum rm_error
 rm_roll_proc_cb_1(void *arg) {
-	struct rm_roll_proc_cb_arg      *cb_arg = NULL;         /* callback argument */
+	struct rm_roll_proc_cb_arg		*cb_arg = NULL;         /* callback argument */
 	struct rm_session				*s = NULL;
-	struct rm_session_push_local    *prvt_local = NULL;
-	struct rm_session_push_tx       *prvt_tx = NULL;
-	struct rm_delta_e               *delta_e = NULL;
+	struct rm_session_push_local	*prvt_local = NULL;
+	struct rm_session_push_tx		*prvt_tx = NULL;
+	struct rm_delta_e				*delta_e = NULL;
 	enum rm_session_type			t = 0;
 	struct rm_delta_reconstruct_ctx	*ctx = NULL;
 	uint8_t							update_ctx = 0;

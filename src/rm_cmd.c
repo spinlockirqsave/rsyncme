@@ -7,6 +7,7 @@
 
 #include "rm_defs.h"
 #include "rm_config.h"
+#include "rm_rx.h"
 #include "rm_tx.h"
 
 
@@ -73,52 +74,6 @@ static void rsyncme_usage(const char *name)
 static void rsyncme_range_error(char argument, unsigned long value)
 {
 	fprintf(stderr, "\nERR, argument [%c] too big [%lu]\n\n", argument, value);
-}
-
-static void print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
-{
-	enum rm_reconstruct_method method;
-	double                  real_time, cpu_time;
-	size_t                  bytes;
-
-	bytes = rec_ctx.rec_by_raw + rec_ctx.rec_by_ref;
-	real_time = rec_ctx.time_real.tv_sec + (double) rec_ctx.time_real.tv_nsec / RM_NANOSEC_PER_SEC;
-	cpu_time = rec_ctx.time_cpu;
-
-	method = rec_ctx.method;
-	switch (method) {
-
-		case RM_RECONSTRUCT_METHOD_COPY_BUFFERED:
-			fprintf(stderr, "\nmethod      : COPY_BUFFERED");
-			fprintf(stderr, "\nbytes       : [%zu]", bytes);
-			break;
-
-		case RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION:
-			fprintf(stderr, "\nmethod      : DELTA_RECONSTRUCTION (block [%zu])", rec_ctx.L);
-			fprintf(stderr, "\nbytes       : [%zu] (by raw [%zu], by refs [%zu])", bytes, rec_ctx.rec_by_raw, rec_ctx.rec_by_ref);
-			if (rec_ctx.rec_by_zero_diff != 0) {
-				fprintf(stderr, " (zero difference)");
-			}
-			fprintf(stderr, "\ndeltas      : [%zu] (raw [%zu], refs [%zu])", rec_ctx.delta_raw_n + rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.delta_ref_n);
-			fprintf(stderr, "\ncollisions  : 1st [%zu], 2nd [%zu], 3rd [%zu]", rec_ctx.collisions_1st_level, rec_ctx.collisions_2nd_level, rec_ctx.collisions_3rd_level);
-			break;
-
-		default:
-			fprintf(stderr, "\nERR, unknown delta reconstruction method\n");
-			exit(EXIT_FAILURE);
-			break;
-	}
-	fprintf(stderr, "\ntime        : real [%lf]s, cpu [%lf]s", real_time, cpu_time);
-	fprintf(stderr, "\nbandwidth   : [%lf]MB/s\n", ((double) bytes / 1000000) / real_time);
-	if ((rec_ctx.copy_all_threshold_fired == 1) || (rec_ctx.copy_tail_threshold_fired == 1)) {
-		fprintf(stderr, "\n");
-	}
-	if (rec_ctx.copy_all_threshold_fired == 1) {
-		fprintf(stderr, "copy all    : fired\n");
-	}
-	if (rec_ctx.copy_tail_threshold_fired == 1) {
-		fprintf(stderr, "copy tail   : fired\n");
-	}
 }
 
 static void help_hint(const char *name)
@@ -778,7 +733,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	print_stats(rec_ctx);
+	rm_rx_print_stats(rec_ctx);
 	fprintf(stderr, "\nOK.\n");
 	return RM_ERR_OK;
 
