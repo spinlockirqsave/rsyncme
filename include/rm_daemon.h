@@ -11,6 +11,7 @@
 
 #include "rm.h"
 #include "rm_core.h"
+#include "rm_tcp.h"
 
 #include <signal.h>
 

@@ -55,7 +55,6 @@ int rm_tcp_tx_ch_ch(int fd, const struct rm_ch_ch_ref *e)
 	if (rm_tcp_tx(fd, buf, RM_CH_CH_SIZE) != RM_ERR_OK)                             /* tx over TCP connection */
 		return -1;
 
-	RM_LOG_INFO("[TX]: checksum [%u]", e->ch_ch.f_ch);
 	return 0;
 }
 

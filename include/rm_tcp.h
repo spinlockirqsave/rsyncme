@@ -11,6 +11,7 @@
 
 #include "rm_defs.h"
 #include "rm_core.h"
+#include "rm_session.h"
 #include "rm_serialize.h"
 
 #include <fcntl.h>

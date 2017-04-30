@@ -1,11 +1,9 @@
 /*@file         README
-* @brief        Introduction.
+* @brief        Introduction to RSYNCME.
 * @author       Piotr Gregor <piotrgregor@rsyncme.org>
 * @date         24 Jan 2016 06:16 PM
 * @copyright    LGPLv2.1 */
 
-
-rsyncme
 
 Content
 1. OVERVIEW
@@ -21,7 +19,7 @@ Content
 
 1. OVERVIEW
 
-rsyncme is open source tool for easy and efficient synchronization of data
+RSYNCME is open source tool for easy and efficient synchronization of data
 locally (on the same PC) and remotely (PC <-> PC) over TCP connection.
 The main idea is to avoid sending of redundant data, that is these bytes
 from file which didn't change from last sync. The bytes which need to be sent
@@ -80,6 +78,7 @@ rsyncme/		<-- this directory (ROOT)
         - rsyncme/
             - log/
 				Server logs are written here
+
 
 
 4. BUILD , TEST, INSTALLATION
@@ -142,6 +141,7 @@ following below instructions or run our install_deps.sh script).
     make install    (you may need to run this with sudo depending on your environment)
 
 
+
 5. TESTS
 
 Please be sure dependencies are installed (see 4.1)
@@ -168,9 +168,11 @@ Make sure cmocka support is installed (see 4.1)
         definition in header ROOT/test/include/test_rm<#>.h to 0.
 
 
+
 6. USAGE
 
     Please read USER_GUIDE.txt.
+
 
 
 7. DEBUGGING
@@ -179,6 +181,7 @@ Debugging should be done from ROOT/test/src folder.
 E.g:
 
     piotr@world:~/projects/rsyncme/test/src$ gdb ../build/debug/test_rm_main1
+
 
 
 8. CLEAN

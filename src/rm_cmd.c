@@ -16,19 +16,16 @@
 #include <getopt.h>
 
 
-enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
-
-
 static void rsyncme_usage(const char *name)
 {
 	if (name == NULL) {
 		return;
 	}
 	fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4 [-p port]]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
-	fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
+	fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version] [--loglevel level]\n\n");
 	fprintf(stderr, "     \t -x           : file to synchronize\n");
-	fprintf(stderr, "     \t -i           : remote address (IP or domain name) if syncing with remote peer\n");
-	fprintf(stderr, "     \t -p           : remote port if syncing with remote peer\n");
+	fprintf(stderr, "     \t -i           : IP address or domain name of the receiver of file\n");
+	fprintf(stderr, "     \t -p           : receiver's port (defaults to %u)\n", RM_DEFAULT_PORT);
 	fprintf(stderr, "     \t -y           : reference file used for syncing (local if [ip]\n"
 			"     \t                was not given, remote otherwise) or result file if it doesn't\n"
 			"     \t                exist and -z is not set and --force is set\n");
@@ -49,10 +46,17 @@ static void rsyncme_usage(const char *name)
 	fprintf(stderr, "     \t --timeout_us : microseconds part of timeout limit on connect\n");
 	fprintf(stderr, "     \t --help       : display this help and exit\n");
 	fprintf(stderr, "     \t --version    : output version information and exit\n");
+	fprintf(stderr, "     \t --loglevel   : set log verbosity (defalut is NORMAL)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "     \t If no option is specified, --help is assumed.\n");
 
 	fprintf(stderr, "\nExamples:\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar -z /tmp/result\n"
+			"		This will sync local /tmp/foo.tar with remote\n"
+			"		file /tmp/bar.tar and save result in remote /tmp/result file (remote /tmp/bar.tar\n"
+			"		is saved as /tmp/result, /tmp/bar.tar no longer exists).\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar -z /tmp/result --l\n"
+			"		Same as above but remote /tmp/bar.tar is left intact.\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
 			"		file /tmp/bar.tar (remote becomes same as local is).\n");
@@ -117,6 +121,9 @@ int main(int argc, char *argv[])
 	char					z_dirname[PATH_MAX];
 	char					*z_dname = NULL;
 
+	struct rm_tx_options	opt = { .loglevel = RM_LOGLEVEL_NORMAL };
+
+
 	if (argc < 2) {
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
@@ -133,6 +140,7 @@ int main(int argc, char *argv[])
 		{ "version", no_argument, 0, 6 },
 		{ "timeout_s", required_argument, 0, 7 },
 		{ "timeout_us", required_argument, 0, 8 },
+		{ "loglevel", required_argument, 0, 9 },
 		{ 0 }
 	};
 
@@ -204,6 +212,21 @@ int main(int argc, char *argv[])
 					exit(EXIT_FAILURE);
 				}
 				timeout_us = helper;
+				break;
+
+			case 9:																												/* loglevel */
+				helper = strtoul(optarg, &pCh, 10);
+				if (helper > 0x10 - 1) {
+					rsyncme_range_error(c, helper);
+					exit(EXIT_FAILURE);
+				}
+				if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+					fprintf(stderr, "Invalid argument\n");
+					fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+					help_hint(argv[0]);
+					exit(EXIT_FAILURE);
+				}
+				opt.loglevel = helper;
 				break;
 
 			case 'x':
@@ -427,7 +450,7 @@ int main(int argc, char *argv[])
 	if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
 		if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
-			res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, timeout_s, timeout_us, &err_str);
+			res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, timeout_s, timeout_us, &err_str, &opt);
 			if (res != RM_ERR_OK) {
 				fprintf(stderr, "\n");
 				switch (res) {
@@ -574,7 +597,7 @@ int main(int argc, char *argv[])
 		}
 		if ((push_flags & RM_BIT_0) == 0u) { /* local push? */
 			fprintf(stderr, "\nLocal push.\n");
-			res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+			res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &opt);
 			if (res != RM_ERR_OK) {
 				fprintf(stderr, "\n");
 				switch (res) {
@@ -653,7 +676,7 @@ int main(int argc, char *argv[])
 			}
 		} else { /* local pull request */
 			fprintf(stderr, "\nLocal pull.\n");
-			res = rm_tx_local_push(yp, xp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+			res = rm_tx_local_push(yp, xp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &opt);
 			if (res != RM_ERR_OK) {
 				fprintf(stderr, "\n");
 				switch (res) {

@@ -18,7 +18,6 @@
 
 
 struct rsyncme  rm;
-enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
 
 static void rm_daemon_sigint_handler(int signo) {
 	if (signo != SIGINT) {
@@ -347,7 +346,7 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 4:
-				RM_LOGLEVEL = RM_LOGLEVEL_VERBOSE;                                      /* --verbose */
+				opt.loglevel = RM_LOGLEVEL_VERBOSE;										/* --verbose */
 				break;
 
 			case 'l':
@@ -362,7 +361,7 @@ int main(int argc, char *argv[]) {
 					rsyncme_d_help_hint(argv[0]);
 					exit(EXIT_FAILURE);
 				}
-				RM_LOGLEVEL = helper;
+				opt.loglevel = helper;
 				break;
 
 			case '?':

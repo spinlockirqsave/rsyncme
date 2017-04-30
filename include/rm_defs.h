@@ -237,6 +237,12 @@ enum rm_pt_type {
 	RM_PT_MSG_BYE
 };
 
+struct rm_core_options
+{
+	uint8_t	authenticate;
+	uint8_t	loglevel;
+};
+
 /* prototypes */
 
 struct rsyncme;

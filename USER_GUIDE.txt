@@ -1,7 +1,7 @@
 /*@file         USER_GUIDE.txt
-* @brief        Description of rsyncme usage.
-* @author       Piotr Gregor <piotrek.gregor at gmail.com>
-* @version      0.1.2
+* @brief        Short tutorial on how to use RSYNCME.
+* @author       Piotr Gregor <piotrgregor@rsyncme.org>
+* @version      0.1.3
 * @date         13 July 2016 12:50 PM
 * @copyright    LGPLv2.1 */
 
@@ -16,15 +16,22 @@ Content
 2.3 More advanced example (local sync)
 3. OPTIONS
 3.1 TRANSMITTER
+3.1.1 -z
+3.1.2 --leave
+3.1.3 --force
+3.1.4 -l
+3.1.5 -t
+3.1.6 -a
+3.1.7 --loglevel
 3.2 RECEIVER
-4. REMOTE SYNCHRONIZATION
-5. LOCAL SYNCHRONIZATION
-5.1 OPTIONS
-5.1.1 -z OPTION
-5.1.2 --leave OPTION
-5.1.3 -l OPTION
-5.1.4 -t OPTION
-5.1.5 -a OPTION
+3.2.1 -l
+3.2.2 --auth
+3.2.3 --help
+3.2.4 --version
+3.2.5 --verbose
+4. REMOTE SYNCHRONIZATION EXAMPLE
+5. LOCAL SYNCHRONIZATION EXAMPLE
+
 
 
 1. OVERVIEW
@@ -47,6 +54,7 @@ to use as a source of changes (new/current version of data) and -y gives
 the name of the file that is the old version of data. This name may
 be the name of target (so -y file will be changed) or output may be written
 to a new file and -y file deleted or left intact.
+
 
 
 2. EXAMPLES
@@ -133,6 +141,7 @@ that didn't match.
 (see (5) for details).
 
 
+
 3. OPTIONS
 
 3.1 TRANSMITTER
@@ -143,10 +152,13 @@ pull        Set up @y as source of changes, @x as result/output.
 -y          The name of target to be synchronized to be same as @x, it is
             reference file (if push, see -x if pull).
 -z          The new name of target.
+-i			IP or domain name of the receiver of file.
+-p			Receiver's port.
 --leave     Will leave reference file unchanged, producing output as @z.
 --force     Will create @y if it doesn't exist.
 --version   Will output version of program.
 --help      Will print short help information.
+--loglevel	Sets the logging verbosity.
 -l          The size of block used in synchronization algorithm [in bytes].
             Default used is 512.
 -a          Copy all threshold [in bytes]. The file will be sent as raw bytes
@@ -162,6 +174,97 @@ pull        Set up @y as source of changes, @x as result/output.
             point before this limit is reached and therefore delta reference
             to matching block is just to be sent (or the EOF is reached),
             then already accumulated bytes are sent immediately.
+3.1.1 -z OPTION
+
+    rsyncme push -x @x -y @y -z @z
+
+This will output new version of @y as @z, i.e. @y becomes @z (if @y name was different from @z name there is no file with name @y after this is done).
+
+3.1.2 --leave OPTION
+
+    rsyncme push -x @x -y @y -z @z --leave
+
+will work as 4.1.1 but @y file will not be deleted nor changed - it is left intact.
+
+3.1.3 --force OPTION
+
+    rsyncme push -i 192.168.1.12 -x @x -y @y --f
+
+will force receiver to create @y file if it doesn't exist. It is possible therefore
+to make calls with --f and be sure that result exists after call returns,
+it is either reconstructed by receiver reusing existing @y or created by having
+transmitter sending all file as raw bytes.
+
+3.1.4 -l OPTION
+
+    rsyncme push -x @x -y @y -l block_size
+
+Use different size of block for synchronization. This option influences
+number of matches found and number of raw bytes used. The general rule
+is less this value is more matches are found while simultaneously less
+this value is less space for performance improvement is left.
+Example:
+
+    rsyncme push -x @x -y @y -l 128
+
+This will use 128 bytes as synchronization block size.
+
+3.1.5 -t OPTION
+
+    rsyncme push -x @x -y @y -t number_of_bytes
+
+Copy tail threshold sets up the number of bytes at the end of file that will
+be sent literally, as a raw data, straight away - without searching for a match
+in hashtable of checksums. If there is less or equal number of bytes to process,
+copy tail threshold is fired and bytes are sent literally - rolling procedure
+is interrupted and ended. The copy tail threshold can't be 0, therefore if set
+explicitly - this must be positive value. If this threshold is less than copy
+all threshold - copy all threshold is fired and all bytes are sent literally.
+If this value is equal to copy all threshold, copy tail threshold is fired
+to the same effect - all bytes are used literally. 
+Example:
+
+    rsyncme push -x @x -y @y -t 80
+
+This will use 80 bytes as copy tail threshold.
+
+3.1.6 -a OPTION
+
+    rsyncme push -x @x -y @y -a number_of_bytes
+
+Copy all threshold sets up the trigger on the file size to be sent literally.
+If the file size is less than this value or is equal and copy tail thrreshold
+is equal to it - then whole file is sent as raw data. 
+Example:
+
+    rsyncme push -x @x -y @y -a 80
+
+This will use 80 bytes as copy all threshold. All files of sizes less than 80 bytes
+are sent straight away, skipping the rolling checksum procedure.
+
+3.1.7 --loglevel OPTION
+
+    rsyncme push -x @x -y @y --loglevel 3
+
+This will print additional info to the console 
+Example:
+
+    rsyncme push -x /tmp/RINGLIST.DAT -y /tmp/dat2 --loglevel 3
+
+	Local push.
+	2017-04-30_16-29-00:077444	INFO	rm_session.c:411:rm_session_ch_ch_rx_f():	[RX]: checksum [1522536235]
+	2017-04-30_16-29-00:082432	INFO	rm_session.c:631:rm_session_delta_rx_f_local():	[TX]: delta type[1]
+
+
+	method      : DELTA_RECONSTRUCTION (block [512])
+	bytes       : [44] (by raw [44], by refs [0])
+	deltas      : [1] (raw [1], refs [0])
+	collisions  : 1st [0], 2nd [0], 3rd [0]
+	time        : real [0.488435]s, cpu [0.003087]s
+	bandwidth   : [0.000090]MB/s
+
+
+	OK.
 
 3.2 RECEIVER
 
@@ -172,11 +275,39 @@ pull        Set up @y as source of changes, @x as result/output.
 --version	Print software version and exit.
 --verbose	Same as -l 3.
 
+3.2.1 -l OPTION
 
-4. REMOTE SYNCHRONIZATION
+This option sets the verbosity of logging into log file. Default is NORMAL.
+You can set it to:
+0 - disable logging
+1 - normal
+2 - log additional (detailed) information from worker threads (TX/RX of checksums/deltas)
+3 - verbose
 
-If the -i option is given in the command, this means this is remote sync.
-TCP connection is used to transmit/receive data.
+3.2.2 --auth OPTION
+
+This option turns on authentication of incoming requests. Currently in version 0.1.3-alpha,
+allowed IP is hardcoded in rm_config.h as #define RM_IP_AUTH "127.0.0.1" - please change
+it as needed.
+
+3.2.3 --help OPTION
+
+Prints help to the console.
+
+3.2.4 --version	OPTION
+
+Prints software version tp the console.
+
+3.2.5 --verbose OPTION
+
+Same as -l 3, i.e. sets loglevel to VERBOSE.
+
+
+
+4. REMOTE SYNCHRONIZATION EXAMPLE
+
+If the -i option is given to the transmitter, this means this is remote sync.
+TCP connection is used to transmit/receive data between TRANSMITTER and RECEIVER.
 
 Continuing 2.1 example...
 
@@ -187,7 +318,7 @@ to the local file and want remote file to be same as this version.
 peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
 -rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 
-Assuming there is a rsyncme receiver running on 52.16.18.168 with
+Assuming there is a rsyncme RECEIVER running on 52.16.18.168 with
 
 ./rsyncme_d
 
@@ -198,10 +329,11 @@ rsyncme push -i 52.16.18.168
 	-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 	-z /tmp/client --l
 
-is a command to sync that version with our local version. The result is saved
-as a new file /tmp/client on remote host.
+is a command to start TRANSMITTER and sync that version with our local version.
+The result is saved as a new file /tmp/client on remote host and old version is left intact
+(if there is no --leave flag then @y would be moved to @z).
 
-The output on the transmitter side:
+The TRANSMITTER's output to the console:
 
 peter@westernst:~/Downloads$ rsyncme push -i 52.16.18.168
 								-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
@@ -268,7 +400,8 @@ bandwidth   : [1.232694]MB/s
 
 OK.
 
-The output on the receiver side:
+
+The RECEIVER's output to the log:
 
 cat rsyncme_2017-04-29_22-39-13:509254.err
 
@@ -335,11 +468,12 @@ This allowed to achieve 1.23 MB/s up bandwidth on 0.92 Mb(up)/7.2 Mb(down) Ether
 
 
 
-5. LOCAL SYNCHRONIZATION
+5. LOCAL SYNCHRONIZATION EXAMPLE
 
-If the -i option is not given in the command, this means this is local sync.
-That means TCP connection is not used at all and you don't need rsyncme
-receiver to be running at all. The rsyncme process will read/write the data
+If the -i option is not given in the command to the TRANSMITTER,
+this means this is local sync.
+This also means that TCP connection is not used at all and you don't need rsyncme
+RECEIVER to be running at all. The rsyncme TRANSMITTER will read/write the data
 by direct system calls to fread/fwrite (though sync algorithm will be used
 in the same way as if it was remote sync over TCP connection).
 The basic command to synchronize file @x and file @y on the same machine is
@@ -349,66 +483,24 @@ The basic command to synchronize file @x and file @y on the same machine is
 This command will synchronize file @y with @x, that is @y will be the same
 as @x after this is done, and @x is unchanged.
 The basic command will create sychronized version of @y with the same name
-and in the same location, but this can be changed with -z and/or --leave option.
+and in the same location, (this can be changed with -z and/or --leave options).
 
-5.1 OPTIONS
-
-5.1.1 -z OPTION
-
-    rsyncme push -x @x -y @y -z @z
-
-This will output new version of @y as @z, i.e. @y becomes @z (if @y name was different from @z name there is no file with name @y after this is done).
-
-5.1.2 --leave OPTION
-
-    rsyncme push -x @x -y @y -z @z --leave
-
-will work as 4.1.1 but @y file will not be deleted nor changed - it is left intact.
-
-5.1.3 -l OPTION
-
-    rsyncme push -x @x -y @y -l block_size
-
-Use different size of block for synchronization. This option influences
-number of matches found and number of raw bytes used. The general rule
-is less this value is more matches are found while simultaneously less
-this value is less space for performance improvement is left.
 Example:
 
-    rsyncme push -x @x -y @y -l 128
+    rsyncme push -x /tmp/RINGLIST.DAT -y /tmp/dat2 --loglevel 3
 
-This will use 128 bytes as synchronization block size.
+	Local push.
+	2017-04-30_16-29-00:077444	INFO	rm_session.c:411:rm_session_ch_ch_rx_f():	[RX]: checksum [1522536235]
+	2017-04-30_16-29-00:082432	INFO	rm_session.c:631:rm_session_delta_rx_f_local():	[TX]: delta type[1]
 
-5.1.4 -t OPTION
 
-    rsyncme push -x @x -y @y -t number_of_bytes
+	method      : DELTA_RECONSTRUCTION (block [512])
+	bytes       : [44] (by raw [44], by refs [0])
+	deltas      : [1] (raw [1], refs [0])
+	collisions  : 1st [0], 2nd [0], 3rd [0]
+	time        : real [0.488435]s, cpu [0.003087]s
+	bandwidth   : [0.000090]MB/s
 
-Copy tail threshold sets up the number of bytes at the end of file that will
-be sent literally, as a raw data, straight away - without searching for a match
-in hashtable of checksums. If there is less or equal number of bytes to process,
-copy tail threshold is fired and bytes are sent literally - rolling procedure
-is interrupted and ended. The copy tail threshold can't be 0, therefore if set
-explicitly - this must be positive value. If this threshold is less than copy
-all threshold - copy all threshold is fired and all bytes are sent literally.
-If this value is equal to copy all threshold, copy tail threshold is fired
-to the same effect - all bytes are used literally. 
-Example:
 
-    rsyncme push -x @x -y @y -t 80
-
-This will use 80 bytes as copy tail threshold.
-
-5.1.5 -a OPTION
-
-    rsyncme push -x @x -y @y -a number_of_bytes
-
-Copy all threshold sets up the trigger on the file size to be sent literally.
-If the file size is less than this value or is equal and copy tail thrreshold
-is equal to it - then whole file is sent as raw data. 
-Example:
-
-    rsyncme push -x @x -y @y -a 80
-
-This will use 80 bytes as copy all threshold. All files of sizes less than 80 bytes
-are sent straight away, skipping the rolling checksum procedure.
+	OK.
 

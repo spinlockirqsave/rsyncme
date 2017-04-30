@@ -11,7 +11,7 @@
 
 enum rm_error
 rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
-		size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) {
+		size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, struct rm_tx_options *opt) {
 	enum rm_error  err = RM_ERR_OK;
 	FILE        *f_x = NULL;   /* original file, to be synced into @y */
 	FILE        *f_y = NULL;   /* file for taking non-overlapping blocks */
@@ -34,6 +34,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 	twfifo_queue            *q = NULL;
 	const struct rm_delta_e *delta_e = NULL;
 	struct twlist_head      *lh = NULL;
+	struct rm_core_options	core_opt = {0};
 
 	if ((x == NULL) || (y == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
 		return RM_ERR_BAD_CALL;
@@ -130,7 +131,8 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 		goto err_exit;
 	}
 
-	s = rm_session_create(RM_PUSH_LOCAL);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+	core_opt.loglevel = opt->loglevel;
+	s = rm_session_create(RM_PUSH_LOCAL, &core_opt);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
 	if (s == NULL) {
 		err = RM_ERR_CREATE_SESSION;
 		goto err_exit;
@@ -292,7 +294,7 @@ err_exit:
 	return err;
 }
 
-int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
+int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str, struct rm_tx_options *opt) {
 	enum rm_error       err = RM_ERR_OK;
 	FILE                *f_x = NULL;	/* original file, to be synced with @y */
 	int					fd_x = -1;
@@ -309,6 +311,8 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	unsigned char       *buf = NULL;
 	struct rm_msg_push_ack   ack;
 	memset(&ack, 0, sizeof(ack));
+
+	struct rm_core_options	core_opt = {0};
 
 	(void) y;
 	(void) z;
@@ -336,7 +340,8 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		return RM_ERR_X_ZERO_SIZE;
 	}
 
-	s = rm_session_create(RM_PUSH_TX);                                                          /* rx nonoverlapping checksums, calc rolling checksums, produce delta vector and tx to receiver */
+	core_opt.loglevel = opt->loglevel;
+	s = rm_session_create(RM_PUSH_TX, &core_opt);                                               /* rx nonoverlapping checksums, calc rolling checksums, produce delta vector and tx to receiver */
 	if (s == NULL) {
 		err = RM_ERR_CREATE_SESSION;
 		goto err_exit;

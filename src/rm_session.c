@@ -10,7 +10,7 @@
 #include "rm_session.h"
 
 
-void rm_session_push_rx_init(struct rm_session_push_rx *prvt)
+void rm_session_push_rx_init(struct rm_session_push_rx *prvt, struct rm_core_options *opt)
 {
 	memset(prvt, 0, sizeof(struct rm_session_push_rx));
 	TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
@@ -20,6 +20,7 @@ void rm_session_push_rx_init(struct rm_session_push_rx *prvt)
 	prvt->fd = -1;
 	prvt->ch_ch_fd = -1;
 	prvt->delta_fd = -1;
+	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
 
@@ -42,12 +43,13 @@ void rm_session_push_rx_free(struct rm_session_push_rx *prvt)
 	return;
 }
 
-void rm_session_push_tx_init(struct rm_session_push_tx *prvt)
+void rm_session_push_tx_init(struct rm_session_push_tx *prvt, struct rm_core_options *opt)
 {
 	memset(prvt, 0, sizeof(struct rm_session_push_tx));
-	rm_session_push_local_init(&prvt->session_local);
+	rm_session_push_local_init(&prvt->session_local, opt);
 	prvt->session_local.delta_rx_f = rm_rx_tx_delta_element;
 	//pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);	/* moved to it's session_local object */
+	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
 
@@ -60,7 +62,7 @@ void rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 	return;
 }
 
-void rm_session_push_local_init(struct rm_session_push_local *prvt)
+void rm_session_push_local_init(struct rm_session_push_local *prvt, struct rm_core_options *opt)
 {
 	memset(prvt, 0, sizeof(struct rm_session_push_local));
 	pthread_mutex_init(&prvt->h_mutex, NULL);
@@ -68,6 +70,7 @@ void rm_session_push_local_init(struct rm_session_push_local *prvt)
 	pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
 	pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
 	prvt->delta_rx_f = rm_rx_process_delta_element;
+	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
 
@@ -189,7 +192,7 @@ enum rm_error rm_session_assign_from_msg_pull(struct rm_session *s, const struct
 }
 
 /* TODO: generate GUID here */
-struct rm_session *rm_session_create(enum rm_session_type t)
+struct rm_session *rm_session_create(enum rm_session_type t, struct rm_core_options *opt)
 {
 	struct rm_session	*s = NULL;
 	uuid_t				uuid = {0};
@@ -209,7 +212,7 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 			s->prvt = malloc(sizeof(struct rm_session_push_rx));
 			if (s->prvt == NULL)
 				goto fail;
-			rm_session_push_rx_init(s->prvt);
+			rm_session_push_rx_init(s->prvt, opt);
 			break;
 		case RM_PULL_RX:
 			s->prvt = malloc(sizeof(struct rm_session_pull_rx));
@@ -220,13 +223,13 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 			s->prvt = malloc(sizeof(struct rm_session_push_tx));
 			if (s->prvt == NULL)
 				goto fail;
-			rm_session_push_tx_init(s->prvt);
+			rm_session_push_tx_init(s->prvt, opt);
 			break;
 		case RM_PUSH_LOCAL:
 			s->prvt = malloc(sizeof(struct rm_session_push_local));
 			if (s->prvt == NULL)
 				goto fail;
-			rm_session_push_local_init(s->prvt);
+			rm_session_push_local_init(s->prvt, opt);
 			break;
 		default:
 			goto fail;
@@ -235,6 +238,7 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 	s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
 	uuid_generate(uuid);
 	memcpy(&s->id, &uuid, rm_min(sizeof(uuid_t), RM_UUID_LEN));
+
 	return s;
 
 fail:
@@ -292,6 +296,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 	struct stat                     fs = {0};
 	size_t                          y_sz = 0, blocks_n_exp = 0, blocks_n = 0;
 	int                             fd = -1;
+	uint8_t							loglevel = RM_LOGLEVEL_NORMAL;
 
 	//TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
 	//twhash_init(h);
@@ -306,6 +311,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 				goto done;
 			}
 			msg_push = rm_push_rx->msg_push;
+			loglevel = rm_push_rx->opt.loglevel;
 			fd = rm_push_rx->fd;																				/* TODO use separate socket for checksums TX? (ch_ch_port in receiver?) */
 			L = rm_push_rx->msg_push->L;
 			f_y = s->f_y;
@@ -324,7 +330,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 					goto  done;
 				}
 				assert(blocks_n == blocks_n_exp && "rm_do_msg_push_rx ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
-				if (RM_LOGLEVEL > RM_LOGLEVEL_NORMAL)
+				if (loglevel > RM_LOGLEVEL_NORMAL)
 					RM_LOG_INFO("[%s] -> [%s], [%u]: TX-ed [%zu] nonoverlapping checksum elements", s->ssid1, s->ssid2, s->hashed_hash, blocks_n_exp);
 			} else {
 				goto done;																						/* no checkums to TX */
@@ -365,12 +371,15 @@ void *rm_session_ch_ch_rx_f(void *arg)
 	struct twhlist_head			*h = NULL;
 	pthread_mutex_t				*h_mutex = NULL;
 	enum rm_rx_status			status = RM_RX_STATUS_OK;
+	uint8_t						loglevel = RM_LOGLEVEL_NORMAL;
+
 
 	struct rm_session *s = (struct rm_session *) arg;
 	prvt = s->prvt;
 	ack = prvt->msg_push_ack;
 	h = prvt->session_local.h;
 	h_mutex = &prvt->session_local.h_mutex;
+	loglevel = prvt->opt.loglevel;
 
 	fd = prvt->fd;																		/* TODO Do we need to use separate ch_ch channel (ch_ch_port) instead of main socket? */
 	ch_ch_n = ack->ch_ch_n;
@@ -397,7 +406,9 @@ void *rm_session_ch_ch_rx_f(void *arg)
 			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
 		}
-		RM_LOG_INFO("[RX]: checksum [%u]", e->data.ch_ch.f_ch);
+
+		if (loglevel >= RM_LOGLEVEL_THREADS)
+			RM_LOG_INFO("[RX]: checksum [%u]", e->data.ch_ch.f_ch);
 
 		e->data.ref = entries_n;														/* assign offset */
 		TWINIT_HLIST_NODE(&e->hlink);
@@ -507,6 +518,9 @@ void *rm_session_delta_rx_f_local(void *arg)
 	uint16_t	timeout_s = 10;							/* TODO get timeouts from the user */
 	uint16_t	timeout_us = 0;
 
+	uint8_t		loglevel = RM_LOGLEVEL_NORMAL;
+
+
 	s = (struct rm_session*) arg;
 	if (s == NULL) {
 		status = RM_RX_STATUS_INTERNAL_ERR;
@@ -538,6 +552,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 		q = &prvt_local->tx_delta_e_queue;
 		q_mutex = &prvt_local->tx_delta_e_queue_mutex;
 		q_signal = &prvt_local->tx_delta_e_queue_signal;
+		loglevel = prvt_local->opt.loglevel;
 	} else {												/* RM_PUSH_TX */
 		prvt_tx = s->prvt;
 		if (prvt_tx == NULL) {
@@ -550,6 +565,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 		q = &prvt_tx->session_local.tx_delta_e_queue;
 		q_mutex = &prvt_tx->session_local.tx_delta_e_queue_mutex;
 		q_signal = &prvt_tx->session_local.tx_delta_e_queue_signal;
+		loglevel = prvt_tx->opt.loglevel;
 
 		struct sockaddr peer_addr;
 		socklen_t addrlen = sizeof(peer_addr);
@@ -603,12 +619,17 @@ void *rm_session_delta_rx_f_local(void *arg)
 			delta_e = tw_container_of(lh, struct rm_delta_e, link);
 			//err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
 			delta_pack.delta_e = delta_e;
+
 			err = prvt_local->delta_rx_f(&delta_pack);
 			if (err != 0) {
 				pthread_mutex_unlock(q_mutex);
 				status = RM_RX_STATUS_DELTA_PROC_FAIL;
 				goto err_exit;
 			}
+
+			if (loglevel >= RM_LOGLEVEL_THREADS)
+				RM_LOG_INFO("[TX]: delta type[%u]", delta_e->type);
+
 			bytes_to_rx -= delta_e->raw_bytes_n;
 			if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
 				free(delta_e->raw_bytes);
@@ -675,7 +696,9 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	struct timespec					real_time = {0};
 	double							cpu_time = 0.0;
 
-	struct sockaddr_storage cli_addr = {0};;
+	uint8_t							loglevel = RM_LOGLEVEL_NORMAL;
+
+	struct sockaddr_storage cli_addr = {0};
 	socklen_t               cli_len = 0;
 
 	s = (struct rm_session*) arg;
@@ -704,6 +727,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	listen_fd	= prvt_rx->delta_fd;
 	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
 	file_mutex	= &s->y_file_mutex;
+	loglevel = prvt_rx->opt.loglevel;
 
 	pthread_mutex_unlock(&s->mutex);
 
@@ -750,7 +774,8 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			status = RM_RX_STATUS_DELTA_RX_TCP_FAIL;
 			goto err_exit;
 		}
-		RM_LOG_INFO("[RX]: delta type[%u]", delta_e.type);
+		if (loglevel >= RM_LOGLEVEL_THREADS)
+			RM_LOG_INFO("[RX]: delta type[%u]", delta_e.type);
 
 		switch (delta_e.type) {
 

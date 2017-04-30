@@ -143,12 +143,13 @@ static int test_rm_delete_copies_of_files_postfixed(const char *postfix)
 
 int test_rm_setup(void **state)
 {
-    int         err;
-    size_t      i,j;
-    FILE        *f;
-    void        *buf;
-    struct rm_session   *s;
-    unsigned long seed;
+    int         err = -1;
+    size_t      i = 0, j = 0;
+    FILE        *f = NULL;
+    void        *buf = NULL;
+    struct rm_session   *s = NULL;
+    unsigned long seed = 0;
+	struct rm_core_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_7", 1);
@@ -208,7 +209,7 @@ int test_rm_setup(void **state)
     rm_state.buf2 = buf;
 
     /* session for local push */
-    s = rm_session_create(RM_PUSH_LOCAL);
+    s = rm_session_create(RM_PUSH_LOCAL, &opt);
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
     }

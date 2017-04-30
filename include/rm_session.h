@@ -10,6 +10,7 @@
 
 
 #include "rm.h"
+#include "rm_core.h"
 #include "rm_rx.h"
 #include "twlist.h"
 
@@ -72,6 +73,8 @@ struct rm_session_push_local
 	pthread_t               delta_rx_tid;       /* consumer of delta elements (reconstruction function in local push, delta transmitter in remote push) */
 	enum rm_rx_status       delta_rx_status;
 	rm_delta_f              *delta_rx_f;        /* delta rx callback (in RM_PUSH_LOCAL dequeues delta elements and does data reconstruction, in RM_PUSH_TX dequeues deltas and transmits them over TCP) */
+
+	struct rm_core_options	opt;
 };
 
 /* Receiver of file (delta vector) */
@@ -92,6 +95,8 @@ struct rm_session_push_rx
 	pthread_cond_t  rx_delta_e_queue_signal;    /* signaled by receiving proc when
 												   delta elements are received on the socket */
 	struct rm_msg_push      *msg_push;          /* keeps pointer to MSG_PUSH message that describes incoming synchronization request */
+
+	struct rm_core_options	opt;
 };
 
 /* Transmitter of file (delta vector) */
@@ -108,6 +113,8 @@ struct rm_session_push_tx
 	//pthread_mutex_t         ch_ch_hash_mutex;    hashtable mutex for synchronization with session_local's ch_ch_rx thread
 
 	struct rm_msg_push_ack *msg_push_ack;		/* ACK received from receiver (contains delta port on which receiver is expecting of delta) */
+
+	struct rm_core_options	opt;
 };
 
 /* Receiver of file (delta vector) */
@@ -118,16 +125,16 @@ struct rm_session_pull_rx
 	pthread_t               delta_tid;
 };
 
-void rm_session_push_rx_init(struct rm_session_push_rx *prvt) __attribute__((nonnull(1)));
+void rm_session_push_rx_init(struct rm_session_push_rx *prvt, struct rm_core_options *opt) __attribute__((nonnull(1,2)));
 void rm_session_push_rx_free(struct rm_session_push_rx *prvt) __attribute__((nonnull(1)));
 
-void rm_session_push_tx_init(struct rm_session_push_tx *prvt) __attribute__((nonnull(1)));
+void rm_session_push_tx_init(struct rm_session_push_tx *prvt, struct rm_core_options *opt) __attribute__((nonnull(1,2)));
 
 /* @brief   Frees private session, DON'T TOUCH private
  *          session after this returns */ 
 void rm_session_push_tx_free(struct rm_session_push_tx *prvt) __attribute__((nonnull(1)));
 
-void rm_session_push_local_init(struct rm_session_push_local *prvt) __attribute__((nonnull(1)));
+void rm_session_push_local_init(struct rm_session_push_local *prvt, struct rm_core_options *opt) __attribute__((nonnull(1,2)));
 
 /* @brief   Frees private session, DON'T TOUCH private
  *          session after this returns */ 
@@ -138,7 +145,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 enum rm_error rm_session_assign_validate_from_msg_pull(struct rm_session *s, struct rm_msg_pull *m) __attribute__((nonnull(1,2)));
 
 /* @brief   Creates new session. */
-struct rm_session* rm_session_create(enum rm_session_type t);
+struct rm_session* rm_session_create(enum rm_session_type t, struct rm_core_options *opt);
 
 /* @brief   Frees session with it's private object, DON'T TOUCH
  *          session after this returns */ 

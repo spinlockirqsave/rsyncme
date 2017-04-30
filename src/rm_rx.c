@@ -10,12 +10,13 @@
 
 int rm_rx_f_tx_ch_ch(const struct f_tx_ch_ch_ref_arg_1 arg)
 {
-	const struct rm_ch_ch_ref       *e;
-	const struct rm_session         *s;
-	enum rm_session_type            s_type;
-	struct rm_session_push_rx       *rm_push_rx;
-	struct rm_session_pull_rx       *rm_pull_rx;
-	int                             fd;
+	const struct rm_ch_ch_ref       *e = NULL;
+	const struct rm_session         *s = NULL;
+	enum rm_session_type            s_type = 0;
+	struct rm_session_push_rx       *rm_push_rx = NULL;
+	struct rm_session_pull_rx       *rm_pull_rx = NULL;
+	int                             fd = -1;
+	uint8_t							loglevel = 0;
 
 	e = arg.e;
 	s = arg.s;
@@ -30,6 +31,7 @@ int rm_rx_f_tx_ch_ch(const struct f_tx_ch_ch_ref_arg_1 arg)
 			if (rm_push_rx == NULL)
 				return RM_ERR_RX;
 			fd = rm_push_rx->ch_ch_fd;
+			loglevel = rm_push_rx->opt.loglevel;
 			break;
 		case RM_PULL_RX:
 			rm_pull_rx = (struct rm_session_pull_rx *) s->prvt;
@@ -42,6 +44,10 @@ int rm_rx_f_tx_ch_ch(const struct f_tx_ch_ch_ref_arg_1 arg)
 	}
 	if (rm_tcp_tx_ch_ch(fd, e) < 0)
 		return RM_ERR_TX;
+
+	if (loglevel >= RM_LOGLEVEL_THREADS)
+		RM_LOG_INFO("[TX]: checksum [%u]", e->ch_ch.f_ch);
+
 	return RM_ERR_OK;
 }
 
@@ -393,8 +399,6 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 
 	if (delta_e == NULL || ctx == NULL)
 		return RM_ERR_BAD_CALL;
-	// z_offset = ctx->rec_by_ref + ctx->rec_by_raw;
-	RM_LOG_INFO("[TX]: delta type[%u]", delta_e->type);
 
 	/* TX delta over TCP using delta protocol */
 	if (rm_tcp_tx(fd, (void*) &delta_e->type, RM_DELTA_ELEMENT_TYPE_FIELD_SIZE) != RM_ERR_OK)							/* tx delta type over TCP connection */

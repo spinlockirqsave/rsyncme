@@ -137,12 +137,13 @@ int RM_TEST_MOCK_FOPEN64    = 0;
 
 int
 test_rm_setup(void **state) {
-    int         err;
-    size_t      i,j;
-    FILE        *f;
-    void        *buf;
-    struct rm_session   *s;
+    int         err = -1;
+    size_t      i = 0, j = 0;
+    FILE        *f = NULL;
+    void        *buf = NULL;
+    struct rm_session   *s = NULL;
     unsigned long const seed = time(NULL);
+	struct rm_core_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_9", 1);
@@ -205,7 +206,7 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL && "Can't malloc buffer");
     rm_state.buf2 = buf;
 
-    s = rm_session_create(RM_PUSH_LOCAL); /* session for local push */
+    s = rm_session_create(RM_PUSH_LOCAL, &opt); /* session for local push */
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
         if (f != NULL) {
@@ -285,6 +286,7 @@ test_rm_local_push_err_1(void **state) {
     rm_push_flags                   flags;
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_9");
     if (err != 0) {
@@ -355,33 +357,33 @@ test_rm_local_push_err_1(void **state) {
             flags = 0;
 
             flags = 0;
-            status = rm_tx_local_push(NULL, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(NULL, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-            status = rm_tx_local_push(NULL, f_y_name, rm_state->unique_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(NULL, f_y_name, rm_state->unique_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-            status = rm_tx_local_push(rm_state->unique_name, f_y_name, rm_state->unique_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, NULL);
+            status = rm_tx_local_push(rm_state->unique_name, f_y_name, rm_state->unique_name, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, NULL, &opt);
             assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-            status = rm_tx_local_push(rm_state->unique_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(rm_state->unique_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OPEN_X);
 
             flags = 0;
-            status = rm_tx_local_push(NULL, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(NULL, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
-            status = rm_tx_local_push(buf_x_name, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, NULL, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_BAD_CALL);
 
             flags = 0;
             RM_TEST_MOCK_FOPEN64 = 1;
             will_return(__wrap_fopen64, NULL);
-            status = rm_tx_local_push(rm_state->unique_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(rm_state->unique_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(status, RM_ERR_OPEN_X);
 
@@ -391,7 +393,7 @@ test_rm_local_push_err_1(void **state) {
             RM_TEST_MOCK_FOPEN64 = 1;
             will_return(__wrap_fopen64, f_x);
             will_return(__wrap_fopen64, NULL);
-            status = rm_tx_local_push(buf_x_name, rm_state->unique_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, rm_state->unique_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(status, RM_ERR_OPEN_Y);
             f_x = NULL;
@@ -403,7 +405,7 @@ test_rm_local_push_err_1(void **state) {
             will_return(__wrap_fopen64, f_x);
             will_return(__wrap_fopen64, NULL);
             will_return(__wrap_fopen64, NULL);
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             RM_TEST_MOCK_FOPEN64 = 0;
             assert_int_equal(status, RM_ERR_OPEN_Z);
             f_x = NULL;

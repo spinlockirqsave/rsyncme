@@ -61,13 +61,18 @@ void* rm_do_msg_push_rx(void* arg) {
 	uint8_t							ack_tx_err = 0;															/* set to 1 if ACK tx failed */
 	int								fd_z = -1;
 	struct stat                     fs = {0};
+	struct rm_core_options			opt = {0};
 
 	struct rm_work* work = (struct rm_work*) arg;
 	msg_push = (struct rm_msg_push*) work->msg;
 
 	RM_LOG_INFO("[%s] [0]: work started in thread [%llu]", rm_work_type_str[work->task], rm_gettid());
 
-	s = rm_session_create(RM_PUSH_RX);
+	pthread_mutex_lock(&work->rm->mutex);
+	memcpy(&opt, &work->rm->opt, sizeof(struct rm_core_options));
+	pthread_mutex_unlock(&work->rm->mutex);
+
+	s = rm_session_create(RM_PUSH_RX, &opt);
 	if (s == NULL || s->prvt == NULL) {
 		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, NULL) != RM_ERR_OK) {	/* send ACK explaining error */
 			ack_tx_err = 1;
@@ -82,6 +87,10 @@ void* rm_do_msg_push_rx(void* arg) {
 	RM_LOG_INFO("[%s] [1]: their ssid [%s] -> our ssid [%s]", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u][0x%02x]. Validating...", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, msg_push->hdr->flags);
+	if (msg_push->hdr->flags & RM_BIT_4)
+		RM_LOG_INFO("[%s] [2]: [%s] -> [%s], --force", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+	if (msg_push->hdr->flags & RM_BIT_6)
+		RM_LOG_INFO("[%s] [2]: [%s] -> [%s], --leave", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);									/* validate, change dir to result's path */
 	if (err != RM_ERR_OK) {
@@ -309,7 +318,7 @@ rm_do_msg_pull_tx(struct rsyncme *rm, unsigned char *buf) {
 
 	(void) buf;
 	assert(rm != NULL && buf != NULL);
-	s = rm_session_create(RM_PULL_TX);
+	s = rm_session_create(RM_PULL_TX, NULL);
 	if (s == NULL) {
 		return -1;
 	}
@@ -326,7 +335,7 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 
 	(void) buf;
 	assert(rm != NULL && buf != NULL);
-	s = rm_session_create(RM_PULL_RX);
+	s = rm_session_create(RM_PULL_RX, NULL);
 	if (s == NULL) {
 		return -1;
 	}

@@ -14,17 +14,12 @@
 #include "rm_error.h"
 #include "twlist.h"
 #include "twhash.h"
-#include "rm_session.h"
 #include "rm_serialize.h"
 #include "rm_wq.h"
+#include "rm_session.h"
 
 #include <arpa/inet.h>
 
-
-struct rm_core_options
-{
-	uint8_t	authenticate;
-};
 
 struct rsyncme
 {
