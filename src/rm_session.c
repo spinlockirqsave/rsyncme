@@ -48,7 +48,6 @@ void rm_session_push_tx_init(struct rm_session_push_tx *prvt, struct rm_core_opt
 	memset(prvt, 0, sizeof(struct rm_session_push_tx));
 	rm_session_push_local_init(&prvt->session_local, opt);
 	prvt->session_local.delta_rx_f = rm_rx_tx_delta_element;
-	//pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);	/* moved to it's session_local object */
 	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
@@ -57,7 +56,6 @@ void rm_session_push_tx_init(struct rm_session_push_tx *prvt, struct rm_core_opt
 void rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 {
 	rm_session_push_local_deinit(&prvt->session_local);
-	//pthread_mutex_destroy(&prvt->ch_ch_hash_mutex); /* moved to it's sesion_local object */
 	free(prvt);
 	return;
 }
@@ -76,8 +74,7 @@ void rm_session_push_local_init(struct rm_session_push_local *prvt, struct rm_co
 
 static void rm_session_push_local_deinit(struct rm_session_push_local *prvt)
 {
-	/* queue of delta elements MUST be empty now */
-	if (twlist_empty(&prvt->tx_delta_e_queue) != 0)
+	if (twlist_empty(&prvt->tx_delta_e_queue) == 0)										/* queue of delta elements MUST be empty now */
 		RM_LOG_ERR("%s", "Delta elements queue NOT EMPTY!\n");
 	pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
 	pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
@@ -86,8 +83,7 @@ static void rm_session_push_local_deinit(struct rm_session_push_local *prvt)
 /* frees private session, DON'T TOUCH private session after this returns */ 
 void rm_session_push_local_free(struct rm_session_push_local *prvt)
 {
-	/* queue of delta elements MUST be empty now */
-	rm_session_push_local_deinit(prvt);
+	rm_session_push_local_deinit(prvt);													/* queue of delta elements MUST be empty now */
 	free(prvt);
 	return;
 }
@@ -620,7 +616,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 			//err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
 			delta_pack.delta_e = delta_e;
 
-			err = prvt_local->delta_rx_f(&delta_pack);
+			err = prvt_local->delta_rx_f(&delta_pack);								/* reconstruct or TX */
 			if (err != 0) {
 				pthread_mutex_unlock(q_mutex);
 				status = RM_RX_STATUS_DELTA_PROC_FAIL;

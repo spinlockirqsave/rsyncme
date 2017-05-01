@@ -341,6 +341,8 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	}
 
 	core_opt.loglevel = opt->loglevel;
+	core_opt.delta_conn_timeout_s = timeout_s;
+	core_opt.delta_conn_timeout_us = timeout_us;
 	s = rm_session_create(RM_PUSH_TX, &core_opt);                                               /* rx nonoverlapping checksums, calc rolling checksums, produce delta vector and tx to receiver */
 	if (s == NULL) {
 		err = RM_ERR_CREATE_SESSION;

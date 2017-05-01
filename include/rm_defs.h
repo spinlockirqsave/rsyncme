@@ -239,8 +239,10 @@ enum rm_pt_type {
 
 struct rm_core_options
 {
-	uint8_t	authenticate;
-	uint8_t	loglevel;
+	uint8_t		authenticate;
+	uint8_t		loglevel;
+	uint16_t	delta_conn_timeout_s;
+	uint16_t	delta_conn_timeout_us;
 };
 
 /* prototypes */

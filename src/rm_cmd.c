@@ -411,7 +411,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	if ((timeout_s == 0) && (timeout_us == 0)) {
-		timeout_s = 10;
+		timeout_s = RM_DEFAULT_DELTA_CONNECT_TIMEOUT_S;
+		timeout_us = RM_DEFAULT_DELTA_CONNECT_TIMEOUT_US;
 	}
 	if (push_flags & RM_BIT_5) { /* remote */
 		if (yp == NULL) {

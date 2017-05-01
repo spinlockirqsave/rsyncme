@@ -6,9 +6,6 @@
 * @copyright    LGPLv2.1 */
 
 
-USAGE OF rsyncme
-
-Content
 1. OVERVIEW
 2. EXAMPLES
 2.1 Basic example (remote sync)
@@ -17,12 +14,14 @@ Content
 3. OPTIONS
 3.1 TRANSMITTER
 3.1.1 -z
-3.1.2 --leave
-3.1.3 --force
-3.1.4 -l
-3.1.5 -t
-3.1.6 -a
-3.1.7 --loglevel
+3.1.2 -i
+3.1.3 -p
+3.1.4 --leave
+3.1.5 --force
+3.1.6 -l
+3.1.7 -t
+3.1.8 -a
+3.1.9 --loglevel
 3.2 RECEIVER
 3.2.1 -l
 3.2.2 --auth
@@ -37,12 +36,9 @@ Content
 1. OVERVIEW
 
 rsyncme can be used to synchronize data on the same machine (locally)
-or between endpoints connected over IP. In current version 0.1.2 only
-local sync is possible and you must wait for version 0.1.3 to be ready
-to synchronize data between machines. Even if local sync doesn't offer
-many benefits over simple copying of data in terms of time improvement,
-it is necessary step in development process and inspecting the results
-locally is great source of knowledge about algorithm's behavior.
+or between endpoints connected over TCP/IP. Please make sure that RECEIVER
+can be accesed through nonpriviledged ports (1024-65535) if remote
+synchronization is used.
 
 There is always constant part of all commands using rsyncme,
 -x and -y options necessarily followed by file names, for example:
@@ -68,19 +64,21 @@ to the local file and want remote file to be same as this version.
 peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
 -rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 
-Assuming there is a rsyncme receiver running on 52.16.18.168 with
+Assuming there is a rsyncme receiver started on 52.16.18.168 with
 
 ./rsyncme_d
 
-and maybe old version of file in /tmp folder then 
+and firewall on that host allows for inbound traffic on nonpriviledged ports
+(1024-65535), and maybe there is old version of file in /tmp folder then 
 
 rsyncme push -i 52.16.18.168
 	-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 	-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 	-z /tmp/client --l
 
-is a command to sync that version with our local version. The result is saved
-as a new file /tmp/client on remote host (see (4) for details).
+is a command to start TRANSMITTER and sync that version with our local version.
+The result is saved as a new file /tmp/client on remote host and old version is left intact
+(if there is no --leave flag then @y would be moved to @z).
 
 
 2.2 Basic example (local sync)
@@ -138,8 +136,6 @@ that didn't match.
 
     OK.
 
-(see (5) for details).
-
 
 
 3. OPTIONS
@@ -180,13 +176,35 @@ pull        Set up @y as source of changes, @x as result/output.
 
 This will output new version of @y as @z, i.e. @y becomes @z (if @y name was different from @z name there is no file with name @y after this is done).
 
-3.1.2 --leave OPTION
+3.1.2 -i OPTION
+
+    rsyncme push -i 54.35.70.55 -x @x -y @y -z @z
+
+Transmitter will connect to 54.35.70.55 and do remote sync (on default port).
+
+    rsyncme push -i example.com -x @x -y @y -z @z
+
+Transmitter will resolve the domain example.com and do remote sync (on default port).
+Please make sure that RECEIVER can be accessed through nonpriviledged ports, 1024-65535.
+The RECEIVER will open new random TCP port for each file transfer and TRANSMITTER must
+be able to connect to that port (in range of 1024-65535).
+
+3.1.3 -p OPTION
+
+    rsyncme push --i 54.35.70.55 -p 6788 -x @x -y @y -z @z
+
+Transmitter will connect to 54.35.70.55 on port 6788 and do remote sync.
+Please make sure that RECEIVER can be accessed through nonpriviledged ports, 1024-65535.
+The RECEIVER will open new random TCP port for each file transfer and TRANSMITTER must
+be able to connect to that port (in range of 1024-65535).
+
+3.1.4 --leave OPTION
 
     rsyncme push -x @x -y @y -z @z --leave
 
 will work as 4.1.1 but @y file will not be deleted nor changed - it is left intact.
 
-3.1.3 --force OPTION
+3.1.5 --force OPTION
 
     rsyncme push -i 192.168.1.12 -x @x -y @y --f
 
@@ -195,7 +213,7 @@ to make calls with --f and be sure that result exists after call returns,
 it is either reconstructed by receiver reusing existing @y or created by having
 transmitter sending all file as raw bytes.
 
-3.1.4 -l OPTION
+3.1.6 -l OPTION
 
     rsyncme push -x @x -y @y -l block_size
 
@@ -209,7 +227,7 @@ Example:
 
 This will use 128 bytes as synchronization block size.
 
-3.1.5 -t OPTION
+3.1.7 -t OPTION
 
     rsyncme push -x @x -y @y -t number_of_bytes
 
@@ -228,7 +246,7 @@ Example:
 
 This will use 80 bytes as copy tail threshold.
 
-3.1.6 -a OPTION
+3.1.8 -a OPTION
 
     rsyncme push -x @x -y @y -a number_of_bytes
 
@@ -242,7 +260,7 @@ Example:
 This will use 80 bytes as copy all threshold. All files of sizes less than 80 bytes
 are sent straight away, skipping the rolling checksum procedure.
 
-3.1.7 --loglevel OPTION
+3.1.9 --loglevel OPTION
 
     rsyncme push -x @x -y @y --loglevel 3
 
@@ -274,6 +292,10 @@ Example:
 --help		Print help and exit.
 --version	Print software version and exit.
 --verbose	Same as -l 3.
+
+Please make sure that RECEIVER can be accessed through nonpriviledged ports, 1024-65535.
+The RECEIVER will open new random TCP port for each file transfer and TRANSMITTER must
+be able to connect to that port (in range of 1024-65535).
 
 3.2.1 -l OPTION
 
@@ -318,11 +340,12 @@ to the local file and want remote file to be same as this version.
 peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
 -rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 
-Assuming there is a rsyncme RECEIVER running on 52.16.18.168 with
+Assuming there is a rsyncme receiver started on 52.16.18.168 with
 
 ./rsyncme_d
 
-and maybe old version of file in /tmp folder then 
+and firewall on that host allows for inbound traffic on nonpriviledged ports
+(1024-65535), and maybe there is old version of file in /tmp folder then 
 
 rsyncme push -i 52.16.18.168
 	-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
@@ -401,7 +424,8 @@ bandwidth   : [1.232694]MB/s
 OK.
 
 
-The RECEIVER's output to the log:
+The RECEIVER's output to the log (the TX/RX info will only appear in log if you run receiver
+with increased logging capability, i.e. ./rsyncme_d --verbose, or ./rsyncme_d -l 2, or ./rsyncme_d -l 3):
 
 cat rsyncme_2017-04-29_22-39-13:509254.err
 
