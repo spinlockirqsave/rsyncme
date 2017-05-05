@@ -140,12 +140,12 @@ do_it_all(int fd, struct rsyncme* rm) {
 		}
 	}
 
-	hdr = malloc(sizeof(*hdr));
+	hdr = malloc(sizeof(struct rm_msg_hdr));
 	if (hdr == NULL) {
 		RM_LOG_CRIT("%s", "core: Couldn't allocate message header. Not enough memory");
 		goto err_exit;
 	}
-	to_read = rm_calc_msg_hdr_len(hdr);
+	to_read = RM_MSG_HDR_LEN;
 	buf = malloc(to_read);																						/* buffer for incoming message header */
 	if (buf == NULL) {
 		RM_LOG_CRIT("%s", "core: Couldn't allocate buffer for the message header. Not enough memory");
@@ -193,7 +193,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 	buf = NULL;
 
 	pt = hdr->pt;
-	to_read = hdr->len - rm_calc_msg_hdr_len(hdr);
+	to_read = hdr->len - RM_MSG_HDR_LEN;
 
 	err = rm_core_tcp_msg_assemble(fd, pt, (void*)&body_raw, to_read);
 	if (err != RM_ERR_OK) { /* TODO handle properly */

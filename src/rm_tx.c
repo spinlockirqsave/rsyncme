@@ -114,6 +114,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 				rec_ctx->method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
 				rec_ctx->delta_raw_n = 1;
 				rec_ctx->rec_by_raw = x_sz;
+				rec_ctx->msg_push_len = 0;
 			}
 			goto done;
 		} else {
@@ -142,6 +143,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 	s->rec_ctx.copy_all_threshold = copy_all_threshold;
 	s->rec_ctx.copy_tail_threshold = copy_tail_threshold;
 	s->rec_ctx.send_threshold = send_threshold;
+	s->rec_ctx.msg_push_len = 0;
 	prvt = s->prvt; /* setup private session's arguments */
 	prvt->h = h;
 	s->f_x = f_x;
@@ -355,7 +357,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		goto err_exit;
 	}
 
-	memset(&msg, 0, sizeof msg);
+	memset(&msg, 0, sizeof(msg));
 	if (rm_msg_push_alloc(&msg) != RM_ERR_OK) {
 		goto err_exit;                                                                          /* RM_ERR_MEM */
 	}
@@ -381,6 +383,8 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	}
 	msg.hdr->len = rm_calc_msg_len(&msg);
 	msg.hdr->hash = rm_core_hdr_hash(msg.hdr);
+
+	rec_ctx->msg_push_len = msg.hdr->len;
 
 	msg_raw = malloc(msg.hdr->len);
 	if (msg_raw == NULL) {

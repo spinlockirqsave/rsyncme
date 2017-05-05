@@ -55,7 +55,7 @@ static void rsyncme_usage(const char *name)
 			"		This will sync local /tmp/foo.tar with remote\n"
 			"		file /tmp/bar.tar and save result in remote /tmp/result file (remote /tmp/bar.tar\n"
 			"		is saved as /tmp/result, /tmp/bar.tar no longer exists).\n");
-	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar -z /tmp/result --l\n"
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar -z /tmp/result --leave\n"
 			"		Same as above but remote /tmp/bar.tar is left intact.\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
@@ -411,8 +411,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	if ((timeout_s == 0) && (timeout_us == 0)) {
-		timeout_s = RM_DEFAULT_DELTA_CONNECT_TIMEOUT_S;
-		timeout_us = RM_DEFAULT_DELTA_CONNECT_TIMEOUT_US;
+		timeout_s = RM_DEFAULT_TCP_CONNECT_TIMEOUT_S;
+		timeout_us = RM_DEFAULT_TCP_CONNECT_TIMEOUT_US;
 	}
 	if (push_flags & RM_BIT_5) { /* remote */
 		if (yp == NULL) {
@@ -757,8 +757,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	rm_rx_print_stats(rec_ctx);
-	fprintf(stderr, "\nOK.\n");
+	rm_rx_print_stats(rec_ctx, (push_flags & RM_BIT_5 ? 1 : 0), 1);
 	return RM_ERR_OK;
 
 fail:

@@ -13,7 +13,7 @@
 enum rm_error rm_core_init(struct rsyncme *rm, struct rm_core_options *opt)
 {
 	assert(rm != NULL);
-	memset(rm, 0, sizeof *rm);
+	memset(rm, 0, sizeof(struct rsyncme));
 	twhash_init(rm->sessions);
 	TWINIT_LIST_HEAD(&rm->sessions_list);
 	memcpy(&rm->opt, opt, sizeof(struct rm_core_options));

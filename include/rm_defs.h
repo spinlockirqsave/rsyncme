@@ -87,21 +87,24 @@
 #define RM_CORE_CONNECTIONS_MAX     1           /* max number of simultaneous connections */
 #define RM_CORE_HASH_OK             84
 #define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off while debugging for convenience */
-#define RM_STRONG_CHECK_BYTES       16
-#define RM_CH_CH_SIZE				(sizeof(struct rm_ch_ch))
-#define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
+#define RM_STRONG_CHECK_BYTES       16u
+#define RM_CH_CH_SIZE				20u
+#define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + 8)
 #define RM_NANOSEC_PER_SEC          1000000000U
 #define RM_CORE_HASH_CHALLENGE_BITS 32u
 
-#define RM_DELTA_ELEMENT_TYPE_FIELD_SIZE	1	/* we need 2 bits to be honest */
-#define RM_DELTA_ELEMENT_BYTES_FIELD_SIZE	8	/* it is size_t now, but we will change it to be uint64_t explicitly */
-#define RM_DELTA_ELEMENT_REF_FIELD_SIZE		8	/* it is size_t now, but we will change it to be uint64_t explicitly */
+#define RM_DELTA_ELEMENT_TYPE_FIELD_SIZE	1u	/* we need 2 bits to be honest */
+#define RM_DELTA_ELEMENT_BYTES_FIELD_SIZE	8u	/* it is size_t now, but we will change it to be uint64_t explicitly */
+#define RM_DELTA_ELEMENT_REF_FIELD_SIZE		8u	/* it is size_t now, but we will change it to be uint64_t explicitly */
+
+#define RM_CH_OVERHEAD				RM_CH_CH_SIZE
+#define RM_DELTA_RAW_OVERHEAD		(RM_DELTA_ELEMENT_TYPE_FIELD_SIZE + RM_DELTA_ELEMENT_BYTES_FIELD_SIZE)
+#define RM_DELTA_REF_OVERHEAD		(RM_DELTA_ELEMENT_TYPE_FIELD_SIZE + RM_DELTA_ELEMENT_REF_FIELD_SIZE)
 
 /* defaults */
-#define RM_DEFAULT_L                512         /* default block size in bytes */
-#define RM_L1_CACHE_RECOMMENDED     8192        /* buffer size, so that it should fit into
-												 * L1 cache on most architectures */
-#define RM_WORKERS_N                8u          /* default number of workers for main work queue */
+#define RM_DEFAULT_L                512u		/* default block size in bytes */
+#define RM_L1_CACHE_RECOMMENDED     8192u		/* buffer size, so that it should fit into L1 cache on most architectures */
+#define RM_WORKERS_N                8u			/* default number of workers for main work queue */
 
 #define rm_container_of(ptr, type, member) __extension__({  \
 		const typeof( ((type *)0)->member ) *__mptr = (ptr);    \

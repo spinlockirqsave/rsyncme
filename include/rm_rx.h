@@ -116,7 +116,10 @@ enum rm_error rm_rx_process_delta_element(void *arg) __attribute__((nonnull(1)))
  */
 enum rm_error rm_rx_tx_delta_element(void *arg) __attribute__((nonnull(1)));
 
-void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx);
+/* @brief	Prints statistics to the stderr.
+ * @param	remote - 0 : local xfer, 1 : remote xfer,
+ *			xfer_direction - 0 : RECEIVER, 1 : TRANSMITTER */
+void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx, uint8_t remote, uint8_t xfer_direction);
 
 
 #endif	/* RSYNCME_RX_H */

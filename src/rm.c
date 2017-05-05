@@ -553,11 +553,11 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 			send_left -= read;
 		} else { /* tx raw bytes */
 			if (raw_bytes_n == 0) {
-				raw_bytes = malloc(raw_bytes_max * sizeof(*raw_bytes));
+				raw_bytes = malloc(raw_bytes_max * sizeof(unsigned char));
 				if (raw_bytes == NULL) {
 					return RM_ERR_MEM;
 				}
-				memset(raw_bytes, 0, raw_bytes_max * sizeof(*raw_bytes));
+				memset(raw_bytes, 0, raw_bytes_max * sizeof(unsigned char));
 			}
 			if (beginning_bytes_in_buf == 1 && a_k_pos < read_begin) {  /* if we have still L bytes read at the beginning in the buffer */
 				a_k = buf[a_k_pos];                                     /* read a_k byte */

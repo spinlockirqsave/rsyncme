@@ -12,11 +12,11 @@
 
 
 enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) {
-	msg->hdr = malloc(sizeof *(msg->hdr));
+	msg->hdr = malloc(sizeof(struct rm_msg_hdr));
 	if (msg->hdr == NULL) {
 		return RM_ERR_FAIL;
 	}
-	memset(msg->hdr, 0, sizeof(*msg->hdr));
+	memset(msg->hdr, 0, sizeof(struct rm_msg_hdr));
 	return RM_ERR_OK;
 }
 
@@ -26,11 +26,11 @@ void rm_msg_push_free(struct rm_msg_push *msg) {
 }
 
 enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *ack) {
-	ack->hdr = malloc(sizeof *(ack->hdr));
+	ack->hdr = malloc(sizeof(struct rm_msg_hdr));
 	if (ack->hdr == NULL) {
 		return RM_ERR_FAIL;
 	}
-	memset(ack->hdr, 0, sizeof(*ack->hdr));
+	memset(ack->hdr, 0, sizeof(struct rm_msg_hdr));
 	return RM_ERR_OK;
 }
 
@@ -205,7 +205,7 @@ void* rm_do_msg_push_rx(void* arg) {
 		}
 	}
 
-	rm_rx_print_stats(s->rec_ctx);
+	rm_rx_print_stats(s->rec_ctx, 1, 0);
 	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
 
 	if (s != NULL) {
@@ -346,11 +346,6 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 }
 
 uint16_t
-rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr) {
-	return (sizeof(hdr->hash) + sizeof(hdr->pt) + sizeof(hdr->flags) + sizeof(hdr->len));
-}
-
-uint16_t
 rm_calc_msg_len(void *arg) {
 	struct rm_msg_push  *msg_push;
 	struct rm_msg       *msg = (struct rm_msg*) &arg;
@@ -360,7 +355,7 @@ rm_calc_msg_len(void *arg) {
 
 		case RM_PT_MSG_PUSH:
 			msg_push = (struct rm_msg_push*) arg;
-			len = rm_calc_msg_hdr_len(msg_push->hdr);
+			len = RM_MSG_HDR_LEN;
 			len += 16;                      /* ssid */
 			len += 8;                       /* L    */
 			len += (2 + msg_push->x_sz);
@@ -385,13 +380,13 @@ rm_calc_msg_len(void *arg) {
 			break;
 
 		case RM_PT_MSG_PUSH_ACK:
-			len = rm_calc_msg_hdr_len(msg->hdr);
+			len = RM_MSG_HDR_LEN;
 			len += 2;							/* delta port */
 			len += 8;							/* checksums number */
 			break;
 
 		case RM_PT_MSG_PULL_ACK:
-			len = rm_calc_msg_hdr_len(msg->hdr);
+			len = RM_MSG_HDR_LEN;
 			break;
 
 		case RM_PT_MSG_ACK:

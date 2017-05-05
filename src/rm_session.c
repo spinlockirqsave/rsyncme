@@ -193,7 +193,7 @@ struct rm_session *rm_session_create(enum rm_session_type t, struct rm_core_opti
 	struct rm_session	*s = NULL;
 	uuid_t				uuid = {0};
 
-	s = malloc(sizeof *s);
+	s = malloc(sizeof(struct rm_session));
 	if (s == NULL)
 		return NULL;
 	memset(s, 0, sizeof(struct rm_session));

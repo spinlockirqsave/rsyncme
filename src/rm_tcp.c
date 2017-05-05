@@ -318,7 +318,7 @@ enum rm_error rm_tcp_connect_nonblock_timeout_once_sockaddr(int fd, struct socka
 
 	rm_tcp_set_socket_blocking_mode(fd, 0);
 
-	err = connect(fd, peer_addr, sizeof(*peer_addr));
+	err = connect(fd, peer_addr, sizeof(struct sockaddr));
 	if (err == 0) {
 		return RM_ERR_OK;
 	} else if ((errno != EINPROGRESS) && (errno != EINTR)) {

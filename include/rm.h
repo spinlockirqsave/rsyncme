@@ -102,8 +102,7 @@ struct rm_ch_ch
 struct rm_ch_ch_ref
 {
 	struct rm_ch_ch     ch_ch;
-	size_t              ref;    /* The reference to location in B's F_B file
-								 * (taken from ch_ch list), block number */
+	uint64_t            ref;    /* The reference to location in B's F_B file (taken from ch_ch list), block number */
 };
 
 /* @brief   Checksum checksum struct used for local syncs. */
@@ -181,6 +180,7 @@ struct rm_delta_reconstruct_ctx
 	struct timespec             time_real; /* updated by main thread (tx_local_push)*/
 	double                      time_cpu;
 	size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
+	uint16_t					msg_push_len;
 };
 
 /* @brief   Calculate similar to adler32 fast checksum on a given

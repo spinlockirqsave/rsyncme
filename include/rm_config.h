@@ -14,8 +14,8 @@
 #define RM_TCP_MSG_MAX_LEN		256         /* maximum length of TCP control message */
 #define RM_IP_AUTH              "127.0.0.1" /* authorized IP, requests from which will be processed */
 #define RM_DEFAULT_PORT         5048u       /* default daemon's port */
-#define RM_DEFAULT_DELTA_CONNECT_TIMEOUT_S	10	/* seconds */
-#define RM_DEFAULT_DELTA_CONNECT_TIMEOUT_US	0	/* microseconds */
+#define RM_DEFAULT_TCP_CONNECT_TIMEOUT_S	10	/* seconds */
+#define RM_DEFAULT_TCP_CONNECT_TIMEOUT_US	0	/* microseconds */
 
 
 #endif /* RSYNCME_CONFIG_H */

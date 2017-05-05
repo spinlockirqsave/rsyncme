@@ -143,7 +143,7 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 			err = RM_ERR_READ;
 			goto done;
 		}
-		e = malloc(sizeof (*e));															/* alloc new table entry */
+		e = malloc(sizeof (struct rm_ch_ch_ref_hlink));										/* alloc new table entry */
 		if (e == NULL)	 {
 			RM_LOG_PERR("%s", "Can't allocate table entry, malloc failed");
 			free(buf);
@@ -289,14 +289,14 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struc
 			free(buf);
 			return RM_ERR_READ;
 		}
-		e = malloc(sizeof (*e)); /* alloc new table entry */
+		e = malloc(sizeof (struct rm_ch_ch_ref_link));														/* alloc new table entry */
 		if (e == NULL) {
 			free(buf);
 			RM_LOG_PERR("%s", "Can't allocate list entry, malloc failed");
 			return RM_ERR_MEM;
 		}
 
-		e->data.ch_ch.f_ch = rm_fast_check_block(buf, read); /* compute checksums */
+		e->data.ch_ch.f_ch = rm_fast_check_block(buf, read);												/* compute checksums */
 		rm_md5(buf, read, e->data.ch_ch.s_ch.data);
 
 		TWINIT_LIST_HEAD(&e->link); /* insert into list */
@@ -446,15 +446,17 @@ enum rm_error rm_rx_tx_delta_element(void *arg)
 	return RM_ERR_OK;
 }
 
-void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
+void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx, uint8_t remote, uint8_t xfer_direction)
 {
 	enum rm_reconstruct_method method;
-	double                  real_time, cpu_time;
-	size_t                  bytes;
+	double                  real_time = 0.0, cpu_time = 0.0;
+	size_t                  bytes = 0, real_bytes = 0, ch_n = 0, delta_raw_overhead = 0, delta_ref_overhead = 0, ch_overhead = 0;
 
 	bytes = rec_ctx.rec_by_raw + rec_ctx.rec_by_ref;
 	real_time = rec_ctx.time_real.tv_sec + (double) rec_ctx.time_real.tv_nsec / RM_NANOSEC_PER_SEC;
 	cpu_time = rec_ctx.time_cpu;
+	if (rec_ctx.L > 0)
+		ch_n = bytes / rec_ctx.L + (bytes % rec_ctx.L ? 1 : 0);
 
 	method = rec_ctx.method;
 	switch (method) {
@@ -470,8 +472,25 @@ void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
 			if (rec_ctx.rec_by_zero_diff != 0) {
 				fprintf(stderr, " (zero difference)");
 			}
-			fprintf(stderr, "\ndeltas      : [%zu] (raw [%zu], refs [%zu])", rec_ctx.delta_raw_n + rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.delta_ref_n);
-			fprintf(stderr, "\ncollisions  : 1st [%zu], 2nd [%zu], 3rd [%zu]", rec_ctx.collisions_1st_level, rec_ctx.collisions_2nd_level, rec_ctx.collisions_3rd_level);
+			if (rec_ctx.L > 0)
+				fprintf(stderr, "\n              checksums             : [%zu]", ch_n);
+			fprintf(stderr, "\n              deltas                : [%zu] (raw [%zu], refs [%zu])", rec_ctx.delta_raw_n + rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.delta_ref_n);
+			if (rec_ctx.L > 0) {
+				ch_overhead = ch_n * RM_CH_OVERHEAD;
+				fprintf(stderr, "\n              checksums overhead    : [%zu]", ch_overhead);
+			}
+			delta_raw_overhead = rec_ctx.delta_raw_n * RM_DELTA_RAW_OVERHEAD;
+			delta_ref_overhead = rec_ctx.delta_ref_n * RM_DELTA_REF_OVERHEAD;
+			real_bytes = delta_raw_overhead + delta_ref_overhead + rec_ctx.rec_by_raw + (remote ? rec_ctx.msg_push_len + RM_MSG_PUSH_ACK_LEN : 0);
+			fprintf(stderr, "\n              deltas overhead       : raw [%zu], refs [%zu]", delta_raw_overhead, delta_ref_overhead);
+			if (xfer_direction == 0) {																			/* RECEIVER */
+				fprintf(stderr, "\n              Total RX overhead     : [%zu]", delta_raw_overhead + delta_ref_overhead);
+				fprintf(stderr, "\n              Total RX              : [%zu]", real_bytes);
+			} else {																							/* TRANSMITTER */
+				fprintf(stderr, "\n              Total TX overhead     : [%zu]", delta_raw_overhead + delta_ref_overhead);
+				fprintf(stderr, "\n              Total TX              : [%zu]", real_bytes);
+				fprintf(stderr, "\ncollisions  : 1st [%zu], 2nd [%zu], 3rd [%zu]", rec_ctx.collisions_1st_level, rec_ctx.collisions_2nd_level, rec_ctx.collisions_3rd_level);
+			}
 			break;
 
 		default:
@@ -480,7 +499,12 @@ void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
 			break;
 	}
 	fprintf(stderr, "\ntime        : real [%lf]s, cpu [%lf]s", real_time, cpu_time);
-	fprintf(stderr, "\nbandwidth   : [%lf]MB/s\n\n", ((double) bytes / 1000000) / real_time);
+	fprintf(stderr, "\nbandwidth   : [%lf]MB/s (virtual)", ((double) bytes / 1000000) / real_time);
+	fprintf(stderr, "\nbandwidth   : [%lf]MB/s (real)\n", ((double) real_bytes / 1000000) / real_time);
+	if (real_bytes <= bytes)
+		fprintf(stderr, "\nimprovement : [+%lf]\n", (double) bytes / (double)real_bytes);
+	else
+		fprintf(stderr, "\nimprovement : [-%lf]\n", (double) real_bytes / (double)bytes);
 	if (rec_ctx.copy_all_threshold_fired == 1) {
 		fprintf(stderr, "copy all    : fired\n");
 	}

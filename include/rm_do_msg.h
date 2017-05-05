@@ -108,9 +108,6 @@ void* rm_do_msg_push_rx(void* arg) __attribute__ ((nonnull(1)));
  * @details     Daemon's message. */
 int rm_do_msg_pull_rx(struct rsyncme* rm, unsigned char *buf) __attribute__ ((nonnull(1,2)));
 
-/* @brief       Return the size of the header. */
-uint16_t rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr);
-
 /* @brief       Return length of message including header, appropriate to put into hdr->len field */
 uint16_t rm_calc_msg_len(void *arg);
 
