@@ -246,7 +246,7 @@ fail:
 			break;
 
 		case RM_ERR_OPEN_Y:
-			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @y (should transmitter set --force flag?)", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
 		case RM_ERR_GETCWD:

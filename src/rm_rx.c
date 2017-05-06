@@ -502,9 +502,9 @@ void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx, uint8_t remote, 
 	fprintf(stderr, "\nbandwidth   : [%lf]MB/s (virtual)", ((double) bytes / 1000000) / real_time);
 	fprintf(stderr, "\nbandwidth   : [%lf]MB/s (real)\n", ((double) real_bytes / 1000000) / real_time);
 	if (real_bytes <= bytes)
-		fprintf(stderr, "\nimprovement : [+%lf]\n", (double) bytes / (double)real_bytes);
+		fprintf(stderr, "\nimprovement : [+%lf]\n", ((double) bytes - (double) real_bytes) / (double) bytes);
 	else
-		fprintf(stderr, "\nimprovement : [-%lf]\n", (double) real_bytes / (double)bytes);
+		fprintf(stderr, "\nimprovement : [-%lf]\n", ((double) real_bytes - (double) bytes) / (double) bytes);
 	if (rec_ctx.copy_all_threshold_fired == 1) {
 		fprintf(stderr, "copy all    : fired\n");
 	}
