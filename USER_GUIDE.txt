@@ -29,11 +29,13 @@
 3.2 RECEIVER
 3.2.1 -l
 3.2.2 --auth
-3.2.3 --help
-3.2.4 --version
-3.2.5 --verbose
-4. REMOTE SYNCHRONIZATION EXAMPLE
-5. LOCAL SYNCHRONIZATION EXAMPLE
+3.2.3 --daemon
+3.2.4 --help
+3.2.5 --version
+3.2.6 --verbose
+4. SIGNALS
+5. REMOTE SYNCHRONIZATION EXAMPLE
+6. LOCAL SYNCHRONIZATION EXAMPLE
 
 
 
@@ -221,11 +223,19 @@ transmitter sending all file as raw bytes.
 
 3.1.6 --version OPTION
 
-3.1.7 --timeout_s
+Prints program version to the console.
 
-3.1.8 --timeout_us
+3.1.7 --timeout_s OPTION
 
-3.1.9 --help
+This option sets the seconds part of the timeout used when connecting to receiver.
+
+3.1.8 --timeout_us OPTION
+
+This option sets the microseconds part of the timeout used when connecting to receiver.
+
+3.1.9 --help OPTION
+
+Prints help information to the console.
 
 3.1.10 --loglevel OPTION
 
@@ -331,27 +341,51 @@ You can set it to:
 2 - log additional (detailed) information from worker threads (TX/RX of checksums/deltas)
 3 - verbose
 
-3.2.2 --auth OPTION
+3.2.2 --daemon OPTION
+
+This option makes receiver to run as daemon. When running as daemon the SIGHUP signal
+is interpreted by receiver as request to reload configuration.
+
+3.2.3 --auth OPTION
 
 This option turns on authentication of incoming requests. Currently in version 0.1.3-alpha,
 allowed IP is hardcoded in rm_config.h as #define RM_IP_AUTH "127.0.0.1" - please change
 it as needed.
 
-3.2.3 --help OPTION
+3.2.4 --help OPTION
 
 Prints help to the console.
 
-3.2.4 --version	OPTION
+3.2.5 --version	OPTION
 
 Prints software version tp the console.
 
-3.2.5 --verbose OPTION
+3.2.6 --verbose OPTION
 
 Same as -l 3, i.e. sets loglevel to VERBOSE.
 
 
 
-4. REMOTE SYNCHRONIZATION EXAMPLE
+4. SIGNALS
+
+Receiver handles following signals:
+
+SIGINT	- interrupts receiver to print statistics into the log
+SIGTSTP	- stops receiver
+SIGHUP	- forces receiver to reload configuration
+
+The way to send signal from the Linux console is to find the process id, for example with
+
+	sudo ps -ef | grep rsyncme_d
+	user     8451     1  0 12:25 ?        00:00:00 ./rsyncme_d --d
+
+and then use kill command to queue the signal to the process
+
+	kill -s SIGTSTP 8451
+
+
+
+5. REMOTE SYNCHRONIZATION EXAMPLE
 
 If the -i option is given to the transmitter, this means this is remote sync.
 TCP connection is used to transmit/receive data between TRANSMITTER and RECEIVER.
@@ -518,7 +552,7 @@ This allowed to achieve 1.23 MB/s up bandwidth on 0.92 Mb(up)/7.2 Mb(down) Ether
 
 
 
-5. LOCAL SYNCHRONIZATION EXAMPLE
+6. LOCAL SYNCHRONIZATION EXAMPLE
 
 If the -i option is not given in the command to the TRANSMITTER,
 this means this is local sync.

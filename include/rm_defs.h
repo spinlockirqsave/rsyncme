@@ -86,7 +86,6 @@
 #define RM_CORE_ST_SHUT_DOWN        255         /* shutting down, no more requests */
 #define RM_CORE_CONNECTIONS_MAX     1           /* max number of simultaneous connections */
 #define RM_CORE_HASH_OK             84
-#define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off while debugging for convenience */
 #define RM_STRONG_CHECK_BYTES       16u
 #define RM_CH_CH_SIZE				20u
 #define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + 8)
@@ -244,6 +243,7 @@ struct rm_core_options
 {
 	uint8_t		authenticate;
 	uint8_t		loglevel;
+	uint8_t		daemon;
 	uint16_t	delta_conn_timeout_s;
 	uint16_t	delta_conn_timeout_us;
 };

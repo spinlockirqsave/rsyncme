@@ -126,41 +126,42 @@ int rm_util_daemonize(const char *dir, int noclose, const char *logname)
 	pid_t	pid, sid;
 	int 	fd;
 
-	if (logname == NULL) {
+	if (logname == NULL)
 		return RM_ERR_BAD_CALL;
-	}
-	if ((pid = fork()) < 0) { /* background */
+
+	if ((pid = fork()) < 0) {																		/* background */
 		return RM_ERR_FAIL;
-	} else if (pid > 0) { /* parent, terminate */
+	} else if (pid > 0) {																			/* parent, terminate */
 		exit(EXIT_SUCCESS);
 	}
-	if ((sid = setsid()) < 0) { /* 1st child, become session leader */
+	if ((sid = setsid()) < 0)																		/* 1st child, become session leader */
 		return RM_ERR_SETSID;
-	}
-	if ((pid = fork()) < 0) { /* fork again, loose controlling terminal forever */
+
+	if ((pid = fork()) < 0) {																		/* fork again, loose controlling terminal forever */
 		return RM_ERR_FORK;
-	} else if (pid > 0) { /* 1st child, terminate */
+	} else if (pid > 0) {																			/* 1st child, terminate */
 		exit(EXIT_SUCCESS);
 	}
 
-	signal(SIGINT, SIG_IGN); /* TODO: handle signals */
+	signal(SIGINT, SIG_IGN);																		/* TODO: handle signals */
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
 
-	umask(S_IWGRP | S_IWOTH); /* set file mode to 0x622 (rw-r--r--), umask syscall always succeedes */
-	if (rm_util_openlogs("./log/", logname) != RM_ERR_OK) {
-		return RM_ERR_IO_ERROR;
-	}
-	if (dir != NULL) {/* change dir */
+	umask(S_IWGRP | S_IWOTH);																		/* set file mode to 0x622 (rw-r--r--), umask syscall always succeedes */
+	if (dir != NULL) {																				/* change dir */
 		if (chdir(dir) == -1) {
 			return RM_ERR_CHDIR;
 		}
 	}
-	if (noclose == 0) { /* close open descriptors */
+
+	if (rm_util_openlogs("./log/", logname) != RM_ERR_OK)
+		return RM_ERR_IO_ERROR;
+
+	if (noclose == 0) {																				/* close open descriptors */
 		fd = sysconf(_SC_OPEN_MAX);
-		for (; fd > 2; fd--) {
+		for (; fd > 2; fd--)
 			close(fd);
-		}
+
 	}
 	return RM_ERR_OK;
 }
@@ -169,25 +170,25 @@ int rm_util_chdir_umask_openlog(const char *dir, int noclose, const char *lognam
 {
 	int 	fd;
 
-	if (ignore_signals != 0) { /* TODO: handle signals */
+	if (ignore_signals != 0) {																		/* TODO: handle signals */
 		signal(SIGINT, SIG_IGN);
 		signal(SIGHUP, SIG_IGN);
 		signal(SIGCHLD, SIG_IGN);
 	}
-	umask(S_IWGRP | S_IWOTH); /* set file mode to 0x622 (rw-r--r--) umask syscall always succeedes */
-	if (dir != NULL) { /* change dir */
+	umask(S_IWGRP | S_IWOTH);																		/* set file mode to 0x622 (rw-r--r--) umask syscall always succeedes */
+	if (dir != NULL) {																				/* change dir */
 		if (chdir(dir) == -1) {
 			return RM_ERR_CHDIR;
 		}
 	}
-	if ((logname != NULL) && (rm_util_openlogs("./log/", logname) != RM_ERR_OK)) {
+	if ((logname != NULL) && (rm_util_openlogs("./log/", logname) != RM_ERR_OK))
 		return RM_ERR_IO_ERROR;
-	}
-	if (noclose == 0) { /* close open descriptors */
+
+	if (noclose == 0) {																				/* close open descriptors */
 		fd = sysconf(_SC_OPEN_MAX);
-		for (; fd > 2; fd--) {
+		for (; fd > 2; fd--)
 			close(fd);
-		}
+
 	}
 	return RM_ERR_OK;
 }

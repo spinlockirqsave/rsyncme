@@ -213,3 +213,9 @@ enum rm_error rm_core_tcp_msg_assemble(int fd, enum rm_pt_type pt, void **body_r
 	}
 	return RM_ERR_OK;
 }
+
+enum rm_error rm_core_reload_config(struct rsyncme *rm)	/* TODO */
+{
+	(void) rm;
+	return RM_ERR_OK;
+}

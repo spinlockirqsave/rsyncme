@@ -20,19 +20,25 @@
 struct rsyncme  rm;
 
 static void rm_daemon_sigint_handler(int signo) {
-	if (signo != SIGINT) {
+	if (signo != SIGINT)
 		return;
-	}
 	rm.signo = SIGINT;
 	rm.signal_pending = 1;
 	return;
 }
 
 static void rm_daemon_sigtstp_handler(int signo) {
-	if (signo != SIGTSTP) {
+	if (signo != SIGTSTP)
 		return;
-	}
 	rm.signo = SIGTSTP;
+	rm.signal_pending = 1;
+	return;
+}
+
+static void rm_daemon_sighup_handler(int signo) {
+	if (signo != SIGHUP)
+		return;
+	rm.signo = SIGHUP;
 	rm.signal_pending = 1;
 	return;
 }
@@ -41,18 +47,42 @@ static void rm_daemon_signal_handler(int signo) {
 	switch (signo) {
 		case SIGINT:
 			fprintf(stderr, "\n\n==Received SIGINT==\n\nState:\n");
+
 			pthread_mutex_lock(&rm.mutex);
+			fprintf(stderr, "sessions_n                            \t[%u]\n", rm.sessions_n);
 			fprintf(stderr, "workers_n                             \t[%u]\n", rm.wq.workers_n);
 			fprintf(stderr, "workers_active_n                      \t[%u]\n", rm.wq.workers_active_n);
 			pthread_mutex_unlock(&rm.mutex);
+
 			fprintf(stderr, "\n\n");
 			break;
 
 		case SIGTSTP:
 			fprintf(stderr, "\n\n==Received SIGTSTP==\n\nQuiting...\n");
+
 			pthread_mutex_lock(&rm.mutex);
 			rm.state = RM_CORE_ST_SHUT_DOWN;
 			pthread_mutex_unlock(&rm.mutex);
+
+			fprintf(stderr, "\n\n");
+			break;
+
+		case SIGHUP:
+			if (rm.opt.daemon == 0) {
+				fprintf(stderr, "\n\n==Received SIGHUP==\n\nDid we loose the console?...\n");
+				break;
+			} else
+				fprintf(stderr, "\n\n==Received SIGHUP==\n\nReloading configuration...\n");
+
+			pthread_mutex_lock(&rm.mutex);
+
+			if (rm_core_reload_config(&rm) != RM_ERR_OK)
+				fprintf(stderr, "ERR, reloading failed...\n");
+			else
+				fprintf(stderr, "OK, config reloaded...\n");
+
+			pthread_mutex_unlock(&rm.mutex);
+
 			fprintf(stderr, "\n\n");
 			break;
 
@@ -313,9 +343,10 @@ int main(int argc, char *argv[]) {
 	int option_index = 0;
 	struct option long_options[] = {
 		{ "auth", no_argument, 0, 1 },
-		{ "help", no_argument, 0, 2 },
-		{ "version", no_argument, 0, 3 },
-		{ "verbose", no_argument, 0, 4 },
+		{ "daemon", no_argument, 0, 2 },
+		{ "help", no_argument, 0, 3 },
+		{ "version", no_argument, 0, 4 },
+		{ "verbose", no_argument, 0, 5 },
 		{ 0 }
 	};
 
@@ -336,16 +367,20 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 2:
+				opt.daemon = 1;															/* --verbose */
+				break;
+
+			case 3:
 				rsyncme_d_usage(argv[0]);                                               /* --help */
 				exit(EXIT_SUCCESS);
 				break;
 
-			case 3:
+			case 4:
 				fprintf(stderr, "\nversion [%s]\n", RM_VERSION);                        /* --version */
 				exit(EXIT_SUCCESS);
 				break;
 
-			case 4:
+			case 5:
 				opt.loglevel = RM_LOGLEVEL_VERBOSE;										/* --verbose */
 				break;
 
@@ -382,9 +417,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (RM_CORE_DAEMONIZE == 1) {
+	if (opt.daemon == 1) {
 		err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
 		if (err != RM_ERR_OK) {
+			fprintf(stderr, "Err, Can't daemonize, err [%d]\n", err);
 			exit(EXIT_FAILURE); /* TODO handle other errors */
 		}
 	} else {
@@ -458,24 +494,31 @@ int main(int argc, char *argv[]) {
 	sa.sa_handler = rm_daemon_sigint_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGINT, &sa, NULL) != 0) {
+	if (sigaction(SIGINT, &sa, NULL) != 0)
 		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGINT");
-	}
+
 	sa.sa_handler = rm_daemon_sigtstp_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGTSTP, &sa, NULL) != 0) {
+	if (sigaction(SIGTSTP, &sa, NULL) != 0)
 		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGTSTP");
-	}
+
+	sa.sa_handler = rm_daemon_sighup_handler;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGHUP, &sa, NULL) != 0)
+		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGHUP");
+
 	while(rm.state != RM_CORE_ST_SHUT_DOWN) {
 		cli_len = sizeof(cli_addr);
 		if ((connfd = accept(listenfd, (struct sockaddr *) &cli_addr, &cli_len)) < 0) {
 			errsv = errno;
 			if (errsv == EINTR) {
 				RM_LOG_PERR("%s", "core: Accept interrupted");
-				if (rm.signal_pending == 1) {
+
+				if (rm.signal_pending == 1)
 					rm_daemon_signal_handler(rm.signo);
-				}
+
 				continue;
 			} else {
 				RM_LOG_PERR("%s", "core: Accept error");

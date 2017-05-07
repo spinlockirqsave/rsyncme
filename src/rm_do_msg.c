@@ -123,7 +123,7 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	rm_core_session_add(work->rm, s);																		/* insert session into global table and list, hash md5 hash */
 
-	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
+	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session hashed to [%u][%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash, s->hashed_hash);
 
 	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);			/* start tx_ch_ch and rx delta threads, save pids in session object */
 	if (err != RM_ERR_OK) {
@@ -206,7 +206,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	}
 
 	rm_rx_print_stats(s->rec_ctx, 1, 0);
-	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u][%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash, s->hashed_hash);
 
 	if (s != NULL) {
 		rm_session_free(s);																					/* frees msg allocated for work as well */

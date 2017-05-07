@@ -93,5 +93,8 @@ int rm_core_select(int fd, enum rm_io_direction io_direction, uint16_t timeout_s
 enum rm_error rm_core_tcp_msg_assemble(int fd, enum rm_pt_type pt, void **body_raw, size_t bytes_n);
 
 
+enum rm_error rm_core_reload_config(struct rsyncme *rm) __attribute__ ((nonnull(1)));
+
+
 #endif  /* RSYNCME_CORE_H */
 
