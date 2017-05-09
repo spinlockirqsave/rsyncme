@@ -11,6 +11,7 @@
 
 #include "rm.h"
 #include "rm_core.h"
+#include "rm_tcp.h"
 
 #include <signal.h>
 
@@ -20,6 +21,7 @@ struct rsyncme  rm;
 
 static void rm_daemon_sigint_handler(int signo);
 static void rm_daemon_sigtstp_handler(int signo);
+static void rm_daemon_sighup_handler(int signo);
 
 static void rm_daemon_signal_handler(int signo);
 

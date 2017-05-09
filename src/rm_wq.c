@@ -78,10 +78,10 @@ static enum rm_error rm_wq_worker_deinit(struct rm_worker *w) {
 
 enum rm_error
 rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *name) {
-    struct rm_worker    *w;
+    struct rm_worker    *w = NULL;
     uint8_t             first_active_set = 0;
 
-    memset(wq, 0, sizeof(*wq));
+    memset(wq, 0, sizeof(struct rm_workqueue));
     wq->workers = malloc(workers_n * sizeof(struct rm_worker));
     if (wq->workers == NULL) {
         return RM_ERR_MEM;
@@ -118,7 +118,7 @@ rm_wq_workqueue_init(struct rm_workqueue *wq, uint32_t workers_n, const char *na
 }
 
 enum rm_error rm_wq_workqueue_deinit(struct rm_workqueue *wq) {
-    struct rm_worker    *w;
+    struct rm_worker    *w = NULL;
     uint32_t            workers_n = wq->workers_n;
 
     free((void*)wq->name);
@@ -141,9 +141,9 @@ void rm_wq_workqueue_free(struct rm_workqueue *wq) {                /* queue MUS
 
 struct rm_workqueue*
 rm_wq_workqueue_create(uint32_t workers_n, const char *name) {
-    enum rm_error   err;
+    enum rm_error   err = RM_ERR_OK;
     struct rm_workqueue* wq;
-    wq = malloc(sizeof(*wq));
+    wq = malloc(sizeof(struct rm_workqueue));
     if (wq == NULL) {
         return NULL;
     }
@@ -167,7 +167,7 @@ rm_wq_workqueue_create(uint32_t workers_n, const char *name) {
 }
 
 enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq) {
-    struct rm_worker    *w;
+    struct rm_worker    *w = NULL;
     uint8_t             workers_n = 0;
     enum rm_error       err = RM_ERR_OK;
 
@@ -207,7 +207,7 @@ rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, s
 
 struct rm_work*
 rm_work_create(enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*)) {
-    struct rm_work* work = malloc(sizeof(*work));
+    struct rm_work* work = malloc(sizeof(struct rm_work));
     if (work == NULL) {
         return NULL;
     }
@@ -225,7 +225,7 @@ rm_work_free(struct rm_work* work) {
 /*  @brief  Work dispatcher (round-robin). */
 void
 rm_wq_queue_work(struct rm_workqueue *wq, struct rm_work* work) {
-    struct rm_worker    *w;
+    struct rm_worker    *w = NULL;
     uint8_t             idx = wq->next_worker_idx_to_use, sanity = 0xFF;
 
     if (wq->workers_active_n == 0) {

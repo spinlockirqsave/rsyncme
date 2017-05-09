@@ -1,38 +1,50 @@
 /*@file         USER_GUIDE.txt
-* @brief        Description of rsyncme usage.
-* @author       Piotr Gregor <piotrek.gregor at gmail.com>
-* @version      0.1.2
+* @brief        Short tutorial on how to use RSYNCME.
+* @author       Piotr Gregor <piotrgregor@rsyncme.org>
+* @version      0.1.3
 * @date         13 July 2016 12:50 PM
 * @copyright    LGPLv2.1 */
 
 
-USAGE OF rsyncme
-
-Content
 1. OVERVIEW
 2. EXAMPLES
-2.1 Basic example
-2.2 More advanced example
+2.1 Basic example (remote sync)
+2.2 Basic example (local sync)
+2.3 More advanced example (local sync)
 3. OPTIONS
-4. LOCAL SYNCHRONIZATION
-4.1 OPTIONS
-4.1.1 -z OPTION
-4.1.2 --leave OPTION
-4.1.3 -l OPTION
-4.1.4 -t OPTION
-4.1.5 -a OPTION
-5. REMOTE SYNCHRONIZATION
+3.1 TRANSMITTER
+3.1.1 -z
+3.1.2 -i
+3.1.3 -p
+3.1.4 --leave
+3.1.5 --force
+3.1.6 --version
+3.1.7 --timeout_s
+3.1.8 --timeout_us
+3.1.9 --help
+3.1.10 --loglevel
+3.1.11 -l
+3.1.12 -t
+3.1.13 -a
+3.2 RECEIVER
+3.2.1 -l
+3.2.2 --auth
+3.2.3 --daemon
+3.2.4 --help
+3.2.5 --version
+3.2.6 --verbose
+4. SIGNALS
+5. REMOTE SYNCHRONIZATION EXAMPLE
+6. LOCAL SYNCHRONIZATION EXAMPLE
+
 
 
 1. OVERVIEW
 
 rsyncme can be used to synchronize data on the same machine (locally)
-or between endpoints connected over IP. In current version 0.1.2 only
-local sync is possible and you must wait for version 0.1.3 to be ready
-to synchronize data between machines. Even if local sync doesn't offer
-many benefits over simple copying of data in terms of time improvement,
-it is necessary step in development process and inspecting the results
-locally is great source of knowledge about algorithm's behavior.
+or between endpoints connected over TCP/IP. Please make sure that RECEIVER
+can be accessed through nonpriviledged ports (1024-65535) if remote
+synchronization is to be used.
 
 There is always constant part of all commands using rsyncme,
 -x and -y options necessarily followed by file names, for example:
@@ -46,9 +58,36 @@ be the name of target (so -y file will be changed) or output may be written
 to a new file and -y file deleted or left intact.
 
 
+
 2. EXAMPLES
 
-2.1 Basic example
+2.1 Basic example (remote sync)
+
+Let us assume we have Oracle client installer stored locally and we would like
+to sync it with remote (IP 52.16.18.168) version as we may have made some changes
+to the local file and want remote file to be same as this version.
+
+peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
+-rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+
+Assuming there is a rsyncme receiver started on 52.16.18.168 with
+
+./rsyncme_d
+
+and firewall on that host allows for inbound traffic on nonpriviledged ports
+(1024-65535), and maybe there is old version of file in /tmp folder then 
+
+rsyncme push -i 52.16.18.168
+	-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-z /tmp/client --leave
+
+is a command to start TRANSMITTER and sync that version with our local version.
+The result is saved as a new file /tmp/client on remote host and old version is left intact
+(if there is no --leave flag then @y would be moved to @z).
+
+
+2.2 Basic example (local sync)
 
 Let us assume two files, calc1.ods and calc2.ods are present in ~/Documents
 directory and you made some changes to calc1.ods (a value of single cell
@@ -77,7 +116,7 @@ version of file would be used literally, avoiding copying of 8704 bytes,
 which would be copied at the other end of the link from referenced old version
 of file, if it was remote sync.
 
-2.2 More advanced example
+2.3 More advanced example (local sync)
 
 Let us synchronize just changed version of file with its previous version, leaving
 both files unchanged and producing result in new file. Moreover let us drive the algorithm
@@ -104,62 +143,135 @@ that didn't match.
     OK.
 
 
+
 3. OPTIONS
 
-push        Set up @x as source of changes, @y as result/output.
-pull        Set up @y as source of changes, @x as result/output.
--x          The name of source of changes (if push, see -y if pull)
--y          The name of target to be synchronized to be same as @x, it is
-            reference file (if push, see -x if pull).
--z          The new name of target.
---leave     Will leave reference file unchanged, producing output as @z.
---force     Will create @y if it doesn't exist.
---version   Will output version of program.
---help      Will print short help information.
--l          The size of block used in synchronization algorithm [in bytes].
-            Default used is 512.
--a          Copy all threshold [in bytes]. The file will be sent as raw bytes
-            if it's size is less than this. (If the copy tail threshold
-            value is equal to this value and they are equal to file size
-            than file is sent literally as well).
--t          Copy tail threshold [in bytes]. Bytes will be sent litearally
-            instead of performing rolling match algorithm
-            if bytes to be processed are equal or less than this value.
--s          Send threshold [in bytes]. This determines the maximum size
-            of delta raw element. Bytes will be queued up to this number
-            if the match is not found in @y. If the match is found at some
-            point before this limit is reached and therefore delta reference
-            to matching block is just to be sent (or the EOF is reached),
-            then already accumulated bytes are sent immediately.
+3.1 TRANSMITTER
 
-
-4. LOCAL SYNCHRONIZATION
-
-If the -i option is not given in the command, this means this is local sync.
-The basic command to synchronize file @x and file @y on the same machine is
-
-    rsyncme push -x @x -y @y
-
-This command will synchronize file @y with @x, that is @y will be the same
-as @x after this is done, and @x is unchanged.
-The basic command will create sychronized version of @y with the same name
-and in the same location, but this can be changed with -z and/or --leave option.
-
-4.1 OPTIONS
-
-4.1.1 -z OPTION
+push			Set up @x as source of changes, @y as result/output.
+pull			Set up @y as source of changes, @x as result/output.
+-x				The name of source of changes (if push, see -y if pull)
+-y				The name of target to be synchronized to be same as @x, it is
+				reference file (if push, see -x if pull).
+-z				The new name of target.
+-i				IP or domain name of the receiver of file.
+-p				Receiver's port.
+--leave			Will leave reference file unchanged, producing output as @z.
+--force			Will create @y if it doesn't exist.
+--version		Will output version of program.
+--timeout_s		Timeout on TCP connect (seconds).
+--timeout_us	Timeout on TCP connect (microseconds).
+--help			Will print short help information.
+--loglevel		Sets the logging verbosity.
+-l				The size of block used in synchronization algorithm [in bytes].
+				Default used is 512.
+-a				Copy all threshold [in bytes]. The file will be sent as raw bytes
+				if it's size is less than this. (If the copy tail threshold
+				value is equal to this value and they are equal to file size
+				than file is sent literally as well).
+-t				Copy tail threshold [in bytes]. Bytes will be sent litearally
+				instead of performing rolling match algorithm
+				if bytes to be processed are equal or less than this value.
+-s				Send threshold [in bytes]. This determines the maximum size
+				of delta raw element. Bytes will be queued up to this number
+				if the match is not found in @y. If the match is found at some
+				point before this limit is reached and therefore delta reference
+				to matching block is just to be sent (or the EOF is reached),
+				then already accumulated bytes are sent immediately.
+3.1.1 -z OPTION
 
     rsyncme push -x @x -y @y -z @z
 
 This will output new version of @y as @z, i.e. @y becomes @z (if @y name was different from @z name there is no file with name @y after this is done).
 
-4.1.2 --leave OPTION
+3.1.2 -i OPTION
+
+    rsyncme push -i 54.35.70.55 -x @x -y @y -z @z
+
+Transmitter will connect to 54.35.70.55 and do remote sync (on default port).
+
+    rsyncme push -i example.com -x @x -y @y -z @z
+
+Transmitter will resolve the domain example.com and do remote sync (on default port).
+Please make sure that RECEIVER can be accessed through nonpriviledged ports, 1024-65535.
+The RECEIVER will open new random TCP port for each file transfer and TRANSMITTER must
+be able to connect to that port (in range of 1024-65535).
+
+3.1.3 -p OPTION
+
+    rsyncme push --i 54.35.70.55 -p 6788 -x @x -y @y -z @z
+
+Transmitter will connect to 54.35.70.55 on port 6788 and do remote sync.
+Please make sure that RECEIVER can be accessed through nonpriviledged ports, 1024-65535.
+The RECEIVER will open new random TCP port for each file transfer and TRANSMITTER must
+be able to connect to that port (in range of 1024-65535).
+
+3.1.4 --leave OPTION
 
     rsyncme push -x @x -y @y -z @z --leave
 
 will work as 4.1.1 but @y file will not be deleted nor changed - it is left intact.
 
-4.1.3 -l OPTION
+3.1.5 --force OPTION
+
+    rsyncme push -i 192.168.1.12 -x @x -y @y --f
+
+will force receiver to create @y file if it doesn't exist. It is possible therefore
+to make calls with --f and be sure that result exists after call returns,
+it is either reconstructed by receiver reusing existing @y or created by having
+transmitter sending all file as raw bytes.
+
+3.1.6 --version OPTION
+
+Prints program version to the console.
+
+3.1.7 --timeout_s OPTION
+
+This option sets the seconds part of the timeout used when connecting to receiver.
+
+3.1.8 --timeout_us OPTION
+
+This option sets the microseconds part of the timeout used when connecting to receiver.
+
+3.1.9 --help OPTION
+
+Prints help information to the console.
+
+3.1.10 --loglevel OPTION
+
+    rsyncme push -x @x -y @y --loglevel 3
+
+This option sets up logging verbosity. It can be one of
+0 - NOTHING (no logging at all)
+1 - NORMAL (standard logging, excluding details from threads)
+2 - THREADS (additional information from worker threads is printed,
+	e.g. checksums and delta transmissions)
+3 - VERBOSE (maximum logging)
+
+Default logging level is NORMAL.
+
+Example:
+
+    rsyncme push -x /tmp/RINGLIST.DAT -y /tmp/dat2 --loglevel 3
+
+This will print additional info to the console 
+
+	Local push.
+	2017-04-30_16-29-00:077444	INFO	rm_session.c:411:rm_session_ch_ch_rx_f():	[RX]: checksum [1522536235]
+	2017-04-30_16-29-00:082432	INFO	rm_session.c:631:rm_session_delta_rx_f_local():	[TX]: delta type[1]
+
+
+	method      : DELTA_RECONSTRUCTION (block [512])
+	bytes       : [44] (by raw [44], by refs [0])
+	deltas      : [1] (raw [1], refs [0])
+	collisions  : 1st [0], 2nd [0], 3rd [0]
+	time        : real [0.488435]s, cpu [0.003087]s
+	bandwidth   : [0.000090]MB/s
+
+
+	OK.
+
+3.1.11 -l OPTION
 
     rsyncme push -x @x -y @y -l block_size
 
@@ -173,7 +285,7 @@ Example:
 
 This will use 128 bytes as synchronization block size.
 
-4.1.4 -t OPTION
+3.1.12 -t OPTION
 
     rsyncme push -x @x -y @y -t number_of_bytes
 
@@ -192,7 +304,7 @@ Example:
 
 This will use 80 bytes as copy tail threshold.
 
-4.1.5 -a OPTION
+3.1.13 -a OPTION
 
     rsyncme push -x @x -y @y -a number_of_bytes
 
@@ -206,6 +318,274 @@ Example:
 This will use 80 bytes as copy all threshold. All files of sizes less than 80 bytes
 are sent straight away, skipping the rolling checksum procedure.
 
-5. REMOTE SYNCHRONIZATION
 
-Remote synchronization will be implemented in 0.1.3 version.
+3.2 RECEIVER
+
+-l			Loglevel (0 - no logging, 1 - normal, 2 - +threads, 3 - verbose)
+--auth		Authenticate incoming requests (currently in 0.1.3-alpha, allowed
+			IP is hardcoded in rm_config.h as #define RM_IP_AUTH "127.0.0.1") 
+--help		Print help and exit.
+--version	Print software version and exit.
+--verbose	Same as -l 3.
+
+Please make sure that RECEIVER can be accessed through nonpriviledged ports, 1024-65535.
+The RECEIVER will open new random TCP port for each file transfer and TRANSMITTER must
+be able to connect to that port (in range of 1024-65535).
+
+3.2.1 -l OPTION
+
+This option sets the verbosity of logging into log file. Default is NORMAL.
+You can set it to:
+0 - disable logging
+1 - normal
+2 - log additional (detailed) information from worker threads (TX/RX of checksums/deltas)
+3 - verbose
+
+3.2.2 --daemon OPTION
+
+This option makes receiver to run as daemon. When running as daemon the SIGHUP signal
+is interpreted by receiver as request to reload configuration.
+
+3.2.3 --auth OPTION
+
+This option turns on authentication of incoming requests. Currently in version 0.1.3-alpha,
+allowed IP is hardcoded in rm_config.h as #define RM_IP_AUTH "127.0.0.1" - please change
+it as needed.
+
+3.2.4 --help OPTION
+
+Prints help to the console.
+
+3.2.5 --version	OPTION
+
+Prints software version tp the console.
+
+3.2.6 --verbose OPTION
+
+Same as -l 3, i.e. sets loglevel to VERBOSE.
+
+
+
+4. SIGNALS
+
+Receiver handles following signals:
+
+SIGINT	- interrupts receiver to print statistics into the log
+SIGTSTP	- stops receiver
+SIGHUP	- forces receiver to reload configuration
+
+The way to send signal from the Linux console is to find the process id, for example with
+
+	sudo ps -ef | grep rsyncme_d
+	user     8451     1  0 12:25 ?        00:00:00 ./rsyncme_d --d
+
+and then use kill command to queue the signal to the process
+
+	kill -s SIGTSTP 8451
+
+
+
+5. REMOTE SYNCHRONIZATION EXAMPLE
+
+If the -i option is given to the transmitter, this means this is remote sync.
+TCP connection is used to transmit/receive data between TRANSMITTER and RECEIVER.
+
+Continuing 2.1 example...
+
+Let us assume we have Oracle client installer stored locally and we would like
+to sync it with remote (IP 52.16.18.168) version as we may have made some changes
+to the local file and want remote file to be same as this version.
+
+peter@westernst:~/Downloads$ ls -la oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm 
+-rw-r--r-- 1 peter peter 634803 May 24  2016 /home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+
+Assuming there is a rsyncme receiver started on 52.16.18.168 with
+
+./rsyncme_d
+
+and firewall on that host allows for inbound traffic on nonpriviledged ports
+(1024-65535), and maybe there is old version of file in /tmp folder then 
+
+rsyncme push -i 52.16.18.168
+	-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+	-z /tmp/client --leave
+
+is a command to start TRANSMITTER and sync remote version of file with our local version.
+The result is saved as a new file /tmp/client on remote host and old version is left intact
+(if there was no --leave flag then @y would be moved to @z).
+
+The TRANSMITTER's output to the console would resemble (TX/RX of checksums and delta would
+appear only if increased logging was used, i.e. --verbose, --loglevel 2, or --loglevel 3):
+
+peter@westernst:~/Downloads$ rsyncme push -i 52.16.18.168
+								-x ~/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+								-y /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
+								-z /tmp/client --leave
+
+Remote push.
+2017-04-29_23-37-31:253719	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2288600433]
+2017-04-29_23-37-31:253760	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [837820154]
+2017-04-29_23-37-31:253768	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1156948906]
+2017-04-29_23-37-31:253775	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1424659506]
+2017-04-29_23-37-31:253782	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2821700257]
+2017-04-29_23-37-31:253792	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1935574658]
+2017-04-29_23-37-31:253799	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [651789785]
+2017-04-29_23-37-31:253806	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2470142762]
+2017-04-29_23-37-31:253813	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2680824165]
+... more checksums RX
+2017-04-29_23-37-31:266017	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [1731920797]
+2017-04-29_23-37-31:266023	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [4144168466]
+2017-04-29_23-37-31:266030	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [945355691]
+2017-04-29_23-37-31:406809	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[1]
+2017-04-29_23-37-31:406854	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:406880	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407080	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407091	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407101	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407112	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:407123	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+... more delta TX
+2017-04-29_23-37-31:411596	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411626	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411626	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [3173775786]
+2017-04-29_23-37-31:411638	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411658	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411670	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411649	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [3238854276]
+2017-04-29_23-37-31:411681	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411688	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [3114465905]
+2017-04-29_23-37-31:411698	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411709	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2320104914]
+2017-04-29_23-37-31:411723	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411843	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2961374749]
+2017-04-29_23-37-31:411853	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411858	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [2770141613]
+2017-04-29_23-37-31:411870	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:411877	INFO	rm_session.c:400:rm_session_ch_ch_rx_f():	[RX]: checksum [959448129]
+2017-04-29_23-37-31:411886	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+...more delta TX / checksums RX
+2017-04-29_23-37-31:423972	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424028	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424041	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424054	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424068	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[0]
+2017-04-29_23-37-31:424081	INFO	rm_rx.c:397:rm_rx_tx_delta_element():	[TX]: delta type[3]
+
+
+method      : DELTA_RECONSTRUCTION (block [512])
+bytes       : [634803] (by raw [512], by refs [634291])
+deltas      : [1240] (raw [1], refs [1239])
+collisions  : 1st [2], 2nd [0], 3rd [0]
+time        : real [0.514972]s, cpu [0.030970]s
+bandwidth   : [1.232694]MB/s
+
+
+OK.
+
+
+The RECEIVER's output to the log would resemble (the TX/RX info will only appear in log if you run receiver
+with increased logging capability, i.e. ./rsyncme_d --verbose, or ./rsyncme_d -l 2, or ./rsyncme_d -l 3):
+
+cat rsyncme_2017-04-29_22-39-13:509254.err
+
+2017-04-29_22-39-58:032125      INFO    rm_core.c:22:rm_core_init():    Starting main work queue
+2017-04-29_22-39-58:032230      INFO    rm_daemon.c:432:main(): core: Main work queue started with [8] worker threads
+2017-04-29_22-39-58:032241      INFO    rm_daemon.c:457:main(): core: Listening on address [0.0.0.0], port [5048]
+2017-04-29_22-40-12:383177      INFO    rm_daemon.c:132:do_it_all():    core: Incoming connection, peer [119.129.145.68] port [33425], handled on local interface [171.21.33.21] port [5048]
+2017-04-29_22-40-12:383207      INFO    rm_daemon.c:156:do_it_all():    core: Waiting for incoming header from peer [119.129.145.68] port [33425], on local interface [171.21.33.21] port [5048]
+2017-04-29_22-40-12:385021      INFO    rm_daemon.c:171:do_it_all():    core: Validating header from peer [119.129.145.68] port [33425]
+2017-04-29_22-40-12:385041      INFO    rm_daemon.c:211:do_it_all():    core: Enqueuing MSG_PUSH work from peer [119.129.145.68] port [33425]
+2017-04-29_22-40-12:385074      INFO    rm_do_msg.c:68:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [0]: work started in thread [139706108393216]
+2017-04-29_22-40-12:385161      INFO    rm_do_msg.c:82:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [1]: their ssid [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> our ssid [399b2504-4991-4d2e-810c-b8889f74299f]
+2017-04-29_22-40-12:385166      INFO    rm_do_msg.c:84:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [2]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], x [/home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], y [/tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], z [/tmp/client], L [512], flags [110][0x6e]. Validating...
+2017-04-29_22-40-12:385247      INFO    rm_do_msg.c:95:rm_do_msg_push_rx():     [RM_WORK_PROCESS_MSG_PUSH] [3]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Opening ephemeral delta rx port
+2017-04-29_22-40-12:385260      INFO    rm_do_msg.c:106:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [4]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], x [/home/peter/Downloads/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], y [/tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm], z [/tmp/client], L [512], flags [0x6e], tmp [3f618daa-62f9-444c-8f07-d95431e3b812], listening on delta rx port [53903]
+2017-04-29_22-40-12:385280      INFO    rm_do_msg.c:113:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [5]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], TXed ACK
+2017-04-29_22-40-12:385285      INFO    rm_do_msg.c:117:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [6]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Session hashed to [272]
+2017-04-29_22-40-12:385318      INFO    rm_do_msg.c:124:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [7]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Checksums tx thread started
+2017-04-29_22-40-12:385333      INFO    rm_do_msg.c:131:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [8]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Delta rx thread started
+2017-04-29_22-40-12:385380      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2288600433]
+2017-04-29_22-40-12:385394      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [837820154]
+2017-04-29_22-40-12:385405      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [1156948906]
+2017-04-29_22-40-12:385417      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [1424659506]
+2017-04-29_22-40-12:385428      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2821700257]
+2017-04-29_22-40-12:385439      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [1935574658]
+... more TX checksum
+2017-04-29_22-40-12:399657      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2046427318]
+2017-04-29_22-40-12:495426      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[1]
+2017-04-29_22-40-12:499668      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [2688873146]
+2017-04-29_22-40-12:508680      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:519677      INFO    rm_tcp.c:58:rm_tcp_tx_ch_ch():  [TX]: checksum [691394732]
+2017-04-29_22-40-12:528717      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:54680      INFO    rm_session.c:328:rm_session_ch_ch_tx_f():       [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], [272]: TX-ed [1240] nonoverlapping checksum elements
+2017-04-29_22-40-12:549708      INFO    rm_do_msg.c:135:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [9]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Checksums tx thread joined
+2017-04-29_22-40-12:708723      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:708728      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:708733      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:708737      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+... more delta RX
+2017-04-29_22-40-12:800334      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800338      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800343      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800347      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800351      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[0]
+2017-04-29_22-40-12:800356      INFO    rm_session.c:753:rm_session_delta_rx_f_remote():        [RX]: delta type[3]
+2017-04-29_22-40-12:800419      INFO    rm_do_msg.c:139:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [10]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], All threads joined
+
+method      : DELTA_RECONSTRUCTION (block [512])
+bytes       : [634803] (by raw [512], by refs [634291])
+deltas      : [1240] (raw [1], refs [1239])
+collisions  : 1st [0], 2nd [0], 3rd [0]
+time        : real [0.415255]s, cpu [0.010000]s
+bandwidth   : [1.528705]MB/s
+
+2017-04-29_22-40-12:800705      INFO    rm_do_msg.c:200:rm_do_msg_push_rx():    [RM_WORK_PROCESS_MSG_PUSH] [11]: [018e3f59-68e8-431a-af0d-4e0135ecfaad] -> [399b2504-4991-4d2e-810c-b8889f74299f], Session [2517838439] ended
+
+
+In this example we can see that there was only one delta element (difference element)
+which contained raw data, the rest of them (1239) contained only a reference to the old
+file location from which data has been copied to the result file on remote host.
+In this case file wasn't changes at all. Finding good matches allowed for sending
+only 512 bytes literally, the remaining 634291 bytes were sent as 1239 references.
+This allowed to achieve 1.23 MB/s up bandwidth on 0.92 Mb(up)/7.2 Mb(down) Ethernet link.   
+
+
+
+6. LOCAL SYNCHRONIZATION EXAMPLE
+
+If the -i option is not given in the command to the TRANSMITTER,
+this means this is local sync.
+This also means that TCP connection is not used at all and you don't need rsyncme
+RECEIVER to be running at all. The rsyncme TRANSMITTER will act as both sender
+and receiver in this case. It will read/write the data
+by direct system calls to fread/fwrite (though sync algorithm will be used
+in the same way as if it was remote sync over TCP connection).
+The basic command to synchronize file @x and file @y on the same machine is
+
+    rsyncme push -x @x -y @y
+
+This command will synchronize file @y with @x, that is @y will be the same
+as @x after this is done, and @x is unchanged.
+The basic command will create sychronized version of @y with the same name
+and in the same location, (this can be changed with -z and/or --leave options).
+
+Example:
+
+    rsyncme push -x /tmp/RINGLIST.DAT -y /tmp/dat2 --loglevel 3
+
+	Local push.
+	2017-04-30_16-29-00:077444	INFO	rm_session.c:411:rm_session_ch_ch_rx_f():	[RX]: checksum [1522536235]
+	2017-04-30_16-29-00:082432	INFO	rm_session.c:631:rm_session_delta_rx_f_local():	[TX]: delta type[1]
+
+
+	method      : DELTA_RECONSTRUCTION (block [512])
+	bytes       : [44] (by raw [44], by refs [0])
+	deltas      : [1] (raw [1], refs [0])
+	collisions  : 1st [0], 2nd [0], 3rd [0]
+	time        : real [0.488435]s, cpu [0.003087]s
+	bandwidth   : [0.000090]MB/s
+
+
+	OK.
+

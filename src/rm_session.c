@@ -10,7 +10,7 @@
 #include "rm_session.h"
 
 
-void rm_session_push_rx_init(struct rm_session_push_rx *prvt)
+void rm_session_push_rx_init(struct rm_session_push_rx *prvt, struct rm_core_options *opt)
 {
 	memset(prvt, 0, sizeof(struct rm_session_push_rx));
 	TWINIT_LIST_HEAD(&prvt->rx_delta_e_queue);
@@ -20,6 +20,7 @@ void rm_session_push_rx_init(struct rm_session_push_rx *prvt)
 	prvt->fd = -1;
 	prvt->ch_ch_fd = -1;
 	prvt->delta_fd = -1;
+	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
 
@@ -42,12 +43,12 @@ void rm_session_push_rx_free(struct rm_session_push_rx *prvt)
 	return;
 }
 
-void rm_session_push_tx_init(struct rm_session_push_tx *prvt)
+void rm_session_push_tx_init(struct rm_session_push_tx *prvt, struct rm_core_options *opt)
 {
 	memset(prvt, 0, sizeof(struct rm_session_push_tx));
-	rm_session_push_local_init(&prvt->session_local);
+	rm_session_push_local_init(&prvt->session_local, opt);
 	prvt->session_local.delta_rx_f = rm_rx_tx_delta_element;
-	//pthread_mutex_init(&prvt->ch_ch_hash_mutex, NULL);	/* moved to it's session_local object */
+	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
 
@@ -55,12 +56,11 @@ void rm_session_push_tx_init(struct rm_session_push_tx *prvt)
 void rm_session_push_tx_free(struct rm_session_push_tx *prvt)
 {
 	rm_session_push_local_deinit(&prvt->session_local);
-	//pthread_mutex_destroy(&prvt->ch_ch_hash_mutex); /* moved to it's sesion_local object */
 	free(prvt);
 	return;
 }
 
-void rm_session_push_local_init(struct rm_session_push_local *prvt)
+void rm_session_push_local_init(struct rm_session_push_local *prvt, struct rm_core_options *opt)
 {
 	memset(prvt, 0, sizeof(struct rm_session_push_local));
 	pthread_mutex_init(&prvt->h_mutex, NULL);
@@ -68,13 +68,13 @@ void rm_session_push_local_init(struct rm_session_push_local *prvt)
 	pthread_mutex_init(&prvt->tx_delta_e_queue_mutex, NULL);
 	pthread_cond_init(&prvt->tx_delta_e_queue_signal, NULL);
 	prvt->delta_rx_f = rm_rx_process_delta_element;
+	memcpy(&prvt->opt, opt, sizeof(struct rm_core_options));
 	return;
 }
 
 static void rm_session_push_local_deinit(struct rm_session_push_local *prvt)
 {
-	/* queue of delta elements MUST be empty now */
-	if (twlist_empty(&prvt->tx_delta_e_queue) != 0)
+	if (twlist_empty(&prvt->tx_delta_e_queue) == 0)										/* queue of delta elements MUST be empty now */
 		RM_LOG_ERR("%s", "Delta elements queue NOT EMPTY!\n");
 	pthread_mutex_destroy(&prvt->tx_delta_e_queue_mutex);
 	pthread_cond_destroy(&prvt->tx_delta_e_queue_signal);
@@ -83,8 +83,7 @@ static void rm_session_push_local_deinit(struct rm_session_push_local *prvt)
 /* frees private session, DON'T TOUCH private session after this returns */ 
 void rm_session_push_local_free(struct rm_session_push_local *prvt)
 {
-	/* queue of delta elements MUST be empty now */
-	rm_session_push_local_deinit(prvt);
+	rm_session_push_local_deinit(prvt);													/* queue of delta elements MUST be empty now */
 	free(prvt);
 	return;
 }
@@ -108,6 +107,7 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 	switch (s->type) {
 
 		case RM_PUSH_RX:                                                                /* validate remote PUSH RX */
+
 			push_rx = s->prvt;
 			push_rx->msg_push = m;
 			push_rx->fd = fd;
@@ -142,51 +142,38 @@ enum rm_error rm_session_assign_validate_from_msg_push(struct rm_session *s, str
 				push_rx->ch_ch_n = y_sz / m->L + (y_sz % m->L ? 1 : 0);                 /* # of nonoverlapping checksums to be sent to remote transmitter */
 			} else {																	/* s->f_y is NULL */
 				push_rx->ch_ch_n = 0;													/* no checksums to send... */
-				if (m->hdr->flags & RM_BIT_4) {                                         /* force creation if @y doesn't exist? */
-					if (m->z_sz != 0) {                                                 /* use different name? */
-						s->f_z = fopen(m->z, "w+b");
-					} else {
-						s->f_z = fopen(m->y, "w+b");
-					}
-					if (s->f_z == NULL) {
-						return RM_ERR_OPEN_Z;											/* couldn't open @z */
-					}
-					goto maybe_f_z;                                                     /* @y is NULL though */
-				} else {
+				if (!(m->hdr->flags & RM_BIT_4))										/* if not --force creation when @y doesn't exist? */
 					return RM_ERR_OPEN_Y;                                               /* couldn't open @y */
-				}
 			}
-			if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
-				return RM_ERR_GETCWD;
-			if (s->f_z != NULL) {
-				if (chdir(s->f_z_dname) == -1)											/* change current working directory */
-					return RM_ERR_CHDIR_Z;
-			} else {
-				if (chdir(s->f_y_dname) == -1)
-					return RM_ERR_CHDIR_Y;
-			}
+
 			rm_md5((unsigned char*) m->y, m->y_sz, s->hash.data);
-			goto exit;
+			break;
 
 		case RM_PULL_RX:                                                                /* validate remote PULL RX */
+
 			rm_md5((unsigned char*) m->y, m->y_sz, (unsigned char*) &s->hash);
-			goto exit;
+			break;
 
 		default:                                                                        /* TX and everything else */
 			return RM_ERR_FAIL;
 	}
 
-maybe_f_z:
-	if (s->f_z == NULL) {
-		if (m->z_sz == 0) {
-			rm_get_unique_string(m->z);
-		}
-		s->f_z = fopen(m->z, "wb+");                                                    /* and open @f_z for reading and writing */
-		if (s->f_z == NULL) {
-			return RM_ERR_OPEN_TMP;
-		}
+	if (getcwd(s->pwd_init, PATH_MAX) == NULL)									/* get current working directory */
+		return RM_ERR_GETCWD;
+	if (m->z_sz > 0) {															/* result f_z will be ultimately renamed to @z (and @y will be deleted or maybe not if --leave flag is also set) */
+		if (chdir(s->f_z_dname) == -1)
+			return RM_ERR_CHDIR_Z;
+	} else {																	/* result f_z will be renamed to @y which doesn't exist yet */
+		if (chdir(s->f_y_dname) == -1)
+			return RM_ERR_CHDIR_Y;
 	}
-exit:
+
+	/* @y exists and is opened for reading  (s->f_y != NULL), reference file exists or @y doesn;t exist but --force is set */
+	rm_get_unique_string(s->f_z_name);
+	s->f_z = fopen(s->f_z_name, "wb+");													/* open tmp file @f_z for reading and writing in @z path */
+	if (s->f_z == NULL)
+		return RM_ERR_OPEN_TMP;
+
 	return RM_ERR_OK;
 }
 
@@ -201,12 +188,12 @@ enum rm_error rm_session_assign_from_msg_pull(struct rm_session *s, const struct
 }
 
 /* TODO: generate GUID here */
-struct rm_session *rm_session_create(enum rm_session_type t)
+struct rm_session *rm_session_create(enum rm_session_type t, struct rm_core_options *opt)
 {
 	struct rm_session	*s = NULL;
 	uuid_t				uuid = {0};
 
-	s = malloc(sizeof *s);
+	s = malloc(sizeof(struct rm_session));
 	if (s == NULL)
 		return NULL;
 	memset(s, 0, sizeof(struct rm_session));
@@ -214,13 +201,14 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 	TWINIT_LIST_HEAD(&s->link);
 	s->type = t;
 	pthread_mutex_init(&s->mutex, NULL);
+	pthread_mutex_init(&s->y_file_mutex, NULL);
 
 	switch (t) {
 		case RM_PUSH_RX:
 			s->prvt = malloc(sizeof(struct rm_session_push_rx));
 			if (s->prvt == NULL)
 				goto fail;
-			rm_session_push_rx_init(s->prvt);
+			rm_session_push_rx_init(s->prvt, opt);
 			break;
 		case RM_PULL_RX:
 			s->prvt = malloc(sizeof(struct rm_session_pull_rx));
@@ -231,13 +219,13 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 			s->prvt = malloc(sizeof(struct rm_session_push_tx));
 			if (s->prvt == NULL)
 				goto fail;
-			rm_session_push_tx_init(s->prvt);
+			rm_session_push_tx_init(s->prvt, opt);
 			break;
 		case RM_PUSH_LOCAL:
 			s->prvt = malloc(sizeof(struct rm_session_push_local));
 			if (s->prvt == NULL)
 				goto fail;
-			rm_session_push_local_init(s->prvt);
+			rm_session_push_local_init(s->prvt, opt);
 			break;
 		default:
 			goto fail;
@@ -246,6 +234,7 @@ struct rm_session *rm_session_create(enum rm_session_type t)
 	s->clk_cputime_start = clock() / CLOCKS_PER_SEC;
 	uuid_generate(uuid);
 	memcpy(&s->id, &uuid, rm_min(sizeof(uuid_t), RM_UUID_LEN));
+
 	return s;
 
 fail:
@@ -253,6 +242,7 @@ fail:
 		free(s->prvt);
 	}
 	pthread_mutex_destroy(&s->mutex);
+	pthread_mutex_destroy(&s->y_file_mutex);
 	free(s);
 	return NULL;
 }
@@ -263,6 +253,7 @@ void rm_session_free(struct rm_session *s)
 
 	assert(s != NULL);
 	pthread_mutex_destroy(&s->mutex);
+	pthread_mutex_destroy(&s->y_file_mutex);
 	t = s->type;
 	if (s->prvt == NULL)
 		goto end;
@@ -301,9 +292,10 @@ void *rm_session_ch_ch_tx_f(void *arg)
 	struct stat                     fs = {0};
 	size_t                          y_sz = 0, blocks_n_exp = 0, blocks_n = 0;
 	int                             fd = -1;
+	uint8_t							loglevel = RM_LOGLEVEL_NORMAL;
 
-	TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
-	twhash_init(h);
+	//TWDEFINE_HASHTABLE(h, RM_NONOVERLAPPING_HASH_BITS);
+	//twhash_init(h);
 
 	s_type = s->type;
 
@@ -315,6 +307,7 @@ void *rm_session_ch_ch_tx_f(void *arg)
 				goto done;
 			}
 			msg_push = rm_push_rx->msg_push;
+			loglevel = rm_push_rx->opt.loglevel;
 			fd = rm_push_rx->fd;																				/* TODO use separate socket for checksums TX? (ch_ch_port in receiver?) */
 			L = rm_push_rx->msg_push->L;
 			f_y = s->f_y;
@@ -328,12 +321,12 @@ void *rm_session_ch_ch_tx_f(void *arg)
 				y_sz = fs.st_size;
 
 				blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);                                                   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-				if (rm_rx_insert_nonoverlapping_ch_ch_ref(fd, f_y, msg_push->y, h, L, rm_tcp_tx_ch_ch, blocks_n_exp, &blocks_n) != RM_ERR_OK) {  /* tx ch_ch only, no ref */
+				if (rm_rx_insert_nonoverlapping_ch_ch_ref(fd, f_y, msg_push->y, NULL, L, rm_tcp_tx_ch_ch, blocks_n_exp, &blocks_n, &s->y_file_mutex) != RM_ERR_OK) {  /* tx ch_ch only, no ref */
 					err = RM_ERR_NONOVERLAPPING_INSERT;
 					goto  done;
 				}
 				assert(blocks_n == blocks_n_exp && "rm_do_msg_push_rx ASSERTION failed  indicating ERROR in blocks count either here or in rm_rx_insert_nonoverlapping_ch_ch_ref");
-				if (RM_LOGLEVEL > RM_LOGLEVEL_NORMAL)
+				if (loglevel > RM_LOGLEVEL_NORMAL)
 					RM_LOG_INFO("[%s] -> [%s], [%u]: TX-ed [%zu] nonoverlapping checksum elements", s->ssid1, s->ssid2, s->hashed_hash, blocks_n_exp);
 			} else {
 				goto done;																						/* no checkums to TX */
@@ -374,12 +367,15 @@ void *rm_session_ch_ch_rx_f(void *arg)
 	struct twhlist_head			*h = NULL;
 	pthread_mutex_t				*h_mutex = NULL;
 	enum rm_rx_status			status = RM_RX_STATUS_OK;
+	uint8_t						loglevel = RM_LOGLEVEL_NORMAL;
+
 
 	struct rm_session *s = (struct rm_session *) arg;
 	prvt = s->prvt;
 	ack = prvt->msg_push_ack;
 	h = prvt->session_local.h;
 	h_mutex = &prvt->session_local.h_mutex;
+	loglevel = prvt->opt.loglevel;
 
 	fd = prvt->fd;																		/* TODO Do we need to use separate ch_ch channel (ch_ch_port) instead of main socket? */
 	ch_ch_n = ack->ch_ch_n;
@@ -387,8 +383,8 @@ void *rm_session_ch_ch_rx_f(void *arg)
 		goto done;
 
 	while (ch_ch_n > 0) {
-		e = malloc(sizeof (*e));
-		if (e == NULL)	 {
+		e = malloc(sizeof(struct rm_ch_ch_ref_hlink));
+		if (e == NULL) {
 			status = RM_RX_STATUS_CH_CH_RX_MEM;
 			goto err_exit;
 		}
@@ -406,7 +402,9 @@ void *rm_session_ch_ch_rx_f(void *arg)
 			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
 		}
-		RM_LOG_INFO("[RX]: checksum [%u]", e->data.ch_ch.f_ch);
+
+		if (loglevel >= RM_LOGLEVEL_THREADS)
+			RM_LOG_INFO("[RX]: checksum [%u]", e->data.ch_ch.f_ch);
 
 		e->data.ref = entries_n;														/* assign offset */
 		TWINIT_HLIST_NODE(&e->hlink);
@@ -474,8 +472,7 @@ void *rm_session_delta_tx_f(void *arg)
 			goto exit;
 	}
 	pthread_mutex_unlock(&s->mutex);
-
-
+//sleep(5);
 	err = rm_rolling_ch_proc(s, h, h_mutex, f_x, delta_tx_f, 0); /* 1. run rolling checksum procedure */
 	if (err != RM_ERR_OK)
 		status = RM_TX_STATUS_ROLLING_PROC_FAIL; /* TODO switch err to return more descriptive errors from here to delta tx thread's status */
@@ -517,6 +514,9 @@ void *rm_session_delta_rx_f_local(void *arg)
 	uint16_t	timeout_s = 10;							/* TODO get timeouts from the user */
 	uint16_t	timeout_us = 0;
 
+	uint8_t		loglevel = RM_LOGLEVEL_NORMAL;
+
+
 	s = (struct rm_session*) arg;
 	if (s == NULL) {
 		status = RM_RX_STATUS_INTERNAL_ERR;
@@ -548,6 +548,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 		q = &prvt_local->tx_delta_e_queue;
 		q_mutex = &prvt_local->tx_delta_e_queue_mutex;
 		q_signal = &prvt_local->tx_delta_e_queue_signal;
+		loglevel = prvt_local->opt.loglevel;
 	} else {												/* RM_PUSH_TX */
 		prvt_tx = s->prvt;
 		if (prvt_tx == NULL) {
@@ -560,6 +561,7 @@ void *rm_session_delta_rx_f_local(void *arg)
 		q = &prvt_tx->session_local.tx_delta_e_queue;
 		q_mutex = &prvt_tx->session_local.tx_delta_e_queue_mutex;
 		q_signal = &prvt_tx->session_local.tx_delta_e_queue_signal;
+		loglevel = prvt_tx->opt.loglevel;
 
 		struct sockaddr peer_addr;
 		socklen_t addrlen = sizeof(peer_addr);
@@ -613,12 +615,17 @@ void *rm_session_delta_rx_f_local(void *arg)
 			delta_e = tw_container_of(lh, struct rm_delta_e, link);
 			//err = rm_rx_process_delta_element(delta_e, f_y, f_z, &rec_ctx);
 			delta_pack.delta_e = delta_e;
-			err = prvt_local->delta_rx_f(&delta_pack);
+
+			err = prvt_local->delta_rx_f(&delta_pack);								/* reconstruct or TX */
 			if (err != 0) {
 				pthread_mutex_unlock(q_mutex);
 				status = RM_RX_STATUS_DELTA_PROC_FAIL;
 				goto err_exit;
 			}
+
+			if (loglevel >= RM_LOGLEVEL_THREADS)
+				RM_LOG_INFO("[TX]: delta type[%u]", delta_e->type);
+
 			bytes_to_rx -= delta_e->raw_bytes_n;
 			if (delta_e->type == RM_DELTA_ELEMENT_RAW_BYTES) {
 				free(delta_e->raw_bytes);
@@ -671,12 +678,9 @@ void* rm_session_delta_rx_f_remote(void *arg)
 {
 	FILE                            *f_y = NULL;		/* file on which reconstruction is performed */
 	FILE                            *f_z = NULL;		/* result file */
-	/*twfifo_queue                    *q; */
-	/*const struct rm_delta_e         *delta_e;        iterator over delta elements */
-	/*struct twlist_head              *lh;*/
+	pthread_mutex_t					*file_mutex = NULL;
 	struct rm_session_push_rx       *prvt_rx = NULL;
 	rm_push_flags					push_flags = 0;
-	char                            f_z_name[RM_UNIQUE_STRING_LEN];
 	int								listen_fd = -1, fd = -1;
 	size_t                          bytes_to_rx = 0, y_sz = 0;
 	struct rm_session               *s = NULL;
@@ -685,7 +689,12 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	enum rm_error					err = RM_ERR_OK;
 	enum rm_rx_status				status = RM_RX_STATUS_OK;
 
-	struct sockaddr_storage cli_addr = {0};;
+	struct timespec					real_time = {0};
+	double							cpu_time = 0.0;
+
+	uint8_t							loglevel = RM_LOGLEVEL_NORMAL;
+
+	struct sockaddr_storage cli_addr = {0};
 	socklen_t               cli_len = 0;
 
 	s = (struct rm_session*) arg;
@@ -713,24 +722,27 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	f_z			= s->f_z;
 	listen_fd	= prvt_rx->delta_fd;
 	memcpy(&rec_ctx, &s->rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));													/* init reconstruction context (L set in assign_validate() */
+	file_mutex	= &s->y_file_mutex;
+	loglevel = prvt_rx->opt.loglevel;
 
 	pthread_mutex_unlock(&s->mutex);
 
 	if (f_y == NULL) {
-		assert(push_flags & RM_BIT_4);																						/* assert force creation if @y doesn't exist? */
-		if (!(push_flags & RM_BIT_4)) {
+		assert((push_flags & RM_BIT_4) && (f_z != NULL));																	/* assert force creation if @y doesn't exist? */
+		if (!(push_flags & RM_BIT_4) || (f_z == NULL)) {
 			err = RM_ERR_BAD_CALL;
 			goto err_exit;
 		}
 	} else {
-		rm_get_unique_string(f_z_name);
-		f_z = fopen(f_z_name, "wb+");																						/* create and open @f_z for reading and writing in @z path */
+		/*rm_get_unique_string(f_z_name);
+		f_z = fopen(f_z_name, "wb+");																						create and open @f_z for reading and writing in @z path
 		if (f_z == NULL) {
 			err = RM_ERR_OPEN_TMP;
 			goto err_exit;
 		}
 		strncpy(s->f_z_name, f_z_name, RM_UNIQUE_STRING_LEN);
 		s->f_z = f_z;
+		*/
 	}
 
 	cli_len = sizeof(cli_addr);
@@ -746,6 +758,7 @@ void* rm_session_delta_rx_f_remote(void *arg)
 	delta_pack.f_y = f_y;
 	delta_pack.f_z = f_z;
 	delta_pack.rec_ctx = &rec_ctx;
+	delta_pack.file_mutex = file_mutex;
 
 	/* RX delta over TCP using delta protocol */
 	struct rm_delta_e delta_e;
@@ -757,7 +770,8 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			status = RM_RX_STATUS_DELTA_RX_TCP_FAIL;
 			goto err_exit;
 		}
-		RM_LOG_INFO("[RX]: delta type[%u]", delta_e.type);
+		if (loglevel >= RM_LOGLEVEL_THREADS)
+			RM_LOG_INFO("[RX]: delta type[%u]", delta_e.type);
 
 		switch (delta_e.type) {
 
@@ -817,6 +831,14 @@ done:
 
 	pthread_mutex_lock(&s->mutex);
 
+	s->clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
+	cpu_time = s->clk_cputime_stop - s->clk_cputime_start;
+	clock_gettime(CLOCK_REALTIME, &s->clk_realtime_stop);
+	real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
+	real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec;
+	rec_ctx.time_cpu = cpu_time;
+	rec_ctx.time_real = real_time;
+
 	if (fd != -1) {																											/* close accepted socket connection */
 		close(fd);
 		fd = -1;
@@ -848,6 +870,7 @@ err_exit:
 		prvt_rx->delta_fd = -1;
 	}
 	prvt_rx->delta_rx_status = status;
+	memcpy(&s->rec_ctx, &rec_ctx, sizeof(struct rm_delta_reconstruct_ctx));
 
 	pthread_mutex_unlock(&s->mutex);
 

@@ -12,11 +12,11 @@
 
 
 enum rm_error rm_msg_push_alloc(struct rm_msg_push *msg) {
-	msg->hdr = malloc(sizeof *(msg->hdr));
+	msg->hdr = malloc(sizeof(struct rm_msg_hdr));
 	if (msg->hdr == NULL) {
 		return RM_ERR_FAIL;
 	}
-	memset(msg->hdr, 0, sizeof(*msg->hdr));
+	memset(msg->hdr, 0, sizeof(struct rm_msg_hdr));
 	return RM_ERR_OK;
 }
 
@@ -26,11 +26,11 @@ void rm_msg_push_free(struct rm_msg_push *msg) {
 }
 
 enum rm_error rm_msg_ack_alloc(struct rm_msg_ack *ack) {
-	ack->hdr = malloc(sizeof *(ack->hdr));
+	ack->hdr = malloc(sizeof(struct rm_msg_hdr));
 	if (ack->hdr == NULL) {
 		return RM_ERR_FAIL;
 	}
-	memset(ack->hdr, 0, sizeof(*ack->hdr));
+	memset(ack->hdr, 0, sizeof(struct rm_msg_hdr));
 	return RM_ERR_OK;
 }
 
@@ -61,13 +61,18 @@ void* rm_do_msg_push_rx(void* arg) {
 	uint8_t							ack_tx_err = 0;															/* set to 1 if ACK tx failed */
 	int								fd_z = -1;
 	struct stat                     fs = {0};
+	struct rm_core_options			opt = {0};
 
 	struct rm_work* work = (struct rm_work*) arg;
 	msg_push = (struct rm_msg_push*) work->msg;
 
 	RM_LOG_INFO("[%s] [0]: work started in thread [%llu]", rm_work_type_str[work->task], rm_gettid());
 
-	s = rm_session_create(RM_PUSH_RX);
+	pthread_mutex_lock(&work->rm->mutex);
+	memcpy(&opt, &work->rm->opt, sizeof(struct rm_core_options));
+	pthread_mutex_unlock(&work->rm->mutex);
+
+	s = rm_session_create(RM_PUSH_RX, &opt);
 	if (s == NULL || s->prvt == NULL) {
 		if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_CREATE_SESSION, NULL) != RM_ERR_OK) {	/* send ACK explaining error */
 			ack_tx_err = 1;
@@ -81,7 +86,11 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	RM_LOG_INFO("[%s] [1]: their ssid [%s] -> our ssid [%s]", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
-	RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags);
+	RM_LOG_INFO("[%s] [2]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u][0x%02x]. Validating...", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, msg_push->hdr->flags);
+	if (msg_push->hdr->flags & RM_BIT_4)
+		RM_LOG_INFO("[%s] [2]: [%s] -> [%s], --force", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+	if (msg_push->hdr->flags & RM_BIT_6)
+		RM_LOG_INFO("[%s] [2]: [%s] -> [%s], --leave", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	err = rm_session_assign_validate_from_msg_push(s, msg_push, work->fd);									/* validate, change dir to result's path */
 	if (err != RM_ERR_OK) {
@@ -103,7 +112,7 @@ void* rm_do_msg_push_rx(void* arg) {
 		goto fail;
 	}
 
-	RM_LOG_INFO("[%s] [4]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [%u], listening on delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, prvt->delta_port);
+	RM_LOG_INFO("[%s] [4]: [%s] -> [%s], x [%s], y [%s], z [%s], L [%zu], flags [0x%02x], tmp [%s], listening on delta rx port [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, msg_push->x, msg_push->y, msg_push->z, msg_push->L, msg_push->hdr->flags, s->f_z_name, prvt->delta_port);
 
 	if (rm_tcp_tx_msg_ack(work->fd, RM_PT_MSG_PUSH_ACK, RM_ERR_OK, s) != RM_ERR_OK) {						/* send ACK OK */
 		ack_tx_err = 1;
@@ -114,14 +123,14 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	rm_core_session_add(work->rm, s);																		/* insert session into global table and list, hash md5 hash */
 
-	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session hashed to [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hashed_hash);
+	RM_LOG_INFO("[%s] [6]: [%s] -> [%s], Session hashed to [%u][%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash, s->hashed_hash);
 
 	err = rm_launch_thread(&prvt->ch_ch_tx_tid, rm_session_ch_ch_tx_f, s, PTHREAD_CREATE_JOINABLE);			/* start tx_ch_ch and rx delta threads, save pids in session object */
 	if (err != RM_ERR_OK) {
 		goto fail;
 	}
 
-	RM_LOG_INFO("[%s] [7]: [%s] -> [%s], Checkums tx thread started", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+	RM_LOG_INFO("[%s] [7]: [%s] -> [%s], Checksums tx thread started", rm_work_type_str[work->task], s->ssid1, s->ssid2);
 
 	err = rm_launch_thread(&prvt->delta_rx_tid, rm_session_delta_rx_f_remote, s, PTHREAD_CREATE_JOINABLE);	/* start rx delta thread */
 	if (err != RM_ERR_OK) {
@@ -136,19 +145,21 @@ void* rm_do_msg_push_rx(void* arg) {
 
 	pthread_join(prvt->delta_rx_tid, NULL);
 
+	RM_LOG_INFO("[%s] [10]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
+
 	if (prvt->ch_ch_tx_status != RM_TX_STATUS_OK) {
 		err = RM_ERR_CH_CH_TX_THREAD;
+		goto fail;
 	}
 
 	if (prvt->delta_rx_status != RM_RX_STATUS_OK) {
 		err = RM_ERR_DELTA_RX_THREAD;
+		goto fail;
 	}
 
-	RM_LOG_INFO("[%s] [10]: [%s] -> [%s], All threads joined", rm_work_type_str[work->task], s->ssid1, s->ssid2);
-
-	if (s->f_y != NULL) {
+	if (s->f_y != NULL) {																					/* fflush and close f_y */
+		fflush(s->f_y);
 		fclose(s->f_y);
-		s->f_y = NULL;
 	}
 
 	if (s->f_z != NULL) {																					/* fflush and close f_z */
@@ -156,15 +167,31 @@ void* rm_do_msg_push_rx(void* arg) {
 		fd_z = fileno(s->f_z);
 		memset(&fs, 0, sizeof(fs));
 		if (fstat(fd_z, &fs) != 0) {
-			err = RM_ERR_FSTAT_Z;
+			err = RM_ERR_FSTAT_TMP;
+			s->f_y = NULL;
+			s->f_z = NULL;
 			goto fail;
 		}
 		fclose(s->f_z);
 		s->f_z = NULL;
 	}
 
-	if (prvt->msg_push->hdr->flags & RM_BIT_4)																/* force creation if @y doesn't exist? */
-		goto done;
+	if ((prvt->msg_push->hdr->flags & RM_BIT_6) == 0u) {													/* if --leave not set */
+		if (prvt->msg_push->z_sz > 0) {																		/* if @z is set */
+			if (s->f_y && unlink(prvt->msg_push->y) != 0) {													/* remove @y if it exists */
+				s->f_y = NULL;
+				err = RM_ERR_UNLINK_Y;
+				goto fail;
+			}
+		}
+	}
+
+	if (s->f_y != NULL)																						/* it has been flushed & closed already */
+		s->f_y = NULL;
+
+	/* sanity check */
+	if (s->f_z != NULL)																						/* it has been flushed & closed already */
+		s->f_z = NULL;
 
 	if (prvt->msg_push->z_sz > 0) {																			/* use different name? */
 		if (rename(s->f_z_name, prvt->msg_push->z) == -1) {
@@ -178,9 +205,8 @@ void* rm_do_msg_push_rx(void* arg) {
 		}
 	}
 
-done:
-
-	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash);
+	rm_rx_print_stats(s->rec_ctx, 1, 0);
+	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u][%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash, s->hashed_hash);
 
 	if (s != NULL) {
 		rm_session_free(s);																					/* frees msg allocated for work as well */
@@ -207,12 +233,20 @@ fail:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't fstat @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
+		case RM_ERR_FSTAT_Z:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : can't fstat @z", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_FSTAT_TMP:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : can't fstat @tmp", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
 		case RM_ERR_OPEN_Z:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @z", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
 		case RM_ERR_OPEN_Y:
-			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, can't open @y (should transmitter set --force flag?)", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 			break;
 
 		case RM_ERR_GETCWD:
@@ -239,6 +273,30 @@ fail:
 			}
 			break;
 
+		case RM_ERR_BAD_CALL:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : request can't be handled, bad arguments", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_UNLINK_Y:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : can't unlink @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_RENAME_TMP_Y:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : can't rename @tmp to @y", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_RENAME_TMP_Z:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : can't rename @tmp to @z", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
+			break;
+
+		case RM_ERR_CH_CH_TX_THREAD:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : checksums tx thread failed with error [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, err, prvt->ch_ch_tx_status);
+			break;
+
+		case RM_ERR_DELTA_RX_THREAD:
+			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : delta rx thread failed with error [%u]", rm_work_type_str[work->task], s->ssid1, s->ssid2, err, prvt->delta_rx_status);
+			break;
+
 		default:
 			RM_LOG_ERR("[%s] [FAIL]: [%s] -> [%s], ERR [%u] : default", rm_work_type_str[work->task], s->ssid1, s->ssid2, err);
 	}
@@ -260,7 +318,7 @@ rm_do_msg_pull_tx(struct rsyncme *rm, unsigned char *buf) {
 
 	(void) buf;
 	assert(rm != NULL && buf != NULL);
-	s = rm_session_create(RM_PULL_TX);
+	s = rm_session_create(RM_PULL_TX, NULL);
 	if (s == NULL) {
 		return -1;
 	}
@@ -277,7 +335,7 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 
 	(void) buf;
 	assert(rm != NULL && buf != NULL);
-	s = rm_session_create(RM_PULL_RX);
+	s = rm_session_create(RM_PULL_RX, NULL);
 	if (s == NULL) {
 		return -1;
 	}
@@ -285,11 +343,6 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 	prvt = (struct rm_session_pull_rx*) s->prvt;
 	(void)prvt;
 	return 0;
-}
-
-uint16_t
-rm_calc_msg_hdr_len(struct rm_msg_hdr *hdr) {
-	return (sizeof(hdr->hash) + sizeof(hdr->pt) + sizeof(hdr->flags) + sizeof(hdr->len));
 }
 
 uint16_t
@@ -302,7 +355,7 @@ rm_calc_msg_len(void *arg) {
 
 		case RM_PT_MSG_PUSH:
 			msg_push = (struct rm_msg_push*) arg;
-			len = rm_calc_msg_hdr_len(msg_push->hdr);
+			len = RM_MSG_HDR_LEN;
 			len += 16;                      /* ssid */
 			len += 8;                       /* L    */
 			len += (2 + msg_push->x_sz);
@@ -327,13 +380,13 @@ rm_calc_msg_len(void *arg) {
 			break;
 
 		case RM_PT_MSG_PUSH_ACK:
-			len = rm_calc_msg_hdr_len(msg->hdr);
+			len = RM_MSG_HDR_LEN;
 			len += 2;							/* delta port */
 			len += 8;							/* checksums number */
 			break;
 
 		case RM_PT_MSG_PULL_ACK:
-			len = rm_calc_msg_hdr_len(msg->hdr);
+			len = RM_MSG_HDR_LEN;
 			break;
 
 		case RM_PT_MSG_ACK:

@@ -11,7 +11,7 @@
 
 enum rm_error
 rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold,
-		size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx) {
+		size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, struct rm_tx_options *opt) {
 	enum rm_error  err = RM_ERR_OK;
 	FILE        *f_x = NULL;   /* original file, to be synced into @y */
 	FILE        *f_y = NULL;   /* file for taking non-overlapping blocks */
@@ -34,6 +34,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 	twfifo_queue            *q = NULL;
 	const struct rm_delta_e *delta_e = NULL;
 	struct twlist_head      *lh = NULL;
+	struct rm_core_options	core_opt = {0};
 
 	if ((x == NULL) || (y == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
 		return RM_ERR_BAD_CALL;
@@ -87,7 +88,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 		y_sz = fs.st_size;
 
 		blocks_n_exp = y_sz / L + (y_sz % L ? 1 : 0);   /* split @y file into non-overlapping blocks and calculate checksums on these blocks, expected number of blocks is */
-		if (rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n) != RM_ERR_OK) {
+		if (rm_rx_insert_nonoverlapping_ch_ch_ref(0, f_y, y, h, L, NULL, blocks_n_exp, &blocks_n, NULL) != RM_ERR_OK) {
 			err = RM_ERR_NONOVERLAPPING_INSERT;
 			goto  err_exit;
 		}
@@ -105,14 +106,15 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 			}
 			clock_gettime(CLOCK_REALTIME, &clk_realtime_start);
 			clk_cputime_start = clock() / CLOCKS_PER_SEC;
-			if (rm_copy_buffered(f_x, f_z, x_sz) != RM_ERR_OK) { /* @y doesn't exist and --forced flag is specified */
+			if (rm_copy_buffered(f_x, f_z, x_sz, NULL) != RM_ERR_OK) {								/* @y doesn't exist and --forced flag is specified */
 				err = RM_ERR_COPY_BUFFERED;
 				goto err_exit;
 			}
-			if (rec_ctx != NULL) {  /* fill in reconstruction context if given */
+			if (rec_ctx != NULL) {																	/* fill in reconstruction context if given */
 				rec_ctx->method = RM_RECONSTRUCT_METHOD_COPY_BUFFERED;
 				rec_ctx->delta_raw_n = 1;
 				rec_ctx->rec_by_raw = x_sz;
+				rec_ctx->msg_push_len = 0;
 			}
 			goto done;
 		} else {
@@ -130,7 +132,8 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 		goto err_exit;
 	}
 
-	s = rm_session_create(RM_PUSH_LOCAL);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
+	core_opt.loglevel = opt->loglevel;
+	s = rm_session_create(RM_PUSH_LOCAL, &core_opt);    /* calc rolling checksums, produce delta vector and do file reconstruction in local session */
 	if (s == NULL) {
 		err = RM_ERR_CREATE_SESSION;
 		goto err_exit;
@@ -140,6 +143,7 @@ rm_tx_local_push(const char *x, const char *y, const char *z, size_t L, size_t c
 	s->rec_ctx.copy_all_threshold = copy_all_threshold;
 	s->rec_ctx.copy_tail_threshold = copy_tail_threshold;
 	s->rec_ctx.send_threshold = send_threshold;
+	s->rec_ctx.msg_push_len = 0;
 	prvt = s->prvt; /* setup private session's arguments */
 	prvt->h = h;
 	s->f_x = f_x;
@@ -245,26 +249,16 @@ done:
 	}
 	rec_ctx->time_cpu = cpu_time;
 	rec_ctx->time_real = real_time;
-	/*if (y_copy != NULL) {
-	  free(y_copy);
-	  y_copy = NULL;
-	  }*/
+
 	if (f_z != NULL) {
 		fclose(f_z);
 		f_z = NULL;
 	}
-	/*chdir(cwd);
-	  if (cwd != NULL) {
-	  free(cwd);
-	  cwd = NULL;
-	  }*/
+
 	return RM_ERR_OK;
 
 err_exit:
-	/*if (y_copy != NULL) {
-	  free(y_copy);
-	  y_copy = NULL;
-	  }*/
+
 	if (f_x != NULL) {
 		fclose(f_x);
 		f_x = NULL;
@@ -298,15 +292,11 @@ err_exit:
 		rm_session_free(s);
 		s = NULL;
 	}
-	/*if (cwd != NULL) {
-	  chdir(cwd);
-	  free(cwd);
-	  cwd = NULL;
-	  }*/
+
 	return err;
 }
 
-int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str) {
+int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, size_t copy_all_threshold, size_t copy_tail_threshold, size_t send_threshold, rm_push_flags flags, struct rm_delta_reconstruct_ctx *rec_ctx, const char *addr, uint16_t port, uint16_t timeout_s, uint16_t timeout_us, const char **err_str, struct rm_tx_options *opt) {
 	enum rm_error       err = RM_ERR_OK;
 	FILE                *f_x = NULL;	/* original file, to be synced with @y */
 	int					fd_x = -1;
@@ -315,11 +305,16 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	struct rm_session           *s = NULL;
 	struct rm_session_push_tx   *prvt = NULL;
 
+	struct timespec         real_time = {0};
+	double                  cpu_time = 0.0;
+
 	struct rm_msg_push  msg = {0};
 	unsigned char       *msg_raw = NULL;
 	unsigned char       *buf = NULL;
 	struct rm_msg_push_ack   ack;
 	memset(&ack, 0, sizeof(ack));
+
+	struct rm_core_options	core_opt = {0};
 
 	(void) y;
 	(void) z;
@@ -347,7 +342,10 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		return RM_ERR_X_ZERO_SIZE;
 	}
 
-	s = rm_session_create(RM_PUSH_TX);                                                          /* rx nonoverlapping checksums, calc rolling checksums, produce delta vector and tx to receiver */
+	core_opt.loglevel = opt->loglevel;
+	core_opt.delta_conn_timeout_s = timeout_s;
+	core_opt.delta_conn_timeout_us = timeout_us;
+	s = rm_session_create(RM_PUSH_TX, &core_opt);                                               /* rx nonoverlapping checksums, calc rolling checksums, produce delta vector and tx to receiver */
 	if (s == NULL) {
 		err = RM_ERR_CREATE_SESSION;
 		goto err_exit;
@@ -359,7 +357,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		goto err_exit;
 	}
 
-	memset(&msg, 0, sizeof msg);
+	memset(&msg, 0, sizeof(msg));
 	if (rm_msg_push_alloc(&msg) != RM_ERR_OK) {
 		goto err_exit;                                                                          /* RM_ERR_MEM */
 	}
@@ -385,6 +383,8 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	}
 	msg.hdr->len = rm_calc_msg_len(&msg);
 	msg.hdr->hash = rm_core_hdr_hash(msg.hdr);
+
+	rec_ctx->msg_push_len = msg.hdr->len;
 
 	msg_raw = malloc(msg.hdr->len);
 	if (msg_raw == NULL) {
@@ -501,6 +501,17 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		fclose(s->f_y);
 		s->f_y = NULL;
 	}
+
+	s->clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
+	cpu_time = s->clk_cputime_stop - s->clk_cputime_start;
+	clock_gettime(CLOCK_REALTIME, &s->clk_realtime_stop);
+	real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
+	real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec;
+	s->rec_ctx.time_cpu = cpu_time;
+	s->rec_ctx.time_real = real_time;
+
+	memcpy(rec_ctx, &s->rec_ctx, sizeof (struct rm_delta_reconstruct_ctx));
+
 	pthread_mutex_unlock(&s->mutex);
 	rm_session_free(s);
 	s = NULL;

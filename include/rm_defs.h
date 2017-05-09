@@ -71,7 +71,7 @@
 
 #define RM_UNIQUE_STRING_LEN        37u         /* including '\0' at the end, MUST be longer than sizeof(uuid_t)! */
 #define RM_SESSION_HASH_BITS        10          /* 10 bits hash, array size == 1024 */
-#define RM_NONOVERLAPPING_HASH_BITS 17          /* 17 bits hash, array size == 131 072 */
+#define RM_NONOVERLAPPING_HASH_BITS 19          /* 19 bits hash, array size == 524 288 (131 072) */
 #define RM_FILE_LEN_MAX             250         /* max len of names of @x, @y files, MUST be > RM_UNIQUE_STRING_LEN */
 #define RM_UUID_LEN                 16u			/* as uuid_t on Debian */
 
@@ -86,23 +86,24 @@
 #define RM_CORE_ST_SHUT_DOWN        255         /* shutting down, no more requests */
 #define RM_CORE_CONNECTIONS_MAX     1           /* max number of simultaneous connections */
 #define RM_CORE_HASH_OK             84
-#define RM_CORE_DAEMONIZE           0           /* become daemon or not, turn it to off
-												   while debugging for convenience */
-#define RM_STRONG_CHECK_BYTES       16
-#define RM_CH_CH_SIZE				(sizeof(struct rm_ch_ch))
-#define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + (sizeof(((struct rm_ch_ch_ref*)0)->ref)))
+#define RM_STRONG_CHECK_BYTES       16u
+#define RM_CH_CH_SIZE				20u
+#define RM_CH_CH_REF_SIZE			(RM_CH_CH_SIZE + 8)
 #define RM_NANOSEC_PER_SEC          1000000000U
 #define RM_CORE_HASH_CHALLENGE_BITS 32u
 
-#define RM_DELTA_ELEMENT_TYPE_FIELD_SIZE	1	/* we need 2 bits to be honest */
-#define RM_DELTA_ELEMENT_BYTES_FIELD_SIZE	8	/* it is size_t now, but we will change it to be uint64_t explicitly */
-#define RM_DELTA_ELEMENT_REF_FIELD_SIZE		8	/* it is size_t now, but we will change it to be uint64_t explicitly */
+#define RM_DELTA_ELEMENT_TYPE_FIELD_SIZE	1u	/* we need 2 bits to be honest */
+#define RM_DELTA_ELEMENT_BYTES_FIELD_SIZE	8u	/* it is size_t now, but we will change it to be uint64_t explicitly */
+#define RM_DELTA_ELEMENT_REF_FIELD_SIZE		8u	/* it is size_t now, but we will change it to be uint64_t explicitly */
+
+#define RM_CH_OVERHEAD				RM_CH_CH_SIZE
+#define RM_DELTA_RAW_OVERHEAD		(RM_DELTA_ELEMENT_TYPE_FIELD_SIZE + RM_DELTA_ELEMENT_BYTES_FIELD_SIZE)
+#define RM_DELTA_REF_OVERHEAD		(RM_DELTA_ELEMENT_TYPE_FIELD_SIZE + RM_DELTA_ELEMENT_REF_FIELD_SIZE)
 
 /* defaults */
-#define RM_DEFAULT_L                512         /* default block size in bytes */
-#define RM_L1_CACHE_RECOMMENDED     8192        /* buffer size, so that it should fit into
-												 * L1 cache on most architectures */
-#define RM_WORKERS_N                8u          /* default number of workers for main work queue */
+#define RM_DEFAULT_L                512u		/* default block size in bytes */
+#define RM_L1_CACHE_RECOMMENDED     8192u		/* buffer size, so that it should fit into L1 cache on most architectures */
+#define RM_WORKERS_N                8u			/* default number of workers for main work queue */
 
 #define rm_container_of(ptr, type, member) __extension__({  \
 		const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
@@ -216,7 +217,10 @@ enum rm_error {
 	RM_ERR_RESULT_F_NAME = 76,
 	RM_ERR_BUSY = 77,
 	RM_ERR_AUTH = 78,
-	RM_ERR_UNKNOWN_ERROR = 79
+	RM_ERR_Y_ZERO_SIZE = 79,
+	RM_ERR_Z_ZERO_SIZE = 80,
+	RM_ERR_FSTAT_TMP = 81,
+	RM_ERR_UNKNOWN_ERROR = 82
 		/* max error code limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 
@@ -233,6 +237,15 @@ enum rm_pt_type {
 	RM_PT_MSG_PULL_ACK,
 	RM_PT_MSG_ACK,
 	RM_PT_MSG_BYE
+};
+
+struct rm_core_options
+{
+	uint8_t		authenticate;
+	uint8_t		loglevel;
+	uint8_t		daemon;
+	uint16_t	delta_conn_timeout_s;
+	uint16_t	delta_conn_timeout_us;
 };
 
 /* prototypes */

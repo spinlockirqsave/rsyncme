@@ -89,7 +89,7 @@ test_rm_setup(void **state) {
     if (rm_state.f_2.f == NULL) {
         RM_LOG_ERR("Can't create test file [%s]", rm_state.f_2.name);
     }
-    if (1 != rm_fpwrite(file_content_payload, RM_TEST_1_2_BUF_SZ, 1, 0, rm_state.f_2.f)) {
+    if (1 != rm_fpwrite(file_content_payload, RM_TEST_1_2_BUF_SZ, 1, 0, rm_state.f_2.f, NULL)) {
         RM_LOG_ERR("Error writing to the test file [%s]", rm_state.f_2.name);
         assert_true(1 == 0 && "Error writing to the test file");
     }
@@ -168,7 +168,7 @@ test_rm_copy_buffered(void **state) {
             }
         }
         assert_true(f_y != NULL && "Can't open @y file");
-        err = rm_copy_buffered(f_x, f_y, file_sz);
+        err = rm_copy_buffered(f_x, f_y, file_sz, NULL);
         if (err != RM_ERR_OK) {
             RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
             if (f_x != NULL) {
@@ -183,7 +183,7 @@ test_rm_copy_buffered(void **state) {
         assert(err == 0 && "Copy buffered failed");
         k = 0; /* verify files are the same */
         while (k < file_sz) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", fname);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -195,7 +195,7 @@ test_rm_copy_buffered(void **state) {
                 }
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
-            if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y) != 1) {
+            if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -258,7 +258,7 @@ test_rm_copy_buffered_2_1(void **state) {
         }
         file_sz = fs.st_size;
         bytes_requested = rm_min(RM_TEST_1_2_BUF_SZ, file_sz);
-        err = rm_copy_buffered_2(f_x, 0, buf, bytes_requested);
+        err = rm_copy_buffered_2(f_x, 0, buf, bytes_requested, NULL);
         if (err != RM_ERR_OK) {
             RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
             if (f_x != NULL) {
@@ -269,7 +269,7 @@ test_rm_copy_buffered_2_1(void **state) {
         assert(err == RM_ERR_OK && "Copy buffered failed");
         k = 0; /* verify files are the same */
         while (k < bytes_requested) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", fname);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -328,7 +328,7 @@ test_rm_copy_buffered_2_2(void **state) {
     /* 1 request zero bytes */
     bytes_requested = 0;
     offset = 0;
-    err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+    err = rm_copy_buffered_2(f, offset, buf, bytes_requested, NULL);
     if (err != RM_ERR_OK) {
         RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
         if (f != NULL) {
@@ -340,7 +340,7 @@ test_rm_copy_buffered_2_2(void **state) {
     /* 2 request 1 byte, first byte */
     bytes_requested = 1;
     offset = 0;
-    err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+    err = rm_copy_buffered_2(f, offset, buf, bytes_requested, NULL);
     if (err != RM_ERR_OK) {
         RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
         if (f != NULL) {
@@ -358,7 +358,7 @@ test_rm_copy_buffered_2_2(void **state) {
     for (; offset < RM_TEST_1_2_BUF_SZ; ++offset) {
         bytes_requested = 0;
         do {
-            err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+            err = rm_copy_buffered_2(f, offset, buf, bytes_requested, NULL);
             if (err != RM_ERR_OK) {
                 RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
                 if (f != NULL) {
@@ -377,7 +377,7 @@ test_rm_copy_buffered_2_2(void **state) {
     /* 4 request too much */
     bytes_requested = RM_TEST_1_2_BUF_SZ + 1;
     offset = 0;
-    err = rm_copy_buffered_2(f, offset, buf, bytes_requested);
+    err = rm_copy_buffered_2(f, offset, buf, bytes_requested, NULL);
     if (err != RM_ERR_TOO_MUCH_REQUESTED) {
         RM_LOG_ERR("Copy buffered failed with WRONG error [%d], file [%s]", err, fname);
         if (f != NULL) {
@@ -436,7 +436,7 @@ test_rm_copy_buffered_offset(void **state) {
         assert_true(f_y != NULL && "Can't open @y file");
         offset_x = 0;
         offset_y = 0;
-        err = rm_copy_buffered_offset(f_x, f_y, file_sz, offset_x, offset_y);
+        err = rm_copy_buffered_offset(f_x, f_y, file_sz, offset_x, offset_y, NULL);
         if (err != RM_ERR_OK) {
             RM_LOG_ERR("Copy buffered failed with error [%d], file [%s]", err, fname);
             if (f_x != NULL) {
@@ -451,7 +451,7 @@ test_rm_copy_buffered_offset(void **state) {
         assert(err == RM_ERR_OK && "Copy buffered failed");
         k = 0; /* verify files are the same */
         while (k < file_sz) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", fname);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -463,7 +463,7 @@ test_rm_copy_buffered_offset(void **state) {
                 }
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
-            if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y) != 1) {
+            if (rm_fpread(&cy, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                 if (f_x != NULL) {
                     fclose(f_x);

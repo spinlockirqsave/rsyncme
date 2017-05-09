@@ -18,22 +18,27 @@
 
 
 struct rsyncme  rm;
-enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
 
 static void rm_daemon_sigint_handler(int signo) {
-	if (signo != SIGINT) {
+	if (signo != SIGINT)
 		return;
-	}
 	rm.signo = SIGINT;
 	rm.signal_pending = 1;
 	return;
 }
 
 static void rm_daemon_sigtstp_handler(int signo) {
-	if (signo != SIGTSTP) {
+	if (signo != SIGTSTP)
 		return;
-	}
 	rm.signo = SIGTSTP;
+	rm.signal_pending = 1;
+	return;
+}
+
+static void rm_daemon_sighup_handler(int signo) {
+	if (signo != SIGHUP)
+		return;
+	rm.signo = SIGHUP;
 	rm.signal_pending = 1;
 	return;
 }
@@ -42,18 +47,42 @@ static void rm_daemon_signal_handler(int signo) {
 	switch (signo) {
 		case SIGINT:
 			fprintf(stderr, "\n\n==Received SIGINT==\n\nState:\n");
+
 			pthread_mutex_lock(&rm.mutex);
+			fprintf(stderr, "sessions_n                            \t[%u]\n", rm.sessions_n);
 			fprintf(stderr, "workers_n                             \t[%u]\n", rm.wq.workers_n);
 			fprintf(stderr, "workers_active_n                      \t[%u]\n", rm.wq.workers_active_n);
 			pthread_mutex_unlock(&rm.mutex);
+
 			fprintf(stderr, "\n\n");
 			break;
 
 		case SIGTSTP:
 			fprintf(stderr, "\n\n==Received SIGTSTP==\n\nQuiting...\n");
+
 			pthread_mutex_lock(&rm.mutex);
 			rm.state = RM_CORE_ST_SHUT_DOWN;
 			pthread_mutex_unlock(&rm.mutex);
+
+			fprintf(stderr, "\n\n");
+			break;
+
+		case SIGHUP:
+			if (rm.opt.daemon == 0) {
+				fprintf(stderr, "\n\n==Received SIGHUP==\n\nDid we loose the console?...\n");
+				break;
+			} else
+				fprintf(stderr, "\n\n==Received SIGHUP==\n\nReloading configuration...\n");
+
+			pthread_mutex_lock(&rm.mutex);
+
+			if (rm_core_reload_config(&rm) != RM_ERR_OK)
+				fprintf(stderr, "ERR, reloading failed...\n");
+			else
+				fprintf(stderr, "OK, config reloaded...\n");
+
+			pthread_mutex_unlock(&rm.mutex);
+
 			fprintf(stderr, "\n\n");
 			break;
 
@@ -133,18 +162,20 @@ do_it_all(int fd, struct rsyncme* rm) {
 		}
 	}
 
-	if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
-		RM_LOG_ALERT("%s", "core: Authentication failed.\n");
-		err = RM_ERR_AUTH;
-		goto err_exit;
+	if (rm->opt.authenticate) {
+		if (rm_core_authenticate(peer_addr_in) != RM_ERR_OK) {
+			RM_LOG_ALERT("core: Authentication failed. Receiver doesn't accept requests from [%s]. Please skip --auth flag when starting the receiver to disable authentication\n", peer_addr_str);
+			err = RM_ERR_AUTH;
+			goto err_exit;
+		}
 	}
 
-	hdr = malloc(sizeof(*hdr));
+	hdr = malloc(sizeof(struct rm_msg_hdr));
 	if (hdr == NULL) {
 		RM_LOG_CRIT("%s", "core: Couldn't allocate message header. Not enough memory");
 		goto err_exit;
 	}
-	to_read = rm_calc_msg_hdr_len(hdr);
+	to_read = RM_MSG_HDR_LEN;
 	buf = malloc(to_read);																						/* buffer for incoming message header */
 	if (buf == NULL) {
 		RM_LOG_CRIT("%s", "core: Couldn't allocate buffer for the message header. Not enough memory");
@@ -192,7 +223,7 @@ do_it_all(int fd, struct rsyncme* rm) {
 	buf = NULL;
 
 	pt = hdr->pt;
-	to_read = hdr->len - rm_calc_msg_hdr_len(hdr);
+	to_read = hdr->len - RM_MSG_HDR_LEN;
 
 	err = rm_core_tcp_msg_assemble(fd, pt, (void*)&body_raw, to_read);
 	if (err != RM_ERR_OK) { /* TODO handle properly */
@@ -262,8 +293,10 @@ static void rsyncme_d_usage(const char *name)
 	fprintf(stderr, "\nusage:\t %s [-l loglevel]\n\n", name);
 	fprintf(stderr, "     \t -l           : logging level [0-3]\n"
 			"     \t                0 - no logging, 1 - normal, 2 - +threads, 3 - verbose\n");
+	fprintf(stderr, "     \t --auth       : authenticate requests\n");
 	fprintf(stderr, "     \t --help       : display this help and exit\n");
 	fprintf(stderr, "     \t --version    : output version information and exit\n");
+	fprintf(stderr, "     \t --verbose    : max logging\n");
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "\nExamples:\n");
@@ -291,24 +324,29 @@ static void rsyncme_d_help_hint(const char *name)
 }
 
 int main(int argc, char *argv[]) {
-	char                c;
-	char                *pCh;
-	unsigned long long  helper;
-	int                     listenfd, connfd;
-	int                     err, errsv;
-	struct sockaddr_in      srv_addr_in;
-	struct sockaddr_storage cli_addr;
-	socklen_t               cli_len;
+	char                c = 0;
+	char                *pCh = NULL;
+	unsigned long long  helper = 0;
+	int                     listenfd = -1, connfd = -1;
+	int                     err = -1, errsv = -1;
+	struct sockaddr_in      srv_addr_in = {0};;
+	struct sockaddr_storage cli_addr = {0};;
+	socklen_t               cli_len = 0;
 	struct sigaction        sa;
-	enum rm_error           status;
+	enum rm_error           status = RM_ERR_OK;
 	char ip[INET_ADDRSTRLEN];
 	const char *ipptr = NULL;
+	struct rm_core_options	opt = {0};
+
+	memset(&sa, 0, sizeof(struct sigaction));
 
 	int option_index = 0;
 	struct option long_options[] = {
-		{ "help", no_argument, 0, 1 },
-		{ "version", no_argument, 0, 2 },
-		{ "verbose", no_argument, 0, 3 },
+		{ "auth", no_argument, 0, 1 },
+		{ "daemon", no_argument, 0, 2 },
+		{ "help", no_argument, 0, 3 },
+		{ "version", no_argument, 0, 4 },
+		{ "verbose", no_argument, 0, 5 },
 		{ 0 }
 	};
 
@@ -325,17 +363,25 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 1:
+				opt.authenticate = 1;													/* authenticate requests */
+				break;
+
+			case 2:
+				opt.daemon = 1;															/* --verbose */
+				break;
+
+			case 3:
 				rsyncme_d_usage(argv[0]);                                               /* --help */
 				exit(EXIT_SUCCESS);
 				break;
 
-			case 2:
+			case 4:
 				fprintf(stderr, "\nversion [%s]\n", RM_VERSION);                        /* --version */
 				exit(EXIT_SUCCESS);
 				break;
 
-			case 3:
-				RM_LOGLEVEL = RM_LOGLEVEL_VERBOSE;                                      /* --verbose */
+			case 5:
+				opt.loglevel = RM_LOGLEVEL_VERBOSE;										/* --verbose */
 				break;
 
 			case 'l':
@@ -350,7 +396,7 @@ int main(int argc, char *argv[]) {
 					rsyncme_d_help_hint(argv[0]);
 					exit(EXIT_FAILURE);
 				}
-				RM_LOGLEVEL = helper;
+				opt.loglevel = helper;
 				break;
 
 			case '?':
@@ -371,9 +417,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if (RM_CORE_DAEMONIZE == 1) {
+	if (opt.daemon == 1) {
 		err = rm_util_daemonize("/usr/local/rsyncme", 0, "rsyncme");
 		if (err != RM_ERR_OK) {
+			fprintf(stderr, "Err, Can't daemonize, err [%d]\n", err);
 			exit(EXIT_FAILURE); /* TODO handle other errors */
 		}
 	} else {
@@ -401,7 +448,7 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	status = rm_core_init(&rm);
+	status = rm_core_init(&rm, &opt);
 	if (status != RM_ERR_OK) {
 		RM_LOG_CRIT("%s", "core: Can't initialize the engine");
 		switch (status) {
@@ -447,24 +494,31 @@ int main(int argc, char *argv[]) {
 	sa.sa_handler = rm_daemon_sigint_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGINT, &sa, NULL) != 0) {
+	if (sigaction(SIGINT, &sa, NULL) != 0)
 		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGINT");
-	}
+
 	sa.sa_handler = rm_daemon_sigtstp_handler;
 	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
-	if (sigaction(SIGTSTP, &sa, NULL) != 0) {
+	if (sigaction(SIGTSTP, &sa, NULL) != 0)
 		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGTSTP");
-	}
+
+	sa.sa_handler = rm_daemon_sighup_handler;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	if (sigaction(SIGHUP, &sa, NULL) != 0)
+		RM_LOG_PERR("%s", "core: Couldn't set signal handler for SIGHUP");
+
 	while(rm.state != RM_CORE_ST_SHUT_DOWN) {
 		cli_len = sizeof(cli_addr);
 		if ((connfd = accept(listenfd, (struct sockaddr *) &cli_addr, &cli_len)) < 0) {
 			errsv = errno;
 			if (errsv == EINTR) {
 				RM_LOG_PERR("%s", "core: Accept interrupted");
-				if (rm.signal_pending == 1) {
+
+				if (rm.signal_pending == 1)
 					rm_daemon_signal_handler(rm.signo);
-				}
+
 				continue;
 			} else {
 				RM_LOG_PERR("%s", "core: Accept error");

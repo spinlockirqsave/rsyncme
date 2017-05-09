@@ -66,7 +66,7 @@ test_rm_copy_files_and_postfix(const char *postfix) {
                 fclose(f);
                 return -1;
             }
-            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i]);
+            err = rm_copy_buffered(f, f_copy, rm_test_fsizes[i], NULL);
             switch (err) {
                 case RM_ERR_OK:
                     break;
@@ -127,12 +127,13 @@ test_rm_delete_copies_of_files_postfixed(const char *postfix) {
 
 int
 test_rm_setup(void **state) {
-    int         err;
-    size_t      i,j;
-    FILE        *f;
-    void        *buf;
-    struct rm_session   *s;
-    unsigned long seed;
+    int         err = -1;
+    size_t      i = 0, j = 0;
+    FILE        *f = NULL;
+    void        *buf = NULL;
+    struct rm_session   *s = NULL;
+    unsigned long seed = 0;
+	struct rm_core_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
 #ifdef DEBUG
     err = rm_util_chdir_umask_openlog("../build/debug", 1, "rsyncme_test_8", 1);
@@ -186,7 +187,7 @@ test_rm_setup(void **state) {
     assert_true(buf != NULL);
     rm_state.buf2 = buf;
 
-    s = rm_session_create(RM_PUSH_LOCAL);
+    s = rm_session_create(RM_PUSH_LOCAL, &opt);
     if (s == NULL) {
         RM_LOG_ERR("%s", "Can't allocate session local push");
     }
@@ -350,6 +351,7 @@ test_rm_tx_local_push_1(void **state) {
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
     size_t                          detail_case_1_n, detail_case_2_n, detail_case_3_n;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_1");
     if (err != 0) {
@@ -426,7 +428,7 @@ test_rm_tx_local_push_1(void **state) {
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             /* general tests */
@@ -470,13 +472,13 @@ test_rm_tx_local_push_1(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
@@ -574,6 +576,7 @@ test_rm_tx_local_push_2(void **state) {
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_2");
     if (err != 0) {
@@ -628,7 +631,7 @@ test_rm_tx_local_push_2(void **state) {
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -636,7 +639,7 @@ test_rm_tx_local_push_2(void **state) {
         }
         cx_copy = cx;   /* remember first byte for recreation */
         cx = (cx + 1) % 256; /* change first byte, so ZERO_DIFF delta can't happen in this test, therefore this would be an error in this test */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -667,7 +670,7 @@ test_rm_tx_local_push_2(void **state) {
                 fclose(f_y);
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -712,13 +715,13 @@ test_rm_tx_local_push_2(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
@@ -796,7 +799,7 @@ test_rm_tx_local_push_2(void **state) {
                 }
             }
             assert_true(f_y != NULL);
-            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i], NULL) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -808,7 +811,7 @@ test_rm_tx_local_push_2(void **state) {
                 }
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
-            if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, 0, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, 0, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 fclose(f_x);
                 f_x = NULL;
@@ -859,6 +862,7 @@ test_rm_tx_local_push_3(void **state) {
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_3");
     if (err != 0) {
@@ -914,7 +918,7 @@ test_rm_tx_local_push_3(void **state) {
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -922,7 +926,7 @@ test_rm_tx_local_push_3(void **state) {
         }
         cx_copy = cx;           /* remember the last byte for recreation */
         cx = (cx + 1) % 256;    /* change last byte, so ZERO_DIFF and TAIL delta can't happen in this test, therefore this would be an error in this test */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             fclose(f_x);
             fclose(f_y);
@@ -955,7 +959,7 @@ test_rm_tx_local_push_3(void **state) {
                 f_y = NULL;
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -998,13 +1002,13 @@ test_rm_tx_local_push_3(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
@@ -1085,13 +1089,13 @@ test_rm_tx_local_push_3(void **state) {
                 }
             }
             assert_true(f_y != NULL);
-            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i], NULL) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
-            if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy, sizeof(unsigned char), 1, f_x_sz - 1, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
@@ -1140,6 +1144,7 @@ test_rm_tx_local_push_4(void **state) {
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_4");
     if (err != 0) {
@@ -1195,7 +1200,7 @@ test_rm_tx_local_push_4(void **state) {
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
@@ -1203,13 +1208,13 @@ test_rm_tx_local_push_4(void **state) {
         }
         cx_copy_first = cx;     /* remember the first byte for recreation */
         cx = (cx + 1) % 256;    /* change first byte, so ZERO_DIFF can't happen in this test */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
             continue;
         }
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
@@ -1217,7 +1222,7 @@ test_rm_tx_local_push_4(void **state) {
         }
         cx_copy_last = cx;      /* remember the last byte for recreation */
         cx = (cx + 1) % 256;    /* change last byte, so ZERO_DIFF and TAIL delta can't happen in this test */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) fclose(f_x);
             if (f_y != NULL) fclose(f_y);
@@ -1250,7 +1255,7 @@ test_rm_tx_local_push_4(void **state) {
                 f_y = NULL;
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -1293,13 +1298,13 @@ test_rm_tx_local_push_4(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     if (f_x != NULL) fclose(f_x);
                     if (f_y != NULL) fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     if (f_x != NULL) fclose(f_x);
                     if (f_y != NULL) fclose(f_y);
@@ -1421,19 +1426,19 @@ test_rm_tx_local_push_4(void **state) {
                 }
             }
             assert_true(f_y != NULL);
-            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i], NULL) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
-            if (rm_fpwrite(&cx_copy_first, sizeof(unsigned char), 1, 0, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy_first, sizeof(unsigned char), 1, 0, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
                 continue;
             }
-            if (rm_fpwrite(&cx_copy_last, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy_last, sizeof(unsigned char), 1, f_x_sz - 1, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 if (f_x != NULL) fclose(f_x);
                 if (f_y != NULL) fclose(f_y);
@@ -1484,6 +1489,7 @@ test_rm_tx_local_push_5(void **state) {
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
     size_t                      detail_case_1_n, detail_case_2_n, detail_case_3_n;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_5");
     if (err != 0) {
@@ -1539,7 +1545,7 @@ test_rm_tx_local_push_5(void **state) {
             assert_true(1 == 0);
         }
         f_x_sz = fs.st_size;
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) { /* read first byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) { /* read first byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1553,7 +1559,7 @@ test_rm_tx_local_push_5(void **state) {
         }
         cx_copy_first = cx;     /* remember the first byte for recreation */
         cx = (cx + 1) % 256;    /* change first byte, so ZERO_DIFF can't happen in this test */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, 0, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1566,7 +1572,7 @@ test_rm_tx_local_push_5(void **state) {
             continue;
         }
         half_sz = f_x_sz / 2 + f_x_sz % 2;
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, half_sz, f_x) != 1) { /* read middle byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, half_sz, f_x, NULL) != 1) { /* read middle byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1580,7 +1586,7 @@ test_rm_tx_local_push_5(void **state) {
         }
         cx_copy_middle = cx;    /* remember the middle byte for recreation */
         cx = (cx + 1) % 256;    /* change middle byte */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, half_sz, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, half_sz, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1592,7 +1598,7 @@ test_rm_tx_local_push_5(void **state) {
             }
             continue;
         }
-        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) { /* read last byte */
+        if (rm_fpread(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) { /* read last byte */
             RM_LOG_ERR("Error reading file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1606,7 +1612,7 @@ test_rm_tx_local_push_5(void **state) {
         }
         cx_copy_last = cx;      /* remember the last byte for recreation */
         cx = (cx + 1) % 256;    /* change last byte */
-        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x) != 1) {
+        if (rm_fpwrite(&cx, sizeof(unsigned char), 1, f_x_sz - 1, f_x, NULL) != 1) {
             RM_LOG_ERR("Error writing to file [%s], skipping this test", buf_x_name);
             if (f_x != NULL) {
                 fclose(f_x);
@@ -1645,7 +1651,7 @@ test_rm_tx_local_push_5(void **state) {
                 f_y = NULL;
             }
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             assert_int_equal(rec_ctx.rec_by_ref + rec_ctx.rec_by_raw, f_x_sz);  /* validate reconstruction ctx */
@@ -1703,7 +1709,7 @@ test_rm_tx_local_push_5(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     if (f_x != NULL) {
                         fclose(f_x);
@@ -1715,7 +1721,7 @@ test_rm_tx_local_push_5(void **state) {
                     }
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     if (f_x != NULL) {
                         fclose(f_x);
@@ -1852,7 +1858,7 @@ test_rm_tx_local_push_5(void **state) {
                 }
             }
             assert_true(f_y != NULL && "Can't recreate @y file");
-            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i]) != RM_ERR_OK) {
+            if (rm_copy_buffered(f_x, f_y, rm_test_fsizes[i], NULL) != RM_ERR_OK) {
                 RM_LOG_ERR("%s", "Error copying file @x to @y for next test");
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -1864,7 +1870,7 @@ test_rm_tx_local_push_5(void **state) {
                 }
                 assert_true(1 == 0 && "Error copying file @x to @y for next test");
             }
-            if (rm_fpwrite(&cx_copy_first, sizeof(unsigned char), 1, 0, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy_first, sizeof(unsigned char), 1, 0, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -1876,7 +1882,7 @@ test_rm_tx_local_push_5(void **state) {
                 }
                 continue;
             }
-            if (rm_fpwrite(&cx_copy_middle, sizeof(unsigned char), 1, half_sz, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy_middle, sizeof(unsigned char), 1, half_sz, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -1888,7 +1894,7 @@ test_rm_tx_local_push_5(void **state) {
                 }
                 continue;
             }
-            if (rm_fpwrite(&cx_copy_last, sizeof(unsigned char), 1, f_x_sz - 1, f_y) != 1) {
+            if (rm_fpwrite(&cx_copy_last, sizeof(unsigned char), 1, f_x_sz - 1, f_y, NULL) != 1) {
                 RM_LOG_ERR("Error writing to file [%s], skipping this test", f_y_name);
                 if (f_x != NULL) {
                     fclose(f_x);
@@ -1950,6 +1956,7 @@ test_rm_tx_local_push_6(void **state) {
     rm_push_flags                   flags;
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     err = test_rm_copy_files_and_postfix("_test_6");
     if (err != 0) {
@@ -2016,7 +2023,7 @@ test_rm_tx_local_push_6(void **state) {
             flags = RM_BIT_4; /* set force creation flag */
 
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(buf_x_name, f_y_name, NULL, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_COPY_BUFFERED);
@@ -2055,13 +2062,13 @@ test_rm_tx_local_push_6(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", buf_x_name);
                     fclose(f_x);
                     fclose(f_y);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_y, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", f_y_name);
                     fclose(f_x);
                     fclose(f_y);
@@ -2132,6 +2139,7 @@ test_rm_tx_local_push_7(void **state) {
     rm_push_flags                   flags = 0;
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2182,7 +2190,7 @@ test_rm_tx_local_push_7(void **state) {
         flags |= RM_BIT_6; /* set --leave flag */
 
         memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
@@ -2221,13 +2229,13 @@ test_rm_tx_local_push_7(void **state) {
 
         k = 0;
         while (k < f_x_sz) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", x);
                 fclose(f_x);
                 fclose(f_z);
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
-            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", z);
                 fclose(f_x);
                 fclose(f_z);
@@ -2295,6 +2303,7 @@ test_rm_tx_local_push_8(void **state) {
     rm_push_flags                   flags = 0;
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2341,7 +2350,7 @@ test_rm_tx_local_push_8(void **state) {
         flags |= RM_BIT_6; /* set --leave flag */
 
         memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
@@ -2385,13 +2394,13 @@ test_rm_tx_local_push_8(void **state) {
 
         k = 0;
         while (k < f_x_sz) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", x);
                 fclose(f_x);
                 fclose(f_z);
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
-            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", z);
                 fclose(f_x);
                 fclose(f_z);
@@ -2459,6 +2468,7 @@ test_rm_tx_local_push_9(void **state) {
     rm_push_flags                   flags = 0;
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2505,7 +2515,7 @@ test_rm_tx_local_push_9(void **state) {
         flags |= RM_BIT_6; /* set --leave flag */
 
         memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+        status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
         assert_int_equal(status, RM_ERR_OK);
 
         assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
@@ -2549,13 +2559,13 @@ test_rm_tx_local_push_9(void **state) {
 
         k = 0;
         while (k < f_x_sz) {
-            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+            if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", x);
                 fclose(f_x);
                 fclose(f_z);
                 assert_true(1 == 0 && "ERROR reading byte in file @x!");
             }
-            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+            if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z, NULL) != 1) {
                 RM_LOG_CRIT("Error reading file [%s]!", z);
                 fclose(f_x);
                 fclose(f_z);
@@ -2625,6 +2635,7 @@ test_rm_tx_local_push_10(void **state) {
     rm_push_flags                   flags = 0;
     size_t                          copy_all_threshold, copy_tail_threshold, send_threshold;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2674,7 +2685,7 @@ test_rm_tx_local_push_10(void **state) {
             flags |= RM_BIT_6; /* set --leave flag */
 
             memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
-            status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx);
+            status = rm_tx_local_push(x, y, z, L, copy_all_threshold, copy_tail_threshold, send_threshold, flags, &rec_ctx, &opt);
             assert_int_equal(status, RM_ERR_OK);
 
             assert_true(rec_ctx.method == RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION);
@@ -2723,13 +2734,13 @@ test_rm_tx_local_push_10(void **state) {
 
             k = 0;
             while (k < f_x_sz) {
-                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x) != 1) {
+                if (rm_fpread(&cx, sizeof(unsigned char), 1, k, f_x, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", x);
                     fclose(f_x);
                     fclose(f_z);
                     assert_true(1 == 0 && "ERROR reading byte in file @x!");
                 }
-                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z) != 1) {
+                if (rm_fpread(&cz, sizeof(unsigned char), 1, k, f_z, NULL) != 1) {
                     RM_LOG_CRIT("Error reading file [%s]!", z);
                     fclose(f_x);
                     fclose(f_z);
@@ -2791,6 +2802,7 @@ test_rm_tx_local_push_11(void **state) {
     struct test_rm_state    *rm_state;
     rm_push_flags           flags = 0;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2799,37 +2811,37 @@ test_rm_tx_local_push_11(void **state) {
     /* 1. test with --leave flag NOT set */
 
     RM_LOG_INFO("%s", "Testing local push #11 [#1 NULL @x file name pointer, --leave flag NOT set]");
-    status = rm_tx_local_push(NULL, rm_state->f2.name, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, rm_state->f2.name, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#1 NULL @x file name pointer, --leave flag NOT set)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#2 NULL @y file name pointer, --leave flag NOT set]");
-    status = rm_tx_local_push(rm_state->f1.name, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#2 NULL @y file name pointer, --leave flag NOT set)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#3 NULL @z file name pointer, --leave flag NOT set]");
-    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_OK);
     RM_LOG_INFO("%s", "PASSED test #11 (#3 NULL @z file name pointer, --leave flag NOT set)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#4 NULL @x and @y file name pointers, --leave flag NOT set]");
-    status = rm_tx_local_push(NULL, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#4 NULL @x and @y file name pointers, --leave flag NOT set)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#5 NULL @y and @z file name pointers, --leave flag NOT set]");
-    status = rm_tx_local_push(rm_state->f1.name, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#5 NULL @y and @z file name pointers, --leave flag NOT set)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#6 NULL @x and @z file name pointers, --leave flag NOT set]");
-    status = rm_tx_local_push(NULL, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#6 NULL @x and @z file name pointers, --leave flag NOT set)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#7 NULL @x @y and @z file name pointers, --leave flag NOT set]");
-    status = rm_tx_local_push(NULL, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#7 NULL @x @y and @z file name pointers, --leave flag NOT set)");
 
@@ -2837,37 +2849,37 @@ test_rm_tx_local_push_11(void **state) {
     flags |= RM_BIT_6;
 
     RM_LOG_INFO("%s", "Testing local push #11 [#8 NULL @x file name pointer, --leave flag SET]");
-    status = rm_tx_local_push(NULL, rm_state->f2.name, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, rm_state->f2.name, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#8 NULL @x file name pointer, --leave flag SET)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#9 NULL @y file name pointer, --leave flag SET]");
-    status = rm_tx_local_push(rm_state->f1.name, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#9 NULL @y file name pointer, --leave flag SET)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#10 NULL @z file name pointer, --leave flag SET]");
-    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_OK); /* --leave has no effect in this case, result file name is @y */
     RM_LOG_INFO("%s", "PASSED test #11 (#10 NULL @z file name pointer, --leave flag SET)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#11 NULL @x and @y file name pointers, --leave flag SET]");
-    status = rm_tx_local_push(NULL, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, NULL, rm_state->f3.name, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#11 NULL @x and @y file name pointers, --leave flag SET)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#12 NULL @y and @z file name pointers, --leave flag SET]");
-    status = rm_tx_local_push(rm_state->f1.name, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#12 NULL @y and @z file name pointers, --leave flag SET)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#13 NULL @x and @z file name pointers, --leave flag SET]");
-    status = rm_tx_local_push(NULL, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, rm_state->f2.name, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#13 NULL @x and @z file name pointers, --leave flag SET)");
 
     RM_LOG_INFO("%s", "Testing local push #11 [#14 NULL @x @y and @z file name pointers, --leave flag SET]");
-    status = rm_tx_local_push(NULL, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(NULL, NULL, NULL, 10, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #11 (#14 NULL @x @y and @z file name pointers, --leave flag SET)");
     return;
@@ -2881,13 +2893,14 @@ test_rm_tx_local_push_12(void **state) {
     struct test_rm_state    *rm_state;
     rm_push_flags           flags = 0;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
     memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
 
     RM_LOG_INFO("%s", "Testing local push #12 [zero block size, L = 0]");
-    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 0, 0, 0, 10, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 0, 0, 0, 10, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #12 (zero block size, L = 0)");
     return;
@@ -2904,6 +2917,7 @@ test_rm_tx_local_push_13(void **state) {
     int                     fd;
     rm_push_flags           flags = 0;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2925,7 +2939,7 @@ test_rm_tx_local_push_13(void **state) {
     memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
 
     RM_LOG_INFO("%s", "Testing local push #13 [zero send threshold, zero sized file]");
-    status = rm_tx_local_push(rm_state->f0.name, rm_state->f2.name, rm_state->f3.name, 10, 10, 10, 0, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f0.name, rm_state->f2.name, rm_state->f3.name, 10, 10, 10, 0, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #13 (zero send threshold, zero sized file)");
     return;
@@ -2942,6 +2956,7 @@ test_rm_tx_local_push_14(void **state) {
     int                     fd;
     rm_push_flags           flags = 0;
     struct rm_delta_reconstruct_ctx rec_ctx;
+	struct rm_tx_options opt = { .loglevel = RM_LOGLEVEL_NORMAL };
 
     rm_state = *state;
     assert_true(rm_state != NULL);
@@ -2963,7 +2978,7 @@ test_rm_tx_local_push_14(void **state) {
     memset(&rec_ctx, 0, sizeof (struct rm_delta_reconstruct_ctx));
 
     RM_LOG_INFO("%s", "Testing local push #14 [zero send threshold, zero sized file]");
-    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 10, 10, 10, 0, flags, &rec_ctx);
+    status = rm_tx_local_push(rm_state->f1.name, rm_state->f2.name, rm_state->f3.name, 10, 10, 10, 0, flags, &rec_ctx, &opt);
     assert_int_equal(status, RM_ERR_BAD_CALL);
     RM_LOG_INFO("%s", "PASSED test #14 (zero send threshold, zero sized file)");
     return;

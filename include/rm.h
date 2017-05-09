@@ -102,8 +102,7 @@ struct rm_ch_ch
 struct rm_ch_ch_ref
 {
 	struct rm_ch_ch     ch_ch;
-	size_t              ref;    /* The reference to location in B's F_B file
-								 * (taken from ch_ch list), block number */
+	uint64_t            ref;    /* The reference to location in B's F_B file (taken from ch_ch list), block number */
 };
 
 /* @brief   Checksum checksum struct used for local syncs. */
@@ -181,6 +180,7 @@ struct rm_delta_reconstruct_ctx
 	struct timespec             time_real; /* updated by main thread (tx_local_push)*/
 	double                      time_cpu;
 	size_t                      collisions_1st_level, collisions_2nd_level, collisions_3rd_level; /* updated by rx thread */
+	uint16_t					msg_push_len;
 };
 
 /* @brief   Calculate similar to adler32 fast checksum on a given
@@ -265,7 +265,7 @@ rm_md5(const unsigned char *data, size_t len, unsigned char res[16]);
  *          RM_ERR_FERROR: ferror set on either @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 enum rm_error
-rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
+rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n, pthread_mutex_t *file_mutex);
 
 /* @brief   Copy @bytes_n bytes from @x starting at @offset
  *          into @dst buffer.
@@ -276,7 +276,7 @@ rm_copy_buffered(FILE *x, FILE *y, size_t bytes_n);
  *          RM_ERR_FERROR: ferror set on @x,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 enum rm_error
-rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
+rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n, pthread_mutex_t *file_mutex);
 
 /* @brief   Read @items_n blocks of @size bytes each from stream @f at offset @offset.
  * @details This method can't be used with file locking because of internal buffering
@@ -284,7 +284,7 @@ rm_copy_buffered_2(FILE *x, size_t offset, void *dst, size_t bytes_n);
  * @return  As fread, on success the number of blocks (each of @size size)
  *          read by fread. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
-rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
+rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex);
 
 /* @brief   Write @items_n blocks of @size bytes each from stream @f at offset @offset.
  * @details This method can't be used with file locking because of internal buffering
@@ -292,7 +292,7 @@ rm_fpread(void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
  * @return  As fwrite, on success the number of blocks (each of @size size)
  *          written by fwrite. This number equals the number of bytes only when @size is sizeof(char).*/
 size_t
-rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f);
+rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f, pthread_mutex_t *file_mutex);
 
 /* @brief   Copy @bytes_n bytes from @x at offset @x_offset into @y at @y_offset.
  * @details Calls rm_fpread/rm_fpwrite buffered API functions.
@@ -303,7 +303,7 @@ rm_fpwrite(const void *buf, size_t size, size_t items_n, size_t offset, FILE *f)
  *          RM_ERR_FERROR: error set on @x or @y,
  *          RM_ERR_TOO_MUCH_REQUESTED: not enough data */
 enum rm_error
-rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset);
+rm_copy_buffered_offset(FILE *x, FILE *y, size_t bytes_n, size_t x_offset, size_t y_offset, pthread_mutex_t *file_mutex);
 
 typedef enum rm_error (rm_delta_f)(void*);
 
@@ -352,7 +352,7 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate);
 struct rm_roll_proc_cb_arg
 {
 	struct rm_delta_e       *delta_e;
-	const struct rm_session *s;
+	struct rm_session		*s;
 };
 /* @brief   Tx delta element locally (RM_PUSH_LOCAL).
  * @details Rolling proc callback. Called synchronously.

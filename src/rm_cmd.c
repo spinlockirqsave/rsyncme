@@ -7,6 +7,7 @@
 
 #include "rm_defs.h"
 #include "rm_config.h"
+#include "rm_rx.h"
 #include "rm_tx.h"
 
 
@@ -15,19 +16,16 @@
 #include <getopt.h>
 
 
-enum rm_loglevel RM_LOGLEVEL = RM_LOGLEVEL_NORMAL;
-
-
 static void rsyncme_usage(const char *name)
 {
 	if (name == NULL) {
 		return;
 	}
 	fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4 [-p port]]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
-	fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version]\n\n");
+	fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version] [--loglevel level]\n\n");
 	fprintf(stderr, "     \t -x           : file to synchronize\n");
-	fprintf(stderr, "     \t -i           : remote address (IP or domain name) if syncing with remote peer\n");
-	fprintf(stderr, "     \t -p           : remote port if syncing with remote peer\n");
+	fprintf(stderr, "     \t -i           : IP address or domain name of the receiver of file\n");
+	fprintf(stderr, "     \t -p           : receiver's port (defaults to %u)\n", RM_DEFAULT_PORT);
 	fprintf(stderr, "     \t -y           : reference file used for syncing (local if [ip]\n"
 			"     \t                was not given, remote otherwise) or result file if it doesn't\n"
 			"     \t                exist and -z is not set and --force is set\n");
@@ -42,16 +40,23 @@ static void rsyncme_usage(const char *name)
 			"     \t                is equal to size of the block\n");
 	fprintf(stderr, "     \t -l           : block size in bytes, if it is not given then\n"
 			"     \t                default value of 512 bytes is used\n");
-	fprintf(stderr, "     \t --force      : force creation of @y if it doesn't exist\n");
+	fprintf(stderr, "     \t --force      : force creation of result (@y or @z if given) in case the reference file @y doesn't exist\n");
 	fprintf(stderr, "     \t --leave      : leave @y after @z has been reconstructed\n");
 	fprintf(stderr, "     \t --timeout_s  : seconds part of timeout limit on connect\n");
 	fprintf(stderr, "     \t --timeout_us : microseconds part of timeout limit on connect\n");
 	fprintf(stderr, "     \t --help       : display this help and exit\n");
 	fprintf(stderr, "     \t --version    : output version information and exit\n");
+	fprintf(stderr, "     \t --loglevel   : set log verbosity (defalut is NORMAL)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "     \t If no option is specified, --help is assumed.\n");
 
 	fprintf(stderr, "\nExamples:\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar -z /tmp/result\n"
+			"		This will sync local /tmp/foo.tar with remote\n"
+			"		file /tmp/bar.tar and save result in remote /tmp/result file (remote /tmp/bar.tar\n"
+			"		is saved as /tmp/result, /tmp/bar.tar no longer exists).\n");
+	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar -z /tmp/result --leave\n"
+			"		Same as above but remote /tmp/bar.tar is left intact.\n");
 	fprintf(stderr, "	rsyncme push -x /tmp/foo.tar -i 245.218.125.22 -y /tmp/bar.tar\n"
 			"		This will sync local /tmp/foo.tar with remote\n"
 			"		file /tmp/bar.tar (remote becomes same as local is).\n");
@@ -73,52 +78,6 @@ static void rsyncme_usage(const char *name)
 static void rsyncme_range_error(char argument, unsigned long value)
 {
 	fprintf(stderr, "\nERR, argument [%c] too big [%lu]\n\n", argument, value);
-}
-
-static void print_stats(struct rm_delta_reconstruct_ctx rec_ctx)
-{
-	enum rm_reconstruct_method method;
-	double                  real_time, cpu_time;
-	size_t                  bytes;
-
-	bytes = rec_ctx.rec_by_raw + rec_ctx.rec_by_ref;
-	real_time = rec_ctx.time_real.tv_sec + (double) rec_ctx.time_real.tv_nsec / RM_NANOSEC_PER_SEC;
-	cpu_time = rec_ctx.time_cpu;
-
-	method = rec_ctx.method;
-	switch (method) {
-
-		case RM_RECONSTRUCT_METHOD_COPY_BUFFERED:
-			fprintf(stderr, "\nmethod      : COPY_BUFFERED");
-			fprintf(stderr, "\nbytes       : [%zu]", bytes);
-			break;
-
-		case RM_RECONSTRUCT_METHOD_DELTA_RECONSTRUCTION:
-			fprintf(stderr, "\nmethod      : DELTA_RECONSTRUCTION (block [%zu])", rec_ctx.L);
-			fprintf(stderr, "\nbytes       : [%zu] (by raw [%zu], by refs [%zu])", bytes, rec_ctx.rec_by_raw, rec_ctx.rec_by_ref);
-			if (rec_ctx.rec_by_zero_diff != 0) {
-				fprintf(stderr, " (zero difference)");
-			}
-			fprintf(stderr, "\ndeltas      : [%zu] (raw [%zu], refs [%zu])", rec_ctx.delta_raw_n + rec_ctx.delta_ref_n, rec_ctx.delta_raw_n, rec_ctx.delta_ref_n);
-			fprintf(stderr, "\ncollisions  : 1st [%zu], 2nd [%zu], 3rd [%zu]", rec_ctx.collisions_1st_level, rec_ctx.collisions_2nd_level, rec_ctx.collisions_3rd_level);
-			break;
-
-		default:
-			fprintf(stderr, "\nERR, unknown delta reconstruction method\n");
-			exit(EXIT_FAILURE);
-			break;
-	}
-	fprintf(stderr, "\ntime        : real [%lf]s, cpu [%lf]s", real_time, cpu_time);
-	fprintf(stderr, "\nbandwidth   : [%lf]MB/s\n", ((double) bytes / 1000000) / real_time);
-	if ((rec_ctx.copy_all_threshold_fired == 1) || (rec_ctx.copy_tail_threshold_fired == 1)) {
-		fprintf(stderr, "\n");
-	}
-	if (rec_ctx.copy_all_threshold_fired == 1) {
-		fprintf(stderr, "copy all    : fired\n");
-	}
-	if (rec_ctx.copy_tail_threshold_fired == 1) {
-		fprintf(stderr, "copy tail   : fired\n");
-	}
 }
 
 static void help_hint(const char *name)
@@ -162,6 +121,9 @@ int main(int argc, char *argv[])
 	char					z_dirname[PATH_MAX];
 	char					*z_dname = NULL;
 
+	struct rm_tx_options	opt = { .loglevel = RM_LOGLEVEL_NORMAL };
+
+
 	if (argc < 2) {
 		rsyncme_usage(argv[0]);
 		exit(EXIT_FAILURE);
@@ -178,6 +140,7 @@ int main(int argc, char *argv[])
 		{ "version", no_argument, 0, 6 },
 		{ "timeout_s", required_argument, 0, 7 },
 		{ "timeout_us", required_argument, 0, 8 },
+		{ "loglevel", required_argument, 0, 9 },
 		{ 0 }
 	};
 
@@ -249,6 +212,21 @@ int main(int argc, char *argv[])
 					exit(EXIT_FAILURE);
 				}
 				timeout_us = helper;
+				break;
+
+			case 9:																												/* loglevel */
+				helper = strtoul(optarg, &pCh, 10);
+				if (helper > 0x10 - 1) {
+					rsyncme_range_error(c, helper);
+					exit(EXIT_FAILURE);
+				}
+				if ((pCh == optarg) || (*pCh != '\0')) {    /* check */
+					fprintf(stderr, "Invalid argument\n");
+					fprintf(stderr, "Parameter conversion error, nonconvertible part is: [%s]\n", pCh);
+					help_hint(argv[0]);
+					exit(EXIT_FAILURE);
+				}
+				opt.loglevel = helper;
 				break;
 
 			case 'x':
@@ -433,7 +411,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	if ((timeout_s == 0) && (timeout_us == 0)) {
-		timeout_s = 10;
+		timeout_s = RM_DEFAULT_TCP_CONNECT_TIMEOUT_S;
+		timeout_us = RM_DEFAULT_TCP_CONNECT_TIMEOUT_US;
 	}
 	if (push_flags & RM_BIT_5) { /* remote */
 		if (yp == NULL) {
@@ -472,7 +451,7 @@ int main(int argc, char *argv[])
 	if ((push_flags & RM_BIT_5) != 0u) { /* remote request if -i is set */
 		if ((push_flags & RM_BIT_0) == 0u) { /* remote push request? */
 			fprintf(stderr, "\nRemote push.\n");
-			res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, timeout_s, timeout_us, &err_str);
+			res = rm_tx_remote_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, addr, port, timeout_s, timeout_us, &err_str, &opt);
 			if (res != RM_ERR_OK) {
 				fprintf(stderr, "\n");
 				switch (res) {
@@ -482,6 +461,12 @@ int main(int argc, char *argv[])
 					case RM_ERR_FSTAT_X:
 						fprintf(stderr, "Error. Couldn't stat @x [%s]\n", x);
 						goto fail;
+					case RM_ERR_FSTAT_Y:
+						fprintf(stderr, "Error. Couldn't stat @y [%s]\n", y);
+						goto fail;
+					case RM_ERR_FSTAT_TMP:
+						fprintf(stderr, "Error. Receiver failed (couldn't stat intermediate tmp file)\n");
+						goto fail;
 					case RM_ERR_X_ZERO_SIZE:
 						fprintf(stderr, "Error. @x [%s] size is zero\n", x);
 						goto fail;
@@ -490,52 +475,52 @@ int main(int argc, char *argv[])
 						goto fail;
 					case RM_ERR_GETADDRINFO:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. can't get server address, [%s]\n", err_str);
+							fprintf(stderr, "Error. can't get receiver's address, [%s]\n", err_str);
 						} else {
-							fprintf(stderr, "Error. can't get server address\n");
+							fprintf(stderr, "Error. can't get receiver's address\n");
 						}
 						goto fail;
 					case RM_ERR_CONNECT_TIMEOUT:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Timeout occurred while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_CONNECT_REFUSED:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Connection refused while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_CONNECT_HOSTUNREACH:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Host unreachable while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_CONNECT_GEN_ERR:
 						if (err_str != NULL) {
-							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver (server) running on that host?\n", addr, port, err_str);
+							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u] (%s).\nIs the rsyncme receiver running on that host?\n", addr, port, err_str);
 						} else {
-							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u].\nIs the rsyncme receiver (server) running on that host?\n", addr, port);
+							fprintf(stderr, "Error. Connection failed while connecting to [%s] on port [%u].\nIs the rsyncme receiver running on that host?\n", addr, port);
 						}
 						goto fail;
 					case RM_ERR_AUTH:
-						fprintf(stderr, "Error. Authentication failure. Is this IP allowed by rsyncme server running on [%s]\n", addr);
+						fprintf(stderr, "Error. Authentication failure. Is this IP allowed by receiver running on [%s]?\nSkip --auth flag when starting the receiver to disable authentication.\n", addr);
 						goto fail;
 					case RM_ERR_CHDIR_Y:
 						strncpy(y_dirname, y, PATH_MAX);
 						y_dname = dirname(y_dirname);
-						fprintf(stderr, "Error. Server running on [%s] cannot change working directory to @y's dir [%s]\n", addr, y_dname);
+						fprintf(stderr, "Error. receiver running on [%s] cannot change working directory to @y's dir [%s]\n", addr, y_dname);
 						y_dname = NULL;
 						goto fail;
 					case RM_ERR_CHDIR_Z:
 						strncpy(z_dirname, z, PATH_MAX);
 						z_dname = dirname(z_dirname);
-						fprintf(stderr, "Error. Server running on [%s] cannot change working directory to @z's dir [%s]\n", addr, z_dname);
+						fprintf(stderr, "Error. Receiver running on [%s] cannot change working directory to @z's dir [%s]\n", addr, z_dname);
 						z_dname = NULL;
 						goto fail;
 					case RM_ERR_CH_CH_RX_THREAD_LAUNCH:
@@ -548,7 +533,7 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "Error. Delta rx thread launch failed\n");
 						goto fail;
 					case RM_ERR_CH_CH_RX_THREAD:
-						fprintf(stderr, "Error. Checkums rx thread failed\n");
+						fprintf(stderr, "Error. Checksums rx thread failed\n");
 						goto fail;
 					case RM_ERR_DELTA_TX_THREAD:
 						fprintf(stderr, "Error. Delta tx thread failed\n");
@@ -560,28 +545,45 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "Error. Not enough memory\n");
 						exit(EXIT_FAILURE);
 					case RM_ERR_Y_Z_SYNC:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (do not delete @y after @z has been synced, but @z name is not given or is same as @y)\n");
 						goto fail;
 					case RM_ERR_Y_NULL:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (@y name empty)\n");
 						goto fail;
 					case RM_ERR_OPEN_Z:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (can't open @z file)\n");
 						goto fail;
 					case RM_ERR_OPEN_Y:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
-						fprintf(stderr, " (can't open @y file)\nDoes [%s] exist on the receiver [%s]?\nPlease set --force (--f) option if you want to force the file creation in case it doesn't exist.\n", y, addr);
+						fprintf(stderr, "Error, request can't be handled by receiver");
+						fprintf(stderr, " (can't open @y file)\nDoes reference file [%s] exist on the receiver [%s]?\nPlease set --force (--f) option if you want to force the creation of result file in case the reference file doesn't exist.\n", y, addr);
 						goto fail;
 					case RM_ERR_OPEN_TMP:
-						fprintf(stderr, "Error, request can't be handled by remote peer");
+						fprintf(stderr, "Error, request can't be handled by receiver");
 						fprintf(stderr, " (can't open temporary file)\n");
 						goto fail;
+					case RM_ERR_Y_ZERO_SIZE:
+						fprintf(stderr, "Error. @y [%s] size is zero\n", x);
+						goto fail;
+					case RM_ERR_Z_ZERO_SIZE:
+						fprintf(stderr, "Error. @z [%s] size is zero\n", x);
+						goto fail;
 					case RM_ERR_BAD_CALL:
+						fprintf(stderr, "Error. Receiver considers arguments as misconfigured conception\n");
+						goto fail;
+					case RM_ERR_BLOCK_SIZE:
+						fprintf(stderr, "Error. Block size can't be zero\n");
+						goto fail;
+					case RM_ERR_RENAME_TMP_Y:
+						fprintf(stderr, "Error. Receiver can't rename result file to @y [%s]\n", y);
+						goto fail;
+					case RM_ERR_RENAME_TMP_Z:
+						fprintf(stderr, "Error. Receiver can't rename result file to @z [%s]\n", z);
+						goto fail;
 					default:
-						fprintf(stderr, "\nInternal error.\n");
+						fprintf(stderr, "\nError.\n");
 						return -1;
 				}
 			}
@@ -596,7 +598,7 @@ int main(int argc, char *argv[])
 		}
 		if ((push_flags & RM_BIT_0) == 0u) { /* local push? */
 			fprintf(stderr, "\nLocal push.\n");
-			res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+			res = rm_tx_local_push(xp, yp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &opt);
 			if (res != RM_ERR_OK) {
 				fprintf(stderr, "\n");
 				switch (res) {
@@ -675,7 +677,7 @@ int main(int argc, char *argv[])
 			}
 		} else { /* local pull request */
 			fprintf(stderr, "\nLocal pull.\n");
-			res = rm_tx_local_push(yp, xp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx);
+			res = rm_tx_local_push(yp, xp, zp, L, copy_all_threshold, copy_tail_threshold, send_threshold, push_flags, &rec_ctx, &opt);
 			if (res != RM_ERR_OK) {
 				fprintf(stderr, "\n");
 				switch (res) {
@@ -755,8 +757,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	print_stats(rec_ctx);
-	fprintf(stderr, "\nOK.\n");
+	rm_rx_print_stats(rec_ctx, (push_flags & RM_BIT_5 ? 1 : 0), 1);
 	return RM_ERR_OK;
 
 fail:

@@ -55,7 +55,6 @@ int rm_tcp_tx_ch_ch(int fd, const struct rm_ch_ch_ref *e)
 	if (rm_tcp_tx(fd, buf, RM_CH_CH_SIZE) != RM_ERR_OK)                             /* tx over TCP connection */
 		return -1;
 
-	RM_LOG_INFO("[TX]: checksum [%u]", e->ch_ch.f_ch);
 	return 0;
 }
 
@@ -319,7 +318,7 @@ enum rm_error rm_tcp_connect_nonblock_timeout_once_sockaddr(int fd, struct socka
 
 	rm_tcp_set_socket_blocking_mode(fd, 0);
 
-	err = connect(fd, peer_addr, sizeof(*peer_addr));
+	err = connect(fd, peer_addr, sizeof(struct sockaddr));
 	if (err == 0) {
 		return RM_ERR_OK;
 	} else if ((errno != EINPROGRESS) && (errno != EINTR)) {
