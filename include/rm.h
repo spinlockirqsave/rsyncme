@@ -76,6 +76,7 @@
 
 #include "rm_defs.h"
 #include "rm_error.h"
+#include "rm_util.h"
 #include "md5.h"
 
 

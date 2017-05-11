@@ -15,6 +15,12 @@
 #include <stdarg.h>
 
 
+/* @brief		Calculate time difference from timespec structs.
+ * @param		t1 - time start
+ *				t2 - time end
+ *				t3 - result diff */
+void rm_util_calc_timespec_diff(struct timespec *t1, struct timespec *t2, struct timespec *dt) __attribute__ ((nonnull(1,2,3)));
+
 /* @brief       Get date timestamp.
  * @details     @buf must be at least 20 chars.
  * @return      RM_ERR_OK - success,

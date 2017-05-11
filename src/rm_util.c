@@ -8,6 +8,17 @@
 #include "rm_util.h"
 
 
+void rm_util_calc_timespec_diff(struct timespec *t1, struct timespec *t2, struct timespec *dt)
+{
+	if (t2->tv_nsec < t1->tv_nsec) {                          /* if nanoseconds part is smaller in older time, then seconds part MUST be bigger */
+		dt->tv_sec = t2->tv_sec - t1->tv_sec - 1;
+		dt->tv_nsec = RM_NANOSEC_PER_SEC + t2->tv_nsec - t1->tv_nsec;
+	} else {                                                    /* "normal" situation */
+		dt->tv_sec = t2->tv_sec - t1->tv_sec;
+		dt->tv_nsec = t2->tv_nsec - t1->tv_nsec;
+	}
+}
+
 int rm_util_dt(char *buf)
 {
 	struct tm	t;

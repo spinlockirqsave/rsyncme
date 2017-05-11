@@ -244,8 +244,7 @@ done:
 		clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
 		cpu_time = clk_cputime_stop - clk_cputime_start;
 		clock_gettime(CLOCK_REALTIME, &clk_realtime_stop);    
-		real_time.tv_sec = clk_realtime_stop.tv_sec - clk_realtime_start.tv_sec; 
-		real_time.tv_nsec = clk_realtime_stop.tv_nsec - clk_realtime_start.tv_nsec; 
+		rm_util_calc_timespec_diff(&clk_realtime_start, &clk_realtime_stop, &real_time);
 	}
 	rec_ctx->time_cpu = cpu_time;
 	rec_ctx->time_real = real_time;
@@ -505,8 +504,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	s->clk_cputime_stop = (double) clock() / CLOCKS_PER_SEC; 
 	cpu_time = s->clk_cputime_stop - s->clk_cputime_start;
 	clock_gettime(CLOCK_REALTIME, &s->clk_realtime_stop);
-	real_time.tv_sec = s->clk_realtime_stop.tv_sec - s->clk_realtime_start.tv_sec; 
-	real_time.tv_nsec = s->clk_realtime_stop.tv_nsec - s->clk_realtime_start.tv_nsec;
+	rm_util_calc_timespec_diff(&s->clk_realtime_start, &s->clk_realtime_stop, &real_time);
 	s->rec_ctx.time_cpu = cpu_time;
 	s->rec_ctx.time_real = real_time;
 

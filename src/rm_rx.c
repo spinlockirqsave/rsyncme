@@ -453,6 +453,11 @@ void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx, uint8_t remote, 
 	size_t                  bytes = 0, real_bytes = 0, ch_n = 0, delta_raw_overhead = 0, delta_ref_overhead = 0, ch_overhead = 0;
 
 	bytes = rec_ctx.rec_by_raw + rec_ctx.rec_by_ref;
+
+	delta_raw_overhead = rec_ctx.delta_raw_n * RM_DELTA_RAW_OVERHEAD;
+	delta_ref_overhead = rec_ctx.delta_ref_n * RM_DELTA_REF_OVERHEAD;
+	real_bytes = delta_raw_overhead + delta_ref_overhead + rec_ctx.rec_by_raw + (remote ? rec_ctx.msg_push_len + RM_MSG_PUSH_ACK_LEN : 0);
+
 	real_time = rec_ctx.time_real.tv_sec + (double) rec_ctx.time_real.tv_nsec / RM_NANOSEC_PER_SEC;
 	cpu_time = rec_ctx.time_cpu;
 	if (rec_ctx.L > 0)
@@ -479,9 +484,6 @@ void rm_rx_print_stats(struct rm_delta_reconstruct_ctx rec_ctx, uint8_t remote, 
 				ch_overhead = ch_n * RM_CH_OVERHEAD;
 				fprintf(stderr, "\n              checksums overhead    : [%zu]", ch_overhead);
 			}
-			delta_raw_overhead = rec_ctx.delta_raw_n * RM_DELTA_RAW_OVERHEAD;
-			delta_ref_overhead = rec_ctx.delta_ref_n * RM_DELTA_REF_OVERHEAD;
-			real_bytes = delta_raw_overhead + delta_ref_overhead + rec_ctx.rec_by_raw + (remote ? rec_ctx.msg_push_len + RM_MSG_PUSH_ACK_LEN : 0);
 			fprintf(stderr, "\n              deltas overhead       : raw [%zu], refs [%zu]", delta_raw_overhead, delta_ref_overhead);
 			if (xfer_direction == 0) {																			/* RECEIVER */
 				fprintf(stderr, "\n              Total RX overhead     : [%zu]", delta_raw_overhead + delta_ref_overhead);
