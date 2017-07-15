@@ -62,6 +62,7 @@ test-check-debug:	test-debug
 install:	all
 	$(shell if [ ! -d /usr/local/rsyncme/log ]; then mkdir -p /usr/local/rsyncme/log; chown -R $(SUDO_USER) /usr/local/rsyncme; fi)
 	cp $(CMDRELEASETARGET) /usr/bin
+	cp $(RELEASETARGET) /usr/bin
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
 	$(CC) $(LDFLAGS_D) $(DEBUGOBJECTS) -o $@ $(LDLIBS)

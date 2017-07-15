@@ -315,6 +315,10 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 
 	struct rm_core_options	core_opt = {0};
 
+	size_t                          bkt = 0;    /* hashtable deletion */
+	const struct rm_ch_ch_ref_hlink *e = NULL;
+	struct twhlist_node             *tmp = NULL;
+
 	(void) y;
 	(void) z;
 	(void) flags;
@@ -531,6 +535,12 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	free(ack.ack.hdr);
 	ack.ack.hdr = NULL;
 
+	bkt = 0;
+	twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+		twhash_del((struct twhlist_node*)&e->hlink);
+		free((struct rm_ch_ch_ref_hlink*)e);
+	}
+
 	return RM_ERR_OK;
 
 err_exit:
@@ -558,6 +568,14 @@ err_exit:
 				RM_LOG_ERR("%s", "Connection error\n");
 			else
 				RM_LOG_ERR("%s", "General connection error\n");
+			break;
+
+		case RM_ERR_CH_CH_RX_THREAD:
+
+			if (prvt->ch_ch_rx_status == RM_RX_STATUS_CH_CH_RX_TCP_DISCONNECT)
+				RM_LOG_ERR("%s", "Receiver closed checksums channel prematurely\n");
+			else
+				RM_LOG_ERR("%s", "Error on checksums channel\n");
 			break;
 
 		case RM_ERR_TCP:
@@ -597,6 +615,12 @@ err_exit:
 	if (s != NULL) {
 		rm_session_free(s);
 		s = NULL;
+	}
+
+	bkt = 0;
+	twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+		twhash_del((struct twhlist_node*)&e->hlink);
+		free((struct rm_ch_ch_ref_hlink*)e);
 	}
 
 	return err;

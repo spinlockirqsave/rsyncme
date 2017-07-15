@@ -399,7 +399,10 @@ void *rm_session_ch_ch_rx_f(void *arg)
 
 		err = rm_tcp_rx(fd, &e->data.ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
 		if (err != RM_ERR_OK) {
-			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
+			if (err == RM_ERR_READ)
+				status = RM_RX_STATUS_CH_CH_RX_TCP_DISCONNECT;
+			else
+				status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
 		}
 

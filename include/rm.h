@@ -153,12 +153,13 @@ enum rm_rx_status
 	RM_RX_STATUS_DELTA_RX_ACCEPT_FAIL	= 2,	/* accept on delta socket error */
 	RM_RX_STATUS_DELTA_RX_TCP_FAIL	= 3,	/* error while reading socket in rm_session_delta_rx_f_remote */
 	RM_RX_STATUS_DELTA_PROC_FAIL    = 4,	/* error processing delta element */
-	RM_RX_STATUS_CH_CH_RX_TCP_FAIL	= 5,	/* error while reading socket in rm_session_ch_ch_rx_f */
-	RM_RX_STATUS_CH_CH_RX_MEM		= 6,	/* malloc failed when attempting to get memory for checksum */
-	RM_RX_STATUS_CONNECT_TIMEOUT	= 7,
-	RM_RX_STATUS_CONNECT_REFUSED	= 8,
-	RM_RX_STATUS_CONNECT_HOSTUNREACH	= 9,
-	RM_RX_STATUS_CONNECT_GEN_ERR	= 10
+	RM_RX_STATUS_CH_CH_RX_TCP_DISCONNECT	= 5,	/* read 0 bytes while reading socket in rm_session_ch_ch_rx_f - receiver closed connection prematurely */
+	RM_RX_STATUS_CH_CH_RX_TCP_FAIL	= 6,	/* error while reading socket in rm_session_ch_ch_rx_f */
+	RM_RX_STATUS_CH_CH_RX_MEM		= 7,	/* malloc failed when attempting to get memory for checksum */
+	RM_RX_STATUS_CONNECT_TIMEOUT	= 8,
+	RM_RX_STATUS_CONNECT_REFUSED	= 9,
+	RM_RX_STATUS_CONNECT_HOSTUNREACH	= 10,
+	RM_RX_STATUS_CONNECT_GEN_ERR	= 11
 };
 enum rm_reconstruct_method
 {
