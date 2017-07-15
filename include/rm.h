@@ -27,7 +27,7 @@
  * F_B  - previous version of file F in B
  *
  * When sender (A) made a change to current
- * versiion of file F (F_A),
+ * version of file F (F_A),
  * it has produced new file F'_A and now
  * it will synchronize this new file with
  * other version F_B (maybe same as F_A,

@@ -546,7 +546,7 @@ bandwidth   : [1.528705]MB/s
 In this example we can see that there was only one delta element (difference element)
 which contained raw data, the rest of them (1239) contained only a reference to the old
 file location from which data has been copied to the result file on remote host.
-In this case file wasn't changes at all. Finding good matches allowed for sending
+In this case file wasn't changes at all. Finding matching blocks allowed for sending
 only 512 bytes literally, the remaining 634291 bytes were sent as 1239 references.
 This allowed to achieve 1.23 MB/s up bandwidth on 0.92 Mb(up)/7.2 Mb(down) Ethernet link.   
 

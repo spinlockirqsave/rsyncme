@@ -220,7 +220,9 @@ enum rm_error {
 	RM_ERR_Y_ZERO_SIZE = 79,
 	RM_ERR_Z_ZERO_SIZE = 80,
 	RM_ERR_FSTAT_TMP = 81,
-	RM_ERR_UNKNOWN_ERROR = 82
+	RM_ERR_TCP = 82,
+	RM_ERR_TCP_DISCONNECT = 83,
+	RM_ERR_UNKNOWN_ERROR = 84
 		/* max error code limited by size of flags in rm_msg_push_ack (8 bits, 255) */ 
 };
 
