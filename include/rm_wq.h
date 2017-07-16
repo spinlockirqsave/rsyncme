@@ -17,37 +17,38 @@
 
 
 enum rm_work_sync_async_type {
-    RM_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
-    RM_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
+	RM_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
+	RM_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
 };
 
 /* Keep in sync with rm_work_type_str */
 enum rm_work_type {
-    RM_WORK_PROCESS_MSG_PUSH = 0,
-    RM_WORK_PROCESS_MSG_PULL = 1,
-    RM_WORK_PROCESS_MSG_BYE = 2,
-    RM_WORK_PROCESS_N
+	RM_WORK_PROCESS_MSG_PUSH = 0,
+	RM_WORK_PROCESS_MSG_PULL = 1,
+	RM_WORK_PROCESS_MSG_BYE = 2,
+	RM_WORK_PROCESS_N
 };
 const char *rm_work_type_str[RM_WORK_PROCESS_N + 1];
 
 struct rm_worker {              /* thread wrapper */
-    uint8_t         idx;        /* index in workqueue table */
-    pthread_t       tid;
-    twfifo_queue    queue;      /* queue of work structs */
-    pthread_mutex_t mutex;
-    pthread_cond_t  signal;     /* signaled when new item is enqueued to this worker's queue */
-    uint8_t         active;     /* 0 - no, 1 - yes (successfuly created and waiting for work) */
-    struct rm_workqueue *wq;    /* owner */
+	uint8_t         idx;        /* index in workqueue table */
+	pthread_t       tid;
+	twfifo_queue    queue;      /* queue of work structs */
+	pthread_mutex_t mutex;
+	pthread_cond_t  signal;     /* signaled when new item is enqueued to this worker's queue */
+	uint8_t         active;		/* successfuly created and waiting for work */
+	uint8_t         busy;		/* active thread (successfuly created and waiting for work) may be busy while processing work */
+	struct rm_workqueue *wq;    /* owner */
 };
 
 struct rm_workqueue {
-    struct rm_worker    *workers;
-    uint8_t             workers_n;          /* number of worker threads */
-    uint32_t            workers_active_n;   /* number of active/running worker threads (successfuly created and waiting for work) */
-    const char          *name;
-    uint8_t             running;            /* 0 - no, 1 - yes */
-    uint8_t             first_active_worker_idx;
-    uint8_t             next_worker_idx_to_use; /* index of next worker to use for enquing the work in round-robin fashion */
+	struct rm_worker    *workers;
+	uint8_t             workers_n;          /* number of worker threads */
+	uint32_t            workers_active_n;   /* number of active worker threads: successfuly created and accepting work */
+	const char          *name;
+	uint8_t             running;            /* 0 - no, 1 - yes */
+	uint8_t             first_active_worker_idx;
+	uint8_t             next_worker_idx_to_use; /* index of next worker to use for enquing the work in round-robin fashion */
 };
 
 /* @brief   Start the worker threads.
@@ -62,23 +63,24 @@ struct rm_workqueue* rm_wq_workqueue_create(uint32_t workers_n, const char *name
 enum rm_error rm_wq_workqueue_stop(struct rm_workqueue *wq);
 
 struct rm_work {
-    struct twlist_head  link;
-    enum rm_work_type   task;
-    struct rsyncme      *rm;
-    struct rm_msg       *msg;               /* message handle */
-    int                 fd;                 /* socket */
-    void* (*f)(void*);                      /* processing */
-    void (*f_dtor)(void*);                  /* destructor */
+	struct twlist_head  link;
+	enum rm_work_type   task;
+	struct rsyncme      *rm;
+	struct rm_msg       *msg;               /* message handle */
+	int                 fd;                 /* socket */
+	uint8_t				worker_idx;			/* index of worker in the workers table of workqueue, which is processing this work */					
+	void* (*f)(void*);                      /* processing */
+	void (*f_dtor)(void*);                  /* destructor */
 };
 
 #define RM_WORK_INITIALIZER(n, d, f) {      \
-    .link  = { &(n).link, &(n).link },      \
-    .data = (d),                            \
-    .func = (f),                            \
+	.link  = { &(n).link, &(n).link },      \
+	.data = (d),                            \
+	.func = (f),                            \
 }
 
 #define DECLARE_WORK(n, d, f) \
-    struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
+	struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
 
 struct rm_work*
 rm_work_init(struct rm_work* work, enum rm_work_type task, struct rsyncme* rm, struct rm_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));

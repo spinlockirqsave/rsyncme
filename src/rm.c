@@ -423,31 +423,30 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 
 	/*(void) h_mutex;  Verify hashtable locking needs for rm_rolling_ch_proc <-> rm_session_ch_ch_rx_f */
 
-	if ((s == NULL) || (f_x == NULL) || (delta_f == NULL)) {
+	if ((s == NULL) || (f_x == NULL) || (delta_f == NULL))
 		return RM_ERR_BAD_CALL;
-	}
+
 	cb_arg.s = s;                           /* setup callback argument */
 	L = s->rec_ctx.L;
-	if (L == 0) {
+	if (L == 0)
 		return RM_ERR_BAD_CALL;
-	}
+
 	copy_all_threshold  = s->rec_ctx.copy_all_threshold;
 	copy_tail_threshold = s->rec_ctx.copy_tail_threshold;
 	send_threshold      = s->rec_ctx.send_threshold;
-	if (send_threshold == 0) {
+	if (send_threshold == 0)
 		return RM_ERR_BAD_CALL;
-	}
 
 	raw_bytes_max = rm_max(L, send_threshold);
 
 	fd = fileno(f_x);
-	if (fstat(fd, &fs) != 0) {
+	if (fstat(fd, &fs) != 0)
 		return RM_ERR_FSTAT_X;
-	}
+
 	file_sz = fs.st_size;
-	if (from >= file_sz) {
+	if (from >= file_sz)
 		return RM_ERR_TOO_MUCH_REQUESTED;   /* Nothing to do */
-	}
+
 	send_left = file_sz - from;             /* positive value */
 
 	if ((send_left < copy_all_threshold) || (h == NULL)) {   /* copy all bytes */
@@ -462,9 +461,9 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 	}
 
 	buf = malloc(L * sizeof(unsigned char));
-	if (buf == NULL) {
+	if (buf == NULL)
 		return RM_ERR_MEM;
-	}
+
 	a_k_pos = a_kL_pos = 0;
 	match = 1;
 	beginning_bytes_in_buf = 0;
@@ -531,48 +530,43 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 
 		if (match == 1) { /* tx RM_DELTA_ELEMENT_REFERENCE, TODO free delta object in callback!*/
 			if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
-				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first, move ownership of raw bytes, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
+				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, ref - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) /* send them first, move ownership of raw bytes, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES*/
 					return RM_ERR_TX_RAW;
-				}
+
 				raw_bytes_n = 0;
 				raw_bytes = NULL;
 			}
 			if (read == file_sz) {
-				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, ref, NULL, file_sz) != RM_ERR_OK) {
+				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_ZERO_DIFF, ref, NULL, file_sz) != RM_ERR_OK)
 					return RM_ERR_TX_ZERO_DIFF;
-				}
 			} else if (read < L) {
-				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, ref, NULL, read) != RM_ERR_OK) {
+				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_TAIL, ref, NULL, read) != RM_ERR_OK)
 					return RM_ERR_TX_TAIL;
-				}
 			} else {
-				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, ref,  NULL, L) != RM_ERR_OK) {
+				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_REFERENCE, ref,  NULL, L) != RM_ERR_OK)
 					return RM_ERR_TX_REF;
-				}
 			}
 			send_left -= read;
 		} else { /* tx raw bytes */
 			if (raw_bytes_n == 0) {
 				raw_bytes = malloc(raw_bytes_max * sizeof(unsigned char));
-				if (raw_bytes == NULL) {
+				if (raw_bytes == NULL)
 					return RM_ERR_MEM;
-				}
 				memset(raw_bytes, 0, raw_bytes_max * sizeof(unsigned char));
 			}
 			if (beginning_bytes_in_buf == 1 && a_k_pos < read_begin) {  /* if we have still L bytes read at the beginning in the buffer */
 				a_k = buf[a_k_pos];                                     /* read a_k byte */
 			} else {
-				if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f_x, NULL) != 1) {
+				if (rm_fpread(&a_k, sizeof(unsigned char), 1, a_k_pos, f_x, NULL) != 1)
 					return RM_ERR_READ;
-				}
 			}
 			raw_bytes[raw_bytes_n] = a_k;                               /* enqueue raw byte */
 			send_left -= 1;
 			++raw_bytes_n;
 			if ((raw_bytes_n == send_threshold) || (send_left == 0)) {               /* tx? TODO there will be more conditions on final transmit here! */
-				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK) {   /* tx, move ownership of raw bytes, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES */
+				if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, raw_bytes_n) != RM_ERR_OK)   /* tx, move ownership of raw bytes, reference is not used for RM_DELTA_ELEMENT_RAW_BYTES */
 					return RM_ERR_TX_RAW;
-				}
+
 				raw_bytes_n = 0;
 				raw_bytes = NULL;
 			}
@@ -586,12 +580,12 @@ rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_m
 	s->rec_ctx.copy_tail_threshold_fired = copy_tail_threshold_fired;
 	pthread_mutex_unlock(&s->mutex);
 
-	if (raw_bytes != NULL) {
+	if (raw_bytes != NULL)
 		free(raw_bytes);
-	}
-	if (buf != NULL) {
+
+	if (buf != NULL)
 		free(buf);
-	}
+
 	return RM_ERR_OK;
 
 copy_tail:
@@ -609,6 +603,7 @@ copy_tail:
 			a_k_pos = a_kL_pos;
 		}
 	}
+
 	if (raw_bytes_n > 0) {    /* but first: any raw bytes buffered? */
 		if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos - raw_bytes_n, raw_bytes, raw_bytes_n) != RM_ERR_OK) { /* send them first, move ownership of raw bytes */
 			return RM_ERR_TX_RAW;
@@ -616,24 +611,28 @@ copy_tail:
 		raw_bytes_n = 0;
 		raw_bytes = NULL;
 	}
+
 	raw_bytes = malloc(send_left * sizeof(*raw_bytes));
 	if (raw_bytes == NULL) {
 		if (buf != NULL) free(buf);
 		return RM_ERR_MEM;
 	}
+
 	if (rm_copy_buffered_2(f_x, a_k_pos, raw_bytes, send_left, NULL) != RM_ERR_OK) {
 		if (buf != NULL) free(buf);
 		free(raw_bytes);
 		return RM_ERR_COPY_BUFFERED_2;
 	}
+
 	if (rm_rolling_ch_proc_tx(&cb_arg, delta_f, RM_DELTA_ELEMENT_RAW_BYTES, a_k_pos, raw_bytes, send_left) != RM_ERR_OK) {   /* tx, move ownership of raw bytes */
 		if (buf != NULL) free(buf);
 		free(raw_bytes);
 		return RM_ERR_TX_RAW;
 	}
-	if (buf != NULL) {
+
+	if (buf != NULL)
 		free(buf);
-	}
+
 	return RM_ERR_OK;
 }
 
@@ -643,19 +642,21 @@ rm_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate) {
 	pthread_attr_t      attr;
 
 	err = pthread_attr_init(&attr);
-	if (err != 0) {
+	if (err != 0)
 		return RM_ERR_FAIL;
-	}
+
 	err = pthread_attr_setdetachstate(&attr, detachstate);
-	if (err != 0) {
+	if (err != 0)
 		goto fail;
-	}
+
 	err = pthread_create(t, &attr, f, arg);
-	if (err != 0) {
+	if (err != 0)
 		goto fail;
-	}
+
 	pthread_attr_destroy(&attr);
+
 	return 0;
+
 fail:
 	pthread_attr_destroy(&attr);
 	return RM_ERR_FAIL;

@@ -816,11 +816,16 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			goto err_exit;
 		}
 
+		/* count bytes and free memory in case this is ELEMENT_RAW_BYTES */
 		switch (delta_e.type) {
 
 			case RM_DELTA_ELEMENT_REFERENCE:
+				bytes_to_rx -= delta_e.raw_bytes_n;
+				break;
+
 			case RM_DELTA_ELEMENT_RAW_BYTES:
 				bytes_to_rx -= delta_e.raw_bytes_n;
+				free(delta_e.raw_bytes);
 				break;
 
 			case RM_DELTA_ELEMENT_TAIL:

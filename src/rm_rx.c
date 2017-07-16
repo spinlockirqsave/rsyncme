@@ -156,12 +156,6 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 
 		e->data.ref = entries_n;															/* assign offset */
 
-		if (h != NULL) {																	/* insert into hashtable, hashing fast checksum */
-			TWINIT_HLIST_NODE(&e->hlink);
-			twhash_add_bits(h, &e->hlink, e->data.ch_ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);
-		}
-		entries_n++;
-
 		if (f_tx_ch_ch_ref != NULL) {														/* tx checksums to remote A ? */
 			if (f_tx_ch_ch_ref(fd, &e->data) != RM_ERR_OK) {
 				free(buf);
@@ -169,16 +163,32 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 				goto done;
 			}
 		}
+
+		if (h != NULL) {																	/* free memory for checksums or insert them into hashtable and release memory later */
+			TWINIT_HLIST_NODE(&e->hlink);
+			twhash_add_bits(h, &e->hlink, e->data.ch_ch.f_ch, RM_NONOVERLAPPING_HASH_BITS);	/* insert into hashtable, hashing fast checksum */
+		} else {
+			free(e);
+			e = NULL;
+		}
+		entries_n++;
+
 		read_left -= read;
 		read_now = rm_min(L, read_left);
+
 	} while (read_now > 0 && entries_n < limit);
 
-	free(buf);
 	err = RM_ERR_OK;
 
 done:
+
 	if (blocks_n != NULL)
 		*blocks_n = entries_n;
+
+	if (buf) {
+		free(buf);
+		buf = 0;
+	}
 
 	return err;
 }
@@ -240,11 +250,14 @@ int rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct r
 
 		read_left -= read;
 		read_now = rm_min(L, read_left);
+
 	} while (read_now > 0 && entries_n < limit);
 
 	if (blocks_n != NULL)
 		*blocks_n = entries_n;
+
 	free(buf);
+
 	return RM_ERR_OK;
 }
 
@@ -307,6 +320,7 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struc
 
 		read_left -= read;
 		read_now = rm_min(L, read_left);
+
 	} while (read_now > 0 && entries_n < limit);
 
 	*blocks_n = entries_n;
