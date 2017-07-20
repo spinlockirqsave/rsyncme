@@ -315,6 +315,10 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 
 	struct rm_core_options	core_opt = {0};
 
+	size_t                          bkt = 0;    /* hashtable deletion */
+	const struct rm_ch_ch_ref_hlink *e = NULL;
+	struct twhlist_node             *tmp = NULL;
+
 	(void) y;
 	(void) z;
 	(void) flags;
@@ -327,9 +331,9 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	twhash_init(h);
 
 	f_x = fopen(x, "rb");
-	if (f_x == NULL) {
+	if (f_x == NULL) 
 		return RM_ERR_OPEN_X;
-	}
+	
 	fd_x = fileno(f_x);                                                                         /* get input file size */
 	memset(&fs, 0, sizeof(fs));
 	if (fstat(fd_x, &fs) != 0) {
@@ -337,9 +341,9 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 		goto err_exit;
 	}
 	x_sz = fs.st_size;
-	if (x_sz == 0) {
+	if (x_sz == 0) 
 		return RM_ERR_X_ZERO_SIZE;
-	}
+	
 
 	core_opt.loglevel = opt->loglevel;
 	core_opt.delta_conn_timeout_s = timeout_s;
@@ -357,9 +361,9 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	}
 
 	memset(&msg, 0, sizeof(msg));
-	if (rm_msg_push_alloc(&msg) != RM_ERR_OK) {
+	if (rm_msg_push_alloc(&msg) != RM_ERR_OK)
 		goto err_exit;                                                                          /* RM_ERR_MEM */
-	}
+	
 	msg.hdr->pt = RM_PT_MSG_PUSH;
 	msg.hdr->flags = flags;
 	memcpy(msg.ssid, s->id, RM_UUID_LEN);
@@ -386,26 +390,31 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	rec_ctx->msg_push_len = msg.hdr->len;
 
 	msg_raw = malloc(msg.hdr->len);
-	if (msg_raw == NULL) {
+	if (msg_raw == NULL)
 		return RM_ERR_TOO_MUCH_REQUESTED;
-	}
+
 	rm_serialize_msg_push(msg_raw, &msg);
 	err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);											/* tx msg PUSH */
-	if (err != RM_ERR_OK) {
+	if (err != RM_ERR_OK)
 		goto err_exit;																				/* RM_ERR_WRITE */
-	}
 
-	if (rm_msg_push_ack_alloc(&ack) != RM_ERR_OK) {													/* prepare for incoming ACK, allocate space for header == ACK */
-		goto err_exit; /* TODO Couldn't allocate message ack. Not enough memory */
-	}
+
+	if (rm_msg_push_ack_alloc(&ack) != RM_ERR_OK)													/* prepare for incoming ACK, allocate space for header == ACK */
+		goto err_exit;
+
 	buf = malloc(RM_MSG_PUSH_ACK_LEN);																/* buffer for incoming raw message header */
-	if (buf == NULL) {
-		goto err_exit; /* TODO Couldn't allocate buffer for the message header. Not enough memory */
-	}
+	if (buf == NULL)
+		goto err_exit;
+
 	err = rm_tcp_rx(prvt->fd, buf, RM_MSG_ACK_LEN);													/* wait for incoming ACK, generic part */
 	if (err != RM_ERR_OK) {																			/* RM_ERR_READ || RM_ERR_EOF */
-		goto err_exit; /* TODO handle */													
+		if (err == RM_ERR_EOF)
+			err = RM_ERR_TCP_DISCONNECT;
+		else
+			err = RM_ERR_TCP;
+		goto err_exit;
 	}
+
 	rm_deserialize_msg_ack(buf, &ack.ack);
 	if (ack.ack.hdr->pt != RM_PT_MSG_PUSH_ACK) {                                                    /* if not MSG_PUSH_ACK, i.e. generic ACK describibg some error occurred on the receiver side */
 		if (ack.ack.hdr->flags != RM_ERR_OK) {                                                      /* if request cannot be handled, maybe AUTH failure or RM_ERR_CHDIR_Z */
@@ -417,9 +426,14 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	}
 	err = rm_tcp_rx(prvt->fd, buf + RM_MSG_ACK_LEN, RM_MSG_PUSH_ACK_LEN - RM_MSG_ACK_LEN);          /* wait for incoming MSG PUSH part of the ACK */
 	if (err != RM_ERR_OK) {																			/* RM_ERR_READ || RM_ERR_EOF */
-		goto err_exit; /* TODO handle */													
+		if (err == RM_ERR_EOF)
+			err = RM_ERR_TCP_DISCONNECT;
+		else
+			err = RM_ERR_TCP;
+		goto err_exit;
 	}
-	err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_PUSH_ACK_LEN);									/* validate potential ACK message: check header: hash, size and pt*/
+
+	err = rm_core_tcp_msg_ack_validate(buf, RM_MSG_PUSH_ACK_LEN);									/* validate potential ACK message: check header: hash, size and pt */
 	if (err != RM_ERR_OK) { /* bad message */
 		RM_LOG_ERR("Bad MSG_PUSH_ACK, error [%u]", err);
 		switch (err) {
@@ -521,6 +535,12 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	free(ack.ack.hdr);
 	ack.ack.hdr = NULL;
 
+	bkt = 0;
+	twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+		twhash_del((struct twhlist_node*)&e->hlink);
+		free((struct rm_ch_ch_ref_hlink*)e);
+	}
+
 	return RM_ERR_OK;
 
 err_exit:
@@ -548,6 +568,22 @@ err_exit:
 				RM_LOG_ERR("%s", "Connection error\n");
 			else
 				RM_LOG_ERR("%s", "General connection error\n");
+			break;
+
+		case RM_ERR_CH_CH_RX_THREAD:
+
+			if (prvt->ch_ch_rx_status == RM_RX_STATUS_CH_CH_RX_TCP_DISCONNECT)
+				RM_LOG_ERR("%s", "Receiver closed checksums channel prematurely\n");
+			else
+				RM_LOG_ERR("%s", "Error on checksums channel\n");
+			break;
+
+		case RM_ERR_TCP:
+			RM_LOG_ERR("%s", "TCP error on connection with receiver\n");
+			break;
+
+		case RM_ERR_TCP_DISCONNECT:
+			RM_LOG_ERR("%s", "Receiver closed connection prematurely\n");
 			break;
 
 		case RM_ERR_MEM:
@@ -579,6 +615,12 @@ err_exit:
 	if (s != NULL) {
 		rm_session_free(s);
 		s = NULL;
+	}
+
+	bkt = 0;
+	twhash_for_each_safe(h, bkt, tmp, e, hlink) {
+		twhash_del((struct twhlist_node*)&e->hlink);
+		free((struct rm_ch_ch_ref_hlink*)e);
 	}
 
 	return err;

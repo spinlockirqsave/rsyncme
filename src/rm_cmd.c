@@ -18,9 +18,9 @@
 
 static void rsyncme_usage(const char *name)
 {
-	if (name == NULL) {
+	if (name == NULL)
 		return;
-	}
+	
 	fprintf(stderr, "\nusage:\t %s push <-x file> <[-i IPv4 [-p port]]|[-y file]> [-z file] [-a threshold] [-t threshold] [-s threshold]\n\n", name);
 	fprintf(stderr, "      \t               [-l block_size] [--f(orce)] [--l(eave)] [--help] [--version] [--loglevel level]\n\n");
 	fprintf(stderr, "     \t -x           : file to synchronize\n");

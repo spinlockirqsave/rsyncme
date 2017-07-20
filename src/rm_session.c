@@ -399,7 +399,10 @@ void *rm_session_ch_ch_rx_f(void *arg)
 
 		err = rm_tcp_rx(fd, &e->data.ch_ch.s_ch, RM_STRONG_CHECK_BYTES);
 		if (err != RM_ERR_OK) {
-			status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
+			if (err == RM_ERR_READ)
+				status = RM_RX_STATUS_CH_CH_RX_TCP_DISCONNECT;
+			else
+				status = RM_RX_STATUS_CH_CH_RX_TCP_FAIL;
 			goto err_exit;
 		}
 
@@ -813,11 +816,16 @@ void* rm_session_delta_rx_f_remote(void *arg)
 			goto err_exit;
 		}
 
+		/* count bytes and free memory in case this is ELEMENT_RAW_BYTES */
 		switch (delta_e.type) {
 
 			case RM_DELTA_ELEMENT_REFERENCE:
+				bytes_to_rx -= delta_e.raw_bytes_n;
+				break;
+
 			case RM_DELTA_ELEMENT_RAW_BYTES:
 				bytes_to_rx -= delta_e.raw_bytes_n;
+				free(delta_e.raw_bytes);
 				break;
 
 			case RM_DELTA_ELEMENT_TAIL:

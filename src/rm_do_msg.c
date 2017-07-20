@@ -66,7 +66,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	struct rm_work* work = (struct rm_work*) arg;
 	msg_push = (struct rm_msg_push*) work->msg;
 
-	RM_LOG_INFO("[%s] [0]: work started in thread [%llu]", rm_work_type_str[work->task], rm_gettid());
+	RM_LOG_INFO("[%s] [0]: work started in worker [%u] thread [%llu]", rm_work_type_str[work->task], work->worker_idx, rm_gettid());
 
 	pthread_mutex_lock(&work->rm->mutex);
 	memcpy(&opt, &work->rm->opt, sizeof(struct rm_core_options));

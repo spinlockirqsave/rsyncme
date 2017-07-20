@@ -41,6 +41,7 @@ enum rm_error rm_core_deinit(struct rsyncme *rm)
 	if (rm_wq_workqueue_stop(&rm->wq) != RM_ERR_OK) {
 		return RM_ERR_WORKQUEUE_STOP;
 	}
+
 	if (rm_wq_workqueue_deinit(&rm->wq) != RM_ERR_OK) {
 		return RM_ERR_MEM;
 	}
@@ -85,7 +86,7 @@ void rm_core_session_add(struct rsyncme *rm, struct rm_session *s)
 	return;
 }
 
-int
+	int
 rm_core_session_stop(struct rm_session *s)
 {
 	assert(s != NULL);
