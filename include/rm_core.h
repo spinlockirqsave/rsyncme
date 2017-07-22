@@ -68,6 +68,8 @@ struct rm_session* rm_core_session_find(struct rsyncme *rm, unsigned char sessio
 
 /* @brief   Adds new sesion into table and list. */
 void rm_core_session_add(struct rsyncme *rm, struct rm_session *s) __attribute__ ((nonnull(1,2)));
+/* @brief   Remove sesion from table and list. */
+void rm_core_session_del(struct rsyncme *rm, struct rm_session *s) __attribute__ ((nonnull(1,2)));
 
 /* @brief   Shut down. */
 int rm_core_shutdown(struct rsyncme *rm) __attribute__ ((nonnull(1)));

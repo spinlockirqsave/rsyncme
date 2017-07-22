@@ -209,6 +209,7 @@ void* rm_do_msg_push_rx(void* arg) {
 	RM_LOG_INFO("[%s] [11]: [%s] -> [%s], Session [%u][%u] ended", rm_work_type_str[work->task], s->ssid1, s->ssid2, s->hash, s->hashed_hash);
 
 	if (s != NULL) {
+		rm_core_session_del(work->rm, s);
 		rm_session_free(s);																					/* frees msg allocated for work as well */
 		s = NULL;
 		work->msg = NULL;																					/* do not free msg again in work dtor */
@@ -304,6 +305,7 @@ fail:
 		/* TODO reschedule the job? */
 	}
 	if (s != NULL) {
+		rm_core_session_del(work->rm, s);
 		rm_session_free(s);
 		s = NULL;
 		work->msg = NULL;																					/* do not free msg again in work dtor */
@@ -399,8 +401,7 @@ rm_calc_msg_len(void *arg) {
 	return len;
 }
 
-void
-rm_msg_push_dtor(void *arg) {
+void rm_msg_push_dtor(void *arg) {
 	struct rm_work *work = (struct rm_work*) arg;
 	close(work->fd);
 	if (work->msg)
