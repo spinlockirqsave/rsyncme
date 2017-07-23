@@ -86,13 +86,13 @@ void rm_core_session_add(struct rsyncme *rm, struct rm_session *s)
 	return;
 }
 
-	int
-rm_core_session_stop(struct rm_session *s)
+void rm_core_session_del(struct rsyncme *rm, struct rm_session *s)
 {
 	assert(s != NULL);
+	pthread_mutex_lock(&rm->mutex);
 	twlist_del(&s->link);
 	twhash_del(&s->hlink);
-	return 0;
+	pthread_mutex_unlock(&rm->mutex);
 }
 
 enum rm_error rm_core_authenticate(struct sockaddr_in *cli_addr)
