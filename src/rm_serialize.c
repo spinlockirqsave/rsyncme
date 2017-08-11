@@ -46,7 +46,8 @@ unsigned char* rm_serialize_u64(unsigned char *buf, uint64_t v) {
 }
 
 /* @brief   Write big-endian int value into buffer assumes 8-bit char. */
-unsigned char* rm_serialize_size_t(unsigned char *buf, size_t v) {
+unsigned char* rm_serialize_size_t(unsigned char *buf, size_t v)
+{
 	if (sizeof(size_t) == 4) {
 		buf = rm_serialize_u32(buf, v);
 		return buf;
@@ -65,19 +66,20 @@ unsigned char* rm_serialize_size_t(unsigned char *buf, size_t v) {
 	}
 }
 
-unsigned char* rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n) {
-	if (src == NULL) {
+unsigned char* rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n)
+{
+	if (src == NULL)
 		return buf;
-	}
+
 	memcpy(buf, src, bytes_n);
 	buf[bytes_n - 1] = '\0';    /* I am not going to produce invalid strings, if you wanted memcpy use serailize_mem instead */
 	return (buf + bytes_n);
 }
 
 unsigned char* rm_serialize_mem(void *buf, const void *src, size_t bytes_n) {
-	if (src == NULL) {
+	if (src == NULL)
 		return (unsigned char*)buf;
-	}
+
 	memcpy(buf, src, bytes_n);
 	return (((unsigned char*)buf) + bytes_n);
 }
@@ -198,18 +200,18 @@ unsigned char* rm_deserialize_size_t(unsigned char *buf, size_t *v) {
 }
 
 unsigned char* rm_deserialize_string(const void *buf, char *dst, size_t bytes_n) {
-	if (dst == NULL) {
+	if (dst == NULL)
 		return (unsigned char*)buf;
-	}
+
 	strncpy(dst, (char*)buf, bytes_n);
 	dst[bytes_n - 1] = '\0';
 	return (((unsigned char*) buf) + bytes_n);
 }
 
 unsigned char* rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n) {
-	if (dst == NULL) {
+	if (dst == NULL)
 		return (unsigned char*)buf;
-	}
+
 	memcpy(dst, buf, bytes_n);
 	return (((unsigned char*) buf) + bytes_n);
 }

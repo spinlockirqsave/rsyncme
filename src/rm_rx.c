@@ -98,7 +98,7 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 	struct rm_ch_ch_ref_hlink	*e = NULL;
 	unsigned char	    *buf = NULL;
 
-	if (f == NULL || fname == NULL || L == 0 || fd < 0) {
+	if (L == 0 || fd < 0) {
 		err = RM_ERR_BAD_CALL;
 		goto done;
 	}
@@ -139,14 +139,12 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 		read = rm_fpread(buf, 1, read_now, L * entries_n, f, file_mutex);
 		if (read != read_now) {
 			RM_LOG_PERR("Error reading file [%s]", fname);
-			free(buf);
 			err = RM_ERR_READ;
 			goto done;
 		}
 		e = malloc(sizeof (struct rm_ch_ch_ref_hlink));										/* alloc new table entry */
 		if (e == NULL)	 {
 			RM_LOG_PERR("%s", "Can't allocate table entry, malloc failed");
-			free(buf);
 			err = RM_ERR_MEM;
 			goto done;
 		}
@@ -158,7 +156,6 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref(int fd, FILE *f, const char *fname, st
 
 		if (f_tx_ch_ch_ref != NULL) {														/* tx checksums to remote A ? */
 			if (f_tx_ch_ch_ref(fd, &e->data) != RM_ERR_OK) {
-				free(buf);
 				err = RM_ERR_TX;
 				goto done;
 			}
@@ -200,14 +197,14 @@ int rm_rx_insert_nonoverlapping_ch_ch_array(FILE *f, const char *fname, struct r
 	struct stat fs;
 	uint32_t	file_sz, read_left, read_now, read;
 	size_t      entries_n;
-	struct rm_ch_ch	*e;
-	unsigned char	*buf;
+	struct rm_ch_ch	*e = NULL;
+	unsigned char	*buf = NULL;
 
 	assert(f != NULL);
 	assert(fname != NULL);
 	assert(L > 0);
 	assert(checksums != NULL);
-	if (f == NULL || fname == NULL || L == 0 || checksums == NULL)
+	if (L == 0)
 		return RM_ERR_BAD_CALL;
 
 	ffd = fileno(f);
@@ -268,14 +265,14 @@ int rm_rx_insert_nonoverlapping_ch_ch_ref_link(FILE *f, const char *fname, struc
 	struct stat             fs;
 	uint32_t	            file_sz, read_left, read_now, read;
 	size_t                  entries_n;
-	struct rm_ch_ch_ref_link *e;
-	unsigned char           *buf;
+	struct rm_ch_ch_ref_link *e = NULL;
+	unsigned char           *buf = NULL;
 
 	assert(f != NULL);
 	assert(fname != NULL);
 	assert(l != NULL);
 	assert(L > 0);
-	if (f == NULL || fname == NULL || L == 0 || l == NULL)
+	if (L == 0)
 		return RM_ERR_BAD_CALL;
 
 	ffd = fileno(f); /* get file size */
