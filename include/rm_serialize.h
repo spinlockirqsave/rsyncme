@@ -19,9 +19,9 @@ unsigned char* rm_serialize_u16(unsigned char *buf, uint16_t v) __attribute__ ((
 unsigned char* rm_serialize_u32(unsigned char *buf, uint32_t v) __attribute__ ((nonnull(1)));
 unsigned char* rm_serialize_u64(unsigned char *buf, uint64_t v) __attribute__ ((nonnull(1)));
 unsigned char* rm_serialize_size_t(unsigned char *buf, size_t v) __attribute__ ((nonnull(1)));
-unsigned char* rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n) __attribute__ ((nonnull(1,2)));
-unsigned char* rm_serialize_mem(void *buf, const void *src, size_t bytes_n) __attribute__ ((nonnull(1,2)));
-unsigned char* rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h) __attribute__ ((nonnull(1,2)));
+unsigned char* rm_serialize_string(unsigned char *buf, const void *src, size_t bytes_n);
+unsigned char* rm_serialize_mem(void *buf, const void *src, size_t bytes_n);
+unsigned char* rm_serialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *h);
 unsigned char* rm_serialize_msg_push(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_serialize_msg_ack(unsigned char *buf, struct rm_msg_ack *m) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_serialize_msg_push_ack(unsigned char *buf, struct rm_msg_push_ack *m) __attribute__ ((nonnull(1,2)));
@@ -40,9 +40,9 @@ unsigned char* rm_deserialize_u16(unsigned char *buf, uint16_t *v) __attribute__
 unsigned char* rm_deserialize_u32(unsigned char *buf, uint32_t *v) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_deserialize_u64(unsigned char *buf, uint64_t *v) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_deserialize_size_t(unsigned char *buf, size_t *v) __attribute__ ((nonnull(1,2)));
-unsigned char* rm_deserialize_string(const void *buf, char *dst, size_t bytes_n) __attribute__ ((nonnull(1,2)));
-unsigned char* rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n) __attribute__ ((nonnull(1,2)));
-unsigned char* rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr) __attribute__ ((nonnull(1,2)));
+unsigned char* rm_deserialize_string(const void *buf, char *dst, size_t bytes_n);
+unsigned char* rm_deserialize_mem(const void *buf, void *dst, size_t bytes_n);
+unsigned char* rm_deserialize_msg_hdr(unsigned char *buf, struct rm_msg_hdr *hdr);
 unsigned char* rm_deserialize_msg_push_body(unsigned char *buf, struct rm_msg_push *m) __attribute__ ((nonnull(1,2)));
 unsigned char* rm_deserialize_msg_push(unsigned char *buf, struct rm_msg_hdr *hdr, struct rm_msg_push **m) __attribute__ ((nonnull(1,2,3)));
 unsigned char* rm_deserialize_msg_ack(unsigned char *buf, struct rm_msg_ack *ack) __attribute__ ((nonnull(1,2)));

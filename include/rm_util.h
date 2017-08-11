@@ -47,7 +47,7 @@ rm_util_dt_detail(char *buf);
  *              RM_ERR_FOPEN_STDERR - fopen failed for stderr log,
  *              RM_ERR_FREOPEN_STDERR - stream redirection failed */
 int
-rm_util_openlogs(const char *dir, const char *name) __attribute__((nonnull(1)));
+rm_util_openlogs(const char *dir, const char *name);
 
 /* @return      RM_ERR_OK - success,
  *              RM_ERR_FAIL - failure */
@@ -67,7 +67,7 @@ rm_util_log_perr(FILE *stream, const char *fmt, ...);
  *              RM_ERR_IO_ERROR - can't open logs,
  *              RM_ERR_CHDIR - can't chdir */
 int
-rm_util_daemonize(const char *dir, int noclose, const char *logname) __attribute__((nonnull(3)));
+rm_util_daemonize(const char *dir, int noclose, const char *logname);
 
 /* @return      RM_ERR_OK - success,
  *              RM_ERR_CHDIR - can't chdir,

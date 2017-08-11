@@ -341,7 +341,7 @@ struct rm_session;
  *          RM_ERR_TX_ZERO_DIFF - zero difference tx failed */
 enum rm_error
 rm_rolling_ch_proc(struct rm_session *s, const struct twhlist_head *h, pthread_mutex_t *h_mutex,
-		FILE *f_x, rm_delta_f *delta_f, size_t from) __attribute__ ((nonnull(1,4,5)));
+		FILE *f_x, rm_delta_f *delta_f, size_t from);
 
 /* @brief   Start execution of @f function in new thread.
  * @details Thread is started in @detachstate with @arg argument passed to @f.

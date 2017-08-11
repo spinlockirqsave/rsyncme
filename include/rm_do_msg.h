@@ -102,11 +102,11 @@ void rm_msg_push_ack_free(struct rm_msg_push_ack *ack) __attribute__ ((nonnull(1
  *              The session is created and freed in this callback.
  *              The work dctor is not called in this function
  *              but as synchronous dctor by worker thread. */
-void* rm_do_msg_push_rx(void* arg) __attribute__ ((nonnull(1)));
+void* rm_do_msg_push_rx(void* arg);
 
 /* @brief       Handles incoming rsync pull request in new sesion.
  * @details     Daemon's message. */
-int rm_do_msg_pull_rx(struct rsyncme* rm, unsigned char *buf) __attribute__ ((nonnull(1,2)));
+int rm_do_msg_pull_rx(struct rsyncme* rm, unsigned char *buf);
 
 /* @brief       Return length of message including header, appropriate to put into hdr->len field */
 uint16_t rm_calc_msg_len(void *arg);
