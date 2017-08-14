@@ -41,7 +41,7 @@ void rm_msg_ack_free(struct rm_msg_ack *ack) {
 }
 
 enum rm_error rm_msg_push_ack_alloc(struct rm_msg_push_ack *ack) {
-	if (rm_msg_ack_alloc(&ack->ack) != RM_ERR_OK)
+	if (rm_msg_ack_alloc(&(ack->ack)) != RM_ERR_OK)
 		return RM_ERR_FAIL;
 	ack->delta_port = 0;
 	return RM_ERR_OK;
@@ -350,7 +350,7 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 uint16_t
 rm_calc_msg_len(void *arg) {
 	struct rm_msg_push  *msg_push;
-	struct rm_msg       *msg = (struct rm_msg*) &arg;
+	struct rm_msg       *msg = (struct rm_msg*) arg;
 	uint16_t            len = 0;
 
 	switch (msg->hdr->pt) {
