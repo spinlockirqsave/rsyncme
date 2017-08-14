@@ -310,7 +310,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	struct rm_msg_push  msg = {0};
 	unsigned char       *msg_raw = NULL;
 	unsigned char       *buf = NULL;
-	struct rm_msg_push_ack   ack;
+	struct rm_msg_push_ack   ack = {0};
 	memset(&ack, 0, sizeof(ack));
 
 	struct rm_core_options	core_opt = {0};
@@ -363,7 +363,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	memset(&msg, 0, sizeof(msg));
 	if (rm_msg_push_alloc(&msg) != RM_ERR_OK)
 		goto err_exit;                                                                          /* RM_ERR_MEM */
-	
+
 	msg.hdr->pt = RM_PT_MSG_PUSH;
 	msg.hdr->flags = flags;
 	memcpy(msg.ssid, s->id, RM_UUID_LEN);
@@ -397,7 +397,6 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	err = rm_tcp_write(prvt->fd, msg_raw, msg.hdr->len);											/* tx msg PUSH */
 	if (err != RM_ERR_OK)
 		goto err_exit;																				/* RM_ERR_WRITE */
-
 
 	if (rm_msg_push_ack_alloc(&ack) != RM_ERR_OK)													/* prepare for incoming ACK, allocate space for header == ACK */
 		goto err_exit;
