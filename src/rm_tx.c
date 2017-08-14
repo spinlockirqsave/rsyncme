@@ -310,7 +310,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	struct rm_msg_push  msg = {0};
 	unsigned char       *msg_raw = NULL;
 	unsigned char       *buf = NULL;
-	struct rm_msg_push_ack   ack = {0};
+	struct rm_msg_push_ack   ack;
 	memset(&ack, 0, sizeof(ack));
 
 	struct rm_core_options	core_opt = {0};
@@ -343,7 +343,6 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	x_sz = fs.st_size;
 	if (x_sz == 0) 
 		return RM_ERR_X_ZERO_SIZE;
-	
 
 	core_opt.loglevel = opt->loglevel;
 	core_opt.delta_conn_timeout_s = timeout_s;
