@@ -350,10 +350,10 @@ rm_do_msg_pull_rx(struct rsyncme *rm, unsigned char *buf) {
 uint16_t
 rm_calc_msg_len(void *arg) {
 	struct rm_msg_push  *msg_push;
-	struct rm_msg       *msg = (struct rm_msg*) arg;
+	struct rm_msg_hdr   *hdr = (struct rm_msg_hdr*) arg;
 	uint16_t            len = 0;
 
-	switch (msg->hdr->pt) {
+	switch (hdr->pt) {
 
 		case RM_PT_MSG_PUSH:
 			msg_push = (struct rm_msg_push*) arg;
