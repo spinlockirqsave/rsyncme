@@ -474,14 +474,19 @@ int main(int argc, char *argv[]) {
 		switch(errsv) {
 			case EADDRINUSE:
 				RM_LOG_ERR("%s", "core: Another socket is already listening on the same port");
+				break;
 			case EBADF:
 				RM_LOG_ERR("%s", "core: Not a valid descriptor");
+				break;
 			case ENOTSOCK:
 				RM_LOG_ERR("%s", "core: Not a socket");
+				break;
 			case EOPNOTSUPP:
 				RM_LOG_ERR("%s", "core: The socket is not of a type that supports the listen() call");
+				break;
 			default:
 				RM_LOG_ERR("%s", "core: Unknown error");
+				break;
 		}
 		exit(EXIT_FAILURE);
 	}
