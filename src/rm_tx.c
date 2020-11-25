@@ -310,8 +310,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	struct rm_msg_push  msg = {0};
 	unsigned char       *msg_raw = NULL;
 	unsigned char       *buf = NULL;
-	struct rm_msg_push_ack   ack = {0};
-	memset(&ack, 0, sizeof(ack));
+	struct rm_msg_push_ack   ack;
 
 	struct rm_core_options	core_opt = {0};
 
@@ -322,6 +321,7 @@ int rm_tx_remote_push(const char *x, const char *y, const char *z, size_t L, siz
 	(void) y;
 	(void) z;
 	(void) flags;
+	memset(&ack, 0, sizeof(ack));
 
 	if ((x == NULL) || (L == 0) || (rec_ctx == NULL) || (send_threshold == 0)) {
 		return RM_ERR_BAD_CALL;
